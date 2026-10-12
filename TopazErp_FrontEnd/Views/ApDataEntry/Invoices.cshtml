@@ -1,0 +1,43 @@
+@{
+    ViewBag.Title = "Invoices";
+    Layout = "~/Views/Shared/_adminApLayout.cshtml";
+}
+
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>AP - Data Entry</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Invoices</span>
+        </div>
+    </div>
+
+    <div id="app" class="space-y-6">
+            <div class="card" data-card-title="Invoices">
+                <data-grid
+                    title="Invoices"
+                    :columns="invoiceColumns"
+                    :data="invoiceList"
+                    :child="invoiceDetailChild"
+                    :theme="theme"
+                    row-id="id"
+                    label-key="name"
+                    item-label="bank"
+                    item-label-plural="banks"
+                    add-label="Add"
+                    :page-size="10"
+                    :selectable="true"
+                    :actions="true"
+                    @@create="onCreate"
+                    @@update="onUpdate"
+              
+                ></data-grid>
+               
+            </div>
+        </div>
+        </div>
+
+
+
+<script src="~/js/ap/DataEntry/invoices.js" asp-append-version="true"></script>
+
