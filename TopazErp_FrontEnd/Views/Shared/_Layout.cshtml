@@ -1,0 +1,118 @@
+﻿
+@{
+    var title = ViewData["Title"] as string ?? "Dashboard";
+    var subtitle = ViewData["Subtitle"] as string ?? "Topaz ERP";
+    var userName = User?.Identity?.Name ?? "Admin";
+    var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, StringSplitOptions.RemoveEmptyEntries)
+                                         .Take(2).Select(p => char.ToUpper(p[0])));
+}
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@title - TopazErp_FrontEnd</title>
+
+    <script>
+      /* options for wwwroot/js/shell.js — no menu data here, the menu is markup */
+      window.__SHELL__ = {
+        breakpoint: 1024,          // below this width the sidebar becomes a drawer
+        railWidth: 72, minWidth: 210, maxWidth: 420,
+        storagePrefix: 'shell'     // localStorage keys: shell:collapsed, shell:w, shell:theme
+      };
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                50:'#eff6ff', 100:'#dbeafe', 200:'#bfdbfe', 300:'#93c5fd', 400:'#60a5fa',
+                500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8', 800:'#1e40af', 900:'#1e3a8a', 950:'#172554'
+              }
+            },
+            fontFamily: { sans: ['Inter','ui-sans-serif','system-ui','-apple-system','Segoe UI','Roboto','sans-serif'] },
+            boxShadow: { card: '0 1px 2px 0 rgb(0 0 0 / 0.04), 0 8px 24px -12px rgb(15 23 42 / 0.18)' }
+          }
+        }
+      }
+    </script>
+    <script src="~/libs/jquery/jquery.js" asp-append-version="true"></script>
+    
+ 
+    <environment names="Development">
+        <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    </environment>
+
+    <environment names="Production">
+        <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    </environment>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/line-awesome@1.3.0/dist/line-awesome/css/line-awesome.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.30.1/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="~/css/shell.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/card.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+    
+    <!-- Report Viewer component script-->
+    <script src="~/libs/jquery/jquery.js" asp-append-version="true"></script>
+
+    <!-- Syncfusion EJ1 / Essential JavaScript -->
+    <script src="~/ejassets/scripts/jsrender.min.js"></script>
+    <script src="~/ejassets/scripts/ej.web.all.min.js"></script>
+
+    <!-- Moment -->
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.30.1/moment.min.js"></script>
+
+    <!-- Bold Reports Viewer -->
+    <script src="~/js/bold.report-viewer.min.js"></script>
+
+    <script>
+        // Application root path.
+        // Supports applications hosted under an IIS virtual directory.
+        var abp = abp || {};
+        abp.appPath = '@Url.Content("~/")';
+
+        var reportApiBaseUrl = 'http://108.181.191.134:78/api/ReportApi';
+    </script>
+    <link href="~/ejassets/ejthemes/office-365/ej.web.all.min.css" rel="stylesheet" />
+ 
+
+</head>
+
+<body class="h-full min-h-full bg-grey-50 font-sans text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-200">
+
+
+    @* ══════════════════════════════ PAGE ══════════════════════════════ *@
+    <main role="main">
+        <div >
+            @RenderBody()
+        </div>
+    </main>
+
+    <footer class="page-footer">
+        <div class="page-container page-footer-inner">
+            <span>&copy; @DateTime.Now.Year - Topaz, All rights reserved.</span>
+            <a href="#">Privacy</a>
+        </div>
+    </footer>
+
+    <script src="~/js/app-shell.js" asp-append-version="true"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/card.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
