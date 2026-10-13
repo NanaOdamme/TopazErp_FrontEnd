@@ -1,0 +1,235 @@
+﻿
+@{
+    ViewBag.Title = "Users";
+    Layout = "~/Views/Shared/_adminTenantLayout.cshtml";
+}
+
+
+<div class="app-content content">
+    <div class="content-wrapper">
+        <div class="content-header row">
+            <div class="content-header-left col-md-6 col-12 mb-2">
+                <h3 class="content-header-title"> Users </h3>
+                <div class="row breadcrumbs-top">
+                    <div class="breadcrumb-wrapper col-12">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item">
+                                <a href="#"> Manage </a>
+                            </li>
+
+                            <li class="breadcrumb-item active">
+                                Users
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="content-body">
+            <!-- Basic Tables start -->
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 my-2">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title"> Users  </h4>
+                            <a class="heading-elements-toggle"><i class="la la-ellipsis-v font-medium-3"></i></a>
+                            <div class="heading-elements">
+                                <ul class="list-inline mb-0">
+                                    <li><a data-action="expand"><i class="ft-maximize"></i></a></li>
+                                    <li><a data-action="close"><i class="ft-x"></i></a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="card-content collapse show">
+                            <div class="card-body" id="app">
+
+                                <div class="row d-flex justify-content-between mb-3">
+
+                                    <h6 class="d-flex justify-content-start">   </h6>
+
+                                    <button class="inline-flex items-center justify-center gap-2 rounded-lg
+                                       px-6 py-2.5 text-sm font-semibold text-white shadow-sm
+                                       transition disabled:cursor-not-allowed disabled:opacity-60 bg-blue-500 hover:bg-blue-700"  v-on:click="resetModal()" type="button" data-target="#user-modal" data-toggle="modal"> Create New User</button>
+
+                                </div>
+
+                                <div class="element-box-tp">
+
+                                    <div class="table-responsive">
+                                        <table class="table table-padded">
+                                            <thead>
+                                                <tr>
+
+                                                    <th>First Name</th>
+                                                    <th>Last Name</th>
+                                                    <th>Username</th>
+                                                    <th>Email Address</th>
+                                                    <th> Status </th>
+                                                    <th> Actions </th>
+
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+
+                                                <tr v-for="(user,index) in userList" :key="user.id">
+                                                    <td>
+                                                        <div class="">  {{user.name}} </div>
+                                                    </td>
+
+                                                    <td>
+                                                        <div class=""> {{user.surname}} </div>
+                                                    </td>
+
+                                                    <td>
+                                                        <div class=""> {{user.userName}} </div>
+                                                    </td>
+
+                                                    <td>
+                                                        <div class=""> {{user.emailAddress}} </div>
+                                                    </td>
+
+                                                    <td v-if="user.isActive"> Active </td>
+
+                                                    <td v-else> Inactive </td>
+
+                                                    <td class="row-actions">
+
+                                                        <button type="button" v-on:click="viewUserDetails(user)" class="inline-flex items-center justify-center gap-2 rounded-lg
+                                       px-6 py-2.5 text-sm font-semibold text-white shadow-sm
+                                       transition disabled:cursor-not-allowed disabled:opacity-60 bg-blue-500 hover:bg-blue-700"  aria-expanded="false"> View Details </button>
+
+                                                        <button type="button" v-on:click="deleteUser(user)" v-if="user.isActive" class="inline-flex items-center justify-center gap-2 rounded-lg
+                                       px-6 py-2.5 text-sm font-semibold text-white shadow-sm
+                                       transition disabled:cursor-not-allowed disabled:opacity-60 bg-blue-500 hover:bg-blue-700"  aria-expanded="false"> Delete </button>
+
+                                                    </td>
+                                                </tr>
+
+                                            </tbody>
+                                        </table>
+
+                                    </div>
+
+                                    <div class="row justify-content-between" v-if="userList.length">
+
+                                        <div class="col-sm-12 col-md-5">
+                                            <div class="dataTables_info" id="dataTable1_info" role="status" aria-live="polite"> Showing {{lowerBound}} - {{upperBound}} of {{totalCount}} records </div>
+                                        </div>
+
+                                        <div class="col-sm-12 col-md-7">
+
+                                            <div class="dataTables_paginate paging_simple_numbers">
+
+                                                <ul class="pagination justify-content-end">
+
+                                                    <li class="paginate_button page-item" :class="{active: pageNo === page}" v-for="page in pageList" :key="page"><a href="#" aria-controls="dataTable1" data-dt-idx="1" tabindex="0" class="page-link" @@click.prevent="onPageChanged(page)"> {{ page }} </a></li>
+
+                                                </ul>
+
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+
+                                    <div aria-hidden="true" aria-labelledby="exampleModalLabel" class="modal fade" id="user-modal" role="dialog" tabindex="-1">
+                                        <div class="modal-dialog" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="exampleModalLabel"> {{modalTitle}} </h5>
+                                                    <button aria-label="Close" class="close" data-dismiss="modal" type="button"><span aria-hidden="true"> &times;</span></button>
+                                                </div>
+                                                <div class="modal-body">
+
+                                                    <div class="">
+                                                        <label> <strong>First Name:</strong> </label>
+                                                        <input type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" v-model="name" ref="name" placeholder="First Name">
+                                                        <span class="text-danger" v-if="!$v.name.required && $v.name.$dirty"> First name field is required </span>
+
+                                                    </div>
+
+                                                    <div class="">
+                                                        <label> <strong>Last Name:</strong> </label>
+                                                        <input type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" v-model="surname" ref="surname" placeholder="Last Name">
+                                                        <span class="text-danger" v-if="!$v.surname.required && $v.userName.$dirty"> Last name field is required </span>
+
+                                                    </div>
+
+                                                    <div class="">
+                                                        <label> <strong> Username:</strong> </label>
+                                                        <input type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" v-model="userName" ref="userName" placeholder="Username">
+                                                        <span class="text-danger" v-if="!$v.userName.required && $v.userName.$dirty"> Username field is required </span>
+
+                                                    </div>
+
+                                                    <div class="">
+                                                        <label> <strong> Email :</strong> </label>
+
+                                                        <input type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" v-model="emailAddress" ref="emailAddress" placeholder="Email">
+                                                        <span class="text-danger" v-if="!$v.emailAddress.required && $v.emailAddress.$dirty"> Email field is required </span>
+
+                                                    </div>
+
+                                                    <div class="" v-if="id == null">
+                                                        <label> <strong> Password :</strong> </label>
+                                                        <input type="password" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" ref="password" v-model="password" placeholder="*******">
+
+                                                    </div>
+
+                                                    <div class="" v-if="id == null">
+                                                        <label> <strong> Conform Password :</strong> </label>
+                                                        <input type="password" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" ref="passwordConfirm" v-model="passwordConfirm" placeholder="*******">
+
+                                                    </div>
+
+                                                    <div class="">
+                                                        <label> <strong> Role :</strong> </label>
+
+                                                        <select class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 mb-3" v-model="selectedRole">
+                                                            <option value="">Select Role</option>
+                                                            <option :value="role.normalizedName" v-for="role in roleList"> {{role.name}} </option>
+                                                        </select>
+                                                        <span class="text-danger" v-if="!$v.selectedRole.required && $v.selectedRole.$dirty"> Role field is required </span>
+
+                                                    </div>
+
+                                                </div>
+
+                                                <div class="modal-footer">
+                                                    <button class="inline-flex items-center justify-center gap-2 rounded-lg
+                                       px-6 py-2.5 text-sm font-semibold text-white shadow-sm
+                                       transition disabled:cursor-not-allowed disabled:opacity-60 bg-blue-500 hover:bg-blue-700"  data-dismiss="modal" type="button"> Close </button>
+                                                    <button class="inline-flex items-center justify-center gap-2 rounded-lg
+                                       px-6 py-2.5 text-sm font-semibold text-white shadow-sm
+                                       transition disabled:cursor-not-allowed disabled:opacity-60 bg-blue-500 hover:bg-blue-700"  :disabled="isLoading" type="button" v-on:click="saveUser()">
+
+                                                        Save changes
+
+                                                        <i class="la la-circle-o-notch spinner" v-if="isLoading"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+</div>
+
+
+ 
+<script src="~/libs/vuelidate/vuelidate.min.js"></script>
+<script src="~/libs/vuelidate/validators.min.js"></script>
+
+<script src="~/js/manage/users.js" asp-append-version="true"></script>

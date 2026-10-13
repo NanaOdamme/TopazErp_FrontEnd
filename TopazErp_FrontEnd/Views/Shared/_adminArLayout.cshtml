@@ -1,0 +1,731 @@
+@* ============================================================================
+   _Layout.cshtml — sidebar + header shell for TopazErp_FrontEnd.
+
+   How the menu works
+   ------------------
+   The links are ordinary Razor markup with tag helpers, exactly like:
+
+       <a asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+
+   The only extra things are the classes the CSS/JS expect:
+
+       ul.nav-menu                the list
+       li.nav-item                one row
+       li.nav-item.has-sub        this row opens a submenu
+       a.menu-link (top level)    the clickable row   →  a.menu-item inside a submenu
+       span.menu-title            the label
+       ul.menu-content            the submenu <ul> (put it right after the <a>)
+       li.nav-section             a group heading
+       span.badge.menu-badge      optional counter
+
+   That's all: no models, no services. Highlighting the current page is done by
+   wwwroot/js/shell.js, which compares each rendered href with the current URL —
+   so plain asp-controller/asp-action links work on their own. (If you prefer to
+   set it server side, just add class="active" / "open" yourself; the script
+   leaves your markup alone when no link matches.)
+
+   Contract with your pages: wrap the body in <main class="page-main"> and the
+   shell lays itself out around it. Everything else is optional.
+   ============================================================================ *@
+@{
+var title = ViewData["Title"] as string ?? "Dashboard";
+var subtitle = ViewData["Subtitle"] as string ?? "Topaz ERP";
+var userName = User?.Identity?.Name ?? "Admin";
+var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, StringSplitOptions.RemoveEmptyEntries)
+.Take(2).Select(p => char.ToUpper(p[0])));
+}
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@title - TopazErp_FrontEnd</title>
+
+    <script>
+        /* options for wwwroot/js/shell.js — no menu data here, the menu is markup */
+        window.__SHELL__ = {
+            breakpoint: 1024,          // below this width the sidebar becomes a drawer
+            railWidth: 72, minWidth: 210, maxWidth: 420,
+            storagePrefix: 'shell'     // localStorage keys: shell:collapsed, shell:w, shell:theme
+        };
+    </script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50:'#eff6ff', 100:'#dbeafe', 200:'#bfdbfe', 300:'#93c5fd', 400:'#60a5fa',
+                            500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8', 800:'#1e40af', 900:'#1e3a8a', 950:'#172554'
+                        }
+                    },
+                    fontFamily: { sans: ['Inter','ui-sans-serif','system-ui','-apple-system','Segoe UI','Roboto','sans-serif'] },
+                    boxShadow: { card: '0 1px 2px 0 rgb(0 0 0 / 0.04), 0 8px 24px -12px rgb(15 23 42 / 0.18)' }
+                }
+            }
+        }
+    </script>
+    <script src="~/libs/jquery/jquery.js" asp-append-version="true"></script>
+
+
+    <environment names="Development">
+        <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    </environment>
+
+    <environment names="Production">
+        <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    </environment>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/line-awesome@1.3.0/dist/line-awesome/css/line-awesome.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.30.1/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="~/css/shell.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/card.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+
+    <!-- Report Viewer component script-->
+    <script src="~/libs/jquery/jquery.js" asp-append-version="true"></script>
+
+    <!-- Syncfusion EJ1 / Essential JavaScript -->
+    <script src="~/ejassets/scripts/jsrender.min.js"></script>
+    <script src="~/ejassets/scripts/ej.web.all.min.js"></script>
+
+    <!-- Moment -->
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.30.1/moment.min.js"></script>
+
+    <!-- Bold Reports Viewer -->
+    <script src="~/js/bold.report-viewer.min.js"></script>
+
+    <script>
+        // Application root path.
+        // Supports applications hosted under an IIS virtual directory.
+        var abp = abp || {};
+        abp.appPath = '@Url.Content("~/")';
+
+        var reportApiBaseUrl = 'http://108.181.191.134:78/api/ReportApi';
+    </script>
+    <link href="~/ejassets/ejthemes/office-365/ej.web.all.min.css" rel="stylesheet" />
+
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+</head>
+
+<body class="h-full min-h-full bg-grey-50 font-sans text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-200">
+
+@* ══════════════════════════════ SIDEBAR ══════════════════════════════ *@
+<aside class="app-sidebar" id="appSidebar" aria-label="Main navigation">
+
+    <div class="sidebar-brand">
+        <div class="sidebar-brand-link">
+            <span class="sidebar-logo"> <img class="brand-logo" alt="" src="/app-assets/images/topazLogo.png"></span>
+            <span class="sidebar-brand-text">
+                    <span class="sidebar-brand-name">Topaz ERP</span>
+                
+                </span>
+        </div>
+        <button type="button" class="sidebar-icon-btn" data-action="collapse" title="Collapse sidebar (Ctrl+B)" aria-label="Collapse sidebar">
+            <i class="bi bi-chevron-double-left" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="sidebar-icon-btn sidebar-close" data-action="close-drawer" aria-label="Close navigation">
+            <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
+    </div>
+
+    @* ───────────────────────── THE MENU ─────────────────────────
+           Add a link:  <li class="nav-item">
+                            <a class="menu-link" asp-area="" asp-controller="Home" asp-action="Index">
+                              <i class="bi bi-speedometer2"></i><span class="menu-title">Dashboard</span>
+                            </a>
+                        </li>
+
+           Add a submenu: wrap the parent in li.nav-item.has-sub (link href="#")
+                          and put <ul class="menu-content"> right after the <a>.
+        *@
+    <nav class="app-nav" id="appNav" aria-label="Main menu">
+        <ul class="nav-menu" data-menu-level="0">
+            <li class="nav-item">
+                <a class="menu-link" asp-area="" asp-controller="Dashboard" asp-action="Ar"><i class="bi bi-speedometer2" aria-hidden="true"></i>
+                    <span class="menu-title">Dashboard</span>
+                </a>
+            </li>
+            <!-- General Setups -->
+            @*<li class="nav-section"><span class="menu-title">General</span></li>*@
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-share"></i>
+                    <span class="menu-title">General Setups</span>
+                </a>
+                <ul class="menu-content">
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApSharedResource" asp-action="CompanyProfile">
+                            <i class="bi bi-building"></i>
+                            <span class="menu-title">Company Profile</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApSharedResource" asp-action="Departments">
+                            <i class="bi bi-diagram-3"></i>
+                            <span class="menu-title">Departments</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApSharedResource" asp-action="CostCenters">
+                            <i class="bi bi-pie-chart"></i>
+                            <span class="menu-title">Cost Centers</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApSharedResource" asp-action="Currencies">
+                            <i class="bi bi-currency-exchange"></i>
+                            <span class="menu-title">Currencies</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApSharedResource" asp-action="BanksBranches">
+                            <i class="bi bi-bank"></i>
+                            <span class="menu-title">Banks &amp; Branches</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApSharedResource" asp-action="Suppliers">
+                            <i class="bi bi-truck"></i>
+                            <span class="menu-title">Suppliers</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApSharedResource" asp-action="SupplierGroups">
+                            <i class="bi bi-people"></i>
+                            <span class="menu-title">Supplier Groups</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApSharedResource" asp-action="SystemNumbers">
+                            <i class="bi bi-hash"></i>
+                            <span class="menu-title">System Numbers</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApSharedResource" asp-action="Statuses">
+                            <i class="bi bi-check-circle"></i>
+                            <span class="menu-title">Statuses</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApSharedResource" asp-action="DefaultGlNumbers">
+                            <i class="bi bi-journal-text"></i>
+                            <span class="menu-title">Default GL Numbers</span>
+                        </a>
+                    </li>
+
+
+                </ul>
+
+
+            </li>
+
+            <!-- Data Entry -->
+
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-pencil-square"></i>
+                    <span class="menu-title">Data Entry</span>
+                </a>
+
+               
+                <ul class="menu-content">
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApDataEntry" asp-action="OpeningBalances">
+                            <i class="bi bi-wallet2"></i>
+                            <span class="menu-title">Opening Balances</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApDataEntry" asp-action="Invoices">
+                            <i class="bi bi-receipt"></i>
+                            <span class="menu-title">Invoices</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApDataEntry" asp-action="AllPayments">
+                            <i class="bi bi-cash-stack"></i>
+                            <span class="menu-title">Payments</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApDataEntry" asp-action="VoucherAction">
+                            <i class="bi bi-file-earmark-text"></i>
+                            <span class="menu-title">Payment Vouchers</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApDataEntry" asp-action="InitDebitMemo">
+                            <i class="bi bi-file-earmark-minus"></i>
+                            <span class="menu-title">Debit Memo</span>
+                        </a>
+                    </li>
+
+                </ul>
+                
+
+            </li>
+
+            <!-- Enterprise Data Entry -->
+
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span class="menu-title">Enterprise Data Entry</span>
+                </a>
+
+               
+                <ul class="menu-content">
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApEnterpriseDataEntry" asp-action="RaiseVoucher">
+                            <i class="bi bi-file-earmark-plus"></i>
+                            <span class="menu-title">Raise Payment Voucher</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApEnterpriseDataEntry" asp-action="PostVoucher">
+                            <i class="bi bi-check2-square"></i>
+                            <span class="menu-title">Post Vouchers</span>
+                        </a>
+                    </li>
+
+                </ul>
+               
+
+            </li>
+
+            <!-- Enquiries -->
+
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-search"></i>
+                    <span class="menu-title">Enquiries</span>
+                </a>
+
+                
+                <ul class="menu-content">
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="SuppliersList">
+                            <i class="bi bi-truck"></i>
+                            <span class="menu-title">Suppliers Info</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="OpeningBalances">
+                            <i class="bi bi-wallet2"></i>
+                            <span class="menu-title">Opening Balances</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="InvoiceList">
+                            <i class="bi bi-receipt"></i>
+                            <span class="menu-title">All Invoices</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="ApprovedInvoices">
+                            <i class="bi bi-check-circle"></i>
+                            <span class="menu-title">Approved Invoices</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="UnapprovedInvoices">
+                            <i class="bi bi-exclamation-circle"></i>
+                            <span class="menu-title">Invoices Not Approved</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="PaidInvoices">
+                            <i class="bi bi-cash-coin"></i>
+                            <span class="menu-title">Fully Paid Invoices</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="Aging">
+                            <i class="bi bi-hourglass-split"></i>
+                            <span class="menu-title">Aging</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="CanceledInvoices">
+                            <i class="bi bi-x-circle"></i>
+                            <span class="menu-title">Canceled Invoices</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="PaymentHistory">
+                            <i class="bi bi-clock-history"></i>
+                            <span class="menu-title">Payment History</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="CanceledPayments">
+                            <i class="bi bi-x-circle"></i>
+                            <span class="menu-title">Canceled Payments</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="WithHolding">
+                            <i class="bi bi-percent"></i>
+                            <span class="menu-title">WithHoldings</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="Vouchers">
+                            <i class="bi bi-file-earmark-text"></i>
+                            <span class="menu-title">Payment Vouchers</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="DebitMemo">
+                            <i class="bi bi-file-earmark-minus"></i>
+                            <span class="menu-title">Debit Memo</span>
+                        </a>
+                    </li>
+
+                </ul>
+               
+
+            </li>
+
+            <!-- Imports -->
+
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-cloud-upload"></i>
+                    <span class="menu-title">Import Data</span>
+                </a>
+
+                <ul class="menu-content">
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApImportData" asp-action="supplierList">
+                            <i class="bi bi-people"></i>
+                            <span class="menu-title">Suppliers</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApImportData" asp-action="ImportOpeningBalances">
+                            <i class="bi bi-wallet2"></i>
+                            <span class="menu-title">Opening Balances</span>
+                        </a>
+                    </li>
+
+                </ul>
+              
+
+            </li>
+
+            <!-- Email -->
+
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-envelope"></i>
+                    <span class="menu-title">Email</span>
+                </a>
+
+                <ul class="menu-content">
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApEmail" asp-action="EmailApInvoice">
+                            <i class="bi bi-envelope-paper"></i>
+                            <span class="menu-title">Email Invoice</span>
+                        </a>
+                    </li>
+
+                </ul>
+              
+
+            </li>
+
+            <!-- Reports -->
+
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span class="menu-title">AP Reports</span>
+                </a>
+
+                <ul class="menu-content">
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="Suppliers">
+                            <i class="bi bi-people"></i>
+                            <span class="menu-title">Supplier List</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="Statement">
+                            <i class="bi bi-file-text"></i>
+                            <span class="menu-title">Statements</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="InvoiceDetails">
+                            <i class="bi bi-receipt"></i>
+                            <span class="menu-title">Print Invoice</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="Invoice">
+                            <i class="bi bi-file-earmark-text"></i>
+                            <span class="menu-title">Invoice Reports</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="GrOpeningBalances">
+                            <i class="bi bi-wallet2"></i>
+                            <span class="menu-title">Opening Balances</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="Payments">
+                            <i class="bi bi-clock-history"></i>
+                            <span class="menu-title">Pay History Reports</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="Vouchers">
+                            <i class="bi bi-file-earmark-text"></i>
+                            <span class="menu-title">Payment Vouchers</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="AgeingReport">
+                            <i class="bi bi-hourglass-split"></i>
+                            <span class="menu-title">Aging Reports</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="DebitMemo">
+                            <i class="bi bi-file-earmark-minus"></i>
+                            <span class="menu-title">Debit Memo</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="CanceledInvoices">
+                            <i class="bi bi-x-circle"></i>
+                            <span class="menu-title">Canceled Invoices</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="GlTransactions">
+                            <i class="bi bi-journal-text"></i>
+                            <span class="menu-title">AP G/L Transactions</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="AuditLogs">
+                            <i class="bi bi-shield-check"></i>
+                            <span class="menu-title">Audit Logs</span>
+                        </a>
+                    </li>
+
+                </ul>
+              
+
+            </li>
+
+
+        </ul>
+    </nav>
+
+    @* signed-in user + rail expand button *@
+    <div class="sidebar-foot">
+        <div class="sidebar-user">
+            <span class="sidebar-avatar">@initials</span>
+            <span class="sidebar-user-text">
+                    <span class="sidebar-user-name">@userName</span>
+                    <span class="sidebar-user-role">@(User?.IsInRole("Admin") == true ? "Administrator" : "User")</span>
+                </span>
+            <form class="sidebar-signout" asp-area="" asp-controller="Home" asp-action="Index" onsubmit="return false">
+                <button type="submit" class="sidebar-icon-btn" title="Sign out"><i class="bi bi-box-arrow-right" aria-hidden="true"></i></button>
+            </form>
+        </div>
+        <button type="button" class="sidebar-icon-btn sidebar-expand" data-action="expand" title="Expand sidebar (Ctrl+B)">
+            <i class="bi bi-chevron-double-right" aria-hidden="true"></i>
+        </button>
+    </div>
+
+    <span class="sidebar-resizer" data-action="resize" role="separator" aria-orientation="vertical"
+          title="Drag to resize · double-click to reset"></span>
+</aside>
+
+<div class="sidebar-backdrop" data-action="backdrop" hidden></div>
+
+@* ══════════════════════════════ HEADER ══════════════════════════════ *@
+<header class="app-topbar bg-sky-600 dark:bg-sky-950" id="appTopbar">
+    <button type="button" class="topbar-btn" data-action="toggle-sidebar" aria-label="Toggle navigation" aria-haspopup="true">
+        <i class="bi bi-list" aria-hidden="true"></i>
+    </button>
+
+  
+
+
+    <div class="topbar-search" data-search-wrap>
+
+        <input type="search" id="topbarSearch" data-search-input autocomplete="off"
+               placeholder="Search anything…" aria-label="Search" />
+
+        <div class="dropdown-panel search-results" id="searchResults" hidden></div>
+    </div>
+
+    <div class="topbar-actions">
+        <button type="button" class="topbar-btn md:hidden" data-action="mobile-search" aria-label="Search">
+            <i class="bi bi-search" aria-hidden="true"></i>
+        </button>
+
+        <button type="button" class="topbar-btn" data-action="theme" title="Dark mode" aria-label="Toggle dark mode">
+            <i class="bi bi-moon-stars" data-theme-icon aria-hidden="true"></i>
+        </button>
+
+        @*<div class="dropdown" data-dropdown="notif">
+                <button type="button" class="topbar-btn" data-toggle aria-label="Notifications" aria-haspopup="menu">
+                    <i class="bi bi-bell" aria-hidden="true"></i>
+                    @if (unreadCount > 0)
+                    {
+                        <span class="topbar-badge" data-unread-count>@unreadCount</span>
+                    }
+                </button>
+                <div class="dropdown-panel dropdown-panel-notif" role="menu">
+                    <div class="dropdown-head">
+                        <p>Notifications</p>
+                        <button type="button" data-action="mark-read">Mark all read</button>
+                    </div>
+                    <ul class="notif-list">
+                        @foreach (var n in notifications)
+                        {
+                            <li class="@(n.Unread ? "is-unread" : "")">
+                                <span class="notif-icon tone-@n.Tone"><i class="bi @n.Icon" aria-hidden="true"></i></span>
+                                <span class="notif-body">
+                                    <span class="notif-title">@n.Title <i class="notif-dot" aria-hidden="true"></i></span>
+                                    <span class="notif-text">@n.Body</span>
+                                    <span class="notif-time">@n.Time</span>
+                                </span>
+                            </li>
+                        }
+                    </ul>
+                    <div class="dropdown-foot"><a href="#">View all notifications</a></div>
+                </div>
+            </div>*@
+
+        <span class="topbar-divider"></span>
+
+        @* Hello Admin *@
+        <div class="dropdown" data-dropdown="user">
+            <button type="button" class="topbar-user" data-toggle aria-haspopup="menu">
+                <span class="topbar-avatar">@initials</span>
+                <span class="topbar-user-text">
+                        <span class="hello">Hello,</span>
+                        <span class="name">@userName</span>
+                    </span>
+                <i class="bi bi-chevron-down topbar-caret" aria-hidden="true"></i>
+            </button>
+            <div class="dropdown-panel dropdown-panel-user" role="menu">
+                <div class="dropdown-head user-head">
+                    <span class="topbar-avatar lg">@initials</span>
+                    <span class="user-head-text">
+                            <span class="name">@userName</span>
+                            <span class="email">@(User?.FindFirst("email")?.Value ?? "admin@topaz.erp")</span>
+                            <span class="role">@(User?.IsInRole("Admin") == true ? "Administrator" : "User")</span>
+                        </span>
+                </div>
+                <ul class="dropdown-menu-list">
+                    <li><a asp-area="" asp-controller="Manage" asp-action="Profile"><i class="bi bi-person-circle"></i>My Profile</a></li>
+                    <li><a asp-area="" asp-controller="Manage" asp-action="Users"><i class="bi bi-sliders"></i>Manage Users</a></li>
+                    <li><a asp-area="" asp-controller="Manage" asp-action="UpdatePassword"><i class="bi bi-key"></i>Update Password</a></li>
+                    <li><a asp-area="" asp-controller="Manage" asp-action="Modules"><i class="bi bi-gear"></i>Modules</a></li>
+                    <li><a href="#"><i class="bi bi-question-circle"></i>Help &amp; Support</a></li>
+                </ul>
+                <div class="dropdown-foot signout">
+                    <a asp-area="" asp-controller="Account" asp-action="Login" >
+                        <button ><i class="bi bi-box-arrow-right"></i>Sign out</button>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="topbar-mobile-search" id="topbarMobileSearch" hidden>
+        <input type="search" id="topbarSearchMobile" data-search-input autocomplete="off" placeholder="Search anything…" aria-label="Search" />
+        <div class="dropdown-panel search-results" id="searchResultsMobile" hidden></div>
+    </div>
+</header>
+
+@* ══════════════════════════════ PAGE ══════════════════════════════ *@
+<main role="main" class="page-main">
+    <div class="page-container">
+        @RenderBody()
+    </div>
+</main>
+
+<footer class="page-footer">
+    <div class="page-container page-footer-inner">
+        <span>&copy; @DateTime.Now.Year - Topaz, All rights reserved.</span>
+        <a href="#">Privacy</a>
+    </div>
+</footer>
+
+<script src="~/js/app-shell.js" asp-append-version="true"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+<script src="~/js/card.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

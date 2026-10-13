@@ -1,0 +1,283 @@
+﻿@{
+ViewBag.Title = "Invoices";
+Layout = "~/Views/Shared/_adminApLayout.cshtml";
+}
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>AP - Data Entry</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Invoices</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+
+            <div class="page-title">
+                <h2 class="text-2xl font-semibold text-gray-800">
+                    Add Invoice
+                </h2>
+                
+            </div>
+        </div>
+    </div>
+    <div id="app" class="card" data-card-title="Add Invoice">
+    <!--search area -->
+    <div class="row  mb-2">
+
+        <div class="col-sm-4">
+            <div class="">
+                <button type="button" v-on:click="clearForm" class="inline-flex items-center justify-center gap-2 rounded-lg
+                                       px-6 py-2.5 text-sm font-semibold text-white shadow-sm
+                                       transition disabled:cursor-not-allowed disabled:opacity-60 bg-blue-500">
+                    <i class="la la-refresh"></i> Reset Form
+                    <i class="fa fa-spinner fa-spin" v-if="isLoading"></i>
+                </button>
+                
+            </div>
+            
+        </div>
+    </div>
+    <hr/>
+    <!-- add and update form -->
+    <div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-5 mb-2 my-2">
+        
+                <div class="">
+                    <label> Supplier: </label><span class="text-danger">*</span>
+                    <input id="supplierId" v-model="supplierId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" required/>
+                </div>
+
+                <div class="">
+                    <label>Account No.: </label>
+                    <input v-model="accountNumber" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" type="text" disabled="disabled"/>
+
+                </div>
+
+               
+                    <div class="">
+                        <label> Currency: </label><span class="text-danger">*</span>
+                        <input id="currencyId" v-model="currencyId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" required/>
+                    </div>
+
+              
+                <div class="">
+                    <label> Currency Rate: </label>
+                    <input id="buyRate" v-model="buyRate" step="0.01" min="0" type="number" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+
+                </div>
+
+                <div class=" mx-2">
+                    <input class="form-check-input" type="checkbox" id="isMulticurrency" v-model="isMultiCurrency" disabled/>
+                    <label class="form-label" for="isMulticurrency">Is MultiCurrency</label>
+                </div>
+        
+
+                <div class="">
+                    <label> Invoice Number: </label><span class="text-success">*</span>
+                    <input type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" v-model="invoiceNumber" placeholder="Generated On Save" disabled/>
+
+                </div>
+                <div class="">
+                    <label> Received Date: </label><span class="text-danger">*</span>
+                    <input id="invoiceDate" v-model="invoiceDate" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" type="date" required/>
+                </div>
+
+                <div class="">
+                    <label>Projected Pay Date:</label><span class="text-danger">*</span>
+                    <input id="projectedPayDate" v-model="projectedPayDate" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" type="date" required/>
+                </div>
+
+                <div class="">
+                    <label>Voucher No.: </label>
+                    <input v-model="voucherNumber" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" type="text"/>
+                </div>
+
+                <div class="">
+                    <label>PO No.:</label>
+                    <input v-model="purchaseOrderNumber" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" type="text"/>
+                </div>
+
+                <div class="">
+                    <label>Balance: </label>
+                    <input v-model="invoiceBalance" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" type="number" disabled="disabled"/>
+
+                </div>
+
+
+
+            
+         
+                <div  class="" v-if="isOu">
+                        <label> OU (Cost Center): </label><span class="text-danger">*</span>
+                        <input id="ouId" v-model="ouId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" required/>
+                </div>
+
+                <div class="">
+                    <label> Liability G/L No:</label><span class="text-danger">*</span>
+                    <input id="liabilityAccountId" v-model="liabilityAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" required/>
+                </div>
+                <div class="">
+                    <label>Batch No.: </label>
+                    <input v-model="batchNumber" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" type="text" placeholder="2321" disabled/>
+                </div>
+                <div class="">
+                    <label> Total Amount: </label>
+                    <input v-model="totalInvoiceAmount"  class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" type="number" disabled="disabled"/>
+                </div>
+        
+        </div>
+        <hr />
+        <p>Details</p>
+    
+<div class="mb-5 rounded-xl border border-gray-200 bg-white p-4 sm:p-5">
+    <div class="mb-4 flex items-start gap-3">
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+            <i class="bi bi-percent text-lg"></i>
+        </div>
+
+        <div>
+            <h3 class="text-sm font-semibold text-gray-800">
+                Tax Levies
+            </h3>
+            <p class="mt-1 text-sm text-gray-500">
+                Add or remove applicable tax levies and configure the VAT rate.
+            </p>
+        </div>
+    </div>
+
+    <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <!-- Tax levy buttons -->
+        <div class="min-w-0 flex-1">
+            <label class="mb-2 block text-sm font-medium text-gray-700">
+                Applicable Levies
+            </label>
+
+            <div class="flex flex-wrap gap-2">
+                @*v-for="tax in taxLevyList"*@
+                <button
+                    @*:key="tax.id"*@
+                    type="button"
+                    @*@@click="toggleTaxLevy(tax.id)"*@
+                    :disabled="isVatInclusive"
+                    @*:aria-pressed="tax.isApplied"*@
+                    :class="[
+                        'inline-flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition duration-200',
+                        isApplied
+                            ? 'border-blue-600 bg-blue-600 text-white shadow-sm hover:bg-blue-700'
+                            : 'border-gray-300 bg-white text-gray-600 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700',
+                        isVatInclusive
+                            ? 'cursor-not-allowed opacity-50'
+                            : 'cursor-pointer'
+                    ]">
+
+                    <i :class="isApplied
+                        ? 'bi bi-check-circle-fill'
+                        : 'bi bi-plus-circle'">
+                    </i>
+
+                    <span>vat</span>
+
+                    <span :class="isApplied
+                        ? 'rounded-md bg-white/20 px-1.5 py-0.5 text-xs'
+                        : 'rounded-md bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600'">
+                        15%
+                    </span>
+                </button>
+            </div>
+
+            <p v-if="isVatInclusive"
+               class="mt-2 flex items-center gap-1.5 text-xs text-amber-600">
+                <i class="bi bi-info-circle"></i>
+                Tax levies are disabled when VAT-inclusive pricing is enabled.
+            </p>
+        </div>
+
+        <!-- VAT rate -->
+        <div class="w-full lg:max-w-56">
+            <label for="vatRate"
+                   class="mb-2 block text-sm font-medium text-gray-700">
+                VAT Rate
+            </label>
+
+            <div class="relative">
+                <input
+                    id="vatRate"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    v-model.number="vatRate"
+                    :disabled="isVatInclusive"
+                    class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 pr-10 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
+                    placeholder="Enter VAT rate" />
+
+                <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-gray-400">
+                    %
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Applied levy summary -->
+    <div v-if="taxLevyList.some(tax => tax.isApplied)"
+         class="mt-4 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3">
+        <span class="text-xs font-medium text-gray-500">
+            Applied:
+        </span>
+
+        <span
+            v-for="tax in taxLevyList.filter(tax => tax.isApplied)"
+            :key="tax.id"
+            class="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
+            <i class="bi bi-check2"></i>
+            {{ tax.name }}
+        </span>
+    </div>
+</div>
+
+       
+        <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <data-grid
+                title="Invoice Details"
+                :columns="detailColumns"
+                :data="detailsList"
+                :theme="theme"
+                row-id="id"
+                label-key="description"
+                item-label="invoice detail"
+                item-label-plural="invoice details"
+                add-label="Add Detail"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                @@create="onCreateDetail"
+                @@update="onUpdateDetail"
+                @@delete="onDeleteDetail"
+            ></data-grid>
+        </div>
+       
+        <div class="row mt-2">
+            <div class="col"></div>
+            <div class="col">
+                <button class="inline-flex items-center justify-center gap-2 rounded-lg
+                                       px-6 py-2.5 text-sm font-semibold text-white shadow-sm
+                                       transition disabled:cursor-not-allowed disabled:opacity-60 bg-blue-500 hover:bg-blue-700" style="float: right" type="button" data-target="#addEdit" data-toggle="modal"> Save Invoice </button>
+            </div>
+          
+        </div> 
+    </div>
+    
+    
+
+
+
+
+</div>
+
+
+</div>
+
+
+<script src="~/js/ap/DataEntry/create-invoice.js" asp-append-version="true"></script>
+

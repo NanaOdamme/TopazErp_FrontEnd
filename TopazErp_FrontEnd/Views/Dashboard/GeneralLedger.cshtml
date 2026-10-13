@@ -1,0 +1,104 @@
+﻿@{
+    ViewBag.Title = "Dashboard | General Ledger";
+    Layout = "~/Views/Shared/_adminLedgerLayout.cshtml";
+}
+
+<div class="app-content content">
+    <div class="content-wrapper">
+        <div class="content-header row">
+            <div class="content-header-left col-md-6 col-12 mb-2">
+                <div class="row breadcrumbs-top">
+                    <div class="breadcrumb-wrapper col-12">
+                         
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="content-body" id="app">
+
+            <section id="c3-pie-bar-charts">
+
+                <!-- Distribution By Gender -->
+
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 my-2">
+                    <div class="col-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title">  Employee Gender Distribution </h4>
+                                <a class="heading-elements-toggle"><i class="la la-ellipsis-h font-medium-3"></i></a>
+                                <div class="heading-elements">
+                                    <ul class="list-inline mb-0">
+                                        <li><a data-action="collapse"><i class="ft-minus"></i></a></li>
+                                        <li><a data-action="reload"><i class="ft-rotate-cw"></i></a></li>
+                                        <li><a data-action="expand"><i class="ft-maximize"></i></a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="card-content collapse show">
+                                <div class="card-body">
+                                    
+                                    <gender-distribution-chart type="donut" height="230" :options="genderDistributionChartData.chartOptions" :series="genderDistributionChartData.series"></gender-distribution-chart>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title"> Employee Distribution By Category </h4>
+                                <a class="heading-elements-toggle"><i class="la la-ellipsis-h font-medium-3"></i></a>
+                                <div class="heading-elements">
+                                    <ul class="list-inline mb-0">
+                                        <li><a data-action="collapse"><i class="ft-minus"></i></a></li>
+                                        <li><a data-action="reload"><i class="ft-rotate-cw"></i></a></li>
+                                        <li><a data-action="expand"><i class="ft-maximize"></i></a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="card-content collapse show">
+                                <div class="card-body">
+
+                                    <category-distribution-chart type="donut" height="230" :options="categoryDistributionChartData.chartOptions" :series="categoryDistributionChartData.series"></category-distribution-chart>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4 class="card-title"> Employee Loans </h4>
+                                <a class="heading-elements-toggle"><i class="la la-ellipsis-h font-medium-3"></i></a>
+                                <div class="heading-elements">
+                                    <ul class="list-inline mb-0">
+                                        <li><a data-action="reload"><i class="ft-rotate-cw"></i></a></li>
+                                        <li><a data-action="expand"><i class="ft-maximize"></i></a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="card-content collapse show">
+                                <div class="card-body">
+
+                                    <loan-payment-analysis-chart type="bar" height="274" :options="loanPaymentAnalysisChartData.chartOptions" :series="loanPaymentAnalysisChartData.series"></loan-payment-analysis-chart>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>  
+                
+            </section>
+
+
+        </div>
+    </div>
+</div>
+
+ 
+<script src="~/js/payroll/dashboard/general-ledger.js" asp-append-version="true"></script>
+
+

@@ -1,0 +1,499 @@
+@{
+    ViewBag.Title = "AuditTrail";
+    Layout = "~/Views/Shared/_adminTenantLayout.cshtml";
+}
+<style>
+    .table{
+        font-size: 11px;
+        color: black;
+       
+    }
+    .badge-purple {
+        background-color: #6f42c1;
+        color: #fff;
+    }
+    .badge-deepBlue {
+        background-color: #0b20a6;
+        color: #fff;
+    }
+    .badge {
+        padding: 6px 12px;
+        font-size: 12px;
+        color: #fff;
+    }
+    .table-footer{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+    }
+    .table-footer .page-link {
+        width: 30px;
+        height: 30px;
+
+        padding: 0;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        border-radius: 5px !important;
+
+        color: #64748b;
+        border-color: #e2e8f0;
+
+        font-size: 11px;
+    }
+
+    .table-footer .page-item.active .page-link {
+        background: #258dff;
+        border-color:#258dff;
+        color: #fff;
+    }
+    .pass {
+        background-color: rgb(88 253 75 / 0.33);
+        color: #148504;
+    }
+    .fail{
+        background-color: rgb(255 76 76 / 0.33);
+        color: #b01818;
+    }
+</style>
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>Manage</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Audit Trails</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+
+            <div class="page-title">
+                <h2 class="text-2xl font-semibold text-gray-800">
+                    Audit Trails
+                </h2>
+
+                <p class="text-sm text-gray-500">
+                    Manage your audit trails and view historical changes
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="card" data-card-title="Audit Trails">
+        <div id="app">
+
+<div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end mb-5">
+
+    <div class="md:col-span-3">
+
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+            Start Date:
+        </label>
+
+        <input id="startDate"
+               v-model="startDate"
+               type="date"
+               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+
+    </div>
+
+
+    <div class="md:col-span-3">
+
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+            End Date:
+        </label>
+
+        <input id="endDate"
+               v-model="endDate"
+               type="date"
+               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+
+    </div>
+
+
+    <div class="md:col-span-6 flex flex-wrap justify-start md:justify-end gap-2">
+
+        <button type="button"
+                :disabled="isLoading"
+                @@click="getAuditLogs"
+                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+
+            <i class="la la-search"></i>
+
+            <span>Search</span>
+
+            <i class="la la-circle-o-notch animate-spin"
+               v-if="isLoading"></i>
+
+        </button>
+
+
+        <button type="button"
+                @@click="generateAuditLogReport()"
+                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400">
+
+            <i class="la la-file-text"></i>
+
+            <span>Generate Report</span>
+
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- TABLE -->
+<div class="overflow-x-auto border border-gray-200 rounded-lg">
+
+    <table class="min-w-full divide-y divide-gray-200 text-left">
+
+        <thead class="bg-gray-50">
+
+            <tr>
+
+                <th class="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    #
+                </th>
+
+                <th class="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Module
+                </th>
+
+                <th class="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    User
+                </th>
+
+                <th class="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Menu
+                </th>
+
+                <th class="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Action
+                </th>
+
+                <th class="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Status
+                </th>
+
+                <th class="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Execution Time
+                </th>
+
+                <th class="px-4 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Duration
+                </th>
+
+            </tr>
+
+        </thead>
+
+
+        <tbody class="bg-white divide-y divide-gray-200">
+
+
+            <!-- LOADING -->
+            <tr v-if="isLoading">
+
+                <td colspan="9" class="px-4 py-8 text-center">
+
+                    <div class="flex items-center justify-center gap-2 text-sm text-gray-500">
+
+                        <i class="la la-circle-o-notch animate-spin text-lg text-blue-600"></i>
+
+                        <span>
+                            Loading audit logs...
+                        </span>
+
+                    </div>
+
+                </td>
+
+            </tr>
+
+
+            <!-- EMPTY -->
+            <tr v-else-if="auditLogsList.length === 0">
+
+                <td colspan="9"
+                    class="px-4 py-8 text-center text-sm text-gray-500">
+
+                    No audit logs found for the selected date range.
+
+                </td>
+
+            </tr>
+
+
+            <!-- DATA -->
+            <tr v-else
+                v-for="(log, index) in paginatedAuditLogs"
+                :key="log.id"
+                class="hover:bg-gray-50 transition-colors">
+
+                <td class="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+
+                    {{ (currentPage - 1) * pageSize + index + 1 }}
+
+                </td>
+
+
+                <td class="px-4 py-3 text-sm whitespace-nowrap">
+
+                    <span :class="applicationClass(log.application)">
+
+                        {{ log.application }}
+
+                    </span>
+
+                </td>
+
+
+                <td class="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+
+                    <span v-if="log.userFullName">
+
+                        {{ log.userFullName }}
+
+                    </span>
+
+                    <span v-else class="text-gray-400">
+
+                        __
+
+                    </span>
+
+                </td>
+
+
+                <td class="px-4 py-3 text-sm text-gray-700">
+
+                    {{ log.urlPath }}
+
+                </td>
+
+
+                <td class="px-4 py-3 text-sm text-gray-700">
+
+                    {{ log.methodName }}
+
+                </td>
+
+
+                <td class="px-4 py-3 whitespace-nowrap">
+
+                    <span v-if="log.status === 'Success'"
+                          class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+
+                        Success
+
+                    </span>
+
+                    <span v-else
+                          class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700">
+
+                        Failed
+
+                    </span>
+
+                </td>
+
+
+                <td class="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+
+                    {{ log.executionTime | formatDateTime }}
+
+                </td>
+
+
+                <td class="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+
+                    {{ log.executionDuration }} ms
+
+                </td>
+
+            </tr>
+
+        </tbody>
+
+    </table>
+
+</div>
+
+
+<!-- TABLE FOOTER -->
+<div v-if="auditLogsList.length"
+     class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 mb-1">
+
+    <div class="text-sm text-gray-500">
+
+        Showing
+
+        <strong class="text-gray-700">
+            {{ paginationStart }}
+        </strong>
+
+        -
+
+        <strong class="text-gray-700">
+            {{ paginationEnd }}
+        </strong>
+
+        of
+
+        <strong class="text-gray-700">
+            {{ auditLogsList.length }}
+        </strong>
+
+        Logs
+
+    </div>
+
+
+    <!-- PAGINATION -->
+    <nav aria-label="pagination">
+
+        <div class="flex items-center gap-1">
+
+
+            <!-- PREVIOUS -->
+            <button type="button"
+                    @@click="changePage(currentPage - 1)"
+                    :disabled="currentPage === 1"
+                    class="w-8 h-8 flex items-center justify-center text-sm border border-gray-300 rounded-md bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+
+                <i class="la la-angle-left"></i>
+
+            </button>
+
+
+            <!-- PAGE NUMBERS -->
+            <template v-for="(page, index) in paginationPages"
+                      :key="index">
+
+
+                <!-- ELLIPSIS -->
+                <span v-if="page === '...'"
+                      class="w-8 h-8 flex items-center justify-center text-sm text-gray-500">
+
+                    ...
+
+                </span>
+
+
+                <!-- PAGE -->
+                <button v-else
+                        type="button"
+                        @@click="changePage(page)"
+                        :class="[
+                            'w-8 h-8 flex items-center justify-center text-sm border rounded-md transition-colors',
+                            currentPage === page
+                                ? 'bg-blue-600 border-blue-600 text-white'
+                                : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+                        ]">
+
+                    {{ page }}
+
+                </button>
+
+            </template>
+
+
+            <!-- NEXT -->
+            <button type="button"
+                    @@click="changePage(currentPage + 1)"
+                    :disabled="currentPage === totalPages"
+                    class="w-8 h-8 flex items-center justify-center text-sm border border-gray-300 rounded-md bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+
+                <i class="la la-angle-right"></i>
+
+            </button>
+
+        </div>
+
+    </nav>
+
+</div>
+
+
+
+<!-- REPORT MODAL -->
+<div v-if="showAuditReportModal"
+     class="fixed inset-0 z-50 overflow-y-auto"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="auditReportModalLabel">
+
+    <!-- BACKDROP -->
+    <div class="fixed inset-0 bg-black/50"
+         @@click="showAuditReportModal = false">
+    </div>
+
+
+    <!-- MODAL -->
+    <div class="relative min-h-screen flex items-center justify-center p-4">
+
+        <div class="relative w-full max-w-[95%] bg-white rounded-xl shadow-2xl overflow-hidden">
+
+
+            <!-- MODAL HEADER -->
+            <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+
+                <h5 id="auditReportModalLabel"
+                    class="text-lg font-semibold text-gray-800">
+
+                    Audit Log Report
+
+                </h5>
+
+
+                <button type="button"
+                        @@click="showAuditReportModal = false"
+                        class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700">
+
+                    <i class="la la-close text-lg"></i>
+
+                </button>
+
+            </div>
+
+
+            <!-- MODAL BODY -->
+            <div class="p-0">
+
+                <div id="reportView"
+                     class="w-full min-h-[75vh]">
+
+                </div>
+
+            </div>
+
+
+            <!-- MODAL FOOTER -->
+            <div class="flex justify-end px-5 py-4 border-t border-gray-200 bg-gray-50">
+
+                <button type="button"
+                        @@click="showAuditReportModal = false"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100">
+
+                    Close
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+</div>
+
+        </div>
+       
+    </div>
+</div>
+<script src="~/js/manage/audit-logs.js" asp-append-version="true"></script>

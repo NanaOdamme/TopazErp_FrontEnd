@@ -1,0 +1,167 @@
+/* DataGrid custom styles (Tailwind utilities provide the layout). */
+#dt-modal-host { position:relative; z-index:100; }
+#dt-toast-host.dt-toast-host {
+    pointer-events:none; position:fixed; right:1rem; bottom:1rem; z-index:100;
+    display:flex; flex-direction:column; gap:.5rem; width:min(92vw, 380px);
+}
+:root{ --dt-cell-py:.625rem; --dt-cell-px:.875rem; }
+.dt-root[data-density="compact"]     { --dt-cell-py:.25rem; --dt-cell-px:.625rem; }
+.dt-root[data-density="cozy"]        { --dt-cell-py:.625rem; --dt-cell-px:.875rem; }
+.dt-root[data-density="comfortable"] { --dt-cell-py:1rem;    --dt-cell-px:1rem; }
+
+.dt-table { table-layout: fixed; border-collapse: separate; border-spacing: 0; }
+.dt-table th, .dt-table td { padding: var(--dt-cell-py) var(--dt-cell-px); }
+.dt-table thead th { position: sticky; top: 0; z-index: 20; }
+/* the optional filter row sticks right under the header row (height measured in JS) */
+.dt-table thead tr:nth-child(2) th { top: var(--dt-head-h, 40px); z-index: 19; }
+.dt-nosticky .dt-table thead th { position: static; }
+.dt-cell { overflow: hidden; text-overflow: ellipsis; }
+
+.dt-th { user-select: none; }
+.dt-th[data-sortable="true"] { cursor: pointer; }
+.dt-resizer{ position:absolute; top:0; right:-3px; width:7px; height:100%; cursor:col-resize; z-index:30; }
+.dt-resizer::after{ content:''; position:absolute; inset:20% 3px; width:1px; background:rgb(148 163 184 / .55); }
+.dt-resizer:hover::after{ background:var(--dt-primary-600, #2563eb); width:2px; }
+body.dt-resizing{ cursor: col-resize !important; }
+body.dt-resizing *{ user-select:none !important; }
+
+input[type="checkbox"].dt-check { border-radius:.375rem; color:var(--dt-primary-600, #2563eb); accent-color:var(--dt-primary-600, #2563eb); }
+.dark input[type="checkbox"].dt-check{ background-color:#0f172a; border-color:#334155; }
+
+mark.dt-hl{ background:#fef08a; color:inherit; padding:0 .1em; border-radius:.2rem; }
+.dark mark.dt-hl{ background:#a16207; color:#fff; }
+
+@keyframes dt-pop { from{ opacity:0; transform:translateY(-4px) scale(.98);} to{ opacity:1; transform:none;} }
+@keyframes dt-fade{ from{ opacity:0 } to{ opacity:1 } }
+@keyframes dt-up  { from{ opacity:0; transform:translateY(12px) } to{ opacity:1; transform:none } }
+@keyframes dt-slide{ from{ opacity:0; transform:translateY(-6px) } to{ opacity:1; transform:none } }
+.dt-pop { animation: dt-pop .13s ease-out }
+.dt-fade{ animation: dt-fade .15s ease-out }
+.dt-up  { animation: dt-up .22s cubic-bezier(.22,1,.36,1) }
+.dt-slide{ animation: dt-slide .18s ease-out }
+
+.dt-bar > span{ position:relative; overflow:hidden }
+.dt-bar > span::after{ content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgb(255 255 255/.45),transparent); animation:dt-shine 2.4s infinite }
+@keyframes dt-shine{ 0%{transform:translateX(-100%)} 60%,100%{transform:translateX(220%)} }
+
+.dt-scroll::-webkit-scrollbar{ height:10px; width:10px }
+.dt-scroll::-webkit-scrollbar-thumb{ background:rgb(148 163 184/.45); border-radius:9999px; border:2px solid transparent; background-clip:content-box }
+.dt-scroll::-webkit-scrollbar-thumb:hover{ background:rgb(100 116 139/.7); background-clip:content-box }
+.dt-scroll::-webkit-scrollbar-track{ background:transparent }
+
+.dt-skel{ background:linear-gradient(90deg,#e2e8f0 25%,#eef2f7 37%,#e2e8f0 63%); background-size:400% 100%; animation:dt-skel 1.3s ease infinite; border-radius:.375rem }
+.dark .dt-skel{ background:linear-gradient(90deg,#1e293b 25%,#243244 37%,#1e293b 63%); background-size:400% 100% }
+@keyframes dt-skel{ 0%{background-position:100% 50%} 100%{background-position:0 50%} }
+
+@keyframes dt-flash{ 0%{background-color:var(--dt-primary-100, #dbeafe)} 100%{background-color:transparent} }
+tr.dt-flash > td{ animation:dt-flash 1.8s ease-out }
+.dark tr.dt-flash > td{ animation-name:dt-flash-dark }
+@keyframes dt-flash-dark{ 0%{background-color:color-mix(in srgb, var(--dt-primary-500, #3b82f6) 28%, transparent)} 100%{background-color:transparent} }
+
+.dt-nested-lvl1{ border-left:3px solid var(--dt-primary-300, #93c5fd) }
+.dt-nested-lvl2{ border-left:3px solid #c4b5fd }
+
+/* Vue transition hooks (used by <transition>/<transition-group>) */
+.fade-enter-active,.fade-leave-active{ transition:opacity .15s ease }
+.fade-leave-active{ pointer-events:none }
+.fade-enter-from,.fade-leave-to{ opacity:0 }
+.pop-enter-active{ animation:dt-pop .15s ease-out }
+.pop-leave-active{ transition:opacity .12s ease; }
+.pop-leave-to{ opacity:0 }
+.toast-enter-active{ animation:dt-up .22s cubic-bezier(.22,1,.36,1) }
+.toast-leave-active{ transition:opacity .18s, transform .18s }
+.toast-leave-to{ opacity:0; transform:translateY(8px) }
+.toast-move{ transition:transform .2s }
+.detail-enter-active{ animation:dt-slide .18s ease-out }
+
+
+/* Per-instance brand palette. The component sets --dt-theme from its `theme` prop. */
+[data-dt-theme-scope] {
+    --dt-theme: #2563eb;
+    --dt-primary-50: #eff6ff; --dt-primary-100: #dbeafe; --dt-primary-200: #bfdbfe;
+    --dt-primary-300: #93c5fd; --dt-primary-400: #60a5fa; --dt-primary-500: var(--dt-theme, #3b82f6);
+    --dt-primary-600: var(--dt-theme, #2563eb); --dt-primary-700: #1d4ed8; --dt-primary-800: #1e40af;
+    --dt-primary-900: #1e3a8a; --dt-primary-950: #172554;
+}
+@supports (color: color-mix(in srgb, red 50%, white)) {
+    [data-dt-theme-scope] {
+        --dt-primary-50:  color-mix(in srgb, var(--dt-theme) 5%, white);
+        --dt-primary-100: color-mix(in srgb, var(--dt-theme) 10%, white);
+        --dt-primary-200: color-mix(in srgb, var(--dt-theme) 22%, white);
+        --dt-primary-300: color-mix(in srgb, var(--dt-theme) 38%, white);
+        --dt-primary-400: color-mix(in srgb, var(--dt-theme) 58%, white);
+        --dt-primary-500: color-mix(in srgb, var(--dt-theme) 80%, white);
+        --dt-primary-600: var(--dt-theme);
+        --dt-primary-700: color-mix(in srgb, var(--dt-theme) 88%, black);
+        --dt-primary-800: color-mix(in srgb, var(--dt-theme) 74%, black);
+        --dt-primary-900: color-mix(in srgb, var(--dt-theme) 60%, black);
+        --dt-primary-950: color-mix(in srgb, var(--dt-theme) 44%, black);
+    }
+}
+[data-dt-theme-scope] .dt-check { color:var(--dt-primary-600) !important; accent-color:var(--dt-primary-600) !important; }
+
+
+/* Theme-aware Tailwind utilities. */
+[data-dt-theme-scope] [class~="bg-primary-50"] { background-color:var(--dt-primary-50) !important; }
+[data-dt-theme-scope] [class~="bg-primary-100"] { background-color:var(--dt-primary-100) !important; }
+[data-dt-theme-scope] [class~="bg-primary-200"] { background-color:var(--dt-primary-200) !important; }
+[data-dt-theme-scope] [class~="bg-primary-500"] { background-color:var(--dt-primary-500) !important; }
+[data-dt-theme-scope] [class~="bg-primary-600"] { background-color:var(--dt-primary-600) !important; }
+[data-dt-theme-scope] [class~="bg-primary-700"] { background-color:var(--dt-primary-700) !important; }
+[data-dt-theme-scope] [class~="text-primary-50"] { color:var(--dt-primary-50) !important; }
+[data-dt-theme-scope] [class~="text-primary-200"] { color:var(--dt-primary-200) !important; }
+[data-dt-theme-scope] [class~="text-primary-300"] { color:var(--dt-primary-300) !important; }
+[data-dt-theme-scope] [class~="text-primary-500"] { color:var(--dt-primary-500) !important; }
+[data-dt-theme-scope] [class~="text-primary-600"] { color:var(--dt-primary-600) !important; }
+[data-dt-theme-scope] [class~="text-primary-700"] { color:var(--dt-primary-700) !important; }
+[data-dt-theme-scope] [class~="text-primary-800"] { color:var(--dt-primary-800) !important; }
+[data-dt-theme-scope] [class~="border-primary-50"] { border-color:var(--dt-primary-50) !important; }
+[data-dt-theme-scope] [class~="border-primary-200"] { border-color:var(--dt-primary-200) !important; }
+[data-dt-theme-scope] [class~="border-primary-300"] { border-color:var(--dt-primary-300) !important; }
+[data-dt-theme-scope] [class~="border-primary-400"] { border-color:var(--dt-primary-400) !important; }
+[data-dt-theme-scope] [class~="border-primary-500"] { border-color:var(--dt-primary-500) !important; }
+[data-dt-theme-scope] [class~="border-primary-600"] { border-color:var(--dt-primary-600) !important; }
+[data-dt-theme-scope] [class~="ring-primary-50"] { --tw-ring-color:var(--dt-primary-50) !important; }
+[data-dt-theme-scope] [class~="ring-primary-200"] { --tw-ring-color:var(--dt-primary-200) !important; }
+[data-dt-theme-scope] [class~="ring-primary-500"] { --tw-ring-color:var(--dt-primary-500) !important; }
+[data-dt-theme-scope] [class~="bg-blue-50"] { background-color:var(--dt-primary-50) !important; }
+[data-dt-theme-scope] [class~="bg-blue-500"] { background-color:var(--dt-primary-500) !important; }
+[data-dt-theme-scope] [class~="text-blue-300"] { color:var(--dt-primary-300) !important; }
+[data-dt-theme-scope] [class~="text-blue-700"] { color:var(--dt-primary-700) !important; }
+[data-dt-theme-scope] [class~="ring-blue-50"] { --tw-ring-color:var(--dt-primary-50) !important; }
+[data-dt-theme-scope] [class~="ring-blue-200"] { --tw-ring-color:var(--dt-primary-200) !important; }
+[data-dt-theme-scope] [class~="ring-blue-500"] { --tw-ring-color:var(--dt-primary-500) !important; }
+[data-dt-theme-scope] [class~="bg-primary-50/70"],
+[data-dt-theme-scope] [class~="bg-blue-50/70"] { background-color:color-mix(in srgb, var(--dt-primary-50) 70%, transparent) !important; }
+.dark [data-dt-theme-scope] [class~="dark:bg-primary-500/10"],
+.dark [data-dt-theme-scope] [class~="dark:bg-blue-500/10"] { background-color:color-mix(in srgb, var(--dt-primary-500) 10%, transparent) !important; }
+.dark [data-dt-theme-scope] [class~="dark:bg-primary-500/20"],
+.dark [data-dt-theme-scope] [class~="dark:bg-blue-500/20"] { background-color:color-mix(in srgb, var(--dt-primary-500) 20%, transparent) !important; }
+.dark [data-dt-theme-scope] [class~="dark:bg-primary-500/30"],
+.dark [data-dt-theme-scope] [class~="dark:bg-blue-500/30"] { background-color:color-mix(in srgb, var(--dt-primary-500) 30%, transparent) !important; }
+.dark [data-dt-theme-scope] [class~="dark:border-primary-500/30"],
+.dark [data-dt-theme-scope] [class~="dark:border-blue-500/30"] { border-color:color-mix(in srgb, var(--dt-primary-500) 30%, transparent) !important; }
+.dark [data-dt-theme-scope] [class~="dark:border-primary-500/40"],
+.dark [data-dt-theme-scope] [class~="dark:border-blue-500/40"] { border-color:color-mix(in srgb, var(--dt-primary-500) 40%, transparent) !important; }
+.dark [data-dt-theme-scope] [class~="dark:ring-primary-500/30"],
+.dark [data-dt-theme-scope] [class~="dark:ring-blue-500/30"] { --tw-ring-color:color-mix(in srgb, var(--dt-primary-500) 30%, transparent) !important; }
+[data-dt-theme-scope] [class~="focus:ring-primary-500/50"]:focus { --tw-ring-color:color-mix(in srgb, var(--dt-primary-500) 50%, transparent) !important; }
+.dark [data-dt-theme-scope] [class~="dark:hover:bg-primary-500/10"]:hover,
+.dark [data-dt-theme-scope] [class~="dark:hover:bg-blue-500/10"]:hover { background-color:color-mix(in srgb, var(--dt-primary-500) 10%, transparent) !important; }
+/* dark text shades */
+.dark [data-dt-theme-scope] [class~="dark:text-primary-200"] { color:var(--dt-primary-200) !important; }
+.dark [data-dt-theme-scope] [class~="dark:text-primary-300"] { color:var(--dt-primary-300) !important; }
+.dark [data-dt-theme-scope] [class~="dark:text-blue-300"] { color:var(--dt-primary-300) !important; }
+[data-dt-theme-scope] [class~="hover:bg-primary-50"]:hover,
+[data-dt-theme-scope] [class~="hover:bg-blue-50"]:hover { background-color:var(--dt-primary-50) !important; }
+[data-dt-theme-scope] [class~="hover:bg-primary-100"]:hover { background-color:var(--dt-primary-100) !important; }
+[data-dt-theme-scope] [class~="hover:bg-primary-700"]:hover,
+[data-dt-theme-scope] [class~="hover:bg-blue-700"]:hover { background-color:var(--dt-primary-700) !important; }
+[data-dt-theme-scope] [class~="hover:text-primary-600"]:hover,
+[data-dt-theme-scope] [class~="hover:text-blue-600"]:hover { color:var(--dt-primary-600) !important; }
+.dark [data-dt-theme-scope] [class~="dark:hover:text-primary-300"]:hover,
+.dark [data-dt-theme-scope] [class~="dark:hover:text-blue-300"]:hover { color:var(--dt-primary-300) !important; }
+[data-dt-theme-scope] [class~="focus:border-primary-500"]:focus,
+[data-dt-theme-scope] [class~="focus:border-blue-500"]:focus { border-color:var(--dt-primary-500) !important; }
+[data-dt-theme-scope] [class~="focus:ring-primary-500"]:focus,
+[data-dt-theme-scope] [class~="focus:ring-blue-500"]:focus { --tw-ring-color:var(--dt-primary-500) !important; }

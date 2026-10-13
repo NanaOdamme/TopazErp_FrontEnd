@@ -1,0 +1,66 @@
+﻿@{
+    ViewBag.Title = "Modules";
+    Layout = "~/Views/Shared/_adminTenantLayout.cshtml";
+}
+
+
+<ul class="breadcrumb">
+    <li class="breadcrumb-item"><a href="#"> Manage </a></li>
+    <li class="breadcrumb-item"><a href="@Url.Action("Subscription","Manage")"> Subscription </a></li>
+</ul>
+
+<div class="content-i" id="app">
+    <div class="content-box" style="height: auto; width: auto; min-height: 655px;">
+        <div class="row pt-4">
+            <div class="col-sm-12">
+                <div class="element-wrapper">
+                    <h6 class="element-header"> Subscription Information</h6>
+                    <div class="element-box-tp">
+                        <div class="table-responsive">
+                            <table class="table table-padded">
+                                <thead>
+                                    <tr>
+                                        <th> Module Name </th>
+                                        <th> Subscription Start Date </th>
+                                        <th> Renewal Date </th>
+                                        <th> Billing Cycle </th>
+                                        <th> Status </th>
+                                        <th> Actions </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+
+                                    <tr v-for="subscriptionInfo in subscriptionSummary">
+
+                                        <td>
+                                            <div class="user-with-avatar"> <span> {{subscriptionInfo.moduleName}} </span> </div>
+                                        </td>
+                                        
+                                        <td><span> {{subscriptionInfo.subscriptionStartDate | formatDate}} </span> </td>
+                                        <td><span> {{subscriptionInfo.subscriptionEndDate | formatDate}} </span> </td>
+                                        <td><span> {{subscriptionInfo.billingCycle | capitalize}} </span> </td>
+
+                                        <td v-if="subscriptionInfo.statusCode == 0"><a class="badge badge-success-inverted" href="#">{{subscriptionInfo.status}}</a></td>
+                                        <td v-else><a class="badge badge-danger-inverted" href="#">{{subscriptionInfo.status}}</a></td>
+
+                                        <td class="row-actions">
+                                            <a href="#" data-toggle="tooltip" data-placement="top" title="Download Documentation" v-on:click="downloadDocumentation(subscriptionInfo)"><i class="os-icon os-icon-download"></i></a>
+                                            <a href="#" data-toggle="tooltip" data-placement="top" v-if="subscriptionInfo.statusCode == 2" title="Subcribe to Module" v-on:click="subscribeToModule(subscriptionInfo)"><i class="os-icon os-icon-finance-29"></i></a>
+                                            <a href="#" data-toggle="tooltip" data-placement="top" title="Renew Subscription" v-on:click="renewSubscription(subscriptionInfo)"><i class="os-icon os-icon-grid-18"></i></a>
+                                        </td>
+                                    </tr>
+
+                                     
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="~/js/manage/subscription.js" asp-append-version="true"></script>
+

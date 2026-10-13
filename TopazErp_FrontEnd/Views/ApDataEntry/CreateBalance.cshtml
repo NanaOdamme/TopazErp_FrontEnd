@@ -1,0 +1,108 @@
+﻿@{
+ViewBag.Title = "Opening Balances";
+Layout = "~/Views/Shared/_adminApLayout.cshtml";
+}
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>AP - Data Entry</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Opening Balance</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+
+            <div class="page-title">
+                <h2 class="text-2xl font-semibold text-gray-800">
+                    Create Opening Balance
+                </h2>
+                
+            </div>
+        </div>
+    </div>
+    <div class="card" id="app" data-card-title="Create">
+                                    <div class="col-sm-4">
+                                        <button type="button" v-on:click="clearForm" class="inline-flex items-center justify-center gap-2 rounded-lg
+                                       px-6 py-2.5 text-sm font-semibold text-white shadow-sm
+                                       transition disabled:cursor-not-allowed disabled:opacity-60 bg-blue-500 hover:bg-blue-700"-sm btn >
+                                            <i class="text-sm la la-refresh"></i> Reset Form
+                                            <i class="fa fa-spinner fa-spin" v-if="isLoading"></i>
+                                            </button>
+                                        </div>
+                                        
+       <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 my-2" ref="openingbalnceForm">
+                        
+                                        <div class="">
+                                            <div class="">
+                                                <label> <strong> Supplier: </strong> </label><span class="text-danger">*</span>
+                                                <input id="supplierId" v-model="supplierId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" required/>
+                                                </div>
+
+                                          
+                                            <div class="">
+                                                <label> <strong> Currency Rate: </strong>  </label>
+                                                <input id="buyRate" v-model="buyRate" step="0.01" min="0" type="number" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+
+                                                </div>
+                                                    </div>
+                                        <div class="">
+
+                                            <div class="">
+                                                <label> <strong> Amount: </strong> </label><span class="text-danger">*</span>
+                                                <input v-model="amount" step="0.01" min="0" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" type="number" :disabled="isPosted"/>
+
+                                            </div>
+
+
+                                            <div class="" v-if="isOu">
+                                                <label> <strong>OU (Cost Center): </strong> </label><span class="text-danger">*</span>
+                                                <input id="ouId" v-model="ouId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" required/>
+                                            </div>
+
+                                        </div>
+                                        <div class="">
+
+                                            <div class="">
+                                                <label> <strong> Date: </strong> </label><span class="text-danger">*</span>
+                                                <input v-model="transactionDate"  class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" type="date"/>
+
+                                            </div>
+                                                                        
+                                        </div>
+                                        <div class="">
+
+                                            <div class="">
+                                                <label> <strong>Currency: </strong> </label><span class="text-danger">*</span>
+                                                <input id="currencyId" v-model="currencyId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" required/>
+                                            </div>
+                                                                        
+                                        </div>
+
+                                </div>
+                                    
+                                    <div class="my-2">
+                                    
+
+                                                                        <button type="button" v-on:click="saveOpeningBalance()" style="float: right" class="inline-flex items-center justify-center gap-2 rounded-lg
+                                       px-6 py-2.5 text-sm font-semibold text-white shadow-sm
+                                       transition disabled:cursor-not-allowed disabled:opacity-60 bg-blue-500 hover:bg-blue-700">
+                                                                            Save Balance
+                                                                            <i class="la la-circle-o-notch spinner" v-if="isLoading"></i>
+
+                                                                        </button>
+
+                                                                    </div>
+                                        </div>                                    
+                                    </div>
+        <hr/>
+                             
+                           
+                             
+                                
+                              
+                           
+                       
+
+
+
+<script src="~/js/ap/DataEntry/create-balance.js" asp-append-version="true"></script>

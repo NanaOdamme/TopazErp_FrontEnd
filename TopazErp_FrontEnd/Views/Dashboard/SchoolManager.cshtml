@@ -1,0 +1,605 @@
+﻿@{
+ViewBag.Title = "Dashboard | School Manager";
+Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+<style>
+.icon-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-circle i {
+    font-size: 20px;
+    color: #fff;
+}
+select.input {
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 12px;
+    border: 0.5px solid #ced4da;
+    padding: 2px;
+}
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #e6f0ff; 
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #b6b7b7, #e6f0ff); 
+    border-radius: 10px;
+    border: 2px solid #e6f0ff; 
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #b6b7b7, #e6f0ff);
+}
+
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #b6b7b7 #e6f0ff; 
+}
+.mini-calendar { font-size: .85rem; }
+.mc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: .6rem;
+    background: rgb(187 203 253);
+    padding: 5px;
+    border-radius: 20px;
+}
+.mc-title { font-weight: 600; font-size: .9rem; }
+.mc-nav {
+    border: none;
+    background: transparent;
+    color: #6c757d;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.mc-nav:hover { background: #f1f3f5; color: #212529; }
+.mc-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    color: #adb5bd;
+    font-size: .72rem;
+    font-weight: 600;
+    margin-bottom: .3rem;
+}
+.mc-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+.mc-day {
+    position: relative;
+    text-align: center;
+    padding: .35rem 0;
+    border-radius: 20px;
+    cursor: pointer;
+}
+.mc-day:hover { background: #f1f3f5; }
+.mc-day.mc-muted { color: #ced4da; }
+.mc-day.mc-today {
+    background: #fd7e14;
+    color: #fff;
+    font-weight: 600;
+}
+.mc-day .mc-dot {
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 55%;
+    background: #00ff2a;
+}
+.mc-day.mc-today .mc-dot { background: #fff; }
+.finance{
+    background: #ffffff;
+}
+.finance-card{
+    background: #f6f3fd;
+    border-radius: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 1rem;
+    padding: 10px;
+}
+.circle-icon{
+    border-radius: 50%;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+.f-header{
+    font-size: 1rem;
+    font-weight: bold;
+    color: #545454;
+}
+
+
+
+.debtor-table thead th {
+    border:0;
+    color: #545454;
+    font-size:12px;
+    font-weight:600;
+    text-transform:uppercase;
+    padding:15px;
+}
+
+
+.debtor-table tbody tr {
+    transition:.2s ease;
+}
+
+
+.debtor-table tbody tr:hover {
+    background: #ffffff;
+    transform:scale(1.01);
+}
+
+
+.debtor-table td {
+    border-color:#f1f5f9;
+}
+
+.balance-badge {
+    color:#dc2626;
+
+    padding:7px 14px;
+
+    font-weight:700;
+
+    font-size:13px;
+}
+.event-popup{
+    position: absolute;
+    width: 280px;
+    background:#fff;
+    border-radius:10px;
+    box-shadow:0 10px 30px rgba(0,0,0,.2);
+    padding:15px;
+    z-index:999;
+    animation:fadeIn .2s;
+    margin-left: -25px;
+}
+
+
+
+.event-item:not(:last-child){
+    border-bottom: 1px solid #eee;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+}
+
+.event-title{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:14px;
+    font-weight:600;
+    color: #39af4d;
+    margin-bottom:10px;
+}
+
+.event-title i{
+    font-size:22px;
+}
+
+.event-detail{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:#666;
+    margin:6px 0;
+    font-size:12px;
+}
+
+.event-detail i{
+    width:18px;
+    font-size:12px;
+    color: #ff5e5e;
+}
+
+@@keyframes fadeIn{
+    from{
+        opacity:0;
+        transform:translateY(-5px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+</style>
+<div class="app-content content">
+    <div class="content-wrapper">
+        <div class="content-header row">
+            <div class="content-header-left col-md-6 col-12 mb-2">
+                <div class="row breadcrumbs-top">
+                    <div class="breadcrumb-wrapper col-12">
+                        <h4 style="font-family: 'Times New Roman'" class="text-sm">Topaz School Manager (SM) </h4>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    <div class="content-body" id="app">
+
+    <!-- TOP SUMMARY CARDS -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 my-2">
+        <div class="col-md-3" v-for="card in summaryCards" :key="card.title">
+            <div class="card shadow text-white" :style="{ background: card.color }">
+                <div class="card-body d-flex justify-content-between align-items-center">
+
+                    <!-- TEXT -->
+                    <div class="d-flex justify-content-between ">
+                        <div class="icon-circle">
+                            <i class="la" :class="card.icon"></i>
+                        </div>
+                        <div class=" ml-1">
+                            <h3 class=" mb-0 text-white font-weight-bold">{{ card.value }}</h3>
+                            <h6 class="mb-1 text-white">{{ card.title }}</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+        <!-- THIRD ROW -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 my-2">
+            <!-- finances -->
+            <div class="col-md-3 ">
+                <div class="card shadow finance">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <p class="mb-0"><strong>Financial Summary</strong></p>
+                        <div class="heading-elements">
+                            <ul class="list-inline mb-0">
+                                <li><a data-action="collapse"><i class="ft-minus"></i></a></li>
+                                <li><a data-action="reload"><i class="ft-rotate-cw"></i></a></li>
+                                <li><a data-action="expand"><i class="ft-maximize"></i></a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div style="height: 300px; overflow: auto; padding: 10px;">
+                        <div class=" finance-card shadow">
+                            <div>
+                                <p class="f-header d-block">Bills Raised</p>
+                                <p class="fw-bold mb-0">{{ financeDashboard.currencyCode }} {{ formatMoney(financeDashboard.billsRaised)}}</p>
+                            </div>
+                            <div class="circle-icon p-2" style="background:#e8f1ff; color:#1d4ed8;">
+                                <i class="la la-file-invoice"></i>
+                            </div>
+                        </div>
+
+                        <div class=" finance-card">
+                            <div>
+                                <p class="f-header d-block">Payments</p>
+                                <p class="fw-bold mb-0">{{ financeDashboard.currencyCode }} {{ formatMoney(financeDashboard.paymentsReceived) }}</p>
+                            </div>
+                            <div class="circle-icon p-2" style="background:#e7f8ef; color:#15803d;">
+                                <i class="la la-wallet"></i>
+                            </div>
+                        </div>
+
+                        <div class=" finance-card">
+                            <div>
+                                <p class="f-header d-block">Outstanding</p>
+                                <p class="fw-bold mb-0">{{ financeDashboard.currencyCode }} {{ formatMoney(financeDashboard.outstandingDebt)}}</p>
+                            </div>
+                            <div class="circle-icon p-2" style="background:#feecec; color:#dc2626;">
+                                <i class="la la-exclamation-circle"></i>
+                            </div>
+                        </div>
+
+                        <div class=" finance-card">
+                            <div>
+                                <p class="f-header d-block">Collection Rate</p>
+                                <p class="fw-bold mb-0">{{ financeDashboard.collectionRate }}%</p>
+                            </div>
+                            <div class="circle-icon p-2" style="background:#f3e8ff; color:#7e22ce;">
+                                <i class="la la-chart-line"></i>
+                            </div>
+                        </div>
+
+                        <div class=" finance-card">
+                            <div>
+                                <p class="f-header d-block">Today's Collections</p>
+                                <p class="fw-bold mb-0">{{ financeDashboard.currencyCode }} {{ formatMoney(financeDashboard.todaysCollections) }}</p>
+                            </div>
+                            <div class="circle-icon p-2" style="background:#fff4e5; color:#ea580c;">
+                                <i class="la la-calendar-day"></i>
+                            </div>
+                        </div>
+
+                        <div class=" finance-card">
+                            <div>
+                                <p class="f-header d-block">This Month</p>
+                                <p class="fw-bold mb-0">{{ financeDashboard.currencyCode }} {{ formatMoney(financeDashboard.monthlyCollections) }}</p>
+                            </div>
+                            <div class="circle-icon p-2" style="background:#e6fffb; color:#0f766e;">
+                                <i class="la la-calendar"></i>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- performance -->
+            <div class="col-md-6 ">
+                <div class="card shadow">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <p class="mb-0"><strong>Subject Performance</strong></p>
+                        <div class="heading-elements">
+                            <ul class="list-inline mb-0">
+                                <li><a data-action="collapse"><i class="ft-minus"></i></a></li>
+                                <li><a data-action="reload"><i class="ft-rotate-cw"></i></a></li>
+                                <li><a data-action="expand"><i class="ft-maximize"></i></a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-body" style="height: 300px; overflow: auto;">
+                        <canvas id="subjectChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- calender -->
+            <div class="col-md-3 mb-">
+                <div class="card shadow">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <p class="mb-0"><strong>Events Calender</strong></p>
+                        <div class="heading-elements">
+                            <ul class="list-inline mb-0">
+                                <li><a data-action="collapse"><i class="ft-minus"></i></a></li>
+                                <li><a data-action="reload"><i class="ft-rotate-cw"></i></a></li>
+                                <li><a data-action="expand"><i class="ft-maximize"></i></a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-body" style="height: 300px; overflow: auto;">
+
+                        <div class="mini-calendar">
+                            <div class="mc-header">
+                                <a class="mc-nav" @@click="prevMonth"><i class="la la-angle-left"></i></a>
+                                <span class="mc-title">{{ monthTitle }}</span>
+                                <a class="mc-nav" @@click="nextMonth"><i class="la la-angle-right"></i></a>
+                            </div>
+                            <div class="mc-weekdays">
+                                <span v-for="d in weekdays" :key="d">{{ d }}</span>
+                            </div>
+                            <div class="mc-grid">
+                                <div
+                                    v-for="(cell, idx) in calendarCells"
+                                    :key="idx"
+                                    class="mc-day"
+                                    :class="{ 'mc-muted': !cell.inMonth, 'mc-today': cell.isToday }"
+                                    @@mouseenter="showEventPopup(cell, $event)"
+                                    @@mouseleave="hideEventPopup"
+                                >
+                                    {{ cell.day }}
+                                    <span v-if="cell.hasEvent" class="mc-dot"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            v-if="showEventCard"
+                            class="event-popup"
+                        >
+                            <div
+                                v-for="event in selectedEvents"
+                                :key="event.id"
+                                class="event-item"
+                            >
+                                <div class="event-title">
+                                    <i class="la la-calendar-check"></i>
+                                    <span>{{ event.activityDescription }}</span>
+                                </div>
+
+                                <div class="d-flex justify-content-between">
+                                    <div class="event-detail">
+                                        <i class="la la-calendar"></i>
+                                        <span> Start {{ event.startDate.substring(0,10) }}</span>
+                                    </div> -
+                                    <div class="event-detail">
+                                        <i class="la la-calendar-times"></i>
+                                        <span>End {{ event.endDate.substring(0,10) }}</span>
+                                    </div>
+                                </div>
+                               
+
+                                <div class="event-detail">
+                                    <i class="la la-clock"></i>
+                                    <span>
+                                        {{ Math.ceil((new Date(event.endDate) - new Date(event.startDate)) / (1000 * 60 * 60 * 24)) + 1 }}
+                                        Day(s)
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+
+    <!-- SECOND ROW (BIG PANELS) -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 my-2">
+
+        <!-- Subjects -->
+        <div class="col-md-6 ">
+            <div class="card shadow">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <p class="mb-0"><strong>Assigned Subjects</strong></p>
+                    <div class="heading-elements">
+                        <ul class="list-inline mb-0">
+                            <li><a data-action="collapse"><i class="ft-minus"></i></a></li>
+                            <li><a data-action="reload"><i class="ft-rotate-cw"></i></a></li>
+                            <li><a data-action="expand"><i class="ft-maximize"></i></a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body" style="height: 300px; overflow: auto;">
+
+                    <!-- CLASS DROPDOWN -->
+                    <div class="mb-1 d-flex justify-content-between align-items-center">
+                        <select class="input mr-1" v-model="selectedClass">
+                            <option disabled value="">Select Class</option>
+                            <option v-for="cls in classDropdown" :key="cls.id" :value="cls.id">
+                                {{ cls.name }}
+                            </option>
+                        </select>
+                        <p>Total Subjects Assigned: {{ assigned }}</p>
+                    </div>
+
+                    <!-- SUBJECT LIST -->
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex justify-content-between align-items-center"
+                            v-for="subject in filteredSubjects" :key="subject.id">
+                            <div>
+                                {{ subject.name }}
+                               
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <span v-if="subject.isCore" class="badge badge-warning mr-1">Core</span>
+                                <span v-if="subject.isBestSubject" class="badge badge-success mr-1">NBES</span>
+                                <span class="badge badge-primary">{{ subject.students }} Students</span>
+                            </div>
+                           
+                        </li>
+                    </ul>
+
+                </div>
+            </div>
+        </div>
+       
+         <!-- debtors -->
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <p class="mb-0"><strong>Student Debtors</strong></p>
+                    <div class="heading-elements">
+                        <ul class="list-inline mb-0">
+                            <li><a data-action="collapse"><i class="ft-minus"></i></a></li>
+                            <li><a data-action="reload"><i class="ft-rotate-cw"></i></a></li>
+                            <li><a data-action="expand"><i class="ft-maximize"></i></a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body" style="height: 300px; overflow: auto;">
+                    
+            <table class="table align-middle debtor-table table-responsive">
+
+                <thead>
+                <tr>
+                    <th style="width: 10%">#</th>
+                    <th style="width: 35%">Student</th>
+                    <th style="width: 30%">Class</th>
+                    <th style="width: 20%" class="text-end">Balance Due</th>
+                </tr>
+                </thead>
+
+
+                <tbody>
+
+                <tr v-for="(student, i) in studentDebtors" :key="student.studentId">
+                    <td>{{  i + 1 }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="ms-3">
+                                <h6 class="mb-0 fw-semibold">
+                                    {{ student.studentName }}
+                                </h6>
+
+                                <small class="text-muted">
+                                    {{student.studentIdentifier}}
+                                </small>
+                            </div>
+
+                        </div>
+                    </td>
+                    <td>
+                        <span class="fw-semibold">
+                            {{ student.studentClass }}
+                        </span>
+                    </td>
+
+                    <td class="text-end">
+
+                        <span class="balance-badge">
+                            {{ formatMoney(student.balanceDue) }}
+                        </span>
+
+                    </td>
+
+
+                </tr>
+
+
+                    <tr v-if="studentDebtors.length === 0">
+
+                        <td colspan="4" class="text-center py-5">
+
+                            <i class="la la-check-circle text-success fs-1"></i>
+
+                            <p class="text-muted mt-2 mb-0">
+                                No outstanding debts
+                            </p>
+
+                        </td>
+
+                    </tr>
+
+
+                </tbody>
+
+            </table>
+            
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+     
+
+</div>
+
+
+    </div>
+  
+</div>
+
+
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+<script src="~/js/school-manager/dashboard.js" asp-append-version="true"></script>
+
+

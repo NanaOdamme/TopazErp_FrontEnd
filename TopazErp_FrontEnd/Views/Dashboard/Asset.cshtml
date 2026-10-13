@@ -1,0 +1,1021 @@
+﻿@{
+    ViewBag.Title = "Dashboard | Asset Manager";
+    Layout = "~/Views/Shared/_adminAssetLayout.cshtml";
+}
+<style>
+
+    .icon-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-circle i {
+    font-size: 20px;
+    color: #fff;
+}
+select.input {
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 12px;
+    border: 0.5px solid #ced4da;
+    padding: 2px;
+}
+
+.am-table thead th {
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #8a8494;
+    border-bottom: 1px solid #ece7f2;
+    font-weight: 600;
+}
+/*remove table boarders*/
+.am-table {
+    border: none;
+}
+.am-table td { vertical-align: first; font-size: .8rem; }
+.am-table tbody td { vertical-align: first; font-size: .8rem; }
+.asset-avatar {
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    background: #f3e9f8;
+    color: #6c2fa5 ;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: .8rem;
+    margin-right: 10px;
+}
+.name{
+    text-transform: uppercase;
+    font-weight: bold;
+}
+.location{
+    font-size: 0.8rem;
+    color: #8a8494;
+}
+.pink{
+    color: #b72361;
+}
+
+    .page-link {
+        width: 30px;
+        height: 30px;
+
+        padding: 0;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        border-radius: 5px !important;
+
+        color: #1e1e1e !important;
+        border-color: #e2e8f0;
+
+        font-size: 11px;
+    }
+    
+    .page-item.active .page-link {
+        background: #6c2fa5;
+        border-color:#6c2fa5;
+        color: #fff !important;
+    }
+  .rounded-xl{
+    border-radius: 0.75rem !important;
+  }
+    /* Base maintenance row */
+    .maintenance-overdue,
+    .maintenance-today,
+    .maintenance-soon,
+    .maintenance-scheduled,
+    .maintenance-completed,
+    .maintenance-unknown {
+        border-left: 4px solid;
+    }
+
+
+    /* Overdue */
+    .maintenance-overdue {
+        background: #fff5f5;
+        border-left-color: #dc3545;
+    }
+
+    .maintenance-overdue .maintenance-icon {
+        width: 42px;
+        height: 42px;
+        background: rgba(220, 53, 69, .1);
+        color: #dc3545;
+    }
+
+    .maintenance-overdue-badge {
+        background: #dc3545;
+    }
+
+
+    /* Due Today */
+    .maintenance-today {
+        background: #fff8f0;
+        border-left-color: #fd7e14;
+    }
+
+    .maintenance-today .maintenance-icon {
+        width: 42px;
+        height: 42px;
+        background: rgba(253, 126, 20, .1);
+        color: #fd7e14;
+    }
+
+    .maintenance-today-badge {
+        background: #fd7e14;
+    }
+
+
+    /* Due Soon */
+    .maintenance-soon {
+        background: #f3f8ff;
+        border-left-color: #0d6efd;
+    }
+
+    .maintenance-soon .maintenance-icon {
+        width: 42px;
+        height: 42px;
+        background: rgba(13, 110, 253, .1);
+        color: #0d6efd;
+    }
+
+    .maintenance-soon-badge {
+        background: #0d6efd;
+    }
+
+
+    /* Scheduled */
+    .maintenance-scheduled {
+        background: #f2fbf6;
+        border-left-color: #198754;
+    }
+
+    .maintenance-scheduled .maintenance-icon {
+        width: 42px;
+        height: 42px;
+        background: rgba(25, 135, 84, .1);
+        color: #198754;
+    }
+
+    .maintenance-scheduled-badge {
+        background: #198754;
+    }
+
+
+    /* Completed */
+    .maintenance-completed {
+        background: #f5f5f5;
+        border-left-color: #6c757d;
+    }
+
+    .maintenance-completed .maintenance-icon {
+        width: 42px;
+        height: 42px;
+        background: rgba(108, 117, 125, .1);
+        color: #6c757d;
+    }
+
+    .maintenance-completed-badge {
+        background: #6c757d;
+    }
+
+
+    /* Unknown */
+    .maintenance-unknown {
+        background: #f8f9fa;
+        border-left-color: #adb5bd;
+    }
+
+    .maintenance-unknown .maintenance-icon {
+        width: 42px;
+        height: 42px;
+        background: rgba(108, 117, 125, .08);
+        color: #6c757d;
+    }
+
+    .maintenance-unknown-badge {
+        background: #6c757d;
+    }
+</style>
+<div class="app-content content">
+    <div class="content-wrapper">
+        <div class="content-header row">
+            <div class="content-header-left col-md-6 col-12 mb-2">
+                <div class="row breadcrumbs-top">
+                    <div class="breadcrumb-wrapper col-12">
+                         
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="content-body" id="app">
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 my-2">
+                <div class="col-md-3" v-for="card in summaryCards" :key="card.title">
+                    <div class="card shadow text-white" :style="{ background: card.color }">
+                        <div class="card-body d-flex justify-content-between align-items-center">
+                            <div class="d-flex justify-content-between ">
+                                <div class="icon-circle">
+                                    <i class="la" :class="card.icon"></i>
+                                </div>
+                                <div class=" ml-1">
+                                    <h3 class=" mb-0 text-white font-weight-bold">{{ card.value }}</h3>
+                                    <h6 class="mb-1 text-white">{{ card.title }}</h6>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 my-2">
+        
+        <div class="col-md-8 ">
+            <div class="card shadow">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <p class="mb-0"><strong>Recent Assets</strong></p>
+                   
+                    <div class="heading-elements">
+                        <ul class="list-inline mb-0">
+                            <li><a data-action="collapse"><i class="ft-minus"></i></a></li>
+                            <li><a data-action="reload"><i class="ft-rotate-cw"></i></a></li>
+                            <li><a data-action="expand"><i class="ft-maximize"></i></a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body" style="height: 300px; overflow: auto;">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center">
+
+        <!-- Search -->
+        <input type="text"
+               class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100-sm mb-1"
+               placeholder="Search assets..."
+               v-model="search"
+               style="width: 200px;">
+
+        <!-- Pagination -->
+        <nav class="mb-1" aria-label="pagination"
+             v-if="filteredAssets.length > 0">
+
+            <ul class="pagination pagination-sm mb-0">
+
+                <!-- Previous -->
+                <li class="page-item"
+                    :class="{ disabled: currentPage === 1 }">
+
+                    <button type="button"
+                            class="page-link"
+                            @@click="changePage(currentPage - 1)"
+                            :disabled="currentPage === 1">
+
+                        <i class="la la-angle-left"></i>
+
+                    </button>
+                </li>
+
+
+                <!-- Page numbers -->
+                <template v-for="(page, index) in paginationPages" :key="index">
+
+                    <!-- Ellipsis -->
+                    <li v-if="page === '...'"
+                        class="page-item disabled">
+
+                        <span class="page-link pagination-dots">
+                            ...
+                        </span>
+
+                    </li>
+
+                    <!-- Page -->
+                    <li v-else
+                        class="page-item"
+                        :class="{ active: currentPage === page }">
+
+                        <button type="button"
+                                class="page-link"
+                                @@click="changePage(page)">
+
+                            {{ page }}
+
+                        </button>
+
+                    </li>
+
+                </template>
+
+
+                <!-- Next -->
+                <li class="page-item"
+                    :class="{ disabled: currentPage === totalPages }">
+
+                    <button type="button"
+                            class="page-link"
+                            @@click="changePage(currentPage + 1)"
+                            :disabled="currentPage === totalPages">
+
+                        <i class="la la-angle-right"></i>
+
+                    </button>
+
+                </li>
+
+            </ul>
+        </nav>
+
+    </div>
+
+
+    <!-- Asset Table -->
+    <div class="table-responsive">
+
+        <table class="table am-table mb-0 table-hover">
+
+            <thead>
+                <tr>
+                    <th>Asset</th>
+                    <th>Tag</th>
+                    <th>Category</th>
+                    <th>Value</th>
+                    <th>Assigned To</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                <tr v-for="asset in paginatedAssets"
+                    :key="asset.tag">
+
+                    <td class="ps-4">
+
+                        <div class="d-flex align-items-center gap-2">
+
+                            <span class="asset-avatar">
+                                <i class="la la-box"></i>
+                            </span>
+
+                            <div>
+                                <div class="name">
+                                    {{ asset.name }}
+                                </div>
+
+                                <div class="location">
+                                    {{ asset.location }}
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </td>
+
+                    <td class="pink">
+                        {{ asset.tag }}
+                    </td>
+
+                    <td>
+                        {{ asset.category }}
+                    </td>
+
+                    <td class="font-weight-bold">
+                        GH&#8373; {{ asset.value.toLocaleString() }}
+                    </td>
+
+                    <td>
+                        {{ asset.assignedTo }}
+                    </td>
+
+                </tr>
+
+
+                <!-- No results -->
+                <tr v-if="filteredAssets.length === 0">
+
+                    <td colspan="5"
+                        class="text-center text-muted py-4">
+
+                        No assets match "{{ search }}"
+
+                    </td>
+
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+            </div>
+        </div>
+       
+        <div class="col-md-4 ">
+            <div class="card shadow">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <p class="mb-0"><strong>Maintenance Schedule</strong></p>
+                    <div class="heading-elements">
+                        <ul class="list-inline mb-0">
+                            <li><a data-action="collapse"><i class="ft-minus"></i></a></li>
+                            <li><a data-action="reload"><i class="ft-rotate-cw"></i></a></li>
+                            <li><a data-action="expand"><i class="ft-maximize"></i></a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body pt-0" style="height: 300px; overflow: auto;">
+
+                    <div v-for="maintenance in maintenanceSchedule"
+                         :key="maintenance.id"
+                         class="d-flex align-items-center justify-content-between p-1 mb-2 rounded-xl"
+                         :class="getMaintenanceStatus(maintenance.statusId).class">
+
+                        <div class="d-flex align-items-center">
+
+                            <div class="maintenance-icon rounded-xl d-flex align-items-center justify-content-center me-1">
+                                <i :class="maintenance.icon"></i>
+                            </div>
+
+                            <div>
+                                <div class="fw-semibold text-dark">
+                                    {{ maintenance.assetName }}
+                                </div>
+
+                                <small class="text-muted">
+                                    <i class="la la-tag me-1"></i>
+                                    {{ maintenance.assetCode }}
+                                    · {{ maintenance.assetType }}
+                                </small>
+                            </div>
+
+                        </div>
+
+                        <div class="text-end">
+
+                            <span class="badge rounded-pill mb-1"
+                                  :class="getMaintenanceStatus(maintenance.statusId).class + '-badge'">
+
+                                {{ getMaintenanceStatus(maintenance.statusId).name }}
+
+                            </span>
+
+                            <div class="small text-muted">
+                                {{ maintenance.date }}
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+
+    </div>
+           
+
+        </div>
+    </div>
+</div>
+
+
+<script>
+    const app = Vue.createApp({
+
+        data() {
+            return {
+
+                search: '',
+
+                totalAssets: 0,
+                totalAssetValue: 0,
+                inMaintenance: 0,
+                missingFlagged: 0,
+
+                // 3 assets per page
+                currentPage: 1,
+                pageSize: 3,
+
+                summaryCards: [
+                    {
+                        title: 'Total Assets',
+                        value: 0,
+                        icon: 'la-box',
+                        color: 'linear-gradient(90deg, #241044 0%, #3b1f72 50%, #562fa5 100%)'
+                    },
+                    {
+                        title: 'Total Asset Value',
+                        value: 0,
+                        icon: 'la-money-bill',
+                        color: 'linear-gradient(90deg, #562fa5 0%, #3b1f72 55%, #241044 100%)'
+                    },
+                    {
+                        title: 'In Maintenance',
+                        value: 0,
+                        icon: 'la-wrench',
+                        color: 'linear-gradient(90deg, #562fa5 0%, #3b1f72 50%, #241044 100%)'
+                    },
+                    {
+                        title: 'Missing / Flagged',
+                        value: 0,
+                        icon: 'la-exclamation-circle',
+                        color: 'linear-gradient(90deg, #562fa5 0%, #3b1f72 55%, #241044 100%)'
+                    }
+                ],
+
+                assets: [
+                    {
+                        name: 'Dell Latitude 5540',
+                        tag: 'AST-2091',
+                        category: 'IT Equipment',
+                        assignedTo: 'Ama Owusu',
+                        value: 14500,
+                        status: 'Active',
+                        location: 'Head Office - Accra'
+                    },
+                    {
+                        name: 'Toyota Hilux 4x4',
+                        tag: 'AST-1877',
+                        category: 'Vehicles',
+                        assignedTo: 'Fleet Pool',
+                        value: 385000,
+                        status: 'Active',
+                        location: 'Tema Depot'
+                    },
+                    {
+                        name: 'HP LaserJet Pro M428',
+                        tag: 'AST-1642',
+                        category: 'IT Equipment',
+                        assignedTo: 'Finance Dept',
+                        value: 6200,
+                        status: 'Maintenance',
+                        location: 'Head Office - Accra'
+                    },
+                    {
+                        name: 'Executive Desk Set',
+                        tag: 'AST-0958',
+                        category: 'Office Furniture',
+                        assignedTo: 'Kofi Boateng',
+                        value: 8900,
+                        status: 'Active',
+                        location: 'Kumasi Branch'
+                    },
+                    {
+                        name: 'CAT 320 Excavator',
+                        tag: 'AST-0733',
+                        category: 'Machinery',
+                        assignedTo: 'Operations',
+                        value: 920000,
+                        status: 'Maintenance',
+                        location: 'Takoradi Site'
+                    },
+                    {
+                        name: 'MacBook Pro 14"',
+                        tag: 'AST-2104',
+                        category: 'IT Equipment',
+                        assignedTo: 'Efua Asante',
+                        value: 32000,
+                        status: 'Active',
+                        location: 'Head Office - Accra'
+                    },
+                    {
+                        name: 'Projector Epson EB-X51',
+                        tag: 'AST-1319',
+                        category: 'IT Equipment',
+                        assignedTo: 'Board Room',
+                        value: 5400,
+                        status: 'Missing',
+                        location: 'Head Office - Accra'
+                    },
+                    {
+                        name: 'Nissan Almera',
+                        tag: 'AST-1502',
+                        category: 'Vehicles',
+                        assignedTo: 'Sales Team',
+                        value: 210000,
+                        status: 'Retired',
+                        location: 'Kumasi Branch'
+                    }
+                ],
+                maintenanceSchedule: [
+
+                    {
+                        id: 1,
+                        assetName: "Toyota Hilux 4x4",
+                        assetCode: "AST-1877",
+                        assetType: "Vehicle",
+                        statusId: 1,
+                        date: "2 days ago",
+                        icon: "la la-car"
+                    },
+
+                    {
+                        id: 2,
+                        assetName: "HP ProBook 450 G8",
+                        assetCode: "AST-2034",
+                        assetType: "Computer",
+                        statusId: 2,
+                        date: "Today",
+                        icon: "la la-laptop"
+                    },
+
+                    {
+                        id: 3,
+                        assetName: "Samsung Air Conditioner",
+                        assetCode: "AST-1142",
+                        assetType: "Equipment",
+                        statusId: 3,
+                        date: "In 3 days",
+                        icon: "la la-snowflake-o"
+                    },
+
+                    {
+                        id: 4,
+                        assetName: "Canon ImageRunner C3226i",
+                        assetCode: "AST-0918",
+                        assetType: "Office Equipment",
+                        statusId: 4,
+                        date: "In 7 days",
+                        icon: "la la-print"
+                    },
+
+                    {
+                        id: 5,
+                        assetName: "Diesel Generator 150KVA",
+                        assetCode: "AST-0056",
+                        assetType: "Generator",
+                        statusId: 4,
+                        date: "In 12 days",
+                        icon: "la la-bolt"
+                    }
+
+                ]
+
+            };
+        },
+
+
+        watch: {
+
+            // Whenever search changes,
+            // return to page 1.
+            search() {
+                this.currentPage = 1;
+            },
+
+            // Extra protection in case assets
+            // are changed dynamically.
+            assets: {
+                deep: true,
+                handler() {
+                    if (this.currentPage > this.totalPages) {
+                        this.currentPage = this.totalPages;
+                    }
+                }
+            }
+
+        },
+
+
+        computed: {
+
+            /*
+             * Filter assets based on search
+             */
+            filteredAssets() {
+
+                const q = this.search
+                    .trim()
+                    .toLowerCase();
+
+                if (!q) {
+                    return this.assets;
+                }
+
+                return this.assets.filter(asset => {
+
+                    return [
+                        asset.name,
+                        asset.tag,
+                        asset.category,
+                        asset.assignedTo,
+                        asset.status,
+                        asset.location
+                    ]
+                        .join(' ')
+                        .toLowerCase()
+                        .includes(q);
+
+                });
+            },
+
+
+            /*
+             * Number of pages
+             *
+             * IMPORTANT:
+             * This uses filteredAssets, not assets.
+             */
+            totalPages() {
+
+                return Math.max(
+                    1,
+                    Math.ceil(
+                        this.filteredAssets.length /
+                        this.pageSize
+                    )
+                );
+
+            },
+
+
+            /*
+             * Only return the 3 assets
+             * for the current page.
+             */
+            paginatedAssets() {
+
+                const start =
+                    (this.currentPage - 1) *
+                    this.pageSize;
+
+                const end =
+                    start + this.pageSize;
+
+                return this.filteredAssets.slice(
+                    start,
+                    end
+                );
+
+            },
+
+
+            /*
+             * Creates:
+             *
+             * 1 2 3
+             *
+             * or for many pages:
+             *
+             * 1 ... 4 5 6 ... 20
+             */
+            paginationPages() {
+
+                const total = this.totalPages;
+                const current = this.currentPage;
+
+                if (total <= 7) {
+
+                    return Array.from(
+                        { length: total },
+                        (_, index) => index + 1
+                    );
+
+                }
+
+                const pages = [];
+
+                pages.push(1);
+
+                if (current <= 4) {
+
+                    pages.push(2);
+                    pages.push(3);
+                    pages.push(4);
+                    pages.push(5);
+                    pages.push('...');
+                    pages.push(total);
+
+                    return pages;
+                }
+
+                if (current >= total - 3) {
+
+                    pages.push('...');
+
+                    pages.push(total - 4);
+                    pages.push(total - 3);
+                    pages.push(total - 2);
+                    pages.push(total - 1);
+                    pages.push(total);
+
+                    return pages;
+                }
+
+                pages.push('...');
+
+                pages.push(current - 2);
+                pages.push(current - 1);
+                pages.push(current);
+                pages.push(current + 1);
+                pages.push(current + 2);
+
+                pages.push('...');
+                pages.push(total);
+
+                return pages;
+            },
+
+
+            /*
+             * First item currently displayed
+             */
+            paginationStart() {
+
+                if (this.filteredAssets.length === 0) {
+                    return 0;
+                }
+
+                return (
+                    (this.currentPage - 1) *
+                    this.pageSize
+                ) + 1;
+
+            },
+
+
+            /*
+             * Last item currently displayed
+             */
+            paginationEnd() {
+
+                return Math.min(
+                    this.currentPage * this.pageSize,
+                    this.filteredAssets.length
+                );
+
+            }
+
+        },
+
+
+        methods: {
+            getMaintenanceStatus(statusId) {
+
+                const statuses = {
+                    1: {
+                        name: "Overdue",
+                        class: "maintenance-overdue"
+                    },
+
+                    2: {
+                        name: "Due Today",
+                        class: "maintenance-today"
+                    },
+
+                    3: {
+                        name: "Due Soon",
+                        class: "maintenance-soon"
+                    },
+
+                    4: {
+                        name: "Scheduled",
+                        class: "maintenance-scheduled"
+                    },
+
+                    5: {
+                        name: "Completed",
+                        class: "maintenance-completed"
+                    }
+                };
+
+                return statuses[statusId] || {
+                    name: "Unknown",
+                    class: "maintenance-unknown"
+                };
+            },
+            /*
+             * Change page safely
+             */
+            changePage(page) {
+
+                if (page === '...') {
+                    return;
+                }
+
+                if (page < 1) {
+                    return;
+                }
+
+                if (page > this.totalPages) {
+                    return;
+                }
+
+                this.currentPage = page;
+
+            },
+
+
+            formatMoney(value) {
+
+                return Number(value || 0)
+                    .toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+
+            },
+
+
+            formatDate(date) {
+
+                const d = new Date(date);
+
+                const y = d.getFullYear();
+                const m = String(
+                    d.getMonth() + 1
+                ).padStart(2, "0");
+
+                const day = String(
+                    d.getDate()
+                ).padStart(2, "0");
+
+                return `${y}-${m}-${day}`;
+            },
+
+
+            getSummaryValues() {
+
+                this.totalAssets = 354;
+                this.totalAssetValue = 44000;
+                this.inMaintenance = 15;
+                this.missingFlagged = 8;
+
+                this.updateSummaryCards();
+
+            },
+
+
+            updateSummaryCards() {
+
+                this.animateValue(
+                    0,
+                    this.totalAssets,
+                    0
+                );
+
+                this.animateValue(
+                    1,
+                    this.totalAssetValue,
+                    0
+                );
+
+                this.animateValue(
+                    2,
+                    this.inMaintenance,
+                    0
+                );
+
+                this.animateValue(
+                    3,
+                    this.missingFlagged,
+                    0
+                );
+
+            },
+
+
+            animateValue(index, end, start) {
+
+                let current = start;
+
+                const interval = setInterval(() => {
+
+                    current += Math.ceil(end / 20);
+
+                    if (current >= end) {
+
+                        current = end;
+
+                        clearInterval(interval);
+
+                    }
+
+                    this.summaryCards[index].value =
+                        current;
+
+                }, 30);
+
+            }
+
+        },
+        mounted() {
+
+            this.getSummaryValues();
+            
+        }
+
+    });
+
+    app.mount('#app');
+
+</script>
