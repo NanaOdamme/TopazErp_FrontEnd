@@ -1,0 +1,51 @@
+﻿@{
+    ViewBag.Title = "Banks & Branches";
+    Layout = "~/Views/Shared/_adminArLayout.cshtml";
+}
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>AR - SharedResources</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Banks & Branches</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+
+            <div class="page-title">
+                <h2 class="text-2xl font-semibold text-gray-800">
+                    Banks & Branches
+                </h2>
+                
+            </div>
+        </div>
+    </div>
+    <div class="card" data-card-title="Banks & Branches">
+        <div id="app">
+          <data-grid
+                title="Banks &amp; Branches"
+                :columns="bankColumns"
+                :data="bankList"
+                :child="branchCol"
+                :theme="theme"
+                row-id="id"
+                label-key="name"
+                item-label="bank"
+                item-label-plural="banks"
+                add-label="Add"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                @@create="onCreate"
+                @@update="onUpdate"
+              
+          ></data-grid>
+          
+        </div>
+       
+    </div>
+</div>
+
+
+
+<script src="~/js/shared/vue3/banks-branches.js" asp-append-version="true"></script>

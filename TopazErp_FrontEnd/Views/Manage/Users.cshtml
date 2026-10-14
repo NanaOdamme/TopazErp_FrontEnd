@@ -145,21 +145,21 @@
                                                     <div class="">
                                                         <label> <strong>First Name:</strong> </label>
                                                         <input type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" v-model="name" ref="name" placeholder="First Name">
-                                                        <span class="text-danger" v-if="!$v.name.required && $v.name.$dirty"> First name field is required </span>
+                                                        <span class="text-red-500" v-if="!$v.name.required && $v.name.$dirty"> First name field is required </span>
 
                                                     </div>
 
                                                     <div class="">
                                                         <label> <strong>Last Name:</strong> </label>
                                                         <input type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" v-model="surname" ref="surname" placeholder="Last Name">
-                                                        <span class="text-danger" v-if="!$v.surname.required && $v.userName.$dirty"> Last name field is required </span>
+                                                        <span class="text-red-500" v-if="!$v.surname.required && $v.userName.$dirty"> Last name field is required </span>
 
                                                     </div>
 
                                                     <div class="">
                                                         <label> <strong> Username:</strong> </label>
                                                         <input type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" v-model="userName" ref="userName" placeholder="Username">
-                                                        <span class="text-danger" v-if="!$v.userName.required && $v.userName.$dirty"> Username field is required </span>
+                                                        <span class="text-red-500" v-if="!$v.userName.required && $v.userName.$dirty"> Username field is required </span>
 
                                                     </div>
 
@@ -167,7 +167,7 @@
                                                         <label> <strong> Email :</strong> </label>
 
                                                         <input type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" v-model="emailAddress" ref="emailAddress" placeholder="Email">
-                                                        <span class="text-danger" v-if="!$v.emailAddress.required && $v.emailAddress.$dirty"> Email field is required </span>
+                                                        <span class="text-red-500" v-if="!$v.emailAddress.required && $v.emailAddress.$dirty"> Email field is required </span>
 
                                                     </div>
 
@@ -190,7 +190,7 @@
                                                             <option value="">Select Role</option>
                                                             <option :value="role.normalizedName" v-for="role in roleList"> {{role.name}} </option>
                                                         </select>
-                                                        <span class="text-danger" v-if="!$v.selectedRole.required && $v.selectedRole.$dirty"> Role field is required </span>
+                                                        <span class="text-red-500" v-if="!$v.selectedRole.required && $v.selectedRole.$dirty"> Role field is required </span>
 
                                                     </div>
 

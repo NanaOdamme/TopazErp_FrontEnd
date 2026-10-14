@@ -34,7 +34,7 @@ Layout = "~/Views/Shared/_adminApLayout.cshtml";
                         
                                         <div class="">
                                             <div class="">
-                                                <label> <strong> Supplier: </strong> </label><span class="text-danger">*</span>
+                                                <label> <strong> Supplier: </strong> </label><span class="text-red-500">*</span>
                                                 <input id="supplierId" v-model="supplierId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" required/>
                                                 </div>
 
@@ -48,14 +48,14 @@ Layout = "~/Views/Shared/_adminApLayout.cshtml";
                                         <div class="">
 
                                             <div class="">
-                                                <label> <strong> Amount: </strong> </label><span class="text-danger">*</span>
+                                                <label> <strong> Amount: </strong> </label><span class="text-red-500">*</span>
                                                 <input v-model="amount" step="0.01" min="0" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" type="number" :disabled="isPosted"/>
 
                                             </div>
 
 
                                             <div class="" v-if="isOu">
-                                                <label> <strong>OU (Cost Center): </strong> </label><span class="text-danger">*</span>
+                                                <label> <strong>OU (Cost Center): </strong> </label><span class="text-red-500">*</span>
                                                 <input id="ouId" v-model="ouId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" required/>
                                             </div>
 
@@ -63,7 +63,7 @@ Layout = "~/Views/Shared/_adminApLayout.cshtml";
                                         <div class="">
 
                                             <div class="">
-                                                <label> <strong> Date: </strong> </label><span class="text-danger">*</span>
+                                                <label> <strong> Date: </strong> </label><span class="text-red-500">*</span>
                                                 <input v-model="transactionDate"  class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" type="date"/>
 
                                             </div>
@@ -72,7 +72,7 @@ Layout = "~/Views/Shared/_adminApLayout.cshtml";
                                         <div class="">
 
                                             <div class="">
-                                                <label> <strong>Currency: </strong> </label><span class="text-danger">*</span>
+                                                <label> <strong>Currency: </strong> </label><span class="text-red-500">*</span>
                                                 <input id="currencyId" v-model="currencyId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" required/>
                                             </div>
                                                                         

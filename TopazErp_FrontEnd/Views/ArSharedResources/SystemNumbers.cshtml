@@ -1,0 +1,151 @@
+﻿@{
+    ViewBag.Title = "System Numbers";
+    Layout = "~/Views/Shared/_adminArLayout.cshtml";
+}
+
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>AR - SharedResources</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">System Numbers</span>
+        </div>
+
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+            <div class="page-title">
+                <h2 class="text-2xl font-semibold text-gray-800">
+                    System Numbers
+                </h2>
+                <p class="text-sm text-gray-500 mt-1">
+                    Manage numbering formats used across your ERP modules.
+                </p>
+            </div>
+
+            <div class="flex items-center gap-2 text-sm">
+                <span class="inline-flex items-center gap-2 rounded-lg bg-red-50 text-red-600 px-3 py-2">
+                    <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                    Not configured
+                </span>
+
+                <span class="inline-flex items-center gap-2 rounded-lg bg-green-50 text-green-700 px-3 py-2">
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                    Configured
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" data-card-title="System Numbers">
+        <div id="app">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="rounded-xl border border-gray-200 bg-white p-4">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <p class="text-sm text-gray-500">Total Numbering Rules</p>
+                            <h3 class="text-2xl font-semibold text-gray-800 mt-1">
+                                {{ systemNumbers.length }}
+                            </h3>
+                        </div>
+                        <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                            <i class="bi bi-list-ol text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounded-xl border border-gray-200 bg-white p-4">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <p class="text-sm text-gray-500">Configured</p>
+                            <h3 class="text-2xl font-semibold text-green-600 mt-1">
+                                {{ configuredCount }}
+                            </h3>
+                        </div>
+                        <div class="w-11 h-11 rounded-xl bg-green-50 text-green-600 flex items-center justify-center">
+                            <i class="bi bi-check-circle text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounded-xl border border-gray-200 bg-white p-4">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <p class="text-sm text-gray-500">Not Configured</p>
+                            <h3 class="text-2xl font-semibold text-red-600 mt-1">
+                                {{ missingCount }}
+                            </h3>
+                        </div>
+                        <div class="w-11 h-11 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
+                            <i class="bi bi-exclamation-circle text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounded-xl border border-gray-200 bg-white p-4">
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <p class="text-sm text-gray-500">Modules Covered</p>
+                            <h3 class="text-2xl font-semibold text-gray-800 mt-1">
+                                {{ moduleCount }}
+                            </h3>
+                        </div>
+                        <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                            <i class="bi bi-grid text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 mb-5 flex items-start gap-3">
+                <i class="bi bi-exclamation-triangle-fill text-red-500 mt-0.5"></i>
+                <div>
+                    <p class="font-semibold text-red-700 text-sm">
+                        Configuration required
+                    </p>
+                    <p class="text-sm text-red-600 mt-1">
+                        Rows highlighted in red have not been configured yet.
+                        Select a row to edit its prefix, suffix, and last number.
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
+                <div>
+                    <h3 class="text-base font-semibold text-gray-800">
+                        Numbering Configuration
+                    </h3>
+                    <p class="text-sm text-gray-500 mt-1">
+                        Configure the numbering sequence for each module.
+                    </p>
+                </div>
+
+                <button type="button"
+                        @@click="resetDemoData"
+                        class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                    Reset Demo Data
+                </button>
+            </div>
+
+            <data-grid
+                title="System Numbers"
+                :columns="systemNumberColumns"
+                :data="systemNumbers"
+                :theme="theme"
+                row-id="pk"
+                label-key="friendlyName"
+                item-label="system number"
+                item-label-plural="system numbers"
+                add-label="Add"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                @@create="onCreate"
+                @@update="onUpdate"
+                @@delete="onDelete">
+            </data-grid>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/shared/vue3/system-numbers.js"
+        asp-append-version="true"></script>

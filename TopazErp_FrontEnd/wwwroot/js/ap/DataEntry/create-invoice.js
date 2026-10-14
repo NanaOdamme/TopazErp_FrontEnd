@@ -82,77 +82,16 @@
             isMultiCurrency: false,
             theme: '#0645e7',
             detailColumns: [
-                {
-                    key: 'id',
-                    label: 'ID',
-                    hidden: true,
-                    editable: false,
-                    searchable: false
-                },
-                {
-                    key: 'referenceNumber',
-                    label: 'Ref No',
-                    type: 'text',
-                    editable: true,
-                    searchable: true
-                },
-                {
-                    key: 'description',
-                    label: 'Description',
-                    type: 'text',
-                    required: true,
-                    editable: true,
-                    searchable: true
-                },
-                {
-                    key: 'debitAccountId',
-                    label: 'Debit G/L Account',
-                    type: 'select',
-                    editable: true,
-                    required: false,
-                    options: [],
-                    optionLabel: 'accountIdentifier',
-                    optionValue: 'id'
-                },
-                {
-                    key: 'quantity',
-                    label: 'Quantity',
-                    type: 'number',
-                    required: true,
-                    editable: true
-                },
-                {
-                    key: 'unitPrice',
-                    label: 'Unit Price',
-                    type: 'number',
-                    required: true,
-                    editable: true
-                },
-                {
-                    key: 'discountAsPercentage',
-                    label: 'Disc. As %?',
-                    type: 'boolean',
-                    editable: true
-                },
-                {
-                    key: 'discount',
-                    label: 'Disc. %',
-                    type: 'number',
-                    editable: true
-                },
-                {
-                    key: 'amount',
-                    label: 'Disc. Amt.',
-                    type: 'number',
-                    editable: true
-                },
-                {
-                    key: 'subTotal',
-                    label: 'Sub Total',
-                    type: 'number',
-                    editable: false,
-                   
-                }
+                {key: 'id', label: 'ID', hidden: true,},
+                {key: 'referenceNumber', label: 'Ref No', type: 'text', searchable: true},
+                {key: 'description', label: 'Description', type: 'text', required: true, searchable: true},
+                {key: 'debitAccountId', label: 'Debit G/L Account', type: 'select', required: false, options: [], display: 'accountIdentifier', value: 'id'},
+                {key: 'quantity', label: 'Quantity', type: 'number', required: true, decimals: 2},
+                {key: 'unitPrice', label: 'Unit Price', type: 'number', required: true, decimals:2},
+                {key: 'discountAsPercentage', label: 'Disc. As %?', type: 'boolean'},
+                {key: 'discount', label: 'Disc. %', type: 'number',decimals: 2},
+                {key: 'amount', label: 'Disc. Amt.', type: 'number', decimals: 2},
+                {key: 'subTotal', label: 'Sub Total', type: 'number', decimals: 2,}
             ],
             isApplied:true
         }
@@ -800,6 +739,7 @@
             return moment(dateInput).format("YYYY-MM-DD");
         },
         setCurrentInvoice() {
+           
             let invoiceInfo = this.getInvoicesdetails(this.invoiceId);
             if (invoiceInfo) {
                 this.taxLevyList = this.taxLevyList.map(tax => ({ ...tax, isApplied: false }));

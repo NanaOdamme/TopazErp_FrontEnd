@@ -291,7 +291,7 @@ const app = Vue.createApp({
                 timerProgressBar: true
             });
 
-        },,
+        },
         sortBTable(key) {
             if (this.bSortKey === key) {
                 this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
