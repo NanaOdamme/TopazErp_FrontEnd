@@ -1,8 +1,38 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
+using TopazErp_FrontEnd.Services;
+using TopazErp_FrontEnd.Utils;
+
 var builder = WebApplication.CreateBuilder(args);
+
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.LogoutPath = "/Account/Logout";
+        options.ExpireTimeSpan = TimeSpan.FromHours(23.6);
+        options.SlidingExpiration = false;
+    });
+
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSession();
+
+builder.Services.AddControllersWithViews();
+
+builder.Services.AddHttpClient();
+
+builder.Services.AddScoped<ITopazErpApi, TopazErpApi>();
+builder.Services.AddScoped<ClaimsHelper>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews()
                 .AddRazorRuntimeCompilation();
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = int.MaxValue;
+});
 
 var app = builder.Build();
 
@@ -17,9 +47,11 @@ if (!app.Environment.IsDevelopment())
 // app.UseHttpsRedirection();
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
+app.UseSession();
 
 app.MapControllerRoute(
         name: "default",
