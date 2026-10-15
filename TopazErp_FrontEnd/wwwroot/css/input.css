@@ -1,0 +1,108 @@
+
+.select {
+    display: block;
+    width: 100%;
+    margin-top: 0.25rem;
+    padding: 0.625rem 0.75rem;
+
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: #0f172a;
+    background-color: #ffffff;
+
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 0.5rem !important;
+
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    transition: color 150ms, background-color 150ms,
+    border-color 150ms, box-shadow 150ms;
+
+    outline: none;
+}
+
+/* Focus state */
+.select:focus {
+    border-color: #3b82f6;
+    outline: none;
+    box-shadow: 0 0 0 2px rgb(59 130 246 / 0.2);
+}
+
+/* Dark theme */
+.dark .select {
+    color: #f1f5f9;
+    background-color: transparent;
+    border-color: #475569 !important;
+}
+
+/* Dark theme focus */
+.dark .select:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 2px rgb(96 165 250 / 0.2);
+}
+
+.dark .select option {
+    color: #f1f5f9;
+    background-color: #1e293b;
+}
+.input-control {
+    display: block;
+    width: 100%;
+    margin-top: 0.25rem;
+    padding: 0.625rem 0.75rem;
+
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: #64748b;
+    background-color: #f8fafc;
+
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 0.5rem !important;
+
+    outline: none;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    transition: color 150ms, background-color 150ms,
+    border-color 150ms, box-shadow 150ms;
+}
+
+/* Focus state */
+.input-control:focus {
+    border-color: #3b82f6;
+    outline: none;
+    box-shadow: 0 0 0 2px rgb(59 130 246 / 0.2);
+}
+
+/* Dark theme */
+.dark .input-control {
+    color: #f1f5f9;
+    background-color: transparent;
+    border-color: #475569 !important;
+}
+
+/* Dark theme focus */
+.dark .input-control:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 2px rgb(96 165 250 / 0.2);
+    
+}
+
+/* Placeholder */
+.input-control::placeholder {
+    color: #94a3b8;
+}
+
+.dark .input-control::placeholder {
+    color: #64748b;
+}
+
+/* Disabled state */
+.input-control:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+    
+}
+.label{
+    color: #212123 !important;
+}
+.dark .label{
+    color:#f1f5f9 !important;
+}

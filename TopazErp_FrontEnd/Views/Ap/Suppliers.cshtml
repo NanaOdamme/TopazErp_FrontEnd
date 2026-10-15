@@ -1,0 +1,514 @@
+﻿@{
+    ViewBag.Title = "Suppliers";
+    Layout = "~/Views/Shared/_adminApLayout.cshtml";
+}
+
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>AP - Shared Resources</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Suppliers</span>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="page-title">
+                <h2 class="text-2xl font-semibold text-gray-800">Suppliers</h2>
+                <p class="mt-1 text-sm text-gray-500">
+                    Manage supplier accounts, financial details and contacts.
+                </p>
+            </div>
+
+            @*<button type="button"
+                    @@click="clearForm"
+                    class="inline-flex items-center gap-2 rounded-lg border border-gray-200
+                           bg-white px-4 py-2.5 text-sm font-medium text-gray-700
+                           shadow-sm transition hover:bg-gray-50">
+                <i class="bi bi-arrow-clockwise"></i>
+                Refresh Form
+            </button>*@
+        </div>
+    </div>
+
+    <div id="app" class="space-y-6">
+
+        <!-- Suppliers grid -->
+        <div class="card" data-card-title="Suppliers">
+            <data-grid
+                title="Suppliers"
+                :columns="supplierColumns"
+                :data="supplierList"
+                :theme="theme"
+                row-id="id"
+                label-key="name"
+                item-label="supplier"
+                item-label-plural="suppliers"
+                add-label="Add Supplier"
+                :page-size="10"
+                :selectable="true"
+                :allow-add="false"
+                :allow-edit="false"
+                :allow-delete="false"
+            >
+            </data-grid>
+        </div>
+
+        <!-- Supplier form -->
+        <div class="card" data-card-title="Supplier Information">
+            <div class="border-b border-gray-100 px-5 py-4 sm:px-6">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white">
+                            {{ isEditing ? 'Update Supplier' : 'Add Supplier' }}
+                        </h3>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Enter supplier details and accounting information.
+                        </p>
+                    </div>
+
+                    <span class="rounded-full px-3 py-1 text-xs font-medium"
+                          :class="isEditing
+                              ? 'bg-amber-50 text-amber-700'
+                              : 'bg-blue-50 text-blue-700'">
+                        {{ isEditing ? 'Editing supplier' : 'New supplier' }}
+                    </span>
+                </div>
+            </div>
+
+            <form  class="p-5 sm:p-6">
+                <!-- Search -->
+                <div class="mb-6 rounded-xl border border-gray-200 bg-gray-50 dark:bg-transparent dark:border-slate-800 p-4">
+                    <label for="supplierSearch"
+                           class="mb-2 block text-sm font-medium text-gray-700 dark:text-white">
+                        Find an existing supplier
+                    </label>
+
+                    <div class="flex flex-col gap-3 sm:flex-row">
+                        <div class="relative flex-1">
+                            <i class="bi bi-search absolute left-3 top-1/2
+                                      -translate-y-1/2 text-gray-400"></i>
+                            <input id="supplierSearch"
+                                   v-model="supplierSearch"
+                                   type="text"
+                                   placeholder="Search by supplier name or account number..."
+                                   class="py-2.5 pl-10 pr-3 text-sm input-control"  />
+                        </div>
+
+                        <button type="button"
+                                @@click="loadSupplierFromSearch"
+                                class="rounded-lg bg-gray-800 px-4 py-2.5 text-sm
+                                       font-medium text-white hover:bg-gray-700">
+                            Find Supplier
+                        </button>
+                    </div>
+
+                    <p class="mt-2 text-xs text-gray-500 dark:text-white">
+                        Select a matching record to load it into the form.
+                    </p>
+                </div>
+
+                <!-- Basic information -->
+                <div class="mb-5 flex items-center gap-3">
+                    <div class="flex h-9 w-9 items-center justify-center
+                                rounded-lg bg-blue-50 text-blue-600 dark:bg-slate-800">
+                        <i class="bi bi-building text-lg"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800 dark:text-white">Basic Information</h4>
+                        <p class="text-xs text-gray-500">Supplier identity and classification</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+                  
+<div>
+    <label for="accountNumber" class="label mb-1.5 block text-sm font-medium text-gray-700">
+        Account Number <span class="text-red-500">*</span>
+    </label>
+    <div class="flex gap-2">
+        <input id="accountNumber"
+               v-model.trim="form.accountNumber"
+               type="text"
+               required
+               placeholder="Account number"
+               class="input-control" />
+        <button type="button"
+                @@click="generateAccountNumber"
+                title="Generate account number"
+                class="rounded-lg border border-blue-200 bg-blue-50
+                       px-3 text-blue-700 hover:bg-blue-100
+                       dark:bg-slate-800 dark:text-yellow-500 dark:border-slate-800">
+            <i class="bi bi-magic"></i>
+        </button>
+    </div>
+</div>
+
+<div>
+    <label for="supplierName"
+           class="label mb-1.5 block text-sm font-medium text-gray-700">
+        Supplier Name <span class="text-red-500">*</span>
+    </label>
+    <input id="supplierName"
+           v-model.trim="form.name"
+           type="text"
+           required
+           placeholder="Enter supplier name"
+           class="input-control" />
+</div>
+
+<div>
+    <label for="supplierGroup"
+           class="label mb-1.5 block text-sm font-medium text-gray-700">
+        Supplier Group
+    </label>
+    <select id="supplierGroup"
+            v-model="form.supplierGroupId"
+            class="select">
+        <option value="">Select supplier group</option>
+        <option v-for="group in supplierGroupList"
+                :key="group.id"
+                :value="group.id">
+            {{ group.name }}
+        </option>
+    </select>
+</div>
+
+<div>
+    <label for="supplierStatus"
+           class="label mb-1.5 block text-sm font-medium text-gray-700">
+        Status <span class="text-red-500">*</span>
+    </label>
+    <select id="supplierStatus"
+            v-model="form.statusId"
+            required
+            class="select">
+        <option value="">Select status</option>
+        <option v-for="status in statusList"
+                :key="status.id"
+                :value="status.id">
+            {{ status.name }}
+        </option>
+    </select>
+</div>
+
+<div>
+    <label for="supplierAddress"
+           class="label mb-1.5 block text-sm font-medium text-gray-700">
+        Address <span class="text-red-500">*</span>
+    </label>
+    <input id="supplierAddress"
+           v-model.trim="form.address"
+           type="text"
+           required
+           placeholder="Supplier address"
+           class="input-control" />
+</div>
+
+<div>
+    <label for="tinNumber"
+           class="label mb-1.5 block text-sm font-medium text-gray-700">
+        TIN Number <span class="text-red-500">*</span>
+    </label>
+    <input id="tinNumber"
+           v-model.trim="form.tinNumber"
+           type="text"
+           required
+           placeholder="TIN number"
+           class="input-control" />
+</div>
+
+<div>
+    <label for="vatNumber"
+           class="label mb-1.5 block text-sm font-medium text-gray-700">
+        VAT Number
+    </label>
+    <input id="vatNumber"
+           v-model.trim="form.vatNumber"
+           type="text"
+           placeholder="VAT number"
+           class="input-control" />
+</div>
+
+<div>
+    <label for="phoneNo"
+           class="label mb-1.5 block text-sm font-medium text-gray-700">
+        Contact Number <span class="text-red-500">*</span>
+    </label>
+    <input id="phoneNo"
+           v-model.trim="form.phoneNo"
+           type="tel"
+           required
+           placeholder="Supplier phone number"
+           class="input-control" />
+</div>
+
+                </div>
+<!-- Financial Information -->
+<div class="mb-5 mt-8 flex items-center gap-3 border-t border-gray-100 pt-6 dark:border-slate-700">
+    <div class="flex h-9 w-9 items-center justify-center
+                rounded-lg bg-blue-50 text-blue-600
+                dark:bg-slate-800 dark:text-blue-400">
+        <i class="bi bi-currency-exchange text-lg"></i>
+    </div>
+    <div>
+        <h4 class="font-semibold text-gray-800 dark:text-slate-100">
+            Financial Information
+        </h4>
+        <p class="text-xs text-gray-500 dark:text-slate-400">
+            Currency, balance and tax details
+        </p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+    <div>
+        <label for="currencyId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Default Currency <span class="text-red-500">*</span>
+        </label>
+        <select id="currencyId"
+                v-model="form.currencyId"
+                required
+                class="select">
+            <option value="">Select currency</option>
+            <option v-for="currency in currencyList"
+                    :key="currency.id"
+                    :value="currency.id">
+                {{ currency.currencyName }}
+            </option>
+        </select>
+    </div>
+
+    <div>
+        <label for="balance"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Balance
+        </label>
+        <input id="balance"
+               :value="form.balance"
+               type="number"
+               step="0.01"
+               disabled
+               class="input-control cursor-not-allowed opacity-70" />
+        <p class="mt-1 text-xs text-gray-400 dark:text-slate-500">
+            Read-only balance for display purposes.
+        </p>
+    </div>
+
+    <div>
+        <label for="taxOffice"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Tax Office
+        </label>
+        <input id="taxOffice"
+               v-model.trim="form.taxOffice"
+               type="text"
+               placeholder="Tax office"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="email"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Email Address <span class="text-red-500">*</span>
+        </label>
+        <input id="email"
+               v-model.trim="form.email"
+               type="email"
+               required
+               placeholder="supplier@example.com"
+               class="input-control" />
+    </div>
+</div>
+
+<!-- General Ledger Mapping -->
+<div class="mb-5 mt-8 flex items-center gap-3 border-t border-gray-100 pt-6 dark:border-slate-700">
+    <div class="flex h-9 w-9 items-center justify-center
+                rounded-lg bg-blue-50 text-blue-600
+                dark:bg-slate-800 dark:text-blue-400">
+        <i class="bi bi-journal-text text-lg"></i>
+    </div>
+    <div>
+        <h4 class="font-semibold text-gray-800 dark:text-slate-100">
+            General Ledger Mapping
+        </h4>
+        <p class="text-xs text-gray-500 dark:text-slate-400">
+            Supplier accounting control accounts
+        </p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+    <div>
+        <label for="debitAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Debit G/L <span class="text-red-500">*</span>
+        </label>
+        <input id="debitAccountId"
+               v-model.trim="form.debitAccountId"
+               type="text"
+               required
+               placeholder="Debit account"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="creditAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Credit G/L <span class="text-red-500">*</span>
+        </label>
+        <input id="creditAccountId"
+               v-model.trim="form.creditAccountId"
+               type="text"
+               required
+               placeholder="Credit account"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="vatAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            VAT G/L Number <span class="text-red-500">*</span>
+        </label>
+        <input id="vatAccountId"
+               v-model.trim="form.vatAccountId"
+               type="text"
+               required
+               placeholder="VAT account"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="irsAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            IRS G/L Number <span class="text-red-500">*</span>
+        </label>
+        <input id="irsAccountId"
+               v-model.trim="form.irsAccountId"
+               type="text"
+               required
+               placeholder="IRS account"
+               class="input-control" />
+    </div>
+</div>
+
+<!-- Residency -->
+<label class="label mt-5 inline-flex cursor-pointer items-center gap-3
+              rounded-lg border border-gray-200 px-4 py-3
+              dark:border-slate-700 dark:bg-slate-800/50">
+    <input type="checkbox"
+           v-model="form.isResident"
+           class="h-4 w-4 rounded border-gray-300 text-blue-600
+                  focus:ring-blue-500
+                  dark:border-slate-600 dark:bg-slate-700" />
+    <span>
+        <span class="block text-sm font-medium text-gray-800 dark:text-slate-100">
+            Is Resident
+        </span>
+        <span class="block text-xs text-gray-500 dark:text-slate-400">
+            Indicate whether the supplier is a resident.
+        </span>
+    </span>
+</label>
+
+<!-- Contact Person -->
+<div class="mb-5 mt-8 flex items-center gap-3 border-t border-gray-100 pt-6 dark:border-slate-700">
+    <div class="flex h-9 w-9 items-center justify-center
+                rounded-lg bg-blue-50 text-blue-600
+                dark:bg-slate-800 dark:text-blue-400">
+        <i class="bi bi-person-lines-fill text-lg"></i>
+    </div>
+    <div>
+        <h4 class="font-semibold text-gray-800 dark:text-slate-100">
+            Supplier Additional Info
+        </h4>
+        <p class="text-xs text-gray-500 dark:text-slate-400">
+            Primary contact person details
+        </p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+    <div>
+        <label for="contactPerson"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Contact Person Name
+        </label>
+        <input id="contactPerson"
+               v-model.trim="form.contactPerson"
+               type="text"
+               placeholder="Contact person name"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="contactPersonPhone"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Contact Person Phone
+        </label>
+        <input id="contactPersonPhone"
+               v-model.trim="form.contactPersonPhone"
+               type="tel"
+               placeholder="Contact person phone"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="contactPersonEmail"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Contact Person Email
+        </label>
+        <input id="contactPersonEmail"
+               v-model.trim="form.contactPersonEmail"
+               type="email"
+               placeholder="Contact person email"
+               class="input-control" />
+    </div>
+</div>
+
+
+                <!-- Actions -->
+                <div class="mt-8 flex flex-col-reverse gap-3 border-t border-gray-100 pt-6
+                            sm:flex-row sm:items-center sm:justify-between">
+                    <button type="button"
+                            @@click="clearForm"
+                            class="inline-flex items-center justify-center gap-2 rounded-lg
+                                   border border-gray-200 px-5 py-2.5 text-sm font-medium
+                                   text-gray-700 hover:bg-gray-50">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                        Clear Form
+                    </button>
+
+                    <div class="flex flex-col gap-3 sm:flex-row">
+                        <button v-if="isEditing"
+                                type="button"
+                                @@click="confirmDeleteCurrent"
+                                class="inline-flex items-center justify-center gap-2 rounded-lg
+                                       border border-red-200 px-5 py-2.5 text-sm font-medium
+                                       text-red-600 hover:bg-red-50">
+                            <i class="bi bi-trash"></i>
+                            Delete Supplier
+                        </button>
+
+                        <button @@click="saveSupplier"
+                                :disabled="isLoading"
+                                class="inline-flex items-center justify-center gap-2 rounded-lg
+                                       px-6 py-2.5 text-sm font-semibold text-white shadow-sm
+                                       transition disabled:cursor-not-allowed disabled:opacity-60"
+                                style="background-color: #0645e7;">
+                            <i v-if="isLoading"
+                               class="bi bi-arrow-repeat animate-spin"></i>
+                            <i v-else
+                               :class="isEditing ? 'bi bi-check2-circle' : 'bi bi-plus-circle'"></i>
+                            {{ isLoading
+                                ? 'Saving...'
+                                : (isEditing ? 'Update Supplier' : 'Save Supplier') }}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/shared/vue3/supplier.js" asp-append-version="true"></script>

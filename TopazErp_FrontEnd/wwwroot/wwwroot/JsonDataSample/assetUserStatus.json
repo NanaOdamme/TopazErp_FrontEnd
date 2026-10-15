@@ -1,9 +1,0 @@
-﻿[
-  {"id": 1, "name": "Active"},
-  {"id": 2, "name": "Inactive"},
-  {"id": 3, "name": "Suspended"},
-  {"id": 4, "name": "Transferred"},
-  {"id": 5, "name": "Terminated"},
-  {"id": 6, "name": "On Leave"},
-  {"id": 7, "name": "Retired"}
-]

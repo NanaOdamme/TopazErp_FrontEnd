@@ -158,6 +158,7 @@
             return {
                 emptyGuid: EMPTY_GUID,
                 theme: '#0645e7',
+                theme1: '#545454',
                 tenantId: 2,
                 accounts: clone(accounts),
                 suppliers: clone(suppliers),
@@ -643,6 +644,5 @@
     });
 
     app.use(DataGridPlugin);
-    globalThis.invoiceEntryApp = app;
-    globalThis.invoiceEntryVm = app.mount('#app');
+    app.mount('#app');
 })();

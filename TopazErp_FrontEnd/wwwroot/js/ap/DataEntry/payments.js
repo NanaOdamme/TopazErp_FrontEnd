@@ -41,7 +41,7 @@
             discount: '0',
             departments: [],
             debitAccountName: '',
-            invoiceEdithList: [],
+            invoiceEditList: [],
             chequeNumber: '',
             bankAccountId: this.emptyGuid,
             bankAccountName: '',

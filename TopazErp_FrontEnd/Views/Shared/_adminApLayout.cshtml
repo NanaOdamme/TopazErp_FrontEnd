@@ -35,6 +35,7 @@
             }
         }
     </script>
+    <link rel="stylesheet" href="~/css/input.css" asp-append-version="true" />
     <script src="~/libs/jquery/jquery.js" asp-append-version="true"></script>
 
 
@@ -46,7 +47,8 @@
         <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     </environment>
     <link rel="stylesheet" href="~/css/data-table.css" asp-append-version="true" />
-    <script src="~/js/dataTable.js" asp-append-version="true"></script>
+    <script src="~/js/components/dataTable.js" asp-append-version="true"></script>
+    <script src="~/js/components/select-input.js" asp-append-version="true"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -62,6 +64,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="~/css/shell.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/card.css" asp-append-version="true" />
+    
     @await RenderSectionAsync("Styles", required: false)
 
     <!-- Report Viewer component script-->
@@ -139,70 +142,70 @@
                 <ul class="menu-content">
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApSharedResource" asp-action="CompanyProfile">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="CompanyProfile">
                             <i class="bi bi-building"></i>
                             <span class="menu-title">Company Profile</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApSharedResource" asp-action="Departments">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Departments">
                             <i class="bi bi-diagram-3"></i>
                             <span class="menu-title">Departments</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApSharedResource" asp-action="CostCenters">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="CostCenters">
                             <i class="bi bi-pie-chart"></i>
                             <span class="menu-title">Cost Centers</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApSharedResource" asp-action="Currencies">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Currencies">
                             <i class="bi bi-currency-exchange"></i>
                             <span class="menu-title">Currencies</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApSharedResource" asp-action="BanksBranches">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="BanksBranches">
                             <i class="bi bi-bank"></i>
                             <span class="menu-title">Banks &amp; Branches</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApSharedResource" asp-action="Suppliers">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Suppliers">
                             <i class="bi bi-truck"></i>
                             <span class="menu-title">Suppliers</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApSharedResource" asp-action="SupplierGroups">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="SupplierGroups">
                             <i class="bi bi-people"></i>
                             <span class="menu-title">Supplier Groups</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApSharedResource" asp-action="SystemNumbers">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="SystemNumbers">
                             <i class="bi bi-hash"></i>
                             <span class="menu-title">System Numbers</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApSharedResource" asp-action="Statuses">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Statuses">
                             <i class="bi bi-check-circle"></i>
                             <span class="menu-title">Statuses</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApSharedResource" asp-action="DefaultGlNumbers">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="DefaultGlNumbers">
                             <i class="bi bi-journal-text"></i>
                             <span class="menu-title">Default GL Numbers</span>
                         </a>
@@ -226,35 +229,35 @@
                 <ul class="menu-content">
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApDataEntry" asp-action="OpeningBalances">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="OpeningBalances">
                             <i class="bi bi-wallet2"></i>
                             <span class="menu-title">Opening Balances</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApDataEntry" asp-action="Invoices">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Invoices">
                             <i class="bi bi-receipt"></i>
                             <span class="menu-title">Invoices</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApDataEntry" asp-action="AllPayments">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Payments">
                             <i class="bi bi-cash-stack"></i>
                             <span class="menu-title">Payments</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApDataEntry" asp-action="VoucherAction">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Vouchers">
                             <i class="bi bi-file-earmark-text"></i>
                             <span class="menu-title">Payment Vouchers</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApDataEntry" asp-action="InitDebitMemo">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="DebitMemos">
                             <i class="bi bi-file-earmark-minus"></i>
                             <span class="menu-title">Debit Memo</span>
                         </a>
@@ -264,139 +267,33 @@
                 
 
             </li>
-
-            <!-- Enterprise Data Entry -->
-
-            <li class="nav-item has-sub">
-                <a href="#" class="menu-link">
-                    <i class="bi bi-file-earmark-text"></i>
-                    <span class="menu-title">Enterprise Data Entry</span>
-                </a>
-
-               
-                <ul class="menu-content">
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApEnterpriseDataEntry" asp-action="RaiseVoucher">
-                            <i class="bi bi-file-earmark-plus"></i>
-                            <span class="menu-title">Raise Payment Voucher</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApEnterpriseDataEntry" asp-action="PostVoucher">
-                            <i class="bi bi-check2-square"></i>
-                            <span class="menu-title">Post Vouchers</span>
-                        </a>
-                    </li>
-
-                </ul>
-               
-
-            </li>
-
-            <!-- Enquiries -->
-
+         <!-- Enquiries -->
             <li class="nav-item has-sub">
                 <a href="#" class="menu-link">
                     <i class="bi bi-search"></i>
                     <span class="menu-title">Enquiries</span>
                 </a>
-
-                
                 <ul class="menu-content">
-
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="SuppliersList">
-                            <i class="bi bi-truck"></i>
-                            <span class="menu-title">Suppliers Info</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="OpeningBalances">
-                            <i class="bi bi-wallet2"></i>
-                            <span class="menu-title">Opening Balances</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="InvoiceList">
-                            <i class="bi bi-receipt"></i>
-                            <span class="menu-title">All Invoices</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="ApprovedInvoices">
-                            <i class="bi bi-check-circle"></i>
-                            <span class="menu-title">Approved Invoices</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="UnapprovedInvoices">
-                            <i class="bi bi-exclamation-circle"></i>
-                            <span class="menu-title">Invoices Not Approved</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="PaidInvoices">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="PaidInvoices">
                             <i class="bi bi-cash-coin"></i>
                             <span class="menu-title">Fully Paid Invoices</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="Aging">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Aging">
                             <i class="bi bi-hourglass-split"></i>
                             <span class="menu-title">Aging</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="CanceledInvoices">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="CanceledInvoices">
                             <i class="bi bi-x-circle"></i>
                             <span class="menu-title">Canceled Invoices</span>
                         </a>
                     </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="PaymentHistory">
-                            <i class="bi bi-clock-history"></i>
-                            <span class="menu-title">Payment History</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="CanceledPayments">
-                            <i class="bi bi-x-circle"></i>
-                            <span class="menu-title">Canceled Payments</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="WithHolding">
-                            <i class="bi bi-percent"></i>
-                            <span class="menu-title">WithHoldings</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="Vouchers">
-                            <i class="bi bi-file-earmark-text"></i>
-                            <span class="menu-title">Payment Vouchers</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApEnquiries" asp-action="DebitMemo">
-                            <i class="bi bi-file-earmark-minus"></i>
-                            <span class="menu-title">Debit Memo</span>
-                        </a>
-                    </li>
-
                 </ul>
                
 
@@ -413,14 +310,14 @@
                 <ul class="menu-content">
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApImportData" asp-action="supplierList">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Importsuppliers">
                             <i class="bi bi-people"></i>
                             <span class="menu-title">Suppliers</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApImportData" asp-action="ImportOpeningBalances">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="ImportBalances">
                             <i class="bi bi-wallet2"></i>
                             <span class="menu-title">Opening Balances</span>
                         </a>
@@ -442,7 +339,7 @@
                 <ul class="menu-content">
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApEmail" asp-action="EmailApInvoice">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="EmailInvoice">
                             <i class="bi bi-envelope-paper"></i>
                             <span class="menu-title">Email Invoice</span>
                         </a>
@@ -458,90 +355,82 @@
             <li class="nav-item has-sub">
                 <a href="#" class="menu-link">
                     <i class="bi bi-file-earmark-text"></i>
-                    <span class="menu-title">AP Reports</span>
+                    <span class="menu-title">Reports</span>
                 </a>
 
                 <ul class="menu-content">
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="Suppliers">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="SupplierReports">
                             <i class="bi bi-people"></i>
                             <span class="menu-title">Supplier List</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="Statement">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Statements">
                             <i class="bi bi-file-text"></i>
                             <span class="menu-title">Statements</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="InvoiceDetails">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="InvoiceReports">
                             <i class="bi bi-receipt"></i>
-                            <span class="menu-title">Print Invoice</span>
+                            <span class="menu-title">Invoices</span>
                         </a>
                     </li>
-
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="Invoice">
-                            <i class="bi bi-file-earmark-text"></i>
-                            <span class="menu-title">Invoice Reports</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="GrOpeningBalances">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="BalanceReports">
                             <i class="bi bi-wallet2"></i>
                             <span class="menu-title">Opening Balances</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="Payments">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="PaymentReports">
                             <i class="bi bi-clock-history"></i>
-                            <span class="menu-title">Pay History Reports</span>
+                            <span class="menu-title">Payments</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="Vouchers">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="VoucherReports">
                             <i class="bi bi-file-earmark-text"></i>
                             <span class="menu-title">Payment Vouchers</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="AgeingReport">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="AgeingReports">
                             <i class="bi bi-hourglass-split"></i>
                             <span class="menu-title">Aging Reports</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="DebitMemo">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="DebitMemoReports">
                             <i class="bi bi-file-earmark-minus"></i>
                             <span class="menu-title">Debit Memo</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="CanceledInvoices">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="CanceledInvoicesReports">
                             <i class="bi bi-x-circle"></i>
                             <span class="menu-title">Canceled Invoices</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="GlTransactions">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="GlTransactions">
                             <i class="bi bi-journal-text"></i>
                             <span class="menu-title">AP G/L Transactions</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApReports" asp-action="AuditLogs">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="AuditLogs">
                             <i class="bi bi-shield-check"></i>
                             <span class="menu-title">Audit Logs</span>
                         </a>
@@ -668,7 +557,7 @@
 <script src="~/js/account/user.js" asp-append-version="true"></script>
 <script src="~/js/app-shell.js" asp-append-version="true"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
-<script src="~/js/card.js" asp-append-version="true"></script>
+<script src="~/js/components/card.js" asp-append-version="true"></script>
 
 @await RenderSectionAsync("Scripts", required: false)
 </body>

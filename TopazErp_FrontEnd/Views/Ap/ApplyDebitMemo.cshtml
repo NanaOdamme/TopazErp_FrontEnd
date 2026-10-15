@@ -1,0 +1,232 @@
+﻿@{
+ViewBag.Title = "Apply Debit Memo";
+Layout = "~/Views/Shared/_adminApLayout.cshtml";
+}
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>AP - Data Entry</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Debit Memo</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+
+            <div class="page-title">
+                <h2 class="text-2xl font-semibold text-gray-800">
+                    Apply Debit Memo
+                </h2>
+                
+            </div>
+        </div>
+    </div>
+    <div id="app" class="card" data-card-title="Apply">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 my-2">
+
+        <div class="col-sm-4">
+            <button type="button" @@click="clearForm()" class="inline-flex items-center justify-center gap-2 rounded-lg
+                                       px-6 py-2.5 text-sm font-semibold text-white shadow-sm
+                                       transition disabled:cursor-not-allowed disabled:opacity-60 bg-blue-500 hover:bg-blue-700">
+                <i class="la la-refresh"></i> Reset Form
+                <i class="fa fa-spinner fa-spin" v-if="isLoading"></i>
+            </button>
+        </div>
+        <div class="col-sm-4 ">
+
+
+        </div>
+        <div class="col-sm-4">
+           
+        </div>
+
+    </div>
+    <div>
+    
+    <!-- form area -->
+    <form ref="debitMemo" v-on:submit.prevent="validateForm()" >
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 my-2">
+                    <div class="">
+                        <div class="">
+                            <label for="invoiceId" class="form-label"><strong>Select Supplier Invoice:</strong><span class="text-red">*</span></label>
+                            <input id="invoiceId" type="text" class="input-control" v-model="invoiceId">
+                        </div>
+                        <div class="">
+                            <label for="invoiceNo" class="form-label"><strong>Invoice No.:</strong></label>
+                            <input type="text" class="input-control" id="invoiceNo" v-model="invoiceNo" disabled="disabled">
+                        </div>
+                    </div>
+                    <div class="">
+                        <div class="">
+                            <label for="accountNo" class="form-label"><strong>Account No:</strong></label>
+                            <input type="text" class="input-control" id="accountNo" v-model="accountNo" disabled="disabled">
+                        </div>
+                        <div class="">
+                            <label for="invoiceBalance" class="form-label"><strong>Invoice Balance:</strong></label>
+                            <input type="number" class="input-control" id="invoiceBalance" v-model="invoiceBalance" disabled="disabled">
+                        </div>
+                    </div>
+                    <div class="">
+                       
+                        <div class="">
+                            <label for="invoiceCurrencyName" class="form-label"><strong>Invoice Currency:</strong></label>
+                            <input type="text" class="input-control" id="invoiceCurrencyName" v-model="invoiceCurrencyName" disabled="disabled">
+                        </div>
+                    </div>
+                    <div class="">
+                        <div class="">
+                           <label  class="label form-label"><strong>Rate:</strong></label>
+                            <input type="number" class="input-control" id="invoiceBuyRate" v-model="invoiceBuyRate" disabled="disabled">
+                        </div>
+                    </div>
+                </div>
+        <div>
+        <hr>
+        <fieldset class="mt-4">
+     
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 my-2">
+            <div class="">
+                <div class="">
+                    <label for="transactionDate" class="form-label"><strong>Payment Date:</strong></label> <span class="text-red-500">*</span>
+                    <input type="date" class="input-control" id="transactionDate" v-model="transactionDate" required>
+                </div>
+            </div> 
+            <div class="">
+                <div class="">
+                   <label  class="label form-label"><strong>Mode of Payment:</strong></label><br>
+                    <div class="input-control">
+                        <div class="form-check form-check-inline">
+                            <input
+                                class="form-check-input"
+                                type="radio"
+                                id="cash"
+                                value="Cash"
+                                v-model="modeOfPayment"
+                                @@change="toggleCash"/>
+                           <label  class="label form-check-label" for="cash">Cash</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input
+                                class="form-check-input"
+                                type="radio"
+                                id="cheque"
+                                value="Cheque"
+                                v-model="modeOfPayment"
+                                @@change="toggleCheque"/>
+                           <label  class="label form-check-label" for="cheque">Cheque</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="">
+                <div class="">
+                    <label> <strong>Currency: </strong> </label><span class="text-red-500">*</span>
+                    <input id="currencyId" v-model="currencyId" type="text" class="input-control" required/>
+                </div>
+            </div>
+            <div class="">
+                <div class="">
+                    <label> <strong>Currency Rate: </strong> </label>
+                    <input id="buyRate" v-model="buyRate" type="number" class="input-control" disabled required/>
+                </div>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 my-2">
+            <div class="">
+                <div class="">
+                    <label> <strong>Bank: </strong> </label>
+                    <input id="bankId" v-model="bankId" type="text" class="input-control"/>
+                </div>
+            </div>
+            <div class="">
+                <div class="">
+                    <label> <strong> Bank Branch: </strong> </label>
+                    <input id="branchId" v-model="bankBranchId" type="text" class="input-control" placeholder="bank branch"/>
+
+                </div>
+            </div>
+            <div class="">
+                <div class="">
+                   <label  class="label form-label" for="chequeNumber"><strong>chequeNumber:</strong></label>
+                    <input type="text" class="input-control" id="chequeNumber" v-model="chequeNumber" required>
+                </div>
+            </div>
+            <div class="">
+                <div class="">
+                   <label  class="label form-label" for="chequeDate"><strong>cheque Date:</strong></label>
+                    <input type="date" class="input-control" id="chequeDate" v-model="chequeDate" required>
+                </div>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 my-2">
+            <div class="">
+                <div class="">
+                    <label for="amount" class="form-label"><strong>Amount:</strong></label><span class="text-red-500">*</span>
+                    <input type="number" step="0.01" min="0" class="input-control" id="amount" v-model="amount" required>
+                </div>
+            </div>
+            <div class="">
+                <div class="">
+                    <label for="batchNumber" class="form-label"><strong>Batch Number</strong></label>
+                    <input type="text" class="input-control" id="batchNumber" v-model="batchNumber" placeholder="2321" disabled>
+                </div>
+            </div>
+            <div class="">
+                <div class="">
+                    <label for="description" class="form-label"><strong>Description:</strong></label><span class="text-red-500">*</span>
+                    <input type="text" class="input-control" id="description" v-model="description" required> </div>
+            </div>
+            <div class="">
+                <div class="" v-if="isOu">
+                    <label> <strong>OU (Cost Center): </strong> </label><span class="text-red-500">*</span>
+                    <input id="ouId" v-model="ouId" type="text" class="input-control" required/>
+                </div>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 my-2">
+            <div class="">
+                <div class="">
+                   <label  class="label form-label"><strong>Debit GL:</strong></label>
+                    <input id="debitGlId" v-model="debitGlId" type="text" class="input-control" required/>
+                </div>
+            </div>
+            <div class="">
+                <div class="o">
+                   <label  class="label form-label"><strong>Credit GL:</strong></label>
+                    <input id="creditGlId" v-model="creditGlId" type="text" class="input-control" required/>
+                </div>
+            </div>
+        </div>
+        </fieldset>
+    </div>
+  
+    <div class="row flex justify-end my-2">
+        <div class="col-sm-2">
+            <!-- Submit Button -->
+            <div class="d-grid">
+                <button type="submit" data-target="#addEdit"  class="inline-flex items-center justify-center gap-2 rounded-lg
+                                       px-6 py-2.5 text-sm font-semibold text-white shadow-sm
+                                       transition disabled:cursor-not-allowed disabled:opacity-60 bg-blue-500 hover:bg-blue-700" >Apply Debit Memo
+                <i class="la la-circle-o-notch spinner" v-if="isLoading"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    </form>
+    
+    </div>
+    <hr/>
+    
+   
+
+</div>
+
+    
+
+</div>
+
+
+<script>
+    window.memoId = @Html.Raw(Json.Serialize(ViewBag.MemoId ?? ""));
+</script>
+
+<script src="~/js/ap/DataEntry/apply-memo.js" asp-append-version="true"></script>

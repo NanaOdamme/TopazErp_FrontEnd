@@ -1,0 +1,52 @@
+@{
+    ViewBag.Title = "Aging";
+    Layout = "~/Views/Shared/_adminApLayout.cshtml";
+}
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>AP - Enquiries</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Aging</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+
+            <div class="page-title">
+                <h2 class="text-2xl font-semibold text-gray-800">
+                    Enquiries
+                </h2>
+                
+            </div>
+        </div>
+    </div>
+    <div id="app" class="card" data-card-title="Aging">
+      <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4 mb-5">
+          <label  class="label block text-sm font-medium text-slate-700 dark:text-white"> Aging Interval:
+              <input v-model="agingInterval" type="number"  class="input-control">
+          </label>
+          <label  class="label block text-sm font-medium text-slate-700 dark:text-white">Start Date: 
+              <input v-model="startDate" type="date"  class="input-control">
+          </label>
+      </div>  
+        <data-grid
+            ref="invoices"
+            title="Aging"
+            :columns="agingColumns"
+            :data="agingData"
+            :theme="theme"
+            row-id="id"
+            label-key="invoiceNumber"
+            item-label="invoice"
+            item-label-plural="invoices"
+            :page-size="10"
+            :selectable="true"
+            :actions="false"
+            :allow-add="false"
+            :allow-edit="false"
+            :allow-delete="false"
+            group-header="currencyCode">
+        </data-grid>
+    </div>
+</div>
+<script src="~/js/ap/Enquiries/ageing.js" asp-append-version="true"></script>
