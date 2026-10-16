@@ -1,0 +1,93 @@
+namespace TopazErp_FrontEnd.Models;
+
+public class SharedModelCollection
+{
+    
+}
+
+public class SubscriptionInfo
+{
+
+    public string BusinessId { get; set; }
+    public string BusinessLogo { get; set; }
+    public string Country { get; set; }
+    public string Network { get; set; }
+    public bool HasSubscribedToGl { get; set; }
+    public bool HasSubscribedToPayroll { get; set; }
+    public bool HasSubscribedToSchoolManager { get; set; }
+    public bool HasSubscribedToPropertyRentals { get; set; }
+    public bool HasSubscribedToAp { get; set; }
+    public bool HasSubscribedToAr { get; set; }
+    public bool HasSubscribedToFixedAssets { get; set; }
+    public bool HasSubscribedToDocumentManagement { get; set; }
+    public bool HasSubscribedToHumanResource { get; set; }
+    public bool HasSubscribedToManufacturing { get; set; }
+    public bool HasSubscribedToSupplyChain { get; set; }
+    public bool HasSubscribedToPointOfSale { get; set; }
+    public bool HasSubscribedToCoreBanking { get; set; }
+    public bool HasSubscribedToInventory { get; set; }
+    
+    public bool IsDirectDebitEnabled { get; set; }
+    public string PhoneNumber { get; set; }
+    public string PaymentMethod { get; set; } // mobile-money,bank-card
+    public string MobileMoneyChannel { get; set; } //mtn-gh-direct-debit, vodafone-gh-direct-debit
+}
+
+
+public class Currency: AuditedEntity<Guid>
+{
+    public string Name { get; set; }
+    public string Code { get; set; }
+    public string MinorName { get; set; }
+    public decimal BuyRate { get; set; }
+    public decimal SellRate { get; set; }
+    public bool IsDefault { get; set; }
+    public List<CurrencyRate> Rates { get; set; }
+}
+
+public class CurrencyRate
+{
+    public Guid Id { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public decimal SellingRate { get; set; }
+    public decimal BuyingRate { get; set; }
+}
+
+public class AuditLog
+{
+    public string UserFullName { get; set; }  
+    
+    public string UrlPath { get; set; }  
+    
+    public long UserId { get; set; }
+
+    public string ServiceName { get; set; }
+
+    public string MethodName { get; set; }
+
+    public string Parameters { get; set; }
+
+    public object ReturnValue { get; set; }
+
+    public DateTimeOffset ExecutionTime { get; set; }
+
+    public long ExecutionDuration { get; set; }
+
+    public string ClientIpAddress { get; set; }
+
+    public object ClientName { get; set; }
+
+    public object BrowserInfo { get; set; }
+
+    public object ExceptionMessage { get; set; }
+
+    public object Exception { get; set; }
+
+    public object ImpersonatorUserId { get; set; }
+
+    public object ImpersonatorTenantId { get; set; }
+
+    public object CustomData { get; set; }
+
+    public long Id { get; set; }
+}

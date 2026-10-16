@@ -9,6 +9,7 @@
     <ItemGroup>
       <PackageReference Include="MailKit" Version="4.18.1" />
       <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="9.0.20" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     </ItemGroup>
 
     <ItemGroup>
