@@ -14,23 +14,24 @@
 
     <div id="app" class="space-y-6">
         <div class="card" data-card-title="Debit Memo">
+        
             <data-grid
+                ref="creditMemo"
                 title="Debit Memos"
                 :columns="debitMemoColumns"
                 :data="debitMemoList"
+                :theme="theme"
                 row-id="id"
                 label-key="supplierName"
                 storage-key="debit-memo-register"
-                item-label="Debit Memo"
+                item-label="debit memo"
+                item-label-plural="debit memos"
                 :page-size="10"
-                :selectable="false"
-                :actions="true"
-                theme="#0645e7"
+                :selectable="true"
                 @@create="onCreate"
                 @@update="onUpdate"
                 @@delete="onDelete">
             </data-grid>
-               
         </div>
     </div>
 </div>

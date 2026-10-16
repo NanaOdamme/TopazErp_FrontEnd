@@ -5,9 +5,9 @@
     margin-top: 0.25rem;
     padding: 0.625rem 0.75rem;
 
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     line-height: 1.25rem;
-    color: #0f172a;
+    color: #000000;
     background-color: #ffffff;
 
     border: 1px solid #cbd5e1 !important;
@@ -50,9 +50,9 @@
     margin-top: 0.25rem;
     padding: 0.625rem 0.75rem;
 
-    font-size: 0.875rem;
+    font-size: 0.8rem !important;
     line-height: 1.25rem;
-    color: #64748b;
+    color: #000000;
     background-color: #f8fafc;
 
     border: 1px solid #cbd5e1 !important;

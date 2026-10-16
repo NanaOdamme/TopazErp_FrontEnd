@@ -12,7 +12,7 @@
     const today = moment().format("YYYY-MM-DD");
     const tenantId = 'tenant-demo-001';
 
-    const suppliers = [
+    const customers = [
         { id: 'b43c9c10-31a2-4d87-8e56-8bc3d94d1021', name: 'Accra Office Supplies Ltd.', accountNumber:'123eee' },
         { id: 'sup-002', name: 'Reliable Transport Services', accountNumber:'123hte' },
         { id: 'e62f4c13-6a15-4b28-8a51-6db2f9e41004', name: 'Professional IT Solutions',accountNumber:'123e74ghe' },
@@ -20,8 +20,8 @@
     ];
     const payments =[
   {
-    "supplierId": "b43c9c10-31a2-4d87-8e56-8bc3d94d1021",
-    "supplierName": "Accra Office Supplies Ltd.",
+    "customerId": "b43c9c10-31a2-4d87-8e56-8bc3d94d1021",
+    "customerName": "Accra Office Supplies Ltd.",
     "accountNumber": "ACC00000484",
     "ouId": "ou-002",
     "ouName": "SISCO/Academic",
@@ -56,8 +56,8 @@
     "tenantId": 2,
     "invoiceList": [
       {
-        "supplierId": "b43c9c10-31a2-4d87-8e56-8bc3d94d1021",
-        "supplierName": "Accra Office Supplies Ltd.",
+        "customerId": "b43c9c10-31a2-4d87-8e56-8bc3d94d1021",
+        "customerName": "Accra Office Supplies Ltd.",
         "accountNumber": "ACC00000484",
         "batchNumber": "AP1872",
         "invoiceNumber": "INV/10146AP",
@@ -140,8 +140,8 @@
     ]
   },
   {
-    "supplierId": "e62f4c13-6a15-4b28-8a51-6db2f9e41004",
-    "supplierName": "Professional IT Solutions",
+    "customerId": "e62f4c13-6a15-4b28-8a51-6db2f9e41004",
+    "customerName": "Professional IT Solutions",
     "accountNumber": "ACC00000486",
     "ouId": "ou-001",
     "ouName": "SISCO/Academic",
@@ -176,8 +176,8 @@
     "tenantId": 2,
     "invoiceList": [
       {
-        "supplierId": "e62f4c13-6a15-4b28-8a51-6db2f9e41004",
-        "supplierName": "Professional IT Solutions",
+        "customerId": "e62f4c13-6a15-4b28-8a51-6db2f9e41004",
+        "customerName": "Professional IT Solutions",
         "accountNumber": "ACC00000486",
         "batchNumber": "AP1874",
         "invoiceNumber": "INV/10148AP",
@@ -295,8 +295,8 @@
 
     const invoices = [
   {
-    "supplierId": "sup-002",
-    "supplierName": "Reliable Transport Services",
+    "customerId": "sup-002",
+    "customerName": "Reliable Transport Services",
     "accountNumber": "ACC00000483",
     "batchNumber": "AP1871",
     "invoiceNumber": "INV/10145AP",
@@ -416,8 +416,8 @@
     "id": "91fab088-28d2-4c7e-bd6b-9546f53764c7"
   },
   {
-    "supplierId": "b43c9c10-31a2-4d87-8e56-8bc3d94d1021",
-    "supplierName": "Accra Office Supplies Ltd.",
+    "customerId": "b43c9c10-31a2-4d87-8e56-8bc3d94d1021",
+    "customerName": "Accra Office Supplies Ltd.",
     "accountNumber": "ACC00000484",
     "batchNumber": "AP1872",
     "invoiceNumber": "INV/10146AP",
@@ -537,8 +537,8 @@
     "id": "a10f219e-5f36-4eb3-8f11-5b7d1f310001"
   },
   {
-    "supplierId": "sup-002",
-    "supplierName": "Reliable Transport Services",
+    "customerId": "sup-002",
+    "customerName": "Reliable Transport Services",
     "accountNumber": "ACC00000485",
     "batchNumber": "AP1873",
     "invoiceNumber": "INV/10147AP",
@@ -619,8 +619,8 @@
     "id": "a10f219e-5f36-4eb3-8f11-5b7d1f310002"
   },
   {
-    "supplierId": "e62f4c13-6a15-4b28-8a51-6db2f9e41004",
-    "supplierName": "Professional IT Solutions",
+    "customerId": "e62f4c13-6a15-4b28-8a51-6db2f9e41004",
+    "customerName": "Professional IT Solutions",
     "accountNumber": "ACC00000486",
     "batchNumber": "AP1874",
     "invoiceNumber": "INV/10148AP",
@@ -701,8 +701,8 @@
     "id": "a10f219e-5f36-4eb3-8f11-5b7d1f310003"
   },
   {
-    "supplierId": "sup-002",
-    "supplierName": "Reliable Transport Services",
+    "customerId": "sup-002",
+    "customerName": "Reliable Transport Services",
     "accountNumber": "ACC00000487",
     "batchNumber": "AP1875",
     "invoiceNumber": "INV/10149AP",
@@ -783,8 +783,8 @@
     "id": "a10f219e-5f36-4eb3-8f11-5b7d1f310004"
   },
   {
-    "supplierId": "a82b3d44-5f16-4c91-8e73-9bd4c6e61006",
-    "supplierName": "Accra Electricals and Engineering",
+    "customerId": "a82b3d44-5f16-4c91-8e73-9bd4c6e61006",
+    "customerName": "Accra Electricals and Engineering",
     "accountNumber": "ACC00000488",
     "batchNumber": "AP1876",
     "invoiceNumber": "INV/10150AP",
@@ -880,7 +880,7 @@
         { key: 'tenantId', label: 'Tenant ID', type: 'text', hidden: true, width: 74, help: 'Demo tenant identifier.'},
         {key: 'batchNumber', label: 'Batch #', type: 'text', width: 170, required: true, searchable: true},
         {key: 'paymentDate', label: 'Date', type: 'date', width: 145, required: true, searchable: true, defaultValue: today},
-        {key: 'supplierId', label: 'Supplier', type: 'select', width: 240, required: true, searchable: true, options: suppliers, display: 'name', value: 'id'},
+        {key: 'customerId', label: 'Customer', type: 'select', width: 240, required: true, searchable: true, options: customers, display: 'name', value: 'id'},
         {key: 'bankAccountId', label: 'Gl Account', type: 'select', width: 240, required: true, searchable: true, options: ledgerAccounts, display: 'accountIdentifier', value: 'id'},
         {key: 'modeOfPayment', label: 'Payment Method', type: 'text', width: 170, required: true},
         {key: 'currencyId', label: 'Currency', type: 'select', width: 170, required: true, options: currencies, display: 'name', value: 'id'},
@@ -897,7 +897,7 @@
         columns: [
             { key: 'id', label: 'ID', type: 'text', hidden: true, width: 74, help: 'Generated payment-record ID.'},
             { key: 'paymentId', label: 'Payment ID', type: 'text', hidden: true},
-            { key: 'supplierName', label: 'Supplier', type: 'text', width: 40, required: true, searchable: true,},
+            { key: 'customerName', label: 'Customer', type: 'text', width: 40, required: true, searchable: true,},
             { key: 'invoiceNumber', label: 'Invoice', type: 'text', width: 40, required: true, searchable: true,},
             { key: 'currencyName', label: 'Currency', type: 'text', width: 40, required: true, searchable: true,},
             { key: 'buyRate', label: 'Rate', type: 'number', width: 40, decimals:4},
@@ -913,7 +913,7 @@
             return {
                 theme: '#0645e7',
                theme1: '#383636',
-                suppliers,
+                customers,
                 bankAccounts,
                 currencies,
                 paymentMethods,
@@ -960,9 +960,9 @@
                 invoiceList: [],
                 invoiceId: '',
                 detailsList: [],
-                supplierList: [],
-                supplierId: '',
-                supplierName: '',
+                customerList: [],
+                customerId: '',
+                customerName: '',
                 accountNumber: '',
                 invoiceNumber: '',
                 paymentDate: moment().format("YYYY-MM-DD"),
@@ -1266,7 +1266,7 @@
                         this.paymentList.forEach(payment => {
                             payment.paymentId = payment.id;
                             payment.paymentDate = this.formatDate(payment.paymentDate);
-                            payment.displayName = `${payment.supplierName} - ${payment.batchNumber}`;
+                            payment.displayName = `${payment.customerName} - ${payment.batchNumber}`;
                             // Map details
                             this.paymentInvoiceDetailsMap[payment.id] = payment.invoiceList.map(detail => {
                                 detail.paymentId = payment.id;
@@ -1290,7 +1290,7 @@
                 return `B-${Math.floor(100000 + Math.random() * 900000)}`;
             },
           
-            getGridData(supplierId) {
+            getGridData(customerId) {
                         this.invoiceList = invoices.filter(invoice =>
                             invoice.isCanceled === false &&
                             invoice.isPosted &&
@@ -1301,7 +1301,7 @@
                             .sort((a, b) => new Date(a.projectedPayDate) - new Date(b.projectedPayDate));
 
                         const invoiceTypeIds = invoices
-                            .filter(invoice => invoice.supplierId === supplierId)
+                            .filter(invoice => invoice.customerId === customerId)
                             .map(invoice => invoice.currencyId);
 
                         this.invoiceTypeList = this.currencyList.filter(currency => invoiceTypeIds.includes(currency.id));
@@ -1335,7 +1335,7 @@
             },
             updateFilteredInvoices() {
                 const filteredInvoices = this.invoiceList.filter(invoice => {
-                    return invoice.supplierId === this.supplierId &&
+                    return invoice.customerId === this.customerId &&
                         (!this.invoiceTypeId || invoice.currencyId === this.invoiceTypeId);
                 });
                 this.filteredInvoices = filteredInvoices;
@@ -1503,41 +1503,41 @@ calculateManualAppliedAmounts() {
         this.outstandingCreditMemo = 0;
     }
 },
-            getSuppliers()
+            getCustomers()
             {
                
-                        this.supplierList = suppliers
-                        $("#supplierId").ejDropDownList({
-                            dataSource: this.supplierList,
-                            watermarkText: "Select Supplier",
+                        this.customerList = customers
+                        $("#customerId").ejDropDownList({
+                            dataSource: this.customerList,
+                            watermarkText: "Select Customer",
                             width: "100%",
                             fields: {id: "id", text: "name", value: "id"},
                             enableFilterSearch: true,
                             change: (args) => {
-                                this.supplierId = args.value;
+                                this.customerId = args.value;
                             }
                         });
             },
-            getSupplierDetails(id)
+            getCustomerDetails(id)
             {
-                return this.supplierList.find(a => a.id === id);
+                return this.customerList.find(a => a.id === id);
             },
-            setCurrentSupplier()
+            setCurrentCustomer()
             {
-                let supplierInfo = this.getSupplierDetails(this.supplierId);
-                if (supplierInfo) {
-                    this.accountNumber = supplierInfo.accountNumber;
-                    this.balance = supplierInfo.balance;
-                    this.supplierName = supplierInfo.name;
-                    this.supplierId = supplierInfo.id;
-                    this.address = supplierInfo.address;
-                    if (supplierInfo.balance < 0) {
-                        this.outstandingCreditMemo = parseFloat(supplierInfo.balance).toFixed(2);
+                let customerInfo = this.getCustomerDetails(this.customerId);
+                if (customerInfo) {
+                    this.accountNumber = customerInfo.accountNumber;
+                    this.balance = customerInfo.balance;
+                    this.customerName = customerInfo.name;
+                    this.customerId = customerInfo.id;
+                    this.address = customerInfo.address;
+                    if (customerInfo.balance < 0) {
+                        this.outstandingCreditMemo = parseFloat(customerInfo.balance).toFixed(2);
                     } else {
                         this.outstandingCreditMemo = '0.00';
                     }
-                    this.tenantId = supplierInfo.tenantId;
-                    $("#supplierId").ejDropDownList({value: supplierInfo.id});
+                    this.tenantId = customerInfo.tenantId;
+                    $("#customerId").ejDropDownList({value: customerInfo.id});
                 }
             },
             getCostCenters()
@@ -1592,9 +1592,9 @@ calculateManualAppliedAmounts() {
             },
           
 getAutomaticPaymentInvoices() {
-    // Filter invoices for the current supplier and currency.
+    // Filter invoices for the current customer and currency.
     const filteredInvoices = (this.invoiceList || []).filter(invoice => {
-        return invoice.supplierId === this.supplierId &&
+        return invoice.customerId === this.customerId &&
             (!this.invoiceTypeId || invoice.currencyId === this.invoiceTypeId);
     });
 
@@ -1765,8 +1765,8 @@ getAutomaticPaymentInvoices() {
               return;
             }
             this.paymentId = paymentInfo.id;
-            this.supplierId = paymentInfo.supplierId;
-            this.supplierName = paymentInfo.supplierName;
+            this.customerId = paymentInfo.customerId;
+            this.customerName = paymentInfo.customerName;
             this.accountNumber = paymentInfo.accountNumber;
             this.paymentDate = paymentInfo.paymentDate;
             this.balance = paymentInfo.balance;
@@ -1898,12 +1898,12 @@ getAutomaticPaymentInvoices() {
                     }
                 }
 
-                if (this.supplierId) {
-                    let supplierInfo = this.getSupplierDetails(this.supplierId);
-                    if (supplierInfo) {
-                        payload.supplierId = supplierInfo.id;
-                        payload.supplierName = supplierInfo.name;
-                        payload.accountNumber = supplierInfo.accountNumber;
+                if (this.customerId) {
+                    let customerInfo = this.getCustomerDetails(this.customerId);
+                    if (customerInfo) {
+                        payload.customerId = customerInfo.id;
+                        payload.customerName = customerInfo.name;
+                        payload.accountNumber = customerInfo.accountNumber;
                     }
                 }
                 if (this.ouId) {
@@ -2129,9 +2129,9 @@ getAutomaticPaymentInvoices() {
          
         },
         watch: {
-            supplierId(val) {
+            customerId(val) {
                 if (val) {
-                    this.setCurrentSupplier();
+                    this.setCurrentCustomer();
                     this.updateFilteredInvoices();
                     this.getGridData(val);
                 }
@@ -2263,7 +2263,7 @@ getAutomaticPaymentInvoices() {
         async mounted() {
             await this.initPayment();
             this.getBusinessProfile();
-            this.getSuppliers();
+            this.getCustomers();
             await this.getBankAccounts();
             await this.getCurrency();
             this.getCostCenters();
@@ -2273,9 +2273,8 @@ getAutomaticPaymentInvoices() {
         }
     });
 
-    if (typeof DataGridPlugin !== 'undefined') {
-        app.use(DataGridPlugin);
-    }
-
-    app.mount('#app');
+  app.use(DataGridPlugin);
+  app.use(WSelectPlugin);
+  app.mount('#app');
 })();
+

@@ -1,38 +1,5 @@
-@* ============================================================================
-   _Layout.cshtml — sidebar + header shell for TopazErp_FrontEnd.
-
-   How the menu works
-   ------------------
-   The links are ordinary Razor markup with tag helpers, exactly like:
-
-       <a asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-
-   The only extra things are the classes the CSS/JS expect:
-
-       ul.nav-menu                the list
-       li.nav-item                one row
-       li.nav-item.has-sub        this row opens a submenu
-       a.menu-link (top level)    the clickable row   →  a.menu-item inside a submenu
-       span.menu-title            the label
-       ul.menu-content            the submenu <ul> (put it right after the <a>)
-       li.nav-section             a group heading
-       span.badge.menu-badge      optional counter
-
-   That's all: no models, no services. Highlighting the current page is done by
-   wwwroot/js/shell.js, which compares each rendered href with the current URL —
-   so plain asp-controller/asp-action links work on their own. (If you prefer to
-   set it server side, just add class="active" / "open" yourself; the script
-   leaves your markup alone when no link matches.)
-
-   Contract with your pages: wrap the body in <main class="page-main"> and the
-   shell lays itself out around it. Everything else is optional.
-   ============================================================================ *@
 @{
-var title = ViewData["Title"] as string ?? "Dashboard";
-var subtitle = ViewData["Subtitle"] as string ?? "Topaz ERP";
-var userName = User?.Identity?.Name ?? "Admin";
-var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, StringSplitOptions.RemoveEmptyEntries)
-.Take(2).Select(p => char.ToUpper(p[0])));
+    var title = ViewData["Title"] as string ?? "TopazERP";
 }
 <!DOCTYPE html>
 <html lang="en" class="h-full">
@@ -49,6 +16,7 @@ var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, String
             storagePrefix: 'shell'     // localStorage keys: shell:collapsed, shell:w, shell:theme
         };
     </script>
+    
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
     <script>
         tailwind.config = {
@@ -67,6 +35,7 @@ var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, String
             }
         }
     </script>
+    <link rel="stylesheet" href="~/css/input.css" asp-append-version="true" />
     <script src="~/libs/jquery/jquery.js" asp-append-version="true"></script>
 
 
@@ -77,7 +46,9 @@ var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, String
     <environment names="Production">
         <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     </environment>
-
+    <link rel="stylesheet" href="~/css/data-table.css" asp-append-version="true" />
+    <script src="~/js/components/dataTable.js" asp-append-version="true"></script>
+    <script src="~/js/components/select-input.js" asp-append-version="true"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -93,6 +64,7 @@ var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, String
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="~/css/shell.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/card.css" asp-append-version="true" />
+    
     @await RenderSectionAsync("Styles", required: false)
 
     <!-- Report Viewer component script-->
@@ -101,7 +73,7 @@ var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, String
     <!-- Syncfusion EJ1 / Essential JavaScript -->
     <script src="~/ejassets/scripts/jsrender.min.js"></script>
     <script src="~/ejassets/scripts/ej.web.all.min.js"></script>
-
+    <link href="~/ejassets/ejthemes/office-365/ej.web.all.min.css" rel="stylesheet" />
     <!-- Moment -->
     <script src="https://cdn.jsdelivr.net/npm/moment@2.30.1/moment.min.js"></script>
 
@@ -170,70 +142,70 @@ var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, String
                 <ul class="menu-content">
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="CompanyProfile">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="CompanyProfile">
                             <i class="bi bi-building"></i>
                             <span class="menu-title">Company Profile</span>
                         </a>
                     </li>
 
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Departments">
+                    @*<li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="Departments">
                             <i class="bi bi-diagram-3"></i>
                             <span class="menu-title">Departments</span>
                         </a>
-                    </li>
+                    </li>*@
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="CostCenters">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="CostCenters">
                             <i class="bi bi-pie-chart"></i>
                             <span class="menu-title">Cost Centers</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Currencies">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="Currencies">
                             <i class="bi bi-currency-exchange"></i>
                             <span class="menu-title">Currencies</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="BanksBranches">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="BanksBranches">
                             <i class="bi bi-bank"></i>
                             <span class="menu-title">Banks &amp; Branches</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Suppliers">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="Customers">
                             <i class="bi bi-truck"></i>
-                            <span class="menu-title">Suppliers</span>
+                            <span class="menu-title">Customers</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="SupplierGroups">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="CustomerGroups">
                             <i class="bi bi-people"></i>
-                            <span class="menu-title">Supplier Groups</span>
+                            <span class="menu-title">Customer Groups</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="SystemNumbers">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="SystemNumbers">
                             <i class="bi bi-hash"></i>
                             <span class="menu-title">System Numbers</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Statuses">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="Statuses">
                             <i class="bi bi-check-circle"></i>
                             <span class="menu-title">Statuses</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="DefaultGlNumbers">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="DefaultGlNumbers">
                             <i class="bi bi-journal-text"></i>
                             <span class="menu-title">Default GL Numbers</span>
                         </a>
@@ -257,37 +229,32 @@ var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, String
                 <ul class="menu-content">
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="OpeningBalances">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="OpeningBalances">
                             <i class="bi bi-wallet2"></i>
                             <span class="menu-title">Opening Balances</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Invoices">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="Invoices">
                             <i class="bi bi-receipt"></i>
                             <span class="menu-title">Invoices</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="AllPayments">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="Payments">
                             <i class="bi bi-cash-stack"></i>
                             <span class="menu-title">Payments</span>
                         </a>
                     </li>
 
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="VoucherAction">
-                            <i class="bi bi-file-earmark-text"></i>
-                            <span class="menu-title">Payment Vouchers</span>
-                        </a>
-                    </li>
+            
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="InitDebitMemo">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="CreditMemos">
                             <i class="bi bi-file-earmark-minus"></i>
-                            <span class="menu-title">Debit Memo</span>
+                            <span class="menu-title">Credit Memo</span>
                         </a>
                     </li>
 
@@ -295,139 +262,33 @@ var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, String
                 
 
             </li>
-
-            <!-- Enterprise Data Entry -->
-
-            <li class="nav-item has-sub">
-                <a href="#" class="menu-link">
-                    <i class="bi bi-file-earmark-text"></i>
-                    <span class="menu-title">Enterprise Data Entry</span>
-                </a>
-
-               
-                <ul class="menu-content">
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="RaiseVoucher">
-                            <i class="bi bi-file-earmark-plus"></i>
-                            <span class="menu-title">Raise Payment Voucher</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="PostVoucher">
-                            <i class="bi bi-check2-square"></i>
-                            <span class="menu-title">Post Vouchers</span>
-                        </a>
-                    </li>
-
-                </ul>
-               
-
-            </li>
-
-            <!-- Enquiries -->
-
+         <!-- Enquiries -->
             <li class="nav-item has-sub">
                 <a href="#" class="menu-link">
                     <i class="bi bi-search"></i>
                     <span class="menu-title">Enquiries</span>
                 </a>
-
-                
                 <ul class="menu-content">
-
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="SuppliersList">
-                            <i class="bi bi-truck"></i>
-                            <span class="menu-title">Suppliers Info</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="OpeningBalances">
-                            <i class="bi bi-wallet2"></i>
-                            <span class="menu-title">Opening Balances</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="InvoiceList">
-                            <i class="bi bi-receipt"></i>
-                            <span class="menu-title">All Invoices</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="ApprovedInvoices">
-                            <i class="bi bi-check-circle"></i>
-                            <span class="menu-title">Approved Invoices</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="UnapprovedInvoices">
-                            <i class="bi bi-exclamation-circle"></i>
-                            <span class="menu-title">Invoices Not Approved</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="PaidInvoices">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="PaidInvoices">
                             <i class="bi bi-cash-coin"></i>
                             <span class="menu-title">Fully Paid Invoices</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Aging">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="Aging">
                             <i class="bi bi-hourglass-split"></i>
                             <span class="menu-title">Aging</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="CanceledInvoices">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="CanceledInvoices">
                             <i class="bi bi-x-circle"></i>
                             <span class="menu-title">Canceled Invoices</span>
                         </a>
                     </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="PaymentHistory">
-                            <i class="bi bi-clock-history"></i>
-                            <span class="menu-title">Payment History</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="CanceledPayments">
-                            <i class="bi bi-x-circle"></i>
-                            <span class="menu-title">Canceled Payments</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="WithHolding">
-                            <i class="bi bi-percent"></i>
-                            <span class="menu-title">WithHoldings</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Vouchers">
-                            <i class="bi bi-file-earmark-text"></i>
-                            <span class="menu-title">Payment Vouchers</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="DebitMemo">
-                            <i class="bi bi-file-earmark-minus"></i>
-                            <span class="menu-title">Debit Memo</span>
-                        </a>
-                    </li>
-
                 </ul>
                
 
@@ -444,14 +305,14 @@ var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, String
                 <ul class="menu-content">
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="supplierList">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="ImportCustomers">
                             <i class="bi bi-people"></i>
-                            <span class="menu-title">Suppliers</span>
+                            <span class="menu-title">Customers</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="ImportOpeningBalances">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="ImportBalances">
                             <i class="bi bi-wallet2"></i>
                             <span class="menu-title">Opening Balances</span>
                         </a>
@@ -473,7 +334,7 @@ var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, String
                 <ul class="menu-content">
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="ApEmail" asp-action="EmailApInvoice">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="EmailInvoice">
                             <i class="bi bi-envelope-paper"></i>
                             <span class="menu-title">Email Invoice</span>
                         </a>
@@ -489,90 +350,82 @@ var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, String
             <li class="nav-item has-sub">
                 <a href="#" class="menu-link">
                     <i class="bi bi-file-earmark-text"></i>
-                    <span class="menu-title">AP Reports</span>
+                    <span class="menu-title">Reports</span>
                 </a>
 
                 <ul class="menu-content">
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Suppliers">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="Customers">
                             <i class="bi bi-people"></i>
-                            <span class="menu-title">Supplier List</span>
+                            <span class="menu-title">Customer List</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Statement">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="Statements">
                             <i class="bi bi-file-text"></i>
                             <span class="menu-title">Statements</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="InvoiceDetails">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="InvoiceReports">
                             <i class="bi bi-receipt"></i>
-                            <span class="menu-title">Print Invoice</span>
+                            <span class="menu-title">Invoices</span>
                         </a>
                     </li>
-
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Invoice">
-                            <i class="bi bi-file-earmark-text"></i>
-                            <span class="menu-title">Invoice Reports</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="GrOpeningBalances">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="BalanceReports">
                             <i class="bi bi-wallet2"></i>
                             <span class="menu-title">Opening Balances</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Payments">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="PaymentReports">
                             <i class="bi bi-clock-history"></i>
-                            <span class="menu-title">Pay History Reports</span>
+                            <span class="menu-title">Payments</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Vouchers">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="VoucherReports">
                             <i class="bi bi-file-earmark-text"></i>
                             <span class="menu-title">Payment Vouchers</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="AgeingReport">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="AgeingReports">
                             <i class="bi bi-hourglass-split"></i>
                             <span class="menu-title">Aging Reports</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="DebitMemo">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="DebitMemoReports">
                             <i class="bi bi-file-earmark-minus"></i>
                             <span class="menu-title">Debit Memo</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="CanceledInvoices">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="CanceledInvoicesReports">
                             <i class="bi bi-x-circle"></i>
                             <span class="menu-title">Canceled Invoices</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="GlTransactions">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="GlTransactions">
                             <i class="bi bi-journal-text"></i>
                             <span class="menu-title">AP G/L Transactions</span>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="AuditLogs">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="AuditLogs">
                             <i class="bi bi-shield-check"></i>
                             <span class="menu-title">Audit Logs</span>
                         </a>
@@ -590,10 +443,9 @@ var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, String
     @* signed-in user + rail expand button *@
     <div class="sidebar-foot">
         <div class="sidebar-user">
-            <span class="sidebar-avatar">@initials</span>
+            <span class="sidebar-avatar" id="initials"></span>
             <span class="sidebar-user-text">
-                    <span class="sidebar-user-name">@userName</span>
-                    <span class="sidebar-user-role">@(User?.IsInRole("Admin") == true ? "Administrator" : "User")</span>
+                    <span class="sidebar-user-name" id="name"></span>
                 </span>
             <form class="sidebar-signout" asp-area="" asp-controller="Home" asp-action="Index" onsubmit="return false">
                 <button type="submit" class="sidebar-icon-btn" title="Sign out"><i class="bi bi-box-arrow-right" aria-hidden="true"></i></button>
@@ -611,7 +463,7 @@ var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, String
 <div class="sidebar-backdrop" data-action="backdrop" hidden></div>
 
 @* ══════════════════════════════ HEADER ══════════════════════════════ *@
-<header class="app-topbar bg-sky-600 dark:bg-sky-950" id="appTopbar">
+<header class="app-topbar bg-blue-500 dark:bg-blue-950" id="appTopbar">
     <button type="button" class="topbar-btn" data-action="toggle-sidebar" aria-label="Toggle navigation" aria-haspopup="true">
         <i class="bi bi-list" aria-hidden="true"></i>
     </button>
@@ -621,8 +473,7 @@ var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, String
 
     <div class="topbar-search" data-search-wrap>
 
-        <input type="search" id="topbarSearch" data-search-input autocomplete="off"
-               placeholder="Search anything…" aria-label="Search" />
+        <input type="search" id="topbarSearch" data-search-input autocomplete="on" placeholder="Search anything…" aria-label="Search"/>
 
         <div class="dropdown-panel search-results" id="searchResults" hidden></div>
     </div>
@@ -636,71 +487,45 @@ var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, String
             <i class="bi bi-moon-stars" data-theme-icon aria-hidden="true"></i>
         </button>
 
-        @*<div class="dropdown" data-dropdown="notif">
-                <button type="button" class="topbar-btn" data-toggle aria-label="Notifications" aria-haspopup="menu">
-                    <i class="bi bi-bell" aria-hidden="true"></i>
-                    @if (unreadCount > 0)
-                    {
-                        <span class="topbar-badge" data-unread-count>@unreadCount</span>
-                    }
-                </button>
-                <div class="dropdown-panel dropdown-panel-notif" role="menu">
-                    <div class="dropdown-head">
-                        <p>Notifications</p>
-                        <button type="button" data-action="mark-read">Mark all read</button>
-                    </div>
-                    <ul class="notif-list">
-                        @foreach (var n in notifications)
-                        {
-                            <li class="@(n.Unread ? "is-unread" : "")">
-                                <span class="notif-icon tone-@n.Tone"><i class="bi @n.Icon" aria-hidden="true"></i></span>
-                                <span class="notif-body">
-                                    <span class="notif-title">@n.Title <i class="notif-dot" aria-hidden="true"></i></span>
-                                    <span class="notif-text">@n.Body</span>
-                                    <span class="notif-time">@n.Time</span>
-                                </span>
-                            </li>
-                        }
-                    </ul>
-                    <div class="dropdown-foot"><a href="#">View all notifications</a></div>
-                </div>
-            </div>*@
+      
 
         <span class="topbar-divider"></span>
 
-        @* Hello Admin *@
-        <div class="dropdown" data-dropdown="user">
-            <button type="button" class="topbar-user" data-toggle aria-haspopup="menu">
-                <span class="topbar-avatar">@initials</span>
-                <span class="topbar-user-text">
+        
+        
+            <div class="dropdown" data-dropdown="user">
+                <button type="button" class="topbar-user" data-toggle aria-haspopup="menu">
+                    <span class="topbar-avatar" id="userInitials"></span>
+                    <span class="topbar-user-text">
                         <span class="hello">Hello,</span>
-                        <span class="name">@userName</span>
+                        <span class="name" id="userFullName"> Loading user...</span>
+                       
                     </span>
-                <i class="bi bi-chevron-down topbar-caret" aria-hidden="true"></i>
-            </button>
-            <div class="dropdown-panel dropdown-panel-user" role="menu">
-                <div class="dropdown-head user-head">
-                    <span class="topbar-avatar lg">@initials</span>
-                    <span class="user-head-text">
-                            <span class="name">@userName</span>
-                            <span class="email">@(User?.FindFirst("email")?.Value ?? "admin@topaz.erp")</span>
-                            <span class="role">@(User?.IsInRole("Admin") == true ? "Administrator" : "User")</span>
+                    <i class="bi bi-chevron-down topbar-caret" aria-hidden="true"></i>
+                </button>
+                <div class="dropdown-panel dropdown-panel-user" role="menu">
+                    <div class="dropdown-head user-head">
+                        <span class="topbar-avatar lg" id="userInitialsLg"></span>
+                        <span class="user-head-text">
+                            <span class="name" id="userFullNameLg"></span>
+                            <span class="email" id="userEmail"></span>
+                            <span class="role" id="userRole"></span>
                         </span>
-                </div>
-                <ul class="dropdown-menu-list">
-                    <li><a asp-area="" asp-controller="Manage" asp-action="Profile"><i class="bi bi-person-circle"></i>My Profile</a></li>
-                    <li><a asp-area="" asp-controller="Manage" asp-action="Users"><i class="bi bi-sliders"></i>Manage Users</a></li>
-                    <li><a asp-area="" asp-controller="Manage" asp-action="UpdatePassword"><i class="bi bi-key"></i>Update Password</a></li>
-                    <li><a asp-area="" asp-controller="Manage" asp-action="Modules"><i class="bi bi-gear"></i>Modules</a></li>
-                    <li><a href="#"><i class="bi bi-question-circle"></i>Help &amp; Support</a></li>
-                </ul>
-                <div class="dropdown-foot signout">
-                    <a asp-area="" asp-controller="Account" asp-action="Login" >
-                        <button ><i class="bi bi-box-arrow-right"></i>Sign out</button>
-                    </a>
+                    </div>
+                    <ul class="dropdown-menu-list">
+                        <li><a asp-area="" asp-controller="Manage" asp-action="Profile"><i class="bi bi-person-circle"></i>My Profile</a></li>
+                        <li><a asp-area="" asp-controller="Manage" asp-action="Users"><i class="bi bi-sliders"></i>Manage Users</a></li>
+                        <li><a asp-area="" asp-controller="Manage" asp-action="UpdatePassword"><i class="bi bi-key"></i>Update Password</a></li>
+                        <li><a asp-area="" asp-controller="Manage" asp-action="Modules"><i class="bi bi-gear"></i>Modules</a></li>
+                        <li><a href="#"><i class="bi bi-question-circle"></i>Help &amp; Support</a></li>
+                    </ul>
+                    <div class="dropdown-foot signout">
+                        <a asp-area="" asp-controller="Account" asp-action="Login" >
+                            <button ><i class="bi bi-box-arrow-right"></i>Sign out</button>
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
     </div>
 
     <div class="topbar-mobile-search" id="topbarMobileSearch" hidden>
@@ -714,6 +539,7 @@ var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, String
     <div class="page-container">
         @RenderBody()
     </div>
+    
 </main>
 
 <footer class="page-footer">
@@ -723,9 +549,12 @@ var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, String
     </div>
 </footer>
 
+<script src="~/js/account/user.js" asp-append-version="true"></script>
 <script src="~/js/app-shell.js" asp-append-version="true"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
-<script src="~/js/card.js" asp-append-version="true"></script>
+<script src="~/js/components/card.js" asp-append-version="true"></script>
+
 @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+
