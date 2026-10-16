@@ -1,0 +1,83 @@
+@{
+    ViewBag.Title = "Statements";
+    Layout = "~/Views/Shared/_adminApLayout.cshtml";
+}
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>AP - Reports</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Statements</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+
+            <div class="page-title">
+                <h2 class="text-2xl font-semibold text-gray-800">
+                    Statements
+                </h2>
+                
+            </div>
+        </div>
+    </div>
+    <div id="app" class="card" data-card-title="Reports - Statements">
+        <div class="space-y-3">
+            <label class="label block text-sm">
+                Select Report Type:
+            </label>
+            <div  class="flex flex-wrap cursor-pointer items-center gap-3 rounded-lg py-3 transition-colors">
+           
+                <!-- Type 1 -->
+                <label for="type1"
+                       class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-blue-300 hover:bg-blue-50/50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-500 dark:hover:bg-slate-800">
+                    <input
+                        id="type1"
+                        type="radio"
+                        value="type1"
+                        v-model="reportType"
+                        class="input-control" />
+                    <span>Type 1</span>
+                </label>
+
+                <!-- Type 2 -->
+                <label for="type2"
+                       class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-blue-300 hover:bg-blue-50/50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-500 dark:hover:bg-slate-800">
+                    <input
+                        id="type2"
+                        type="radio"
+                        value="type2"
+                        v-model="reportType"
+                        class="input-control" />
+                    <span>Type 2</span>
+                </label>
+
+                <!-- Type 3 -->
+                <label for="type3"
+                       class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-blue-300 hover:bg-blue-50/50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-500 dark:hover:bg-slate-800">
+                    <input
+                        id="type3"
+                        type="radio"
+                        value="type3"
+                        v-model="reportType"
+                        class="input-control" />
+                    <span>Type 3</span>
+                </label>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4 mb-5">
+            <label  class="label block text-sm">
+                Start Date: <input id="startDate" v-model="startDate"  type="date" class="input-control" />
+            </label>
+            <label  class="label block text-sm">
+                End Date: <input id="endDate" v-model="endDate"  type="date" class="input-control" />
+            </label>
+        
+        </div>
+        <hr>
+        <div class="bg-gray-50 p-4 my-4 rounded-xl dark:bg-slate-800">
+            <div style="height:auto;width:auto;min-height:500px;" id="reportView">  </div>
+        </div>
+      
+    </div>
+</div>
+<script src="~/js/ap/Reports/statements.js" asp-append-version="true"></script>

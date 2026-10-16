@@ -157,7 +157,7 @@
             const defaultLiability = accounts.find((account) => account.id === 'acc-006');
             return {
                 emptyGuid: EMPTY_GUID,
-                theme: '#0645e7',
+                theme: '#f88500',
                 theme1: '#545454',
                 tenantId: 2,
                 accounts: clone(accounts),

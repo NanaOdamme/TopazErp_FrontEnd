@@ -1,12 +1,19 @@
-﻿
+﻿using Microsoft.AspNetCore.Mvc;
 
-using Microsoft.AspNetCore.Mvc;
 
 namespace TopazErp_FrontEnd.Controllers
 {
     
     public class ApController : Controller
     {
+        private readonly IWebHostEnvironment _env;
+      
+
+        public ApController(IWebHostEnvironment env)
+        {
+            _env = env;
+        }
+
         //shared
         public IActionResult DefaultGlNumbers()
         {
@@ -210,6 +217,26 @@ namespace TopazErp_FrontEnd.Controllers
             {
                 return View();
             }
+            
+            
+            public async Task<IActionResult> DownloadSuppliersUploadSample()
+            {
+                var wwwRoot = _env.WebRootPath;
+
+                byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(Path.Combine(wwwRoot + "/DataSample/", "Suppliers.xlsx"));
+                return File(fileBytes, "application/ms-excel", "Suppliers.xlsx");
+
+            }
+            public async Task<IActionResult> DownloadOpeningBalancesUploadSample()
+            {
+                var wwwRoot = _env.WebRootPath;
+
+                byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(Path.Combine(wwwRoot + "/DataSample/", "ApOpeningBalance.xlsx"));
+                return File(fileBytes, "application/ms-excel", "ApOpeningBalance.xlsx");
+
+            }
+          
+       
     }
    
     

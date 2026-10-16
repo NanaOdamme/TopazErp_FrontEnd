@@ -5,7 +5,7 @@ const app = Vue.createApp({
             payload: {},
             startDate: moment().format("YYYY-MM-DD"),
             agingInterval: 30,
-            theme: '#0645e7',
+            theme: '#f88500',
             agingData: [
                 {
                     currencyCode: "GHS",

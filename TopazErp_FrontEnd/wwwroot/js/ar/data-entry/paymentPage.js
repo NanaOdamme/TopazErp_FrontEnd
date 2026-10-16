@@ -911,7 +911,7 @@
     const app = Vue.createApp({
         data() {
             return {
-                theme: '#0645e7',
+              theme: '#f88500',
                theme1: '#383636',
                 customers,
                 bankAccounts,

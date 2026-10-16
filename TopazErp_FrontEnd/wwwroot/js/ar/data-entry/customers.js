@@ -1,7 +1,7 @@
 const app = Vue.createApp({
     data() {
         return {
-            theme: '#0645e7',
+            theme: '#f88500',
             isLoading: false,
             isShimmerLoading: false,
             isEditing: false,

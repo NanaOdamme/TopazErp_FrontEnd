@@ -365,6 +365,7 @@ const app = Vue.createApp({
 
             creditMemoList: initialCreditMemos,
             today: moment().format("YYYY-MM-DD"),
+            theme: '#f88500',
            
         };
     },

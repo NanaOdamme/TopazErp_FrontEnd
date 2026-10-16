@@ -1,0 +1,44 @@
+@{
+    ViewBag.Title = "Suppliers";
+    Layout = "~/Views/Shared/_adminApLayout.cshtml";
+}
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>AP - Reports</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Supplier List</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+
+            <div class="page-title">
+                <h2 class="text-2xl font-semibold text-gray-800">
+                    Supplier List
+                </h2>
+                
+            </div>
+        </div>
+    </div>
+    <div id="app" class="card" data-card-title="Reports - Suppliers">
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4 mb-5">
+            <label  class="label block text-sm">
+            Select Report Type: <select class="select" v-model="reportType" ref="reportType">
+                <option value="summary-report"> Type 1 </option>
+                <option value="supplier-group"> Type 2 </option>
+            </select></label>
+            <label  class="label block text-sm">
+                Select Report Type: <select class="select" v-model="supplierGroupId" ref="supplierGroup">
+                    <option> Select Supplier Group</option>
+                    <option v-for="group in supplierGroupList" :value="group.id"> {{ group.name }} </option>
+                </select>
+            </label>
+        
+        </div>
+        <hr>
+        <div class="bg-gray-50 p-4 my-4 rounded-xl dark:bg-slate-800">
+            <div style="height:auto;width:auto;min-height:500px;" id="reportView">  </div>
+        </div>
+    </div>
+</div>
+<script src="~/js/ap/Reports/suppliers.js" asp-append-version="true"></script>

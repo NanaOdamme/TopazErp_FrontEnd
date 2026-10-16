@@ -311,7 +311,7 @@
     const app = Vue.createApp({
         data() {
             return {
-                theme: '#0645e7',
+                theme: '#f88500',
                 emptyGuid: EMPTY_GUID,
                 tenantId: DEMO_TENANT_ID,
 

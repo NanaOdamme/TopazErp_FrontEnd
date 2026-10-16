@@ -2,7 +2,7 @@ const app = Vue.createApp({
     data() {
         return {
             isShimmerLoading: false,
-            theme: '#0645e7',
+            theme: '#f88500',
 
             // Mock tenant ID for local frontend testing.
             currentTenantId: 1,

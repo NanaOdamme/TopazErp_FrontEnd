@@ -4,6 +4,13 @@ namespace TopazErp_FrontEnd.Controllers
 {
     public class ArController : Controller
     {
+        private readonly IWebHostEnvironment _env;
+
+        public ArController(IWebHostEnvironment env)
+        {
+            _env = env;
+        }
+
         public IActionResult DefaultGlNumbers()
         {
             return View();
@@ -119,13 +126,31 @@ namespace TopazErp_FrontEnd.Controllers
         }
          
             //import
-            public ActionResult ImportSuppliers()
+            public ActionResult ImportCustomers()
             {
                 return View();
             }
             public ActionResult ImportBalances()
             {
                 return View();
+            }
+
+            public async Task<IActionResult> DownloadCustomersUploadSample()
+            {
+                var wwwRoot = _env.WebRootPath;
+
+                byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(Path.Combine(wwwRoot + "/DataSample/", "Customers.xlsx"));
+                return File(fileBytes, "application/ms-excel", "Customers.xlsx");
+
+            }
+        
+            public async Task<IActionResult> DownloadOpeningBalanceUploadSample() 
+            {
+                var wwwRoot = _env.WebRootPath;
+
+                byte[] fileBytes = await System.IO.File.ReadAllBytesAsync(Path.Combine(wwwRoot + "/DataSample/", "ArOpeningBalance.xlsx"));
+                return File(fileBytes, "application/ms-excel", "ArOpeningBalance.xlsx");
+
             }
             public ActionResult EmailInvoice()
             {
