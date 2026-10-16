@@ -71,7 +71,7 @@ public class AccountController: Controller
                 
                 await HttpContext.SignInAsync(claimsPrincipal);
             
-                return RedirectToAction("ModuleManager", "Account");
+                return RedirectToAction("Modules", "Manage");
             }
             
 

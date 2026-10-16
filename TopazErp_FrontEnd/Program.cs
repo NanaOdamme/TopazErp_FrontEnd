@@ -18,16 +18,12 @@ builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSession();
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
 
 builder.Services.AddHttpClient();
 
 builder.Services.AddScoped<ITopazErpApi, TopazErpApi>();
 builder.Services.AddScoped<ClaimsHelper>();
-
-// Add services to the container.
-builder.Services.AddControllersWithViews()
-                .AddRazorRuntimeCompilation();
 
 // Configure Kestrel to listen on port 5305
 builder.WebHost.UseUrls("http://localhost:5301");

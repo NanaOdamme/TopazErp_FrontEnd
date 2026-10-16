@@ -27,8 +27,7 @@
             <form action="@Url.Action("AttemptLogin", "Account")" method="post">
                
                 <div class="mb-3">
-                    <label for="tenancyName"
-                           class="mb-2 block text-sm font-medium text-slate-700">
+                    <label for="tenancyName" class="mb-2 block text-sm font-medium text-slate-700">
                        Account ID
                     </label>
 
@@ -46,8 +45,7 @@
             
 
                 <div class="mb-5">
-                    <label for="username"
-                           class="mb-2 block text-sm font-medium text-slate-700">
+                    <label for="username" class="mb-2 block text-sm font-medium text-slate-700">
                         Username or email
                     </label>
 
@@ -115,6 +113,7 @@
                 </div>
 
                 <button type="submit"
+                        v-on:click="saveAccountNameToLocalStorage"
                         :disabled="isLoading"
                         class="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70">
 
