@@ -29,6 +29,9 @@ builder.Services.AddScoped<ClaimsHelper>();
 builder.Services.AddControllersWithViews()
                 .AddRazorRuntimeCompilation();
 
+// Configure Kestrel to listen on port 5305
+builder.WebHost.UseUrls("http://localhost:5301");
+
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.Limits.MaxRequestBodySize = int.MaxValue;
