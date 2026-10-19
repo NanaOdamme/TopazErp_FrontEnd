@@ -542,7 +542,7 @@
             hits.map(function (h, i) {
                 return '<a href="' + h.href + '" class="search-result' + (i === 0 ? ' is-active' : '') + '" data-search-result>' +
                     '<i class="' + h.icon + '" aria-hidden="true"></i>' +
-                    '<span class="search-result-text"><span class="label">' + escapeHtml(h.label) + '</span>' +
+                    '<span class="search-result-text"><span <label class="label ">' + escapeHtml(h.label) + '</span>' +
                     '<span class="path">' + escapeHtml(h.trail) + '</span></span>' +
                     '<i class="bi bi-arrow-return-left" aria-hidden="true"></i></a>';
             }).join('');
@@ -564,7 +564,7 @@
                     box.innerHTML = rows.map(function (r, i) {
                         return '<a href="' + r.url + '" class="search-result' + (i === 0 ? ' is-active' : '') + '" data-search-result>' +
                             '<i class="' + (r.icon || 'bi bi-link-45deg') + '" aria-hidden="true"></i>' +
-                            '<span class="search-result-text"><span class="label">' + escapeHtml(r.label) + '</span>' +
+                            '<span class="search-result-text"><span <label class="label ">' + escapeHtml(r.label) + '</span>' +
                             '<span class="path">' + escapeHtml(r.subtitle || '') + '</span></span></a>';
                     }).join('');
                     box.hidden = !rows.length;

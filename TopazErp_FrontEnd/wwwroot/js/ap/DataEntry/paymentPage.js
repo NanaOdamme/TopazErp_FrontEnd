@@ -993,7 +993,7 @@
                 discount: '0',
                 departments: [],
                 debitAccountName: '',
-                invoiceEdithList: [],
+                invoiceEditList: [],
                 chequeNumber: '',
                 bankAccountId: this.emptyGuid,
                 bankAccountName: '',
@@ -2273,9 +2273,8 @@ getAutomaticPaymentInvoices() {
         }
     });
 
-    if (typeof DataGridPlugin !== 'undefined') {
-        app.use(DataGridPlugin);
-    }
-
+   
+  app.use(DataGridPlugin);
+  app.use(WSelectPlugin);
     app.mount('#app');
 })();

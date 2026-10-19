@@ -1,0 +1,274 @@
+@{
+    ViewBag.Title = "Payment Voucher";
+    Layout = "~/Views/Shared/_adminApLayout.cshtml";
+}
+
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="mb-2 flex items-center gap-2 text-sm text-gray-500">
+            <span>AP - Data Entry</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="font-medium text-blue-600">Payment Voucher</span>
+        </div>
+    </div>
+
+    <div id="app" class="space-y-6">
+        <div class="card" data-card-title="Payment Voucher">
+        
+            <form ref="voucherForm" v-on:submit.prevent="validateAndSaveVoucher()" class="space-y-6">
+                <!-- Supplier invoice search -->
+                <section class="rounded-xl border border-gray-200 p-4 dark:border-slate-700 sm:p-5">
+                    <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+                        <div>
+                            <w-select
+                                v-model="invoiceId"
+                                :options="invoiceList"
+                                display-key="displayText"
+                                value-key="id"
+                                label="Search Supplier Invoice:"
+                                required>
+                            </w-select>
+                        </div>
+
+                        <div class="flex flex-col justify-end">
+                            <p class="mb-1.5 text-sm font-semibold text-gray-700 dark:text-slate-300">File Ref</p>
+                            <div class="flex min-h-[42px] items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                                {{ referenceNumber || 'Not selected' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="invoiceDataTable" class="mt-5"></div>
+                </section>
+
+                <!-- Tax levies -->
+                <section class="rounded-xl border border-gray-200 p-4 dark:border-slate-700 sm:p-5">
+                    <div class="mb-4">
+                        <h3 class="text-base font-semibold text-blue-600 dark:text-blue-400">Tax Levies</h3>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-slate-400">Select applicable levies and review the calculated tax amounts.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        <div v-for="tax in taxLevyList" :key="tax.id" class="min-w-0">
+                            <label class="label mb-1.5 block text-sm font-semibold text-gray-700 dark:text-slate-300">
+                                {{ tax.name }}
+                            </label>
+                            <button type="button"
+                                    :class="[
+                                        'flex min-h-[42px] w-full items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-semibold transition focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-50',
+                                        tax.isApplied
+                                            ? 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700'
+                                            : 'border-gray-300 bg-white text-gray-700 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800'
+                                    ]"
+                                    :disabled="tax.isDisabled"
+                                    @@click.prevent="toggleTaxLevy(tax.id)">
+                                <i :class="tax.isApplied ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i>
+                                <span>({{ tax.rate }}%)</span>
+                                <span v-if="tax.amount">- {{ tax.amount }}</span>
+                            </button>
+                        </div>
+
+                        <div>
+                            <label for="VatRate" class="label mb-1.5 block text-sm font-semibold text-gray-700 dark:text-slate-300">VAT Rate</label>
+                            <input id="VatRate"
+                                   type="number"
+                                   v-model="VatRate"
+                                   @@input="userIsEditingRate = true"
+                                   class="input-control"
+                                   placeholder="VAT rate"
+                                   :disabled="!vatInInvoice" />
+                        </div>
+
+                        <div>
+                            <label for="vatAmount" class="label mb-1.5 block text-sm font-semibold text-gray-700 dark:text-slate-300">VAT Amount</label>
+                            <input type="number" step="0.01" min="0" class="input-control" id="vatAmount" v-model="vatAmount" disabled />
+                        </div>
+
+                        <div>
+                            <label for="totalTaxAmount" class="label mb-1.5 block text-sm font-semibold text-gray-700 dark:text-slate-300">Total Tax Amount</label>
+                            <input type="number" step="0.01" min="0" class="input-control" id="totalTaxAmount" v-model="totalTaxAmount" disabled />
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Payment details -->
+                <section class="rounded-xl border border-gray-200 p-4 dark:border-slate-700 sm:p-5">
+                    <div class="mb-5">
+                        <h3 class="text-base font-semibold text-blue-600 dark:text-blue-400">Payment Details</h3>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-slate-400">Enter payment information, withholding details, and ledger accounts.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2 xl:grid-cols-4">
+                        <!-- Voucher and bank information -->
+                        <div class="space-y-4">
+                            <div>
+                                <label for="voucherEntryDate" class="label mb-1.5 block text-sm font-semibold text-gray-700 dark:text-slate-300">Voucher Entry Date</label>
+                                <input type="date" class="input-control" id="voucherEntryDate" v-model="voucherEntryDate" />
+                            </div>
+                            <div>
+                                <label for="voucherDescription" class="label mb-1.5 block text-sm font-semibold text-gray-700 dark:text-slate-300">Description <span class="text-red-500">*</span></label>
+                                <input type="text" class="input-control" id="voucherDescription" v-model="voucherDescription" placeholder="Enter voucher description" required />
+                            </div>
+                            <div>
+                                <label for="voucherNumber" class="label mb-1.5 block text-sm font-semibold text-gray-700 dark:text-slate-300">Voucher No. <span class="text-red-500">*</span></label>
+                                <input type="text" class="input-control" id="voucherNumber" v-model="voucherNumber" placeholder="Generated on save" />
+                            </div>
+                            <div>
+                                <w-select
+                                    v-model="bankAccountId"
+                                    :options="accountsList"
+                                    display-key="accountIdentifier"
+                                    value-key="id"
+                                    label="Bank GL:"
+                                    required>
+                                </w-select>
+                                </div>
+                            <div>
+                                <w-select
+                                    v-model="bankId"
+                                    :options="bankList"
+                                    display-key="name"
+                                    value-key="id"
+                                    label="Bank:"
+                                    >
+                                </w-select> </div>
+                            <div>
+                                <w-select
+                                    v-model="branchId"
+                                    :options="branchList"
+                                    display-key="name"
+                                    value-key="id"
+                                    label="Bank Branch:"
+                                    >
+                                </w-select></div>
+                        </div>
+
+                        <!-- Payment method and currency -->
+                        <div class="space-y-4">
+                            <div>
+                                <label class="label mb-1.5 block text-sm font-semibold text-gray-700 dark:text-slate-300">Mode of Payment</label>
+                                <div class="flex min-h-[42px] flex-wrap items-center gap-5 rounded-lg border border-gray-200 px-3 py-2.5 dark:border-slate-700">
+                                    <label for="cash" class="flex cursor-pointer items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+                                        <input type="radio" id="cash" value="Cash" v-model="modeOfPayment" @@change="toggleCash" class="h-4 w-4 accent-blue-600" />
+                                        Cash
+                                    </label>
+                                    <label for="cheque" class="flex cursor-pointer items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+                                        <input type="radio" id="cheque" value="Cheque" v-model="modeOfPayment" @@change="toggleCheque" class="h-4 w-4 accent-blue-600" />
+                                        Cheque
+                                    </label>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="chequeNumber" class="label mb-1.5 block text-sm font-semibold text-gray-700 dark:text-slate-300">Cheque Number</label>
+                                <input type="text" class="input-control" id="chequeNumber" v-model="chequeNumber" :disabled="!cheque" :required="cheque" placeholder="Enter cheque number" />
+                            </div>
+                            <div>
+                                <w-select
+                                    v-model="payCurrencyId"
+                                    :options="currencyList"
+                                    display-key="currencyName"
+                                    value-key="id"
+                                    label="Currency:"
+                                    required>
+                                </w-select> </div>
+                            <div v-if="payCurrencyId">
+                                <label for="payCurrencyBuyRate" class="label mb-1.5 block text-sm font-semibold text-gray-700 dark:text-slate-300">Currency Rate</label>
+                                <input type="number" class="input-control" id="payCurrencyBuyRate" v-model="payCurrencyBuyRate" />
+                            </div>
+                            <div class="flex min-h-[42px] items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-800">
+                                <input class="h-4 w-4 rounded border-gray-300 accent-blue-600" type="checkbox" id="isMulticurrency" v-model="isMultiCurrency" disabled />
+                                <label class="cursor-not-allowed text-sm font-medium text-gray-600 dark:text-slate-400" for="isMulticurrency">Is Multi-Currency</label>
+                            </div>
+                            <div>
+                                <label for="paymentDate" class="label mb-1.5 block text-sm font-semibold text-gray-700 dark:text-slate-300">Payment Date <span class="text-red-500">*</span></label>
+                                <input type="date" class="input-control" id="paymentDate" v-model="paymentDate" required />
+                            </div>
+                        </div>
+
+                        <!-- Withholding and payment amount -->
+                        <div class="space-y-4">
+                            <div class="flex min-h-[42px] items-center gap-2 rounded-lg border border-gray-200 px-3 py-2.5 dark:border-slate-700">
+                                <input type="checkbox" id="isWithHolding" v-model="isWithHolding" class="h-4 w-4 rounded border-gray-300 accent-blue-600" />
+                                <label class="cursor-pointer text-sm font-semibold text-gray-700 dark:text-slate-300" for="isWithHolding">Withholding</label>
+                            </div>
+                            <div>
+                                <label for="withHoldingRate" class="label mb-1.5 block text-sm font-semibold text-gray-700 dark:text-slate-300">Withholding Rate (%)</label>
+                                <input type="number" step="0.01" min="0" class="input-control" id="withHoldingRate" v-model="withHoldingRate" />
+                            </div>
+                            <div class="flex min-h-[42px] items-center gap-2 rounded-lg border border-gray-200 px-3 py-2.5 dark:border-slate-700">
+                                <input type="checkbox" id="isVatWithHolding" v-model="isVatWithHolding" class="h-4 w-4 rounded border-gray-300 accent-blue-600" />
+                                <label class="cursor-pointer text-sm font-semibold text-gray-700 dark:text-slate-300" for="isVatWithHolding">VAT Withholding</label>
+                            </div>
+                            <div>
+                                <label for="VatWithHeldRate" class="label mb-1.5 block text-sm font-semibold text-gray-700 dark:text-slate-300">VAT Withholding Rate (%)</label>
+                                <input type="number" step="0.01" min="0" class="input-control" id="VatWithHeldRate" v-model="VatWithHeldRate" />
+                            </div>
+                            <div>
+                                <w-select
+                                    v-model="creditAccountId"
+                                    :options="accountsList"
+                                    display-key="accountIdentifier"
+                                    value-key="id"
+                                    label="Credit/Withholding GL:"
+                                    required>
+                                </w-select></div>
+                            <div v-if="vatInInvoice || isVatInclusive">
+                                <w-select
+                                    v-model="vatWithholdAccountId"
+                                    :options="accountsList"
+                                    display-key="accountIdentifier"
+                                    value-key="id"
+                                    label="VAT/Withholding GL:"
+                                    required>
+                                </w-select></div>
+                            <div>
+                                <label for="paymentAmount" class="label mb-1.5 block text-sm font-semibold text-gray-700 dark:text-slate-300">Payment Amount <span class="text-red-500">*</span></label>
+                                <input type="number" step="0.01" min="0" class="input-control" id="paymentAmount" v-model="paymentAmount" required />
+                            </div>
+                        </div>
+
+                        <!-- Calculated totals -->
+                        <div class="rounded-xl bg-gray-50 p-4 dark:bg-slate-800/70">
+                            <h4 class="mb-4 text-sm font-semibold text-gray-900 dark:text-white">Payment Summary</h4>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="total" class="label mb-1.5 block text-sm font-semibold text-gray-700 dark:text-slate-300">Total</label>
+                                    <input type="number" step="0.01" min="0" class="input-control" id="total" v-model="total" disabled />
+                                </div>
+                                <div>
+                                    <label for="withHeld" class="label mb-1.5 block text-sm font-semibold text-gray-700 dark:text-slate-300">Withheld</label>
+                                    <input type="number" step="0.01" min="0" class="input-control" id="withHeld" v-model="withHeld" disabled />
+                                </div>
+                                <div>
+                                    <label for="vatWithheld" class="label mb-1.5 block text-sm font-semibold text-gray-700 dark:text-slate-300">VAT Withheld</label>
+                                    <input type="number" step="0.01" min="0" class="input-control" id="vatWithheld" v-model="vatWithheld" disabled />
+                                </div>
+                                <div>
+                                    <label for="netAmount" class="label mb-1.5 block text-sm font-semibold text-gray-700 dark:text-slate-300">Net Amount</label>
+                                    <input type="number" step="0.01" min="0" class="input-control" id="netAmount" v-model="netAmount" disabled />
+                                </div>
+                                <div>
+                                    <label for="batchNumber" class="label mb-1.5 block text-sm font-semibold text-gray-700 dark:text-slate-300">Batch No.</label>
+                                    <input type="text" class="input-control" id="batchNumber" v-model="batchNumber" ref="batchNumber" placeholder="Batch number" disabled />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Submit -->
+                <div class="flex justify-end border-t border-gray-200 pt-5 dark:border-slate-700">
+                    <button type="submit"
+                            :disabled="isLoading"
+                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60">
+                        <i v-if="isLoading" class="la la-circle-o-notch animate-spin text-lg"></i>
+                        <i v-else class="la la-save text-lg"></i>
+                        {{ isLoading ? 'Raising Voucher...' : 'Raise Voucher' }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/ap/DataEntry/vouchers.js" asp-append-version="true"></script>

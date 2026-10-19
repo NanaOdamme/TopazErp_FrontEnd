@@ -276,14 +276,14 @@
         getInvoices() {
             axios.get('/ApDataEntry/GetInvoices').then(response => {
                     this.invoiceList = response.data.sort((a, b) => a.invoiceNumber.localeCompare(b.invoiceNumber));
-                    this.invoiceEdithList = this.invoiceList.filter(a => a.isPosted === true && a.balance > 0);
+                    this.invoiceEditList = this.invoiceList.filter(a => a.isPosted === true && a.balance > 0);
                     this.invoiceList.forEach((invoice) => {
                         invoice.invoiceId = invoice.id;
                         invoice.displayText = `${invoice.supplierName} - ${invoice.invoiceNumber}`;
 
                     });
                     $("#invoiceId").ejDropDownList({
-                        dataSource: this.invoiceEdithList,
+                        dataSource: this.invoiceEditList,
                         watermarkText: "Select Invoice",
                         width: "100%",
                         fields: { id: "id", text: "displayText", value: "id" },

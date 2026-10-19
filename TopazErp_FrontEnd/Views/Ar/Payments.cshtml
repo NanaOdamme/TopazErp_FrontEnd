@@ -1,0 +1,406 @@
+@{
+    ViewBag.Title = "Payments";
+    Layout = "~/Views/Shared/_adminArLayout.cshtml";
+}
+<style>
+    #add {
+        scroll-margin-top: 80px;
+    }
+</style>
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>AR - Data Entry</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Payments</span>
+        </div>
+
+
+    </div>
+
+    <div id="app" class="space-y-6">
+            <div class="card" data-card-title="Payments">
+            <div class="flex justify-end gap-2 mb-2 flex-wrap">
+            <button type="button" class="border border-green-500 text-green-500 px-4 py-2 rounded-xl hover:bg-green-500 hover:text-white" @@click="scrollToAdd"><i class="bi bi-plus"></i> Add</button>
+            <button type="button" class="border border-blue-800 text-blue-800 px-4 py-2 rounded-xl hover:bg-blue-800 hover:text-white" @@click="setCurrentPayment()"><i class="bi bi-pen"></i> Edit</button>
+            <button class="border border-rose-500 text-rose-500 px-4 py-2 rounded-xl hover:bg-red-500 hover:text-white"><i class="bi bi-x-circle"></i> Cancel Payment (s)</button>
+            <button class="border border-blue-500 text-blue-500 px-4 py-2 rounded-xl hover:bg-blue-500 hover:text-white"><i class="bi bi-send"></i> Post Payment (s)</button>
+            <button @@click="printReport" class="border border-indigo-500 text-indigo-500 px-4 py-2 rounded-xl hover:bg-indigo-500 hover:text-white"> <i class="bi bi-printer"></i> Print </button>
+        
+            </div>
+                <div id="paymentApp">
+                    <data-grid
+                        ref="payments"
+                        title="Payments"
+                        :columns="paymentColumns"
+                        :data="paymentList"
+                        :child="paymentInvoices"
+                        :theme="theme"
+                        row-id="id"
+                        label-key="batchNumber"
+                        storage-key="ar-payment-register"
+                        item-label="payment"
+                        item-label-plural="payments"
+                        add-label="Add Payment"
+                        :page-size="5"
+                        :selectable="true"
+                        :allow-add="false" :allow-edit="false" :allow-delete="false">
+                    </data-grid>
+                    
+                    <div id="add" class="my-5">
+                    <p class="my-4 text-blue-500">Add / Update</p>
+                       <div class="paymentForm">
+                   
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 my-4">
+        
+                <!-- Customer -->
+                <div>
+                    <w-select
+                        v-model="customerId"
+                        :options="customers"
+                        display-key="name"
+                        value-key="id"
+                        label="Customer:"
+                        required>
+                    </w-select>
+                
+                </div>
+        
+                <!-- Account Number -->
+                <div>
+                    <label for="accountNumber" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                        Account No.
+                    </label>
+                    <input
+                        id="accountNumber"
+                        v-model="accountNumber"
+                        type="text"
+                        disabled
+                        required
+                         class="input-control"
+                    />
+                </div>
+        
+                <!-- Payment Date -->
+                <div>
+                    <label for="paymentDate" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                        Date of Payment: <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        id="paymentDate"
+                        v-model="paymentDate"
+                        type="date"
+                        required
+                        class="input-control"
+                    />
+                </div>
+        
+                <!-- Batch Number -->
+                <div>
+                    <label for="batchNumber" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                        Batch Number
+                    </label>
+                    <input
+                        id="batchNumber"
+                        v-model="batchNumber"
+                        type="text"
+                        placeholder="2321"
+                        disabled
+                         class="input-control"
+                    />
+                </div>
+        
+                <!-- Invoice Type -->
+                <div>
+                
+                    <w-select
+                        v-model="invoiceTypeId"
+                        :options="invoiceTypeList"
+                        display-key="name"
+                        value-key="id"
+                        label="Invoice Type:"
+                        required>
+                    </w-select>
+                </div>
+        
+                <!-- Rate -->
+                <div>
+                    <label for="invoiceRate" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                       Invoice Type Rate
+                    </label>
+                    <input
+                        id="invoiceRate"
+                        v-model="invoiceRate"
+                        type="number"
+                        readonly
+                         class="input-control"
+                    />
+                </div>
+        
+                <!-- Amount to Pay -->
+                <div>
+                    <label for="amountToPay" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                        Amount to Pay: <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        id="amountToPay"
+                        v-model="amountToPay"
+                        type="number"
+                        required
+                        class="input-control"
+                    />
+                </div>
+        
+                <!-- Pay Currency -->
+                <div>
+            
+                    <w-select
+                        v-model="currencyId"
+                        :options="currencyList"
+                        display-key="name"
+                        value-key="id"
+                        label="Currency:"
+                        required>
+                    </w-select>
+                </div>
+        
+                <!-- Pay Currency Rate -->
+                <div>
+                    <label for="buyRate" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                        Currency Rate:
+                    </label>
+                    <input
+                        id="buyRate"
+                        v-model="buyRate"
+                        type="number"
+                        required
+                        class="input-control"
+                    />
+                </div>
+        
+                <!-- Apply Payment -->
+                <div>
+                   <label  class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                        Apply Payment:
+                    </label>
+                    <div class="flex min-h-[42px] flex-wrap items-center gap-5 rounded-lg dark:border-slate-800 border border-gray-200 px-3 py-2.5">
+                        <label for="automatic" class="label flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+                            <input
+                                id="automatic"
+                                type="radio"
+                                value="true"
+                                v-model="isAutomatic"
+                                @@change="toggleIsAutomatic"
+                                class="input-control"
+                            />
+                            Automatic
+                        </label>
+        
+                        <label for="manual" class="label flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+                            <input
+                                id="manual"
+                                type="radio"
+                                value="false"
+                                v-model="isAutomatic"
+                                @@change="toggleManual"
+                                class="input-control"
+                            />
+                            Manual
+                        </label>
+                    </div>
+                </div>
+        
+                <!-- Mode of Payment -->
+                <div>
+                   <label  class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                        Mode of Payment:
+                    </label>
+                    <div class="flex min-h-[42px] flex-wrap items-center gap-5 rounded-lg dark:border-slate-800 border border-gray-200 px-3 py-2.5">
+                        <label for="cash" class="label flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+                            <input
+                                id="cash"
+                                type="radio"
+                                value="Cash"
+                                v-model="modeOfPayment"
+                                @@change="toggleCash"
+                                class="input-control"
+                            />
+                            Cash
+                        </label>
+        
+                        <label for="cheque" class="label flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+                            <input
+                                id="cheque"
+                                type="radio"
+                                value="Cheque"
+                                v-model="modeOfPayment"
+                                @@change="toggleCheque"
+                                class="input-control"
+                            />
+                            Cheque
+                        </label>
+                    </div>
+                </div>
+        
+                <!-- Cheque Number -->
+                <div v-if="cheque">
+                    <label for="chequeNumber" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                        Cheque Number: <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        id="chequeNumber"
+                        v-model="chequeNumber"
+                        type="text"
+                        required
+                        class="input-control"
+                    />
+                </div>
+        
+                <!-- Organizational Unit -->
+                <div v-if="isOu">
+
+                    <w-select
+                        v-model="ouId"
+                        :options="ouList"
+                        display-key="name"
+                        value-key="id"
+                        label="Cost Center"
+                        required>
+                    </w-select>
+                </div>
+        
+                <!-- Bank -->
+                <div>
+                
+                    <w-select
+                        v-model="bankId"
+                        :options="bankList"
+                        display-key="name"
+                        value-key="id"
+                        label="Banks:"
+                       >
+                    </w-select>
+                </div>
+        
+                <!-- Bank Branch -->
+                <div>
+                    <w-select
+                        v-model="bankBranchId"
+                        :options="bankBranchList"
+                        display-key="name"
+                        value-key="id"
+                        label="Bank Branches:"
+                       >
+                    </w-select>
+                </div>
+        
+                <!-- Reference Number -->
+                <div>
+                    <label for="refNumber" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                        Ref Number: <span class="text-red-500">*</span>
+                    </label>
+                    <input
+                        id="refNumber"
+                        v-model="referenceNumber"
+                        type="text"
+                        required
+                        class="input-control"
+                    />
+                </div>
+        
+                <!-- Outstanding Credit Memo -->
+                <div>
+                    <label for="outstandingCreditMemo" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                        Outstanding Credit Memo
+                    </label>
+                    <input
+                        id="outstandingCreditMemo"
+                        v-model="outstandingCreditMemo"
+                        type="text"
+                        disabled
+                        required
+                         class="input-control"
+                    />
+                </div>
+        
+                <!-- Bank GL -->
+                <div>
+            
+                    <w-select
+                        v-model="bankAccountId"
+                        :options="accounts"
+                        display-key="accountIdentifier"
+                        value-key="id"
+                        label="Bank Account Gl"
+                        required>
+                    </w-select>
+                </div>
+        
+                <!-- Multi-Currency -->
+                <div class="dark:bg-slate-800 flex items-center gap-2 self-end rounded-lg border dark:border-slate-800 border-gray-200 bg-gray-50 px-3 py-3">
+                    <input
+                        id="isMulticurrency"
+                        v-model="isMultiCurrency"
+                        type="checkbox"
+                        disabled
+                        class="h-4 w-4 rounded border-gray-300 accent-blue-600"
+                    />
+                    <label for="isMulticurrency" class="label cursor-not-allowed text-sm font-medium text-gray-600">
+                        Is Multi-Currency
+                    </label>
+                </div>
+        
+            </div>
+
+                       </div>
+                       
+                       
+                       
+                        <hr/>
+                        <button @*v-if="isAutomatic"*@ type="button" @@click="ApplyPayment" class="mt-2 bg-zinc-500 px-2 py-2 rounded text-white">
+                            Apply Payment
+                        </button>
+                        @*<div class="mt-5" id="dataTable"></div>*@
+                        <div class="my-5">
+                        
+                            <data-grid
+                                ref="invoiceGrid"
+                                title="Invoices Available for Payment"
+                                :columns="invoiceColumns"
+                                :data="filteredInvoices"
+                                :child="invoiceDetailsGrid"
+                                :theme="theme1"
+                                row-id="id"
+                                label-key="invoiceNumber"
+                                storage-key="ar-invoice-payment-selection"
+                                item-label="invoice"
+                                item-label-plural="invoices"
+                                :page-size="10"
+                                :selectable="true"
+                                :allow-add="false"
+                                :allow-edit="false"
+                                :allow-delete="false">
+                            </data-grid>
+                        </div>
+                    </div>
+        </div>
+                                                            
+                <div class="flex justify-end my-2">
+                    <button
+                        @@click="savePayment"
+                        :disabled="isLoading"
+                        class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60">
+                        <i v-if="isLoading" class="la la-circle-o-notch animate-spin text-lg"></i>
+                        <i v-else class="la la-save text-lg"></i>
+                        {{ isLoading ? 'Saving Payment...' : 'Save Payment' }}
+                    </button>
+                </div>
+                
+                </div>
+            </div>
+        </div>
+      
+
+<script src="~/js/ar/data-entry/paymentPage.js" asp-append-version="true"></script>
+
+

@@ -53,7 +53,7 @@
             otherTaxLevyList: [],
             vatRate: '0',
             vatIsApplied: false,
-            invoiceEdithList: [],
+            invoiceEditList: [],
             invoiceBalance: '0',
             invoiceNumber: '',
             detailsId: '',

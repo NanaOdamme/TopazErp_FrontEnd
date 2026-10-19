@@ -82,6 +82,10 @@ tr.dt-flash > td{ animation:dt-flash 1.8s ease-out }
     --dt-primary-300: #93c5fd; --dt-primary-400: #60a5fa; --dt-primary-500: var(--dt-theme, #3b82f6);
     --dt-primary-600: var(--dt-theme, #2563eb); --dt-primary-700: #1d4ed8; --dt-primary-800: #1e40af;
     --dt-primary-900: #1e3a8a; --dt-primary-950: #172554;
+    --dt-table-header-bg: #eff6ff; --dt-table-filter-bg: #f8fafc; --dt-table-header-border: #bfdbfe;
+    --dt-table-hover-bg: #eff6ff; --dt-table-selected-hover-bg: #dbeafe;
+    --dt-table-group-bg: #eff6ff; --dt-table-group-hover-bg: #dbeafe; --dt-table-group-total-bg: #eff6ff;
+    --dt-table-footer-bg: #eff6ff; --dt-table-footer-border: #93c5fd;
 }
 @supports (color: color-mix(in srgb, red 50%, white)) {
     [data-dt-theme-scope] {
@@ -96,7 +100,58 @@ tr.dt-flash > td{ animation:dt-flash 1.8s ease-out }
         --dt-primary-800: color-mix(in srgb, var(--dt-theme) 74%, black);
         --dt-primary-900: color-mix(in srgb, var(--dt-theme) 60%, black);
         --dt-primary-950: color-mix(in srgb, var(--dt-theme) 44%, black);
+        --dt-table-header-bg: color-mix(in srgb, var(--dt-theme) 8%, white);
+        --dt-table-filter-bg: color-mix(in srgb, var(--dt-theme) 3%, white);
+        --dt-table-header-border: color-mix(in srgb, var(--dt-theme) 28%, #e2e8f0);
+        --dt-table-hover-bg: color-mix(in srgb, var(--dt-theme) 8%, white);
+        --dt-table-selected-hover-bg: color-mix(in srgb, var(--dt-theme) 15%, white);
+        --dt-table-group-bg: color-mix(in srgb, var(--dt-theme) 10%, white);
+        --dt-table-group-hover-bg: color-mix(in srgb, var(--dt-theme) 16%, white);
+        --dt-table-group-total-bg: color-mix(in srgb, var(--dt-theme) 8%, white);
+        --dt-table-footer-bg: color-mix(in srgb, var(--dt-theme) 9%, white);
+        --dt-table-footer-border: color-mix(in srgb, var(--dt-theme) 38%, #e2e8f0);
     }
+    .dark [data-dt-theme-scope] {
+        --dt-table-header-bg: color-mix(in srgb, var(--dt-theme) 18%, #0f172a);
+        --dt-table-filter-bg: color-mix(in srgb, var(--dt-theme) 10%, #0f172a);
+        --dt-table-header-border: color-mix(in srgb, var(--dt-theme) 34%, #334155);
+        --dt-table-hover-bg: color-mix(in srgb, var(--dt-theme) 15%, #0f172a);
+        --dt-table-selected-hover-bg: color-mix(in srgb, var(--dt-theme) 24%, #0f172a);
+        --dt-table-group-bg: color-mix(in srgb, var(--dt-theme) 16%, #1e293b);
+        --dt-table-group-hover-bg: color-mix(in srgb, var(--dt-theme) 22%, #334155);
+        --dt-table-group-total-bg: color-mix(in srgb, var(--dt-theme) 15%, #0f172a);
+        --dt-table-footer-bg: color-mix(in srgb, var(--dt-theme) 16%, #0f172a);
+        --dt-table-footer-border: color-mix(in srgb, var(--dt-theme) 38%, #334155);
+    }
+}
+[data-dt-theme-scope] .dt-table thead tr.dt-theme-header {
+    background-color:var(--dt-table-header-bg) !important;
+    border-color:var(--dt-table-header-border) !important;
+}
+[data-dt-theme-scope] .dt-table thead tr.dt-theme-filter {
+    background-color:var(--dt-table-filter-bg) !important;
+    border-color:var(--dt-table-header-border) !important;
+}
+[data-dt-theme-scope] .dt-table tbody tr.dt-group-header {
+    background-color:var(--dt-table-group-bg) !important;
+    border-color:var(--dt-table-header-border) !important;
+}
+[data-dt-theme-scope] .dt-table tbody tr.dt-group-header .dt-group-toggle:hover {
+    background-color:var(--dt-table-group-hover-bg) !important;
+}
+[data-dt-theme-scope] .dt-table tbody tr.dt-theme-row:not(.dt-row-selected):hover {
+    background-color:var(--dt-table-hover-bg) !important;
+}
+[data-dt-theme-scope] .dt-table tbody tr.dt-theme-row.dt-row-selected:hover {
+    background-color:var(--dt-table-selected-hover-bg) !important;
+}
+[data-dt-theme-scope] .dt-table tbody tr.dt-group-total {
+    background-color:var(--dt-table-group-total-bg) !important;
+    border-color:var(--dt-table-header-border) !important;
+}
+[data-dt-theme-scope] .dt-table tfoot tr.dt-theme-footer {
+    background-color:var(--dt-table-footer-bg) !important;
+    border-color:var(--dt-table-footer-border) !important;
 }
 [data-dt-theme-scope] .dt-check { color:var(--dt-primary-600) !important; accent-color:var(--dt-primary-600) !important; }
 

@@ -313,7 +313,7 @@
         getInvoices() {
             axios.get('/ApDataEntry/GetInvoices').then(response => {
                     this.invoiceList = response.data.sort((a, b) => a.invoiceNumber.localeCompare(b.invoiceNumber));
-                    this.invoiceEdithList = this.invoiceList.filter(a => a.isPosted === true && a.isCanceled === false && a.balance > 0);
+                    this.invoiceEditList = this.invoiceList.filter(a => a.isPosted === true && a.isCanceled === false && a.balance > 0);
                     this.invoiceDetailsMap = {};
 
                     this.invoiceList.forEach((invoice) => {
@@ -337,7 +337,7 @@
                     });
                     this.invoiceDataTable([]);
                     $("#invoiceId").ejDropDownList({
-                        dataSource: this.invoiceEdithList,
+                        dataSource: this.invoiceEditList,
                         watermarkText: "Select Invoice",
                         width: "100%",
                         fields: { id: "id", text: "displayText", value: "id" },

@@ -1,0 +1,88 @@
+@{
+    ViewBag.Title = "Opening Balances";
+    Layout = "~/Views/Shared/_adminApLayout.cshtml";
+}
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>AP - Reports</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Opening Balances</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+
+            <div class="page-title">
+                <h2 class="text-2xl font-semibold text-gray-800">
+                    Reports
+                </h2>
+                
+            </div>
+        </div>
+    </div>
+    <div class="card" data-card-title="Reports - Opening Balances">
+     <div class="space-y-3">
+            <label class="label block text-sm">
+                Select Report Type:
+            </label>
+            <div  class="flex flex-wrap cursor-pointer items-center gap-3 rounded-lg py-3 transition-colors">
+           
+                <!-- Type 1 -->
+                <label for="type1"
+                       class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-blue-300 hover:bg-blue-50/50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-500 dark:hover:bg-slate-800">
+                    <input
+                        id="type1"
+                        type="radio"
+                        value="all" v-model="reportStatus"
+                        class="input-control" />
+                    <span>All</span>
+                </label>
+
+                <!-- Type 2 -->
+                <label for="type2"
+                       class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-blue-300 hover:bg-blue-50/50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-500 dark:hover:bg-slate-800">
+                    <input
+                        id="type2"
+                        type="radio"
+                        value="posted" v-model="reportStatus"
+                        class="input-control" />
+                    <span>Posted</span>
+                </label>
+
+                <!-- Type 3 -->
+                <label for="type3"
+                       class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-blue-300 hover:bg-blue-50/50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-500 dark:hover:bg-slate-800">
+                    <input
+                        id="type3"
+                        type="radio"
+                        value="unposted" v-model="reportStatus"
+                        class="input-control" />
+                    <span>Unposted</span>
+                </label>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4 mb-5">
+            <label  class="label block text-sm">
+                Select Report Type: <select class="select" v-model="reportType" ref="reportType">
+                    <option value="summary"> Summary </option>
+                    <option value="bySupplier"> By Supplier </option>
+                    <option value="type2"> Type 2</option>
+                </select></label>
+            <w-select 
+                      v-model="supplierId"
+                      :options="supplierList"
+                      display-key="name"
+                      value-key="id"
+                      label="Supplier:"
+            ></w-select>
+    
+        </div>
+        <hr>
+        <div class="bg-gray-50 p-4 my-4 rounded-xl dark:bg-slate-800">
+            <div style="height:auto;width:auto;min-height:500px;" id="reportView">  </div>
+        </div>
+    
+    </div>
+</div>
+
+<script src="~/js/ap/Reports/balances.cshtml.js" asp-append-version="true"></script>

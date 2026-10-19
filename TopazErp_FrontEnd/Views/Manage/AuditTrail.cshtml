@@ -2,63 +2,7 @@
     ViewBag.Title = "AuditTrail";
     Layout = "~/Views/Shared/_adminTenantLayout.cshtml";
 }
-<style>
-    .table{
-        font-size: 11px;
-        color: black;
-       
-    }
-    .badge-purple {
-        background-color: #6f42c1;
-        color: #fff;
-    }
-    .badge-deepBlue {
-        background-color: #0b20a6;
-        color: #fff;
-    }
-    .badge {
-        padding: 6px 12px;
-        font-size: 12px;
-        color: #fff;
-    }
-    .table-footer{
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 0;
-    }
-    .table-footer .page-link {
-        width: 30px;
-        height: 30px;
 
-        padding: 0;
-
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        border-radius: 5px !important;
-
-        color: #64748b;
-        border-color: #e2e8f0;
-
-        font-size: 11px;
-    }
-
-    .table-footer .page-item.active .page-link {
-        background: #258dff;
-        border-color:#258dff;
-        color: #fff;
-    }
-    .pass {
-        background-color: rgb(88 253 75 / 0.33);
-        color: #148504;
-    }
-    .fail{
-        background-color: rgb(255 76 76 / 0.33);
-        color: #b01818;
-    }
-</style>
 <div class="content">
     <div class="mb-6 content-header">
         <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
@@ -87,7 +31,7 @@
 
     <div class="md:col-span-3">
 
-        <label class="block text-sm font-medium text-gray-700 mb-2">
+       <label  class="label labelblock text-sm font-medium text-gray-700 mb-2">
             Start Date:
         </label>
 
@@ -101,7 +45,7 @@
 
     <div class="md:col-span-3">
 
-        <label class="block text-sm font-medium text-gray-700 mb-2">
+       <label  class="label labelblock text-sm font-medium text-gray-700 mb-2">
             End Date:
         </label>
 

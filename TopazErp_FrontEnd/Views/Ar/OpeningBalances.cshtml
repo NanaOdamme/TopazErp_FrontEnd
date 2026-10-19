@@ -1,0 +1,42 @@
+@{
+    ViewBag.Title = "Opening Balances";
+    Layout = "~/Views/Shared/_adminArLayout.cshtml";
+}
+
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>AR - Data Entry</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Opening Balances</span>
+        </div>
+    </div>
+
+    <div id="app" class="space-y-6">
+        <div class="card" data-card-title="Opening Balances">
+            <data-grid
+                title="Opening Balances"
+                :columns="openingBalanceColumns"
+                :data="openingBalanceList"
+                :theme="theme"
+                row-id="id"
+                label-key="customerName"
+                storage-key="ar-opening-balances"
+                item-label="opening balance"
+                item-label-plural="opening balances"
+                add-label="Add"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                @@create="onCreate"
+                @@update="onUpdate"
+                @@delete="onDelete">
+            </data-grid>
+               
+        </div>
+    </div>
+</div>
+
+
+
+<script src="~/js/ar/data-entry/openingbalances.js" asp-append-version="true"></script>

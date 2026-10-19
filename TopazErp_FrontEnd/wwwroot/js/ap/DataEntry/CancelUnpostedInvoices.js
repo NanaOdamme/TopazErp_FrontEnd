@@ -51,7 +51,7 @@
             vatList: [],
             vatRate: '15',
             vatIsApplied: false,
-            invoiceEdithList: [],
+            invoiceEditList: [],
             invoiceBalance: '0',
             invoiceNumber: '',
             detailsId: '',

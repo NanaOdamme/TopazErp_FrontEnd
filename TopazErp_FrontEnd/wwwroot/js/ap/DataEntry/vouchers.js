@@ -5,18 +5,352 @@
             isLoading: false,
             payload: {},
             emptyGuid: '00000000-0000-0000-0000-000000000000',
-            voucherList: [],
-            invoiceList: [],
+            voucherList:[],
+            vouchers: [
+                {
+                    id: "11111111-aaaa-1111-aaaa-111111111111",
+                    invoiceNumber: "INV-2026-001",
+                    voucherNumber: "PV-2026-001",
+                    supplierName: "Melcom Limited",
+                    description: "Office equipment purchase",
+                    liabilityAccountName: "2001 - Accounts Payable",
+                    bankAccountName: "1002 - Main Bank Account",
+                    vatWithHoldAccountName: "2002 - VAT Withholding Account",
+                    creditAccountName: "2003 - Withholding Tax Payable",
+                    paymentAmount: 5000.00,
+                    netAmount: 4500.00,
+                    vatWithHeld: 250.00,
+                    withHeld: 250.00,
+                    buyRate: 1.00,
+                    ou: "FINANCE",
+                    voucherEntryDate: "2026-10-01T00:00:00",
+                    paymentDate: "2026-10-05T00:00:00",
+                    isPosted: false
+                },
+                {
+                    id: "22222222-bbbb-2222-bbbb-222222222222",
+                    invoiceNumber: "INV-2026-002",
+                    voucherNumber: "PV-2026-002",
+                    supplierName: "Papaye Fast Food",
+                    description: "Catering services",
+                    liabilityAccountName: "2001 - Accounts Payable",
+                    bankAccountName: "1003 - Business Savings Account",
+                    vatWithHoldAccountName: "2002 - VAT Withholding Account",
+                    creditAccountName: "2003 - Withholding Tax Payable",
+                    paymentAmount: 2500.00,
+                    netAmount: 2400.00,
+                    vatWithHeld: 100.00,
+                    withHeld: 0.00,
+                    buyRate: 1.00,
+                    ou: "ADMIN",
+                    voucherEntryDate: "2026-10-03T00:00:00",
+                    paymentDate: "2026-10-07T00:00:00",
+                    isPosted: false
+                },
+                {
+                    id: "33333333-cccc-3333-cccc-333333333333",
+                    invoiceNumber: "INV-2026-003",
+                    voucherNumber: "PV-2026-003",
+                    supplierName: "Office World Ghana",
+                    description: "Stationery supplies",
+                    liabilityAccountName: "2001 - Accounts Payable",
+                    bankAccountName: "1002 - Main Bank Account",
+                    vatWithHoldAccountName: "2002 - VAT Withholding Account",
+                    creditAccountName: "2003 - Withholding Tax Payable",
+                    paymentAmount: 1200.00,
+                    netAmount: 1200.00,
+                    vatWithHeld: 0.00,
+                    withHeld: 0.00,
+                    buyRate: 1.00,
+                    ou: "FINANCE",
+                    voucherEntryDate: "2026-10-06T00:00:00",
+                    paymentDate: "2026-10-10T00:00:00",
+                    isPosted: true
+                },
+                {
+                    id: "44444444-dddd-4444-dddd-444444444444",
+                    invoiceNumber: "INV-2026-004",
+                    voucherNumber: "PV-2026-004",
+                    supplierName: "Accra Stationery Supplies",
+                    description: "Printing materials",
+                    liabilityAccountName: "2001 - Accounts Payable",
+                    bankAccountName: "1004 - Operations Account",
+                    vatWithHoldAccountName: "2002 - VAT Withholding Account",
+                    creditAccountName: "2003 - Withholding Tax Payable",
+                    paymentAmount: 1800.00,
+                    netAmount: 1700.00,
+                    vatWithHeld: 0.00,
+                    withHeld: 100.00,
+                    buyRate: 1.00,
+                    ou: "ADMIN",
+                    voucherEntryDate: "2026-10-08T00:00:00",
+                    paymentDate: "2026-10-12T00:00:00",
+                    isPosted: false
+                }
+            ],
+            invoiceList: [
+                {
+                    id: "11111111-1111-1111-1111-111111111111",
+                    invoiceNumber: "INV-2026-001",
+                    supplierName: "Melcom Limited",
+                    invoiceDate: "2026-10-01T00:00:00",
+                    isPosted: true,
+                    isCanceled: false,
+                    balance: 2500.00,
+                    invoiceDetails: [
+                        {
+                            id: "detail-001",
+                            description: "Office Furniture",
+                            quantity: 2,
+                            unitPrice: 1500.00,
+                            subTotal: 3000.00
+                        },
+                        {
+                            id: "detail-002",
+                            description: "VAT",
+                            quantity: 1,
+                            unitPrice: 450.00,
+                            subTotal: 450.00
+                        },
+                        {
+                            id: "detail-003",
+                            description: "NHIL",
+                            quantity: 1,
+                            unitPrice: 75.00,
+                            subTotal: 75.00
+                        }
+                    ],
+                    invoiceTaxLevies: [
+                    ]
+                },
+                {
+                    id: "22222222-2222-2222-2222-222222222222",
+                    invoiceNumber: "INV-2026-002",
+                    supplierName: "Office World Ghana",
+                    invoiceDate: "2026-10-05T00:00:00",
+                    isPosted: true,
+                    isCanceled: false,
+                    balance: 1800.00,
+                    invoiceDetails: [
+                        {
+                            id: "detail-004",
+                            description: "Printer Paper",
+                            quantity: 10,
+                            unitPrice: 120.00,
+                            subTotal: 1200.00
+                        },
+                        {
+                            id: "detail-005",
+                            description: "Printer Toner",
+                            quantity: 2,
+                            unitPrice: 300.00,
+                            subTotal: 600.00
+                        },
+                        {
+                            id: "detail-006",
+                            description: "VAT",
+                            quantity: 1,
+                            unitPrice: 270.00,
+                            subTotal: 270.00
+                        }
+                    ],
+                    invoiceTaxLevies: [
+                    ]
+                },
+                {
+                    id: "33333333-3333-3333-3333-333333333333",
+                    invoiceNumber: "INV-2026-003",
+                    supplierName: "Accra Stationery Supplies",
+                    invoiceDate: "2026-10-08T00:00:00",
+                    isPosted: true,
+                    isCanceled: false,
+                    balance: 0.00,
+                    invoiceDetails: [
+                        {
+                            id: "detail-007",
+                            description: "Stationery",
+                            quantity: 5,
+                            unitPrice: 200.00,
+                            subTotal: 1000.00
+                        },
+                        {
+                            id: "detail-008",
+                            description: "VAT",
+                            quantity: 1,
+                            unitPrice: 150.00,
+                            subTotal: 150.00
+                        }
+                    ],
+                    invoiceTaxLevies: [
+                        {
+                            id: "122-34",
+                            name: "VAT",
+                            rate: 15,
+                            amount: 100.00,
+                        },
+                        {
+                            id: "122-33",
+                            name: "GETFL",
+                            rate: 15,
+                            amount: 100.00,
+                        },
+                        {
+                            id: "122-34",
+                            name: "NHIL",
+                            rate: 15,
+                            amount: 100.00,
+                        }
+                    ]
+                },
+                {
+                    id: "44444444-4444-4444-4444-444444444444",
+                    invoiceNumber: "INV-2026-004",
+                    supplierName: "Papaye Fast Food",
+                    invoiceDate: "2026-10-10T00:00:00",
+                    isPosted: true,
+                    isCanceled: false,
+                    balance: 900.00,
+                    invoiceDetails: [
+                        {
+                            id: "detail-009",
+                            description: "Catering Services",
+                            quantity: 1,
+                            unitPrice: 900.00,
+                            subTotal: 900.00
+                        }
+                    ],
+                    invoiceTaxLevies: [
+                        {
+                            id: "122-34",
+                            name: "VAT",
+                            rate: 15,
+                            amount: 100.00,
+                        },
+                        {
+                            id: "122-33",
+                            name: "GETFL",
+                            rate: 15,
+                            amount: 100.00,
+                        },
+                        {
+                            id: "122-34",
+                            name: "NHIL",
+                            rate: 15,
+                            amount: 100.00,
+                        }
+                    ]
+                },
+                {
+                    id: "55555555-5555-5555-5555-555555555555",
+                    invoiceNumber: "INV-2026-005",
+                    supplierName: "Ghana Office Solutions",
+                    invoiceDate: "2026-10-12T00:00:00",
+                    isPosted: true,
+                    isCanceled: false,
+                    balance: 1200.00,
+                    invoiceDetails: [
+                        {
+                            id: "detail-010",
+                            description: "Computer Accessories",
+                            quantity: 1,
+                            unitPrice: 1200.00,
+                            subTotal: 1200.00
+                        }
+                    ],
+                    invoiceTaxLevies: [
+                        {
+                            id: "122-34",
+                            name: "VAT",
+                            rate: 15,
+                            amount: 100.00,
+                        },
+                        {
+                            id: "122-33",
+                            name: "GETFL",
+                            rate: 15,
+                            amount: 100.00,
+                        },
+                        {
+                            id: "122-34",
+                            name: "NHIL",
+                            rate: 15,
+                            amount: 100.00,
+                        }
+                    ]
+                }
+            ],
             voucherNumber: '0',
             invoiceId: '',
             invoiceDetailsList: this.detailsList,
-            supplierList: [],
+            supplierList: [
+                {
+                    id: "11111111-1111-1111-1111-111111111111",
+                    name: "Accra Stationery Supplies",
+                    statusName: "Active"
+                },
+                {
+                    id: "22222222-2222-2222-2222-222222222222",
+                    name: "Ghana Office Solutions",
+                    statusName: "Active"
+                },
+                {
+                    id: "33333333-3333-3333-3333-333333333333",
+                    name: "Melcom Limited",
+                    statusName: "Active"
+                },
+                {
+                    id: "44444444-4444-4444-4444-444444444444",
+                    name: "Office World Ghana",
+                    statusName: "Inactive"
+                },
+                {
+                    id: "55555555-5555-5555-5555-555555555555",
+                    name: "Papaye Fast Food",
+                    statusName: "Active"
+                },
+                {
+                    id: "66666666-6666-6666-6666-666666666666",
+                    name: "Prime Business Services",
+                    statusName: "Pending"
+                }
+            ],
             supplierId: '',
             supplierName: '',
             referenceNumber: '',
             accountNumber: '',
             invoiceNumber: '',
-            currencyList: [],
+            currencyList: [
+                {
+                    id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+                    currencyName: "Ghana Cedis",
+                    currencyCode: "GHS",
+                    buyRate: 1.0000
+                },
+                {
+                    id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+                    currencyName: "US Dollar",
+                    currencyCode: "USD",
+                    buyRate: 12.5000
+                },
+                {
+                    id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
+                    currencyName: "British Pound",
+                    currencyCode: "GBP",
+                    buyRate: 16.8000
+                },
+                {
+                    id: "dddddddd-dddd-dddd-dddd-dddddddddddd",
+                    currencyName: "Euro",
+                    currencyCode: "EUR",
+                    buyRate: 14.2000
+                },
+                {
+                    id: "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+                    currencyName: "Nigerian Naira",
+                    currencyCode: "NGN",
+                    buyRate: 0.0080
+                }
+            ],
             currencyId: '',
             currencyName: '',
             buyRate: '',
@@ -75,20 +409,124 @@
             isPosted: false,
             defaultCurrency: {},
             batchNumber: '',
-            accountsList: [],
-            taxLevyList: [],
+            accountsList: [
+                {
+                    id: "11111111-1111-1111-1111-111111111111",
+                    accountNo: "1001",
+                    accountName: "Cash Account"
+                },
+                {
+                    id: "22222222-2222-2222-2222-222222222222",
+                    accountNo: "1002",
+                    accountName: "Bank Account"
+                },
+                {
+                    id: "33333333-3333-3333-3333-333333333333",
+                    accountNo: "2001",
+                    accountName: "Accounts Payable"
+                },
+                {
+                    id: "44444444-4444-4444-4444-444444444444",
+                    accountNo: "2002",
+                    accountName: "VAT Withholding Account"
+                },
+                {
+                    id: "55555555-5555-5555-5555-555555555555",
+                    accountNo: "3001",
+                    accountName: "Withholding Tax Account"
+                },
+                {
+                    id: "66666666-6666-6666-6666-666666666666",
+                    accountNo: "4001",
+                    accountName: "Office Expenses"
+                }
+            ],
+            taxLevyList: [
+                {
+                    id: "tax-001",
+                    name: "VAT",
+                    type: "VAT",
+                    rate: 15.00,
+                    amount: 0,
+                    isApplied: false,
+                    isDisabled: false
+                },
+                {
+                    id: "tax-002",
+                    name: "NHIL",
+                    type: "VAT",
+                    rate: 2.50,
+                    amount: 0,
+                    isApplied: false,
+                    isDisabled: false
+                },
+                {
+                    id: "tax-003",
+                    name: "GETFL",
+                    type: "VAT",
+                    rate: 2.50,
+                    amount: 0,
+                    isApplied: false,
+                    isDisabled: false
+                },
+                {
+                    id: "tax-004",
+                    name: "COVID",
+                    type: "VAT",
+                    rate: 0.00,
+                    amount: 0,
+                    isApplied: false,
+                    isDisabled: false
+                },
+                {
+                    id: "tax-005",
+                    name: "CST",
+                    type: "VAT",
+                    rate: 0.00,
+                    amount: 0,
+                    isApplied: false,
+                    isDisabled: false
+                }
+            ],
             covidRate: 0,
             cstRate: 0,
             covid: false,
             cst: false,
             userIsEditingRate: false,
-            bankAccountList: [],
+            bankAccountList: [
+                {
+                    id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+                    accountNo: "1002",
+                    accountName: "Main Bank Account",
+                    bankName: "GCB Bank",
+                    branchName: "Accra Main Branch",
+                    accountNumber: "0123456789"
+                },
+                {
+                    id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+                    accountNo: "1003",
+                    accountName: "Business Savings Account",
+                    bankName: "Ecobank Ghana",
+                    branchName: "Osu Branch",
+                    accountNumber: "9876543210"
+                },
+                {
+                    id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
+                    accountNo: "1004",
+                    accountName: "Operations Account",
+                    bankName: "Absa Bank Ghana",
+                    branchName: "Airport Branch",
+                    accountNumber: "1234567890"
+                }
+            ],
+           
             vatInInvoice: true,
             isVatInclusive: true,
             baseAmount: '0.00',
             isMultiCurrency: false,
             baseAmount2: '0.00',
             vatCertificate: '',
+            invoiceEditList: []
         }
     },
     methods: {
@@ -96,95 +534,62 @@
             this.referenceNumber = Math.floor(100000 + Math.random() * 900000).toString();
         },
         getBusinessProfile() {
-
-            axios.get('/SharedResource/GetBusinessProfile').then(response => {
-
-                if (response.data) {
-                    this.isVatInclusive = businessProfile.isTaxLeviesInclusive;
-                }
-
-            }).catch(err => {
-
-                console.log(err);
-
-            });
+                    this.isVatInclusive = false;
         },
-       
+
         getDefaultGlSetup() {
+            const responseData = {
+                accountsPayableAccountId: "GL-AP-001",
+                vatPaidAccountId: "GL-VAT-001",
+                accountPayablesBankAccountId: "GL-BANK-001",
+                withholdingTaxAccountId: "GL-WHT-001"
+            };
 
-            axios.get('/LedgerSetups/GetDefaultGlSetup').then(response => {
-
-                let responseData = response.data;
-                this.debitAccountId = responseData.accountsPayableAccountId;
-
-                if (responseData) {
-
-                    this.id = responseData.id;
-
-                    $("#vatWithHoldAccountId").ejDropDownList({
-
-                        value: responseData.vatPaidAccountId,
-
-                    });
-                    $("#bankAccountId").ejDropDownList({
-
-                        value: responseData.accountPayablesBankAccountId,
-
-                    });
-                    $("#creditAccountId").ejDropDownList({
-
-                        value: responseData.withholdingTaxAccountId,
-
-                    });
-
-                }
-                $("#voucherEntryDate").ejDatePicker({
-                    width: "100%",
-                    dateFormat: "yyyy-MM-dd",
-                    value: moment().add(1, 'months').format("YYYY-MM-DD"),
-                    change: (args) => {
-                        this.voucherEntryDate = args.value;
-                    }
-                });
-
-
-            }).catch(err => {
-
-                console.log(err);
-
-                this.toastHandler('error', 'Unable to get default GL numbers.');
-
-            });
+            this.debitAccountId = responseData.accountsPayableAccountId;
+            this.vatWithHoldAccountId = responseData.vatPaidAccountId;
+            this.bankAccountId = responseData.accountPayablesBankAccountId;
+            this.creditAccountId = responseData.withholdingTaxAccountId;
         },
+
         getTaxLevies() {
-            axios.get('/SharedResource/GetTaxLevies')
-                .then(response => {
-                    this.taxLevyList = response.data;
+            if (this.taxLevyList.length > 0) {
+                const vat = this.taxLevyList.find(
+                    tax => tax.name.toLowerCase() === "vat"
+                );
 
-                    if (this.taxLevyList.length > 0) {
-                        let vat = this.taxLevyList.find(tax => tax.name.toLowerCase() === 'vat');
-                        let nhil = this.taxLevyList.find(tax => tax.name.toLowerCase() === 'nhil');
-                        let getfl = this.taxLevyList.find(tax => tax.name.toLowerCase() === 'getfl');
-                        let covid = this.taxLevyList.find(tax => tax.name.toLowerCase() === 'covid');
-                        let cst = this.taxLevyList.find(tax => tax.name.toLowerCase() === 'cst');
+                const nhil = this.taxLevyList.find(
+                    tax => tax.name.toLowerCase() === "nhil"
+                );
 
-                        this.VatRate = vat ? parseFloat(vat.rate).toFixed(2) : "0.00";
-                        this.NHILRate = nhil ? parseFloat(nhil.rate).toFixed(2) : "0.00";
-                        this.GETFLRate = getfl ? parseFloat(getfl.rate).toFixed(2) : "0.00";
-                        this.covidRate = covid ? parseFloat(covid.rate).toFixed(2) : "0.00";
-                        this.cstRate = cst ? parseFloat(cst.rate).toFixed(2) : "0.00";
-                        this.vatList = this.taxLevyList.filter(tax => tax.type.toLowerCase() === 'vat');
-                        
-                        this.NHIL = nhil?.isApplied || false;
-                        this.Vat = vat?.isApplied || false;
-                        this.GETFL = getfl?.isApplied || false;
-                        this.covid = covid?.isApplied || false;
-                        this.cst = cst?.isApplied || false;
-                    }
-                })
-                .catch(err => {
-                    this.toastHandler('error', 'Unable to get tax levies.');
-                });
+                const getfl = this.taxLevyList.find(
+                    tax => tax.name.toLowerCase() === "getfl"
+                );
+
+                const covid = this.taxLevyList.find(
+                    tax => tax.name.toLowerCase() === "covid"
+                );
+
+                const cst = this.taxLevyList.find(
+                    tax => tax.name.toLowerCase() === "cst"
+                );
+
+                this.VatRate = vat ? parseFloat(vat.rate).toFixed(2) : "0.00";
+                this.NHILRate = nhil ? parseFloat(nhil.rate).toFixed(2) : "0.00";
+                this.GETFLRate = getfl ? parseFloat(getfl.rate).toFixed(2) : "0.00";
+                this.covidRate = covid ? parseFloat(covid.rate).toFixed(2) : "0.00";
+                this.cstRate = cst ? parseFloat(cst.rate).toFixed(2) : "0.00";
+
+                this.vatList = this.taxLevyList.filter(
+                    tax => tax.type.toLowerCase() === "vat"
+                );
+
+                this.NHIL = nhil?.isApplied || false;
+                this.Vat = vat?.isApplied || false;
+                this.GETFL = getfl?.isApplied || false;
+                this.covid = covid?.isApplied || false;
+                this.cst = cst?.isApplied || false;
+            }
+            return this.taxLevyList;
         },
         syncTaxFlags() {
             this.Vat = this.taxLevyList.find(t => t.name.toLowerCase() === 'vat')?.isApplied || false;
@@ -195,89 +600,20 @@
         },
 
         initPaymentVoucher() {
+                this.accountsList.forEach(account => {
+                    account.accountIdentifier =
+                        `${account.accountNo} - ${account.accountName}`;
+                });
 
-            axios.get('/LedgerDataEntry/InitJournalEntry').then(response => {
-
-                let accounts = response.data.accounts;
-
-                if (!accounts || accounts.length === 0) {
-                    accounts = [{
-                        id: this.emptyGuid,
-                        accountIdentifier: 'No Ledger Available'
-                    }];
-                } else {
-                    accounts.forEach(v => {
-                        v.accountIdentifier = `${v.accountNo} - ${v.accountName}`;
-                    });
-                    accounts.sort((a, b) => {
-                        return Number(a.accountNo) - Number(b.accountNo);
-                    });
-                }
-                this.accountsList = accounts;
-
-
-                /* $( '#withHoldingAccountId' ).ejDropDownList({
-                     dataSource: response.data.accounts,
-                     width: "100%",
-                     watermarkText: "Select Account",
-                     fields: { id: "id", text: "accountIdentifier", value: "id" },
-                     enableFilterSearch: true,
-                     change: (args) => {
-                         this.withHoldingAccountId = args.value;
-                     }
-                 });*/
-
-                $( '#vatWithHoldAccountId' ).ejDropDownList( {
-                    dataSource: response.data.accounts,
-                    width: "100%",
-                    watermarkText: "Select Account",
-                    fields: { id: "id", text: "accountIdentifier", value: "id" },
-                    enableFilterSearch: true,
-                    change: (args) => {
-
-                        this.vatWithHoldAccountId = args.value;
-                    }
-                } );
-
-                $( '#bankAccountId' ).ejDropDownList( {
-                    dataSource: response.data.accounts,
-                    width: "100%",
-                    watermarkText: "Select Account",
-                    fields: { id: "id", text: "accountIdentifier", value: "id" },
-                    enableFilterSearch: true,
-                    change: (args) => {
-
-                        this.bankAccountId = args.value;
-                    }
-                } );
-                //credit account
-                $( '#creditAccountId' ).ejDropDownList( {
-                    dataSource: response.data.accounts,
-                    width: "100%",
-                    watermarkText: "Select Account",
-                    fields: { id: "id", text: "accountIdentifier", value: "id" },
-                    enableFilterSearch: true,
-                    change: (args) => {
-
-                        this.creditAccountId = args.value;
-                    }
-                } );
-              
-
-            }).catch(err => {
-
-                this.toastHandler('error', 'Voucher initialization failed.');
-
-            });
+                this.accountsList.sort((a, b) => {
+                    return Number(a.accountNo) - Number(b.accountNo);
+                });
+           
+                return this.accountsList
+           
         },
-        getBankAccounts() {
-            axios.get('/LedgerSetups/GetBankAccounts').then(response => {
-                this.bankAccountList = response.data;
-                
-            }).catch(err => {
-                this.toastHandler('error', 'Unable to get bank accounts.');
-            });
-        },
+
+      
         getAccountDetails(id) {
             return this.accountsList.find(a => a.id === id);
         },
@@ -295,97 +631,84 @@
             this.modeOfPayment = this.cash ? 'Cash' : 'Cheque';
         },
         getVouchers() {
-            axios.get('/ApDataEntry/GetVouchers')
-                .then(response => {
-                    this.voucherList = response.data
-                        .filter(voucher => !voucher.isPosted)
-                        .sort((a, b) => a.invoiceNumber.localeCompare(b.invoiceNumber));
+            this.voucherList = this.vouchers
+                .filter(voucher => !voucher.isPosted)
+                .sort((a, b) =>
+                    a.invoiceNumber.localeCompare(b.invoiceNumber)
+                );
 
-                    this.voucherDetails = [];
-                    this.voucherDetailsMap = {};
+            this.voucherDetails = [];
+            this.voucherDetailsMap = {};
 
-                    this.voucherList.forEach((voucher) => {
-                        // Build child entries instead of using voucher.details
-                        const details = [];
+            this.voucherList.forEach(voucher => {
+                const details = [];
 
-                        // liability (debit)
-                        details.push({
-                            id: voucher.id,
-                            account: voucher.liabilityAccountName,
-                            description: voucher.description,
-                            debitAmount: voucher.paymentAmount,
-                            creditAmount: 0,
-                            buyRate: voucher.buyRate
-                        });
-
-                        // bank (credit)
-                        details.push({
-                            id: voucher.id,
-                            account: voucher.bankAccountName,
-                            description: voucher.description,
-                            debitAmount: 0,
-                            creditAmount: voucher.netAmount,
-                            buyRate: voucher.buyRate
-                        });
-
-                        // VAT withheld - include only if > 0
-                        if (parseFloat(voucher.vatWithHeld) > 0) {
-                            details.push({
-                                id: voucher.id,
-                                account: voucher.vatWithHoldAccountName,
-                                description: "Withholding VAT",
-                                debitAmount: 0,
-                                creditAmount: voucher.vatWithHeld,
-                                buyRate: voucher.buyRate
-                            });
-                        }
-
-                        // Withholding tax - include only if > 0
-                        if (parseFloat(voucher.withHeld) > 0) {
-                            details.push({
-                                id: voucher.id,
-                                account: voucher.creditAccountName,
-                                description: "Withholding Amount",
-                                debitAmount: 0,
-                                creditAmount: voucher.withHeld,
-                                ou: voucher.ou,
-                                referenceNumber: voucher.invoiceNumber,
-                                buyRate: voucher.buyRate
-                            });
-                        }
-
-                        // Save details in map and master list
-                        this.voucherDetailsMap[voucher.id] = details;
-                        this.voucherDetails.push(...details);
-
-
-                        // Display text for dropdown
-                        voucher.displayText = `${voucher.supplierName} - ${voucher.voucherNumber}`;
-                        //dates
-                        voucher.voucherEntryDate = this.formatDate(voucher.voucherEntryDate);
-                        voucher.paymentDate = this.formatDate(voucher.paymentDate);
-                    });
-
-                    // Build grid
-                    this.dataTable(this.voucherList, this.voucherDetails);
-
-                    // Dropdown
-                    $("#voucherId").ejDropDownList({
-                        dataSource: this.voucherList,
-                        watermarkText: "Select Voucher",
-                        width: "100%",
-                        fields: { id: "id", text: "displayText", value: "id" },
-                        enableFilterSearch: true,
-                        change: (args) => {
-                            this.voucherId = args.value;
-                        }
-                    });
-                })
-                .catch(err => {
-                    this.toastHandler('error', 'Unable to get invoices.');
+                // Liability (debit)
+                details.push({
+                    id: voucher.id,
+                    account: voucher.liabilityAccountName,
+                    description: voucher.description,
+                    debitAmount: voucher.paymentAmount,
+                    creditAmount: 0,
+                    buyRate: voucher.buyRate
                 });
-        },
 
+                // Bank (credit)
+                details.push({
+                    id: voucher.id,
+                    account: voucher.bankAccountName,
+                    description: voucher.description,
+                    debitAmount: 0,
+                    creditAmount: voucher.netAmount,
+                    buyRate: voucher.buyRate
+                });
+
+                // VAT withheld (credit)
+                if (parseFloat(voucher.vatWithHeld) > 0) {
+                    details.push({
+                        id: voucher.id,
+                        account: voucher.vatWithHoldAccountName,
+                        description: "Withholding VAT",
+                        debitAmount: 0,
+                        creditAmount: voucher.vatWithHeld,
+                        buyRate: voucher.buyRate
+                    });
+                }
+
+                // Withholding tax (credit)
+                if (parseFloat(voucher.withHeld) > 0) {
+                    details.push({
+                        id: voucher.id,
+                        account: voucher.creditAccountName,
+                        description: "Withholding Amount",
+                        debitAmount: 0,
+                        creditAmount: voucher.withHeld,
+                        ou: voucher.ou,
+                        referenceNumber: voucher.invoiceNumber,
+                        buyRate: voucher.buyRate
+                    });
+                }
+
+                // Save voucher details
+                this.voucherDetailsMap[voucher.id] = details;
+                this.voucherDetails.push(...details);
+
+                // Dropdown display text
+                voucher.displayText =
+                    `${voucher.supplierName} - ${voucher.voucherNumber}`;
+
+                // Format dates
+                voucher.voucherEntryDate =
+                    this.formatDate(voucher.voucherEntryDate);
+
+                voucher.paymentDate =
+                    this.formatDate(voucher.paymentDate);
+            });
+
+            // Build grid
+            this.dataTable(this.voucherList, this.voucherDetails);
+
+        },
         getVoucherDetails(id) {
             return this.voucherList.find(a => a.id === id);
         },
@@ -432,47 +755,54 @@
             });
         },
         getInvoices() {
-            axios.get('/ApDataEntry/GetInvoices').then(response => {
-                this.invoiceList = response.data.sort((a, b) => a.invoiceNumber.localeCompare(b.invoiceNumber));
-                this.invoiceEdithList = this.invoiceList.filter(a => a.isPosted === true && a.isCanceled === false && a.balance > 0);
-                this.invoiceDetailsMap = {};
-                
-                this.invoiceList.forEach((invoice) => {
-                    invoice.invoiceId = invoice.id;
-                    invoice.invoiceDate = this.formatDate(invoice.invoiceDate);
-                    invoice.displayText = `${invoice.supplierName} - ${invoice.invoiceNumber}`;
-                    const descriptions = ["VAT", "NHIL", "GETFL", "COVID", "CST"];
-                    const descriptionsNoVat = ["VAT", "CST"];
-                    invoice.baseAmount = (invoice.invoiceDetails || [])
-                        .filter(detail => !descriptions.includes(detail.description))
-                        .reduce((sum, detail) => sum + parseFloat(detail.subTotal || 0), 0)
-                        .toFixed(2);
-                    this.baseAmount = invoice.baseAmount;
-                    this.invoiceDetailsMap[invoice.id] = (invoice.invoiceDetails || []).map(detail => {
+            
+            // Sort invoices by invoice number
+            this.invoiceList.sort((a, b) =>
+                a.invoiceNumber.localeCompare(b.invoiceNumber)
+            );
+
+            // Only posted, uncanceled invoices with an outstanding balance
+            this.invoiceList.filter(invoice =>
+                invoice.isPosted === true &&
+                invoice.isCanceled === false &&
+                invoice.balance > 0
+            );
+
+            this.invoiceDetailsMap = {};
+
+            this.invoiceList.forEach(invoice => {
+                invoice.invoiceId = invoice.id;
+
+                invoice.invoiceDate = this.formatDate(invoice.invoiceDate);
+
+                invoice.displayText =
+                    `${invoice.supplierName} - ${invoice.invoiceNumber}`;
+
+                const descriptions = ["VAT", "NHIL", "GETFL", "COVID", "CST"];
+
+                invoice.baseAmount = (invoice.invoiceDetails || [])
+                    .filter(detail =>
+                        !descriptions.includes(detail.description)
+                    )
+                    .reduce(
+                        (sum, detail) => sum + parseFloat(detail.subTotal || 0),
+                        0
+                    )
+                    .toFixed(2);
+
+                this.baseAmount = invoice.baseAmount;
+
+                this.invoiceDetailsMap[invoice.id] =
+                    (invoice.invoiceDetails || []).map(detail => {
                         detail.invoiceId = invoice.id;
                         return detail;
                     });
-                    
-                    
+            });
 
-            });
-                    this.invoiceDataTable([]);
-                $("#invoiceId").ejDropDownList({
-                    dataSource: this.invoiceEdithList,
-                    watermarkText: "Select Invoice",
-                    width: "100%",
-                    fields: { id: "id", text: "displayText", value: "id" },
-                    enableFilterSearch: true,
-                    change: (args) => {
-                        this.invoiceId = args.value;
-                    }
-                });
-                
-            }
-            
-            ).catch(err => {
-                this.toastHandler('error', 'Unable to get invoices.');
-            });
+            // Initialize invoice data table
+            this.invoiceDataTable([]);
+
+            return this.invoiceList;
         },
         invoiceDataTable(responseData) {
             $("#invoiceDataTable").ejGrid({
@@ -638,80 +968,114 @@
             this.calculateTotalTaxAmount();
         },
         getSuppliers() {
-            axios.get('/SharedResource/GetSuppliers')
-                .then(response => {
-                    this.supplierList = response.data.sort((a, b) => a.name.localeCompare(b.name)).filter(a => a.statusName.trim().toLowerCase() === 'active');
-                    $("#supplierId").ejDropDownList({
-                        dataSource: response.data,
-                        watermarkText: "Select Supplier",
-                        width: "100%",
-                        fields: { id: "id", text: "name", value: "id" },
-                        enableFilterSearch: true,
-                        change: (args) => {
-                            this.supplierId = args.value;
-                        }
-                    });
-                })
-                .catch(err => {
-                    this.toastHandler('error', 'Unable to get suppliers.');
-                });
-        }, 
+           
+
+            // Sort suppliers alphabetically and keep active suppliers only
+            this.supplierList.sort((a, b) => a.name.localeCompare(b.name));
+            
+        },
+
+        getCurrency() {
+            
+
+            // Find Ghana cedi as the default currency
+            this.defaultCurrency = this.currencyList.find(currency => {
+                const name = (currency.currencyName || "").trim().toLowerCase();
+
+                return name === "ghana cedis" || name === "ghana cedi";
+            });
+
+            if (this.defaultCurrency) {
+                this.payCurrencyId = this.defaultCurrency.id;
+                this.payCurrencyBuyRate = parseFloat(
+                    this.defaultCurrency.buyRate
+                ).toFixed(4);
+            }
+
+            // Initialize currency dropdown
+            $("#payCurrencyId").ejDropDownList({
+                dataSource: this.currencyList,
+                width: "100%",
+                watermarkText: "Select Currency",
+                fields: {
+                    id: "id",
+                    text: "currencyName",
+                    value: "id"
+                },
+                enableFilterSearch: true,
+                value: this.payCurrencyId,
+                change: (args) => {
+                    this.payCurrencyId = args.value;
+
+                    // Update the buy rate for the selected currency
+                    const selectedCurrency = this.currencyList.find(
+                        currency => currency.id === args.value
+                    );
+
+                    if (selectedCurrency) {
+                        this.payCurrencyBuyRate = parseFloat(
+                            selectedCurrency.buyRate
+                        ).toFixed(4);
+                    }
+                }
+            });
+        },
         getSupplierDetails(id) {
             return this.supplierList.find(a => a.id === id);
         },
-        getCurrency() {
-            axios.get('/SharedResource/GetCurrencys').then(response => {
-                this.currencyList = response.data;
-
-                this.defaultCurrency = this.currencyList.find(currency => {
-                    const name = currency.currencyName.trim().toLowerCase();
-                    return name === 'ghana cedis' || name === 'ghana cedi';
-                });
-
-                if (this.defaultCurrency) {
-                    this.payCurrencyId = this.defaultCurrency.id;
-                    this.payCurrencyBuyRate = parseFloat(this.defaultCurrency.buyRate).toFixed(4);
-                }
-
-                $('#payCurrencyId').ejDropDownList({
-                    dataSource: response.data,
-                    width: "100%",
-                    watermarkText: "Select Currency",
-                    fields: { id: "id", text: "currencyName", value: "id" },
-                    enableFilterSearch: true,
-                    value: this.payCurrencyId,
-                    change: (args) => {
-                        this.payCurrencyId = args.value;
-                    }
-                });
-            }).catch(err => {
-                this.toastHandler('error', 'Unable to get currency.');
-            });
-        },
+       
         getCurrencyDetails(id) {
             return this.currencyList.find(a => a.id === id);
         },
         getBanks() {
-            axios.get('/SharedResource/GetBanks').then(response => {
+            this.bankList = [
+                {
+                    id: "11111111-aaaa-1111-aaaa-111111111111",
+                    name: "GCB Bank"
+                },
+                {
+                    id: "22222222-bbbb-2222-bbbb-222222222222",
+                    name: "Ecobank Ghana"
+                },
+                {
+                    id: "33333333-cccc-3333-cccc-333333333333",
+                    name: "Absa Bank Ghana"
+                },
+                {
+                    id: "44444444-dddd-4444-dddd-444444444444",
+                    name: "Fidelity Bank Ghana"
+                },
+                {
+                    id: "55555555-eeee-5555-eeee-555555555555",
+                    name: "Stanbic Bank Ghana"
+                },
+                {
+                    id: "66666666-ffff-6666-ffff-666666666666",
+                    name: "Zenith Bank Ghana"
+                },
+                {
+                    id: "77777777-aaaa-7777-aaaa-777777777777",
+                    name: "CalBank"
+                },
+                {
+                    id: "88888888-bbbb-8888-bbbb-888888888888",
+                    name: "Access Bank Ghana"
+                }
+            ];
 
-                this.bankList = response.data;
-
-                $("#bankId" ).ejDropDownList({
-                    dataSource: response.data,
-                    watermarkText: "Select Bank",
-                    width: "100%",
-                    fields: { id: "id", text: "name", value: "id" },
-                    enableFilterSearch: true,
-                    change: (args) => {
-
-                        this.bankId = args.value;
-                    }
-                });
-
-            }).catch(err => {
-
-                this.toastHandler('error', 'Unable to retrieve banks.');
-
+            $("#bankId").ejDropDownList({
+                dataSource: this.bankList,
+                watermarkText: "Select Bank",
+                width: "100%",
+                fields: {
+                    id: "id",
+                    text: "name",
+                    value: "id"
+                },
+                enableFilterSearch: true,
+                change: (args) => {
+                    this.bankId = args.value;
+                }
             });
         },
         getBankDetails(id) {
@@ -1062,35 +1426,6 @@
                 this.isPosted = voucher.isPosted;
                 this.referenceNumber = voucher.referenceNumber;
                 this.tenantId = voucher.tenantId;
-                $("#invoiceId").ejDropDownList({value: ''});
-                let dropdown = $("#bankAccountId").data("ejDropDownList");
-                if (dropdown) {
-                    dropdown.option("value", voucher.bankAccountId);
-                }
-                let bankDropdown = $("#bankId").data("ejDropDownList");
-                if (bankDropdown) {
-                    bankDropdown.option("value", voucher.bankId);
-                }
-                let bankBranchDropdown = $("#bankBranchId").data("ejDropDownList");
-                if (bankBranchDropdown) {
-                    bankBranchDropdown.option("value", voucher.bankBranchId);
-                }
-                let liabilityAccountDropdown = $("#liabilityAccountId").data("ejDropDownList");
-                if (liabilityAccountDropdown) {
-                    liabilityAccountDropdown.option("value", voucher.liabilityAccountId);
-                }
-                let vatWithHoldingAccountDropdown = $("#vatWithHoldAccountId").data("ejDropDownList");
-                if (vatWithHoldingAccountDropdown) {
-                    vatWithHoldingAccountDropdown.option("value", voucher.vatWithHoldAccountId);
-                }
-                let payCurrencyDropdown = $("#payCurrencyId").data("ejDropDownList");
-                if (payCurrencyDropdown) {
-                    payCurrencyDropdown.option("value", voucher.payCurrencyId);
-                }
-                let creditAccountDropdown = $("#creditAccountId").data("ejDropDownList");
-                if (creditAccountDropdown) {
-                    creditAccountDropdown.option("value", voucher.creditAccountId);
-                }
                 this.taxLevyList = this.taxLevyList.map(tax => {
                     switch (tax.name.toLowerCase()) {
                         case 'vat':
@@ -1163,30 +1498,19 @@
             }
         },
         toastHandler(type, message = 'An unexpected error occurred.') {
-            //display alert with 
-            toastr.options = {
-                closeButton: true,
-                progressBar: true,
-                showMethod: 'fadeIn',
-                hideMethod: 'fadeOut',
-                timeOut: 10000,
-            };
-
-            switch (type) {
-
-                case 'warning':
-                    toastr.warning('', message);
-                    break;
-                case 'error':
-                    toastr.error('', message);
-                    break;
-                case 'info':
-                    toastr.info('', message);
-                    break;
-                default:
-                    toastr.success('', message);
-                    break;
+            if (typeof Swal === 'undefined') {
+                console.log(message);
+                return;
             }
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'success',
+                title: message,
+                showConfirmButton: false,
+                timer: 4000,
+                timerProgressBar: true
+            });
 
         },
         resetBankFields() {
@@ -1194,8 +1518,6 @@
             this.bankName = '';
             this.bankBranchId = '';
             this.bankBranchName = '';
-            $("#bankId").ejDropDownList("option", "value", null);
-            $("#bankBranchId").ejDropDownList("option", "value", null);
         },
     },
     watch: {
@@ -1245,20 +1567,7 @@
 
                 // reset model
                 this.invoiceId = '';
-
-                // reset dropdown
-                const dropdown = $("#invoiceId").data("ejDropDownList");
-                if (dropdown?.option) {
-                    dropdown.option("value", '');
-                } else {
-                    $("#invoiceId").ejDropDownList({ value: '' });
-                }
-
-                // clear grid selection
-                try {
-                    const grid = $("#invoiceDataTable").data("ejGrid");
-                    grid?.clearSelection?.();
-                } catch (_) {}
+                
 
                 return;
             }
@@ -1359,7 +1668,7 @@
     mounted() {
         this.getBusinessProfile();
         this.initPaymentVoucher();
-        this.getBankAccounts();
+       // this.getBankAccounts();
         this.getCurrency();
         this.getTaxLevies();
         this.setCurrentInvoice();
@@ -1374,4 +1683,6 @@
     }
     
 });
+app.use(DataGridPlugin);
+app.use(WSelectPlugin);
     app.mount('#app');

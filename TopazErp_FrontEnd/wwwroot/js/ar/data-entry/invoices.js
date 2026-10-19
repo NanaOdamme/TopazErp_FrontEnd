@@ -157,10 +157,11 @@
             const defaultLiability = accounts.find((account) => account.id === 'acc-006');
             return {
                 emptyGuid: EMPTY_GUID,
-                theme: '#0645e7',
+                theme: '#f88500',
+                theme1: '#545454',
                 tenantId: 2,
                 accounts: clone(accounts),
-                customers: clone(customersq),
+                customers: clone(customers),
                 currencies: clone(currencies),
                 organizationalUnits: clone(organizationalUnits),
                 taxLevyList: taxCatalog.map((tax) => ({ ...tax, isApplied: false })),
@@ -641,3 +642,4 @@
     globalThis.invoiceEntryApp = app;
     globalThis.invoiceEntryVm = app.mount('#app');
 })();
+

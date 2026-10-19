@@ -1,0 +1,511 @@
+﻿@{
+    ViewBag.Title = "Default GL Numbers";
+    Layout = "~/Views/Shared/_adminArLayout.cshtml";
+}
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="mb-2 flex items-center gap-2 text-sm text-gray-500">
+            <span>AR - Setups</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="font-medium text-blue-600">Default GL Numbers</span>
+        </div>
+
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <h2 class="text-2xl font-semibold text-gray-800">
+                    Default GL Numbers
+                </h2>
+              
+            </div>
+
+          
+        </div>
+    </div>
+
+    <div id="app" class="card space-y-6" data-card-title="Default GL Numbers">
+  
+<div class="grid grid-cols-1 gap-5 mb-2 lg:grid-cols-4">
+
+    <div>
+        <label for="accountPayablesBankAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            A/P Bank Account
+        </label>
+        <input id="accountPayablesBankAccountId"
+               v-model="accountPayablesBankAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="payRollBankAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Payroll Bank Account
+        </label>
+        <input id="payRollBankAccountId"
+               v-model="payRollBankAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="accountsReceivableBankAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            A/R Bank Account
+        </label>
+        <input id="accountsReceivableBankAccountId"
+               v-model="accountsReceivableBankAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="salesBankAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Sales Bank Account
+        </label>
+        <input id="salesBankAccountId"
+               v-model="salesBankAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="accountsReceivableAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Accounts Receivable
+        </label>
+        <input id="accountsReceivableAccountId"
+               v-model="accountsReceivableAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="accountsPayableAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Accounts Payable
+        </label>
+        <input id="accountsPayableAccountId"
+               v-model="accountsPayableAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="withholdingTaxAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Withholding
+        </label>
+        <input id="withholdingTaxAccountId"
+               v-model="withholdingTaxAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="imprestCategoryId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Imprest Category
+        </label>
+        <input id="imprestCategoryId"
+               v-model="imprestCategoryId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="creditPurchasesAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Credit Purchases
+        </label>
+        <input id="creditPurchasesAccountId"
+               v-model="creditPurchasesAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="advanceFromCustomerAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Advance From Customer
+        </label>
+        <input id="advanceFromCustomerAccountId"
+               v-model="advanceFromCustomerAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="covidTaxRecievedAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            COVID Tax Received
+        </label>
+        <input id="covidTaxRecievedAccountId"
+               v-model="covidTaxRecievedAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="communicationsServiceTaxReceivedAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Communications Service Tax Received
+        </label>
+        <input id="communicationsServiceTaxReceivedAccountId"
+               v-model="communicationsServiceTaxReceivedAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="inventoryAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Inventory
+        </label>
+        <input id="inventoryAccountId"
+               v-model="inventoryAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="salesRevenueAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Sales (Revenue)
+        </label>
+        <input id="salesRevenueAccountId"
+               v-model="salesRevenueAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="stockPurchasesAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Stock Purchases
+        </label>
+        <input id="stockPurchasesAccountId"
+               v-model="stockPurchasesAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="currentEarningsAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Current Earnings
+        </label>
+        <input id="currentEarningsAccountId"
+               v-model="currentEarningsAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="retainedEarningsAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Retained Earnings
+        </label>
+        <input id="retainedEarningsAccountId"
+               v-model="retainedEarningsAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="vatReceivedAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            VAT Received
+        </label>
+        <input id="vatReceivedAccountId"
+               v-model="vatReceivedAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="imprestGlAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Imprest GL #
+        </label>
+        <input id="imprestGlAccountId"
+               v-model="imprestGlAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="purchasesBankAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Purchases Bank
+        </label>
+        <input id="purchasesBankAccountId"
+               v-model="purchasesBankAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="advanceToSupplierAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Advance to Supplier
+        </label>
+        <input id="advanceToSupplierAccountId"
+               v-model="advanceToSupplierAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="covidTaxPaidAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            COVID Tax Paid
+        </label>
+        <input id="covidTaxPaidAccountId"
+               v-model="covidTaxPaidAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="communicationsServiceTaxPaidAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Communications Service Tax Paid
+        </label>
+        <input id="communicationsServiceTaxPaidAccountId"
+               v-model="communicationsServiceTaxPaidAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="vatRate"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            VAT Rate
+        </label>
+        <input id="vatRate"
+               v-model="vatRate"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="goodsInTransitAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Goods in Transit
+        </label>
+        <input id="goodsInTransitAccountId"
+               v-model="goodsInTransitAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="unrealizedFxLossAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Unrealized FX Loss
+        </label>
+        <input id="unrealizedFxLossAccountId"
+               v-model="unrealizedFxLossAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="unrealizedFxGainAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Unrealized FX Gain
+        </label>
+        <input id="unrealizedFxGainAccountId"
+               v-model="unrealizedFxGainAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="realizedFxLossAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Realized FX Loss
+        </label>
+        <input id="realizedFxLossAccountId"
+               v-model="realizedFxLossAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="realizedFxGainAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            Realized FX Gain
+        </label>
+        <input id="realizedFxGainAccountId"
+               v-model="realizedFxGainAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="vatPaidAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            VAT Paid
+        </label>
+        <input id="vatPaidAccountId"
+               v-model="vatPaidAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="getflReceivedAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            GETFL Received
+        </label>
+        <input id="getflReceivedAccountId"
+               v-model="getflReceivedAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="getflPaidAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            GETFL Paid
+        </label>
+        <input id="getflPaidAccountId"
+               v-model="getflPaidAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="nhilReceivedAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            NHIL Received
+        </label>
+        <input id="nhilReceivedAccountId"
+               v-model="nhilReceivedAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+    <div>
+        <label for="nhilPaidAccountId"
+               class="label mb-1.5 block text-sm font-medium text-gray-700">
+            NHIL Paid
+        </label>
+        <input id="nhilPaidAccountId"
+               v-model="nhilPaidAccountId"
+               type="text"
+               class="input-control" />
+    </div>
+
+</div>
+
+<hr class="my-6 border-gray-200 dark:border-slate-700" />
+
+<!-- Social Security Information -->
+<fieldset class="rounded-xl border border-gray-200 p-4 dark:border-slate-700">
+    <legend class="mb-2 px-2 text-sm font-semibold text-blue-500 dark:text-blue-400">
+        Social Security Information
+    </legend>
+
+    <div class="mb-2 grid grid-cols-1 gap-5 lg:grid-cols-4">
+
+        <div>
+            <label for="socialSecurityFundEmployerRate"
+                   class="label mb-1.5 block text-sm font-medium text-gray-700">
+                Employer's Portion of Social Security Rate
+            </label>
+            <input id="socialSecurityFundEmployerRate"
+                   v-model="socialSecurityFundEmployerRate"
+                   type="text"
+                   class="input-control" />
+        </div>
+
+        <div>
+            <label for="socialSecurityFundEmployeeRate"
+                   class="label mb-1.5 block text-sm font-medium text-gray-700">
+                Employee's Portion of Social Security Rate
+            </label>
+            <input id="socialSecurityFundEmployeeRate"
+                   v-model="socialSecurityFundEmployeeRate"
+                   type="text"
+                   class="input-control" />
+        </div>
+
+        <div>
+            <label for="socialSecurityEmployerPortionDefaultExpenseGl"
+                   class="label mb-1.5 block text-sm font-medium text-gray-700">
+                Employer SSF Default Expense GL
+            </label>
+            <input id="socialSecurityEmployerPortionDefaultExpenseGl"
+                   v-model="socialSecurityEmployerPortionDefaultExpenseGl"
+                   type="text"
+                   class="input-control" />
+        </div>
+
+        <div>
+            <label for="socialSecurityEmployeePortionDefaultExpenseGl"
+                   class="label mb-1.5 block text-sm font-medium text-gray-700">
+                Employee SSF Default Expense GL
+            </label>
+            <input id="socialSecurityEmployeePortionDefaultExpenseGl"
+                   v-model="socialSecurityEmployeePortionDefaultExpenseGl"
+                   type="text"
+                   class="input-control" />
+        </div>
+
+        <div>
+            <label for="socialSecurityEmployerPortionDefaultLiabilityGl"
+                   class="label mb-1.5 block text-sm font-medium text-gray-700">
+                Employer SSF Default Liability GL
+            </label>
+            <input id="socialSecurityEmployerPortionDefaultLiabilityGl"
+                   v-model="socialSecurityEmployerPortionDefaultLiabilityGl"
+                   type="text"
+                   class="input-control" />
+        </div>
+
+        <div>
+            <label for="socialSecurityEmployeePortionDefaultLiabilityGl"
+                   class="label mb-1.5 block text-sm font-medium text-gray-700">
+                Employee SSF Default Liability GL
+            </label>
+            <input id="socialSecurityEmployeePortionDefaultLiabilityGl"
+                   v-model="socialSecurityEmployeePortionDefaultLiabilityGl"
+                   type="text"
+                   class="input-control" />
+        </div>
+
+    </div>
+</fieldset>
+
+<!-- Save -->
+<div class="mt-6 flex justify-end">
+    <button type="button"
+            :disabled="isLoading"
+            v-on:click="saveDefaultGlNumbers()"
+            class="inline-flex items-center justify-center gap-2 rounded-lg
+                   bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm
+                   transition hover:bg-blue-700
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+                   disabled:cursor-not-allowed disabled:opacity-60
+                   dark:bg-blue-600 dark:hover:bg-blue-500
+                   dark:focus:ring-offset-slate-900">
+
+        Save
+
+        <div v-if="isLoading"
+             class="spinner-border"
+             role="status"
+             aria-hidden="true"
+             style="width: 20px; height: 20px">
+        </div>
+    </button>
+</div>
+
+</div>
+</div>
+
+<script src="~/js/shared/vue3/default-gl-numbers.js" asp-append-version="true"></script>
