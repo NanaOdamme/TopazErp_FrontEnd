@@ -5,6 +5,26 @@ public class SharedModelCollection
     
 }
 
+public class Bank: AuditedEntity<Guid>
+{
+    public string Name { get; set; }
+    public string ContactPerson { get; set; }
+    public string ContactNo { get; set; }
+    public string Email { get; set; }
+    public string BankCode { get; set; }
+    public List<BankBranch> BankBranches { get; set; }
+}
+
+public class BankBranch
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; }
+    public string ContactPerson { get; set; }
+    public string ContactNo { get; set; }
+    public string Email { get; set; }
+    
+}
+
 public class SubscriptionInfo
 {
 
@@ -33,6 +53,27 @@ public class SubscriptionInfo
     public string MobileMoneyChannel { get; set; } //mtn-gh-direct-debit, vodafone-gh-direct-debit
 }
 
+public class SystemNumber: AuditedEntity<Guid>
+{
+    public int ModuleId { get; set; }
+    
+    public string ItemName { get; set; }
+    public string Key { get; set; }
+    public string Prefix { get; set; }
+    
+    public string Suffix { get; set; }
+    
+    public string FormatPattern { get; set; } // eg. {PREFIX}{NO}{SUFFIX}
+    
+    public int Padding { get; set; }
+    public int LastNo { get; set; }
+}
+
+public class CostCenter: AuditedEntity<Guid>
+{
+    public Guid ParentId { get; set; }
+    public string Name { get; set; }
+}
 
 public class Currency: AuditedEntity<Guid>
 {

@@ -1,0 +1,69 @@
+﻿@{
+    ViewBag.Title = "Countries & Nationalities";
+    Layout = "~/Views/Shared/_adminArLayout.cshtml";
+}
+
+<style>
+    .b {
+        border-radius: 15px;
+        border: 0.5px solid #e3e3e3;
+    }
+</style>
+<div class="app-content content">
+    <div class="content-wrapper">
+        <div class="content-header row">
+            <div class="content-header-left col-md-6 col-12 mb-2">
+                <h3 class="content-header-title"> Countries &amp; Nationalities </h3>
+                <div class="row breadcrumbs-top">
+                    <div class="breadcrumb-wrapper col-12">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item">
+                                <a href="../Dashboard/Ap" class="text-info"><i class="la la-home"></i> Home</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a class="text-info" href="#"> Shared Resources </a>
+                            </li>
+                            <li class="breadcrumb-item active">
+                                Countries &amp; Nationalities
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="content-body">
+            <!-- Basic Tables start -->
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 my-2">
+                <div class="col-12">
+                    <div class="card b">
+                        <div class="card-header">
+                            <h4 class="card-title"> Countries &amp; Nationalities </h4>
+                            <a class="heading-elements-toggle"><i class="la la-ellipsis-v font-medium-3"></i></a>
+                            <div class="heading-elements">
+                                <ul class="list-inline mb-0">
+                                    <li><a data-action="expand"><i class="ft-maximize"></i></a></li>
+                                    <li><a data-action="close"><i class="ft-x"></i></a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="card-content collapse show">
+                            <div class="card-body" id="app">
+
+
+                                <div id="dataTable"></div>
+
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
+<script src="~/js/shared/vue3/nationalities.js" asp-append-version="true"></script>

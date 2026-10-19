@@ -11,6 +11,23 @@ public interface ITopazErpApi
     Task<VerifyOtpResponse> VerifyOtp(string otp, string authToken);
     Task<SubscriptionInfoResponse> GetSubscriptionInfo();
     
+    //shared 
+    Task<BankResponse> GetBanks(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreateBank(object dto);
+    Task<BaseApiResponse> UpdateBank(object dto);
+    Task<BaseApiResponse> DeleteBank(Guid id);
+    Task<BaseApiResponse> CreateBranch(object input);
+    Task<BaseApiResponse> UpdateBranch(object input);
+    Task<BaseApiResponse> DeleteBranch(object input);
+     
+    //settings / system numbers
+    Task<SystemNumberResponse> GetSystemNumbers(string key);
+    Task<BaseApiResponse> UpdateSystemNumber(object dto);
+    //cost centers
+    Task<CostCenterResponse> GetCostCenters(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreateCostCenter(object dto);
+    Task<BaseApiResponse> UpdateCostCenter(object dto);
+    Task<BaseApiResponse> DeleteCostCenter(Guid id);
     //payroll
     
     // allowance types

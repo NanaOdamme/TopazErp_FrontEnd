@@ -6,6 +6,18 @@ public class ApiResponseCollection
 {
     
 }
+public class SystemNumberResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<SystemNumber> Result { get; set; }
+}
+
+
+public class CostCenterResponse: BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public PagedRecords<CostCenter> Result { get; set; }
+}
 
 public class CurrencyResponse: BaseApiResponseModel
 {
@@ -151,6 +163,11 @@ public class AccountHeadResponse : BaseApiResponseModel
     public PagedRecords<AccountHead> Result { get; set; }
 }
 
+public class BankResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public PagedRecords<Bank> Result { get; set; }
+}
 
 public class BankAccountResponse : BaseApiResponseModel
 {
