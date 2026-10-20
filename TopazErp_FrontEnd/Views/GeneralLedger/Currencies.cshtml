@@ -1,4 +1,4 @@
-﻿@{
+@{
 ViewBag.Title = "Currencies";
 Layout = "~/Views/Shared/_adminLedgerLayout.cshtml";
 
@@ -37,6 +37,11 @@ Layout = "~/Views/Shared/_adminLedgerLayout.cshtml";
                 :page-size="10"
                 :selectable="true"
                 :actions="true"
+                :aggregates="false"
+                :loading="isShimmerLoading"
+                @@create="onCreate"
+                @@update="onUpdate"
+                @@delete="onDelete"
             ></data-grid>
           
         </div>

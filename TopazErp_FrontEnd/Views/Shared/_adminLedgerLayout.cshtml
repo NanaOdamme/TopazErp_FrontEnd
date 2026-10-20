@@ -82,6 +82,11 @@
     <environment names="Production">
         <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     </environment>
+    
+    
+    <link rel="stylesheet" href="~/css/data-table.css" asp-append-version="true" />
+    <script src="~/js/components/dataTable.js" asp-append-version="true"></script>
+    <script src="~/js/components/select-input.js" asp-append-version="true"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -298,12 +303,7 @@
                             <span class="menu-title">System Numbers</span>
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="Statuses">
-                            <i class="bi bi-check2-circle" aria-hidden="true"></i>
-                            <span class="menu-title">Transaction Statuses</span>
-                        </a>
-                    </li>
+                     
                     <li class="nav-item">
                         <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="DefaultGlNumbers">
                             <i class="bi bi-bookmark-check" aria-hidden="true"></i>
@@ -333,33 +333,30 @@
                     <li class="nav-item">
                         <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="CoaControl">
                             <i class="bi bi-list-nested" aria-hidden="true"></i>
-                            <span class="menu-title">COA Control Accounts</span>
+                            <span class="menu-title">Chart of Accounts Control</span>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="CoaDetails">
                             <i class="bi bi-card-checklist" aria-hidden="true"></i>
-                            <span class="menu-title">Account Details</span>
+                            <span class="menu-title">Chart of Account Details</span>
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="CostCenters">
-                            <i class="bi bi-pie-chart-fill" aria-hidden="true"></i>
-                            <span class="menu-title">Cost Center Mappings</span>
-                        </a>
-                    </li>
+                    
                     <li class="nav-item">
                         <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="BankAccounts">
                             <i class="bi bi-wallet2" aria-hidden="true"></i>
                             <span class="menu-title">Bank Accounts Setup</span>
                         </a>
                     </li>
+                    
                     <li class="nav-item">
                         <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="DefaultGlNumbers">
                             <i class="bi bi-journal-check" aria-hidden="true"></i>
                             <span class="menu-title">Default GL Accounts</span>
                         </a>
                     </li>
+                    
                 </ul>
             </li>
 

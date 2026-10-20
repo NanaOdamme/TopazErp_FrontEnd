@@ -16,13 +16,66 @@ public class SystemNumberResponse : BaseApiResponseModel
 public class CostCenterResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public PagedRecords<CostCenter> Result { get; set; }
+    public List<CostCenter> Result { get; set; }
 }
+
+public class CustomerGroupResponse: BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public PagedRecords<CustomerGroup> Result { get; set; }
+}
+
+public class CustomerResponse: BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public PagedRecords<Customer> Result { get; set; }
+}
+
+public class CustomersResponse: BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<Customer> Result { get; set; }
+}
+
+public class SupplierResponse: BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public PagedRecords<Supplier> Result { get; set; }
+}
+
+public class SuppliersResponse: BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<Supplier> Result { get; set; }
+}
+
+public class SupplierGroupResponse: BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<SupplierGroup> Result { get; set; }
+}
+
+public class DepartmentResponse: BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<Department> Result { get; set; }
+}
+
+
+
+
+public class TaxLevyResponse: BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public PagedRecords<TaxLevy> Result { get; set; }
+}
+
+
 
 public class CurrencyResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public PagedRecords<Currency> Result { get; set; }
+    public List<Currency> Result { get; set; }
 }
 public class JournalTransactionResponse: BaseApiResponseModel
 {
@@ -166,7 +219,13 @@ public class AccountHeadResponse : BaseApiResponseModel
 public class BankResponse : BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public PagedRecords<Bank> Result { get; set; }
+    public List<Bank> Result { get; set; }
+}
+
+public class CompanyProfileResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public CompanyProfile Result { get; set; }
 }
 
 public class BankAccountResponse : BaseApiResponseModel

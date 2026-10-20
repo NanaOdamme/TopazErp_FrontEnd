@@ -1,7 +1,6 @@
-﻿@{
+@{
     ViewBag.Title = "Cost Centers";
     Layout = "~/Views/Shared/_adminLedgerLayout.cshtml";
-
 }
 <div class="content">
     <div class="mb-6 content-header">
@@ -12,40 +11,38 @@
         </div>
 
         <div class="flex items-center gap-3">
-
             <div class="page-title">
                 <h2 class="text-2xl font-semibold text-gray-800">
                     Cost Centers
                 </h2>
-
             </div>
         </div>
     </div>
+
     <div class="card" data-card-title="Cost Centers">
         <div id="app">
             <data-grid
-                title="Departments"
-                :columns="departmentCol"
-                :data="departmentList"
+                title="Cost Centers"
+                :columns="costCenterCol"
+                :data="costCenterList"
                 :theme="theme"
                 row-id="id"
                 label-key="name"
-                item-label="data"
-                item-label-plural="Departments"
+                item-label="Cost Center"
+                item-label-plural="Cost Centers"
                 add-label="Add"
                 :page-size="10"
                 :selectable="true"
                 :actions="true"
+                :aggregates="false"
+                :show-row-numbers="false"
+                :loading="isShimmerLoading"
                 @@create="onCreate"
                 @@update="onUpdate"
+                @@delete="onDelete"
             ></data-grid>
         </div>
-                               
-       
-
     </div>
 </div>
-
-
 
 <script src="~/js/shared/vue3/cost-centers.js" asp-append-version="true"></script>
