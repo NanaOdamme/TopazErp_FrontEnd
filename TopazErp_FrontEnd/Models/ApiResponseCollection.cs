@@ -213,7 +213,7 @@ public class PayCalendarResponse: BaseApiResponseModel
 public class AccountHeadResponse : BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public PagedRecords<AccountHead> Result { get; set; }
+    public List<AccountHead> Result { get; set; }
 }
 
 public class BankResponse : BaseApiResponseModel
@@ -237,7 +237,7 @@ public class BankAccountResponse : BaseApiResponseModel
 public class CoaControlResponse : BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public PagedRecords<CoaControl> Result { get; set; }
+    public List<CoaControl> Result { get; set; }
 }
 
 public class CoaControlListResponse : BaseApiResponseModel
@@ -249,7 +249,7 @@ public class CoaControlListResponse : BaseApiResponseModel
 public class CoaDetailResponse : BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public PagedRecords<CoaDetail> Result { get; set; }
+    public List<CoaDetail> Result { get; set; }
 }
 
 public class CheckCoaDetailResponse : BaseApiResponseModel

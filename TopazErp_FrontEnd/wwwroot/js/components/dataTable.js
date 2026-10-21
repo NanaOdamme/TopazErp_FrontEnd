@@ -375,6 +375,15 @@
                 if (typeof c.validate === 'function') { const r = c.validate(val, this.row); if (r !== true && r) return r; }
                 return '';
             },
+            onFieldChange(c, ev) {
+                const t = typeOf(c);
+                const val = (t.input === 'checkbox' && ev?.target) ? ev.target.checked
+                    : ((ev && ev.target && ev.target.value !== undefined) ? ev.target.value : this.values[c.key]);
+                this.values[c.key] = val;
+                if (typeof c.onChange === 'function') {
+                    c.onChange(val, this.values, this.row, ev);
+                }
+            },
             submit() {
                 const data = {}; const errors = {}; let firstBad = null;
                 this.columns.forEach((c) => {
@@ -425,16 +434,16 @@
 
               <!-- checkbox -->
               <label v-if="t(c).input === 'checkbox'" class="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-                <input :id="idOf(c)" v-model="values[c.key]" type="checkbox" class="dt-check h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500">
+                <input :id="idOf(c)" v-model="values[c.key]" @change="onFieldChange(c, $event)" type="checkbox" class="dt-check h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500">
                 {{ c.checkboxLabel || 'Yes, active' }}
               </label>
 
               <!-- textarea -->
-              <textarea v-else-if="t(c).input === 'textarea'" :id="idOf(c)" v-model="values[c.key]" rows="3"
+              <textarea v-else-if="t(c).input === 'textarea'" :id="idOf(c)" v-model="values[c.key]" @change="onFieldChange(c, $event)" rows="3"
                 class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"></textarea>
 
               <!-- select -->
-              <select v-else-if="t(c).input === 'select'" :id="idOf(c)" v-model="values[c.key]"
+              <select v-else-if="t(c).input === 'select'" :id="idOf(c)" v-model="values[c.key]" @change="onFieldChange(c, $event)"
                 class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
                 <option value="">— Select —</option>
                 <option v-for="o in optionList(c)" :key="String(o.value)" :value="o.value">
@@ -444,14 +453,14 @@
 
               <!-- number / currency -->
               <div v-else-if="t(c).input === 'number'" class="relative">
-                <input :id="idOf(c)" v-model="values[c.key]" type="number" :step="inputStep(c)" :min="c.min" :max="c.max"
+                <input :id="idOf(c)" v-model="values[c.key]" @change="onFieldChange(c, $event)" type="number" :step="inputStep(c)" :min="c.min" :max="c.max"
                   class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                   :class="c.type === 'currency' ? 'pl-12' : ''">
                 <span v-if="c.type === 'currency'" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">{{ c.currencySymbol || 'GH₵' }}</span>
               </div>
 
               <!-- everything else (text, email, tel, url, date, datetime, time, color, tags) -->
-              <input v-else :id="idOf(c)" v-model="values[c.key]" :type="t(c).input"
+              <input v-else :id="idOf(c)" v-model="values[c.key]" @change="onFieldChange(c, $event)" :type="t(c).input"
                 class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                 :placeholder="t(c).input === 'tags' ? 'Comma separated, e.g. Vue, Tailwind' : (c.placeholder || '')">
 

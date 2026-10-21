@@ -2719,7 +2719,7 @@ public class TopazErpApi: ITopazErpApi
     {
         var authToken = _claimsHelper.GetAuthToken();
         
-        string url = $"{_apiBaseUrl}AccountHead/GetAll?pageNo={pageNo}&pageSize={pageSize}";
+        string url = $"{_apiBaseUrl}CoaHierachy/ListAll?pageNo={pageNo}&pageSize={pageSize}";
 
         //if query is not null
         if (!string.IsNullOrEmpty(query))
@@ -2746,7 +2746,7 @@ public class TopazErpApi: ITopazErpApi
     {
         var authToken = _claimsHelper.GetAuthToken();
         
-        string url = $"{_apiBaseUrl}AccountHead/Create";
+        string url = $"{_apiBaseUrl}CoaHierachy/Create";
 
         var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");
@@ -2767,9 +2767,9 @@ public class TopazErpApi: ITopazErpApi
     public async Task<BaseApiResponse> UpdateAccountHead(object dto)
     {
         var authToken = _claimsHelper.GetAuthToken();
-        string url = $"{_apiBaseUrl}AccountHead/Update";
+        string url = $"{_apiBaseUrl}CoaHierachy/Update";
 
-        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        var request = new HttpRequestMessage(HttpMethod.Put, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");
         request.Content = JsonContent.Create(dto);  
 
@@ -2788,7 +2788,7 @@ public class TopazErpApi: ITopazErpApi
     public async Task<BaseApiResponse> DeleteAccountHead(Guid id)
     {
         var authToken = _claimsHelper.GetAuthToken();
-        string url = $"{_apiBaseUrl}AccountHead/Delete?id={id}";
+        string url = $"{_apiBaseUrl}CoaHierachy/Delete?id={id}";
 
         var request = new HttpRequestMessage(HttpMethod.Delete, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");
@@ -2809,7 +2809,12 @@ public class TopazErpApi: ITopazErpApi
     {
         var authToken = _claimsHelper.GetAuthToken();
         
-        string url = $"{_apiBaseUrl}CoaControl/GetAll?pageNo={pageNo}&pageSize={pageSize}&accountHeadId={accountHeadId}";
+        string url = $"{_apiBaseUrl}CoaControl/ListAll?pageNo={pageNo}&pageSize={pageSize}";
+
+        if (accountHeadId != Guid.Empty)
+        {
+            url += $"&accountHeadId={accountHeadId}";
+        }
 
         //if query is not null
         if (!string.IsNullOrEmpty(query))
@@ -2880,7 +2885,7 @@ public class TopazErpApi: ITopazErpApi
         var authToken = _claimsHelper.GetAuthToken();
         string url = $"{_apiBaseUrl}CoaControl/Update";
 
-        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        var request = new HttpRequestMessage(HttpMethod.Put, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");
         request.Content = JsonContent.Create(dto);  
 
@@ -2921,7 +2926,7 @@ public class TopazErpApi: ITopazErpApi
     {
         var authToken = _claimsHelper.GetAuthToken();
         
-        string url = $"{_apiBaseUrl}CoaDetail/GetAll?pageNo={pageNo}&pageSize={pageSize}&isActive={isActive}";
+        string url = $"{_apiBaseUrl}CoaDetail/ListAll?pageNo={pageNo}&pageSize={pageSize}&isActive={isActive}";
 
         //if query is not null
         if (!string.IsNullOrEmpty(query))
