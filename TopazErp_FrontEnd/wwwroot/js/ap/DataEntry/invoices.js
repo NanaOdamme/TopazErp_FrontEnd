@@ -2,6 +2,17 @@
     'use strict';
 
     const EMPTY_GUID = '00000000-0000-0000-0000-000000000000';
+
+    const api = axios.create({ baseURL: 'http://localhost:5300', withCredentials: true });
+    const ENDPOINTS = {
+        invoices: '/ApDataEntry/GetInvoices',
+        suppliers: '/SharedResource/GetSuppliers',
+        currencies: '/SharedResource/GetCurrencys',
+        organizationalUnits: '/SharedResource/GetCostCenters/',
+        accounts: '/LedgerDataEntry/InitJournalEntry',
+        taxLevies: '/SharedResource/GetTaxLevies' 
+    };
+
     const roundMoney = (value) => Math.round((Number.isFinite(Number(value)) ? Number(value) : 0) * 100) / 100;
     const toNumber = (value, fallback = 0) => {
         if (value === '' || value === null || value === undefined) return fallback;
@@ -9,7 +20,6 @@
         return Number.isFinite(number) ? number : fallback;
     };
     const asBoolean = (value) => value === true || value === 1 || value === '1' || String(value).toLowerCase() === 'true';
-    const clone = (value) => JSON.parse(JSON.stringify(value));
     const isoDate = (date) => {
         if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}/.test(date)) return date.slice(0, 10);
         const d = date instanceof Date ? date : new Date(date);
@@ -29,147 +39,58 @@
             : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
         return `${prefix}-${value}`;
     };
+    const asList = (result) => (Array.isArray(result) ? result : (result && Array.isArray(result.items) ? result.items : []));
+
+    // Normalizes .NET PascalCase -> camelCase once, so Id/InvoiceNumber still works
+    const toCamel = s => s.charAt(0).toLowerCase() + s.slice(1);
+    const normalizeKeys = obj => {
+        if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return obj;
+        if (obj.id || obj.Id) { /* has id already */ }
+        const out = {};
+        for (const [k,v] of Object.entries(obj)) out[toCamel(k)] = v;
+        return out;
+    };
+
+    // Generic unwrapper - handles all your endpoint shapes
+    const unwrapList = (raw, preferredKey) => {
+        if (!raw) return [];
+        if (Array.isArray(raw)) return raw;
+        // ABP wrapper: { result: [...] } or { result: { items: [...] } }
+        if (raw.result !== undefined) return unwrapList(raw.result, preferredKey);
+        if (raw.data !== undefined && !Array.isArray(raw) && typeof raw.data === 'object' && !Array.isArray(raw.data)) {
+            // avoid infinite if raw.data is array already handled
+        }
+        if (preferredKey && Array.isArray(raw[preferredKey])) return raw[preferredKey];
+        if (Array.isArray(raw.items)) return raw.items;
+        if (Array.isArray(raw.result)) return raw.result;
+        // InitJournalEntry: { accounts: [...] }
+        if (Array.isArray(raw.accounts)) return raw.accounts;
+        // fallback: first array property in object (covers suppliers/currencies wrapped once)
+        if (typeof raw === 'object') {
+            const firstArr = Object.values(raw).find(v => Array.isArray(v));
+            if (firstArr) return firstArr;
+        }
+        return asList(raw);
+    };
 
     const today = isoDate(new Date());
-    const emptyGuid = EMPTY_GUID;
-    const accounts = [
-        { id: 'acc-001', accountIdentifier: '5100 - Office Supplies' },
-        { id: 'acc-002', accountIdentifier: '5200 - Travel and Transport' },
-        { id: 'acc-003', accountIdentifier: '5300 - Professional Services' },
-        { id: 'acc-004', accountIdentifier: '1400 - VAT Paid' },
-        { id: 'acc-005', accountIdentifier: '1410 - NHIL Paid' },
-        { id: 'acc-006', accountIdentifier: '2100 - Accounts Payable' }
-    ];
-    const taxCatalog = [
-        { id: 'a1000000-0000-0000-0000-000000000001', name: 'VAT', type: 'vat', rate: 15, accountId: 'acc-004', isActive: true },
-        { id: 'a1000000-0000-0000-0000-000000000002', name: 'NHIL', type: 'others', rate: 2.5, accountId: 'acc-005', isActive: true },
-        { id: 'a1000000-0000-0000-0000-000000000003', name: 'GETFL', type: 'others', rate: 2.5, accountId: '', isActive: true },
-        { id: 'a1000000-0000-0000-0000-000000000004', name: 'CST', type: 'others', rate: 2.5, accountId: '', isActive: true }
-    ];
-    const suppliers = [
-        { id: 'sup-001', name: 'Accra Office Supplies Ltd.', accountNumber: 'SUP-1001', address: 'Accra, Ghana' },
-        { id: 'sup-002', name: 'Reliable Transport Services', accountNumber: 'SUP-1002', address: 'Tema, Ghana' },
-        { id: 'sup-003', name: 'Professional IT Solutions', accountNumber: 'SUP-1003', address: 'Accra, Ghana' },
-        { id: 'sup-004', name: 'Golden Coast Enterprises', accountNumber: 'SUP-1004', address: 'Ghana' }
-    ];
-    const currencies = [
-        { id: 'cur-001', name: 'GHS - Ghana Cedi', code: 'GHS', minorName: 'Pesewa', buyRate: 1, sellRate: 1 },
-        { id: 'cur-002', name: 'USD - US Dollar', code: 'USD', minorName: 'Cent', buyRate: 11, sellRate: 11 },
-        { id: 'cur-003', name: 'EUR - Euro', code: 'EUR', minorName: 'Cent', buyRate: 14, sellRate: 14 }
-    ];
-    const organizationalUnits = [
-        { id: 'ou-001', name: 'ACAD - Administration' },
-        { id: 'ou-002', name: 'FIN - Finance Department' },
-        { id: 'ou-003', name: 'OPS - Operations' }
-    ];
-
-    const detailColumns = [
-        { key: 'id', label: 'ID', type: 'text', hidden: true, editable: false },
-        { key: 'invoiceId', label: 'Invoice ID', type: 'text', hidden: true, editable: false },
-        { key: 'taxId', label: 'Tax ID', type: 'text', hidden: true, editable: false },
-        { key: 'isTax', label: 'Tax row', type: 'boolean', hidden: true, editable: false },
-        { key: 'referenceNumber', label: 'Ref No.', type: 'text', searchable: true },
-        { key: 'description', label: 'Description', type: 'text', required: true, searchable: true, minWidth: 190 },
-        { key: 'debitAccountId', label: 'Debit G/L Account', type: 'select', options: accounts, display: 'accountIdentifier', value: 'id', minWidth: 210 },
-        { key: 'quantity', label: 'Quantity', type: 'number', required: true, defaultValue: 1, min: 0, decimals: 2, width: 110 },
-        { key: 'unitPrice', label: 'Unit Price', type: 'number', required: true, defaultValue: 0, min: 0, decimals: 2, width: 130 },
-        { key: 'discountAsPercentage', label: 'Disc. as %?', type: 'boolean', defaultValue: false, width: 120 },
-        { key: 'discount', label: 'Discount', type: 'number', defaultValue: 0, min: 0, decimals: 2, width: 120 },
-        { key: 'amount', label: 'Disc. Amt.', type: 'number', decimals: 2, editable: false, width: 125 },
-        { key: 'subTotal', label: 'Sub Total', type: 'number', decimals: 2, editable: false, width: 130 }
-    ];
-
-    const invoiceColumns = [
-        { key: 'id', label: 'ID', type: 'text', hidden: true, editable: false },
-        { key: 'tenantId', label: 'Tenant ID', type: 'number', hidden: true, editable: false },
-        { key: 'invoiceNumber', label: 'Invoice #', type: 'text', width: 150, required: true, searchable: true },
-        { key: 'batchNumber', label: 'Batch #', type: 'text', width: 125, searchable: true },
-        { key: 'supplierId', label: 'Supplier', type: 'select', options: suppliers, value: 'id', display: 'name', width: 220, required: true, searchable: true },
-        { key: 'invoiceDate', label: 'Invoice Date', type: 'date', width: 130, searchable: true },
-        { key: 'projectedPayDate', label: 'Projected Pay Date', type: 'date', width: 160, searchable: true },
-        { key: 'currencyId', label: 'Currency', type: 'select', options: currencies, value: 'id', display: 'name', width: 180, searchable: true },
-        { key: 'buyRate', label: 'Buy Rate', type: 'number', width: 110, decimals: 4 },
-        { key: 'totalInvoiceAmount', label: 'Invoice Total', type: 'number', width: 145, decimals: 2, agg: 'sum' },
-        { key: 'balance', label: 'Balance', type: 'number', width: 130, decimals: 2 },
-        { key: 'isApproved', label: 'Approved', type: 'boolean', width: 105 },
-        { key: 'isPosted', label: 'Posted', type: 'boolean', width: 100 }
-    ];
-
-    const detailChild = { key: 'invoiceDetails', title: 'Invoice Details', columns: detailColumns };
-    const vatTaxId = taxCatalog.find((tax) => tax.type === 'vat').id;
-    const seedInvoices = [
-        {
-            id: 'inv-001', tenantId: 2, invoiceNumber: 'INV-2026-001', batchNumber: 'BATCH-001',
-            supplierId: 'sup-001', supplierName: suppliers[0].name, accountNumber: 'SUP-1001',
-            invoiceDate: '2026-09-15', projectedPayDate: '2026-10-15', purchaseOrderNumber: 'PO-2026-001',
-            voucherNumber: 'PV-2026-001', referenceNumber: 'REF-1001', description: 'Office stationery and consumables',
-            currencyId: 'cur-001', currencyName: currencies[0].name, currencyCode: 'GHS', minorName: 'Pesewa',
-            buyRate: 1, sellRate: 1, amount: 3542, totalInvoiceAmount: 3542, paidAmount: 1000, balance: 2542,
-            vatRate: 15, vatAmount: 462, withHeldAmount: 0, accountingPeriod: '2026-09',
-            ouId: 'ou-001', ouName: 'ACAD - Administration', liabilityAccountId: 'acc-006',
-            liabilityAccountName: '2100 - Accounts Payable', status: 'Pending', isApproved: false, isPosted: false,
-            isCanceled: false, isMultiCurrency: false, isVatInclusive: false,
-            invoiceTaxLevies: [{ id: vatTaxId, name: 'VAT', rate: 15 }],
-            invoiceDetails: [
-                { id: 'det-001', invoiceId: 'inv-001', referenceNumber: 'REF-1001', description: 'Printer paper and stationery', debitAccountId: 'acc-001', debitAccountName: accounts[0].accountIdentifier, quantity: 20, unitPrice: 100, discountAsPercentage: false, discount: 0, amount: 0, subTotal: 2000, isTax: false },
-                { id: 'det-002', invoiceId: 'inv-001', referenceNumber: 'REF-1001', description: 'Printer toner cartridges', debitAccountId: 'acc-001', debitAccountName: accounts[0].accountIdentifier, quantity: 10, unitPrice: 120, discountAsPercentage: true, discount: 10, amount: 120, subTotal: 1080, isTax: false },
-                { id: `tax-${vatTaxId}`, invoiceId: 'inv-001', taxId: vatTaxId, isTax: true, referenceNumber: 'REF-1001', description: 'VAT', debitAccountId: 'acc-004', debitAccountName: accounts[3].accountIdentifier, quantity: 1, unitPrice: 462, discountAsPercentage: false, discount: 0, amount: 0, subTotal: 462 }
-            ]
-        },
-        {
-            id: 'inv-002', tenantId: 2, invoiceNumber: 'INV-2026-002', batchNumber: 'BATCH-002',
-            supplierId: 'sup-002', supplierName: suppliers[1].name, accountNumber: 'SUP-1002',
-            invoiceDate: '2026-09-22', projectedPayDate: '2026-10-22', purchaseOrderNumber: 'PO-2026-014',
-            voucherNumber: 'PV-2026-002', referenceNumber: 'REF-1002', description: 'Vehicle and transport expenses',
-            currencyId: 'cur-001', currencyName: currencies[0].name, currencyCode: 'GHS', minorName: 'Pesewa',
-            buyRate: 1, sellRate: 1, amount: 2850, totalInvoiceAmount: 2850, paidAmount: 0, balance: 2850,
-            vatRate: 15, vatAmount: 0, withHeldAmount: 0, accountingPeriod: '2026-09',
-            ouId: 'ou-002', ouName: 'FIN - Finance Department', liabilityAccountId: 'acc-006',
-            liabilityAccountName: '2100 - Accounts Payable', status: 'Pending', isApproved: true, isPosted: false,
-            isCanceled: false, isMultiCurrency: false, isVatInclusive: false, invoiceTaxLevies: [],
-            invoiceDetails: [
-                { id: 'det-004', invoiceId: 'inv-002', referenceNumber: 'REF-1002', description: 'Vehicle maintenance', debitAccountId: 'acc-002', debitAccountName: accounts[1].accountIdentifier, quantity: 1, unitPrice: 1500, discountAsPercentage: false, discount: 0, amount: 0, subTotal: 1500, isTax: false },
-                { id: 'det-005', invoiceId: 'inv-002', referenceNumber: 'REF-1002', description: 'Fuel and transport', debitAccountId: 'acc-002', debitAccountName: accounts[1].accountIdentifier, quantity: 1, unitPrice: 1350, discountAsPercentage: false, discount: 0, amount: 0, subTotal: 1350, isTax: false }
-            ]
-        },
-        {
-            id: 'inv-003', tenantId: 2, invoiceNumber: 'INV-2026-003', batchNumber: 'BATCH-003',
-            supplierId: 'sup-003', supplierName: suppliers[2].name, accountNumber: 'SUP-1003',
-            invoiceDate: '2026-10-01', projectedPayDate: '2026-11-01', purchaseOrderNumber: 'PO-2026-025',
-            voucherNumber: 'PV-2026-003', referenceNumber: 'REF-1003', description: 'IT support and software services',
-            currencyId: 'cur-001', currencyName: currencies[0].name, currencyCode: 'GHS', minorName: 'Pesewa',
-            buyRate: 1, sellRate: 1, amount: 6500, totalInvoiceAmount: 6500, paidAmount: 6500, balance: 0,
-            vatRate: 15, vatAmount: 0, withHeldAmount: 0, accountingPeriod: '2026-10',
-            ouId: 'ou-001', ouName: 'ACAD - Administration', liabilityAccountId: 'acc-006',
-            liabilityAccountName: '2100 - Accounts Payable', status: 'Paid', isApproved: true, isPosted: true,
-            isCanceled: false, isMultiCurrency: false, isVatInclusive: false, invoiceTaxLevies: [],
-            invoiceDetails: [
-                { id: 'det-006', invoiceId: 'inv-003', referenceNumber: 'REF-1003', description: 'Annual IT support', debitAccountId: 'acc-003', debitAccountName: accounts[2].accountIdentifier, quantity: 1, unitPrice: 5000, discountAsPercentage: false, discount: 0, amount: 0, subTotal: 5000, isTax: false },
-                { id: 'det-007', invoiceId: 'inv-003', referenceNumber: 'REF-1003', description: 'Software licensing', debitAccountId: 'acc-003', debitAccountName: accounts[2].accountIdentifier, quantity: 1, unitPrice: 1500, discountAsPercentage: false, discount: 0, amount: 0, subTotal: 1500, isTax: false }
-            ]
-        }
-    ];
 
     const app = Vue.createApp({
         data() {
-            const defaultCurrency = currencies[0];
-            const defaultOu = organizationalUnits[0];
-            const defaultLiability = accounts.find((account) => account.id === 'acc-006');
             return {
                 emptyGuid: EMPTY_GUID,
                 theme: '#0645e7',
                 theme1: '#545454',
-                tenantId: 2,
-                accounts: clone(accounts),
-                suppliers: clone(suppliers),
-                currencies: clone(currencies),
-                organizationalUnits: clone(organizationalUnits),
-                taxLevyList: taxCatalog.map((tax) => ({ ...tax, isApplied: false })),
-                invoiceColumns,
-                detailColumns,
-                invoiceDetailChild: detailChild,
-                invoiceList: clone(seedInvoices),
+                tenantId: null,
+                accounts: [],
+                suppliers: [],
+                currencies: [],
+                organizationalUnits: [],
+                taxCatalog: [],
+                taxLevyList: [],
+                invoiceList: [],
                 detailsList: [],
+                isLoading: false,
                 invoiceId: '',
                 invoiceNumber: '',
                 batchNumber: '',
@@ -183,18 +104,18 @@
                 voucherNumber: '',
                 referenceNumber: '',
                 description: '',
-                currencyId: defaultCurrency.id,
-                currencyName: defaultCurrency.name,
-                currencyCode: defaultCurrency.code,
-                minorName: defaultCurrency.minorName,
-                buyRate: defaultCurrency.buyRate,
-                sellRate: defaultCurrency.sellRate,
+                currencyId: '',
+                currencyName: '',
+                currencyCode: '',
+                minorName: '',
+                buyRate: 1,
+                sellRate: 1,
                 isMultiCurrency: false,
                 isVatWithheld: false,
-                ouId: defaultOu.id,
-                ouName: defaultOu.name,
-                liabilityAccountId: defaultLiability ? defaultLiability.id : EMPTY_GUID,
-                liabilityAccountName: defaultLiability ? defaultLiability.accountIdentifier : '',
+                ouId: '',
+                ouName: '',
+                liabilityAccountId: EMPTY_GUID,
+                liabilityAccountName: '',
                 vatRate: 15,
                 vatAmount: 0,
                 isVatInclusive: false,
@@ -210,8 +131,55 @@
                 isCanceled: false,
                 isEditing: false,
                 formMessage: '',
-                formMessageType: 'info'
+                formMessageType: 'info',
+                isOu: false,
+                vatGl: '',
+                nhilGl: '',
+                getflGl: '',
+                cstGl: '',
+                defaultGlSetup: null,
+                debitAccountId:EMPTY_GUID,
+               
             };
+        },
+        computed: {
+            detailColumns() {
+                return [
+                    { key: 'id', label: 'ID', type: 'text', hidden: true, editable: false },
+                    { key: 'invoiceId', label: 'Invoice ID', type: 'text', hidden: true, editable: false },
+                    { key: 'taxId', label: 'Tax ID', type: 'text', hidden: true, editable: false },
+                    { key: 'isTax', label: 'Tax row', type: 'boolean', hidden: true, editable: false },
+                    { key: 'referenceNumber', label: 'Ref No.', type: 'text', searchable: true, width: 150 },
+                    { key: 'description', label: 'Description', type: 'text', required: true, searchable: true, width: 220 },
+                    { key: 'debitAccountId', label: 'Debit G/L Account', type: 'select', options: this.accounts, display: 'accountIdentifier', value: 'id', width: 220, defaultValue: this.debitAccountId },
+                    { key: 'quantity', label: 'Quantity', type: 'number', required: true, defaultValue: 1, min: 0, decimals: 2, width: 110 },
+                    { key: 'unitPrice', label: 'Unit Price', type: 'number', required: true, defaultValue: 0, min: 0, decimals: 2, width: 130 },
+                    { key: 'discountAsPercentage', label: 'Disc. as %?', type: 'boolean', defaultValue: false, width: 120 },
+                    { key: 'discount', label: 'Discount', type: 'number', defaultValue: 0, min: 0, decimals: 2, width: 120 },
+                    { key: 'amount', label: 'Disc. Amt.', type: 'number', decimals: 2, editable: false, width: 125 },
+                    { key: 'subTotal', label: 'Sub Total', type: 'number', decimals: 2, editable: false, width: 130 }
+                ];
+            },
+            invoiceColumns() {
+                return [
+                    { key: 'id', label: 'ID', type: 'text', hidden: true, editable: false },
+                    { key: 'tenantId', label: 'Tenant ID', type: 'number', hidden: true, editable: false },
+                    { key: 'invoiceNumber', label: 'Invoice #', type: 'text', width: 150, required: true, searchable: true },
+                    { key: 'batchNumber', label: 'Batch #', type: 'text', width: 125, searchable: true },
+                    { key: 'supplierId', label: 'Supplier', type: 'select', options: this.suppliers, value: 'id', display: 'name', width: 280, required: true, searchable: true },
+                    { key: 'invoiceDate', label: 'Invoice Date', type: 'date', width: 130, searchable: true },
+                    { key: 'projectedPayDate', label: 'Projected Pay Date', type: 'date', width: 160, searchable: true },
+                    { key: 'currencyId', label: 'Currency', type: 'select', options: this.currencies, value: 'id', display: 'currencyName', width: 180, searchable: true },
+                    { key: 'buyRate', label: 'Buy Rate', type: 'number', width: 110, decimals: 4 },
+                    { key: 'totalInvoiceAmount', label: 'Invoice Total', type: 'number', width: 145, decimals: 2, agg: 'sum' },
+                    { key: 'balance', label: 'Balance', type: 'number', width: 130, decimals: 2 },
+                    { key: 'isApproved', label: 'Approved', type: 'boolean', width: 105 },
+                    { key: 'isPosted', label: 'Posted', type: 'boolean', width: 100 }
+                ];
+            },
+            invoiceDetailChild() {
+                return { key: 'invoiceDetails', title: 'Invoice Details', columns: this.detailColumns };
+            }
         },
         watch: {
             vatRate() { this.recalculateInvoice(); },
@@ -221,6 +189,71 @@
             }
         },
         methods: {
+            isPosted(row) {
+                return row.isPosted === true;
+            },
+            getTaxGlByName(name) {
+                if (!name) return '';
+                const n = String(name).trim().toLowerCase();
+                if (n === 'vat') return this.vatGl || this.defaultGlSetup?.vatPaidAccountId || '';
+                if (n === 'nhil') return this.nhilGl || this.defaultGlSetup?.nhilPaidAccountId || '';
+                if (n === 'getfl') return this.getflGl || this.defaultGlSetup?.getflPaidAccountId || '';
+                if (n === 'cst') return this.cstGl || this.defaultGlSetup?.cstPaidAccountId || this.defaultGlSetup?.vatPaidAccountId || '';
+                return '';
+            },
+            applyTaxGlMapping() {
+                if (!this.taxCatalog.length) return;
+                let changed = false;
+                this.taxCatalog = this.taxCatalog.map(tax => {
+                    const gl = this.getTaxGlByName(tax.name);
+                    if (gl && tax.accountId !== gl) { changed = true; return { ...tax, accountId: gl }; }
+                    return tax;
+                });
+                if (changed) {
+                    const appliedIds = new Set(this.taxLevyList.filter(t => t.isApplied).map(t => String(t.id)));
+                    this.taxLevyList = this.taxCatalog.map(tax => ({
+                        ...tax,
+                        isApplied: appliedIds.has(String(tax.id))
+                    }));
+                    // if any levy is currently applied, recalc to fix debitAccountId on tax rows
+                    if (appliedIds.size) this.recalculateInvoice();
+                }
+            },
+            async getDefaultGlSetup() {
+                try {
+                    const response = await axios.get('http://localhost:5300/LedgerSetups/GetDefaultGlSetup', {withCredentials:true});
+                    const d = response.data || {};
+                    this.defaultGlSetup = d;
+                    this.vatGl = d.vatPaidAccountId || '';
+                    this.nhilGl = d.nhilPaidAccountId || '';
+                    this.getflGl = d.getflPaidAccountId || '';
+                    this.cstGl = d.cstPaidAccountId || d.vatPaidAccountId || '';
+
+                    // liability default (don't overwrite if user already picked)
+                    if (!this.liabilityAccountId || this.liabilityAccountId === EMPTY_GUID) {
+                        this.liabilityAccountId = d.accountsPayableAccountId || EMPTY_GUID;
+                    }
+                    this.debitAccountId = d.accountsPayableAccountId || EMPTY_GUID;
+
+                    this.applyTaxGlMapping();
+                    return d;
+                } catch(err) {
+                    console.log(err);
+                    this.toastHandler('error', 'Unable to get default GL numbers.');
+                    return null;
+                }
+            },
+            getBusinessProfile() {
+                axios.get('http://localhost:5300/SharedResource/GetBusinessProfile', {withCredentials: true}).then(response => {
+                    if (response.data) {
+                        this.isVatInclusive = response.data.isTaxLeviesInclusive;
+                        this.isOu = response.data.enforceOu;
+                    }
+                }).catch(err => {
+                    console.log(err);
+                });
+            },
+          
             scrollToAdd() {
                 this.$nextTick(() => {
                     const element = document.getElementById('invoice-editor');
@@ -245,25 +278,139 @@
                     timer: 4000,
                     timerProgressBar: true
                 });
-
             },
             formatMoney(value) {
                 return new Intl.NumberFormat('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(toNumber(value));
             },
+
+            // ---------- API loading - FIXED ----------
+            async fetchList(url, label, preferredKey = null) {
+                try {
+                    const response = await api.get(url);
+                    // Handle: raw array, {result: [...]}, {accounts:[...]}, {items:[...]}
+                    const list = unwrapList(response.data, preferredKey);
+                    // PascalCase safety
+                    return list.map(item => (item && item.Id && !item.id) ? normalizeKeys(item) : item);
+                } catch (error) {
+                    this.toastHandler('error', `Failed to load ${label}.`);
+                    return [];
+                }
+            },
+            async getApInvoices() {
+                this.invoiceList = await this.fetchList(ENDPOINTS.invoices, 'AP invoices');
+            },
+            async loadLookups() {
+                const [rawAccounts, rawSuppliers, rawCurrencies, rawUnits, rawTaxes] = await Promise.all([
+                    this.fetchList(ENDPOINTS.accounts, 'accounts', 'accounts'),
+                    this.fetchList(ENDPOINTS.suppliers, 'suppliers'),
+                    this.fetchList(ENDPOINTS.currencies, 'currencies'),
+                    this.fetchList(ENDPOINTS.organizationalUnits, 'organizational units'),
+                    this.fetchList(ENDPOINTS.taxLevies, 'tax levies')
+                ]);
+
+                // Accounts
+                this.accounts = rawAccounts.map(a => ({
+                    ...a,
+                    accountIdentifier: a.accountIdentifier || `${a.accountNo ?? ''} - ${a.accountName ?? a.name ?? ''}`.trim().replace(/^ - /, ''),
+                    name: a.accountName || a.name,
+                    accountName: a.accountName || a.name
+                }));
+
+                // Suppliers
+                this.suppliers = rawSuppliers.map(s => ({
+                    ...s,
+                    name: (s.name || '').trim()
+                }));
+
+                // Currencies
+                this.currencies = rawCurrencies.map(c => ({
+                    ...c,
+                    currencyName:  c.currencyName,
+                    currencyCode: c.currencyCode,
+                    buyRate: toNumber(c.buyRate, 1),
+                    sellRate: toNumber(c.sellRate, 1)
+                }));
+
+                // ---- OU HIERARCHY: Parent / Child ----
+                // e.g. ACAD -> ACAD / CES, ACAD / CES / Lab
+                const byId = new Map(rawUnits.map(u => [String(u.id), u]));
+
+                const getPath = (unit, visited = new Set()) => {
+                    const names = [];
+                    let cur = unit;
+                    let depth = 0;
+                    while (cur && depth < 20) { // 20 = circular protection
+                        names.unshift(cur.name);
+                        const pid = cur.parentId ? String(cur.parentId) : '';
+                        if (!pid || pid === EMPTY_GUID || !byId.has(pid) || visited.has(pid)) break;
+                        visited.add(pid);
+                        cur = byId.get(pid);
+                        depth++;
+                    }
+                    return names.join(' / ');
+                };
+
+                this.organizationalUnits = rawUnits
+                    .map(u => {
+                        const path = getPath(u);
+                        return {
+                            ...u,
+                            originalName: u.name, 
+                            name: path,       
+                            displayName: path,
+                            hierarchy: path
+                        };
+                    })
+                    .sort((a,b) => a.name.localeCompare(b.name));
+
+                this.taxCatalog = rawTaxes.map((tax) => ({
+                    ...tax,
+                    type: String(tax.type || '').toLowerCase() === 'vat' || String(tax.name || '').toLowerCase() === 'vat' ? 'vat' : 'others',
+                    rate: toNumber(tax.rate, 1),
+                    accountId: this.getTaxGlByName(tax.name) || tax.accountId || '', // <-- key fix
+                    isActive: tax.isActive !== false
+                }));
+
+                this.taxLevyList = this.freshTaxLevies();
+                if (!this.isEditing) this.applyNewInvoiceDefaults();
+                
+                
+            },
+            freshTaxLevies() {
+                return this.taxCatalog.map((tax) => ({ ...tax, isApplied: false }));
+            },
+            applyNewInvoiceDefaults() {
+                const currency = this.currencies.find(c => c.isDefault) || this.currencies[0];
+                if (currency) {
+                    this.currencyId = currency.id;
+                    this.currencyName = currency.currencyName;
+                    this.currencyCode = currency.currencyCode;
+                    this.minorName = currency.minorName;
+                    this.buyRate = toNumber(currency.buyRate, 1);
+                    this.sellRate = toNumber(currency.sellRate, 1);
+                }
+               
+                this.ouId = EMPTY_GUID;
+                this.ouName = '';
+                this.liabilityAccountId = EMPTY_GUID;
+                this.liabilityAccountName = '';
+            },
+
             onSupplierChange() {
                 const supplier = this.suppliers.find((item) => item.id === this.supplierId);
                 this.supplierName = supplier ? supplier.name : '';
                 this.accountNumber = supplier ? supplier.accountNumber || '' : '';
-                this.address = supplier ? supplier.address || '' : '';
             },
             onCurrencyChange() {
                 const currency = this.currencies.find((item) => item.id === this.currencyId);
                 if (!currency) return;
-                this.currencyName = currency.name;
-                this.currencyCode = currency.code;
+                this.currencyName = currency.currencyName;
+                this.currencyCode = currency.currencyCode;
                 this.minorName = currency.minorName;
-                this.sellRate = currency.sellRate;
-                this.buyRate = currency.buyRate;
+                this.sellRate = parseFloat(currency.buyRate).toFixed(4);
+                this.buyRate = toNumber(currency.buyRate, 1);
+
+                this.isMultiCurrency = currency.isDefault !== true;
             },
             onOuChange() {
                 const unit = this.organizationalUnits.find((item) => item.id === this.ouId);
@@ -319,7 +466,7 @@
             },
             isLegacyTaxRow(detail) {
                 if (this.isTaxRow(detail)) return true;
-                const tax = taxCatalog.find((item) => item.name.toLowerCase() === String(detail.description || '').trim().toLowerCase());
+                const tax = this.taxCatalog.find((item) => String(item.name).toLowerCase() === String(detail.description || '').trim().toLowerCase());
                 return !!(tax && tax.accountId && String(detail.debitAccountId || '') === String(tax.accountId));
             },
             toggleTaxLevy(taxId) {
@@ -332,6 +479,7 @@
                     : tax);
                 this.recalculateInvoice();
             },
+
             recalculateInvoice() {
                 const sourceRows = Array.isArray(this.detailsList) ? this.detailsList : [];
                 const lineRows = sourceRows.filter((detail) => !this.isTaxRow(detail)).map((detail) => this.normalizeDetail(detail));
@@ -398,47 +546,17 @@
                 this.recalculateInvoice();
             },
             createNewInvoice() {
-                this.invoiceId = '';
-                this.invoiceNumber = '';
-                this.batchNumber = '';
-                this.supplierId = '';
-                this.supplierName = '';
-                this.accountNumber = '';
-                this.address = '';
+                this.invoiceId = ''; this.invoiceNumber = ''; this.batchNumber = '';
+                this.supplierId = ''; this.supplierName = ''; this.accountNumber = ''; this.address = '';
                 this.invoiceDate = isoDate(new Date());
                 this.projectedPayDate = addDays(this.invoiceDate, 30);
-                this.purchaseOrderNumber = '';
-                this.voucherNumber = '';
-                this.referenceNumber = '';
-                this.description = '';
-                this.currencyId = currencies[0].id;
-                this.currencyName = currencies[0].name;
-                this.currencyCode = currencies[0].code;
-                this.minorName = currencies[0].minorName;
-                this.buyRate = currencies[0].buyRate;
-                this.sellRate = currencies[0].sellRate;
-                this.isMultiCurrency = false;
-                this.isVatWithheld = false;
-                this.ouId = organizationalUnits[0].id;
-                this.ouName = organizationalUnits[0].name;
-                this.liabilityAccountId = 'acc-006';
-                this.liabilityAccountName = '2100 - Accounts Payable';
-                this.vatRate = 15;
-                this.vatAmount = 0;
-                this.isVatInclusive = false;
-                this.taxLevyList = taxCatalog.map((tax) => ({ ...tax, isApplied: false }));
-                this.computedTaxLevies = [];
-                this.detailsList = [];
-                this.totalInvoiceAmount = 0;
-                this.amount = 0;
-                this.paidAmount = 0;
-                this.invoiceBalance = 0;
-                this.withHeldAmount = 0;
-                this.status = 'Draft';
-                this.isApproved = false;
-                this.isPosted = false;
-                this.isCanceled = false;
-                this.isEditing = false;
+                this.purchaseOrderNumber = ''; this.voucherNumber = ''; this.referenceNumber = ''; this.description = '';
+                this.isMultiCurrency = false; this.isVatWithheld = false;
+                this.applyNewInvoiceDefaults();
+                this.vatRate = 15; this.vatAmount = 0; this.isVatInclusive = false;
+                this.taxLevyList = this.freshTaxLevies(); this.computedTaxLevies = []; this.detailsList = [];
+                this.totalInvoiceAmount = 0; this.amount = 0; this.paidAmount = 0; this.invoiceBalance = 0; this.withHeldAmount = 0;
+                 this.isEditing = false;
                 if (this.$refs.invoices && this.$refs.invoices.clearSelection) this.$refs.invoices.clearSelection();
                 this.scrollToAdd();
             },
@@ -450,13 +568,11 @@
             setCurrentInvoice() {
                 const grid = this.$refs.invoices;
                 if (!grid || typeof grid.selectedRows !== 'function') {
-                    this.setMessage('The invoices grid is not ready.', 'error');
-                    return;
+                    this.setMessage('The invoices grid is not ready.', 'error'); return;
                 }
                 const selectedRows = grid.selectedRows();
                 if (selectedRows.length !== 1) {
-                    this.toastHandler('warning', 'Select one invoice to edit.');
-                    return;
+                    this.toastHandler('warning', 'Select one invoice to edit.'); return;
                 }
                 this.loadInvoice(selectedRows[0]);
                 this.scrollToAdd();
@@ -464,30 +580,23 @@
             loadInvoice(invoice) {
                 if (!invoice) return;
                 this.isEditing = true;
-                this.invoiceId = invoice.id || '';
-                this.invoiceNumber = invoice.invoiceNumber || '';
-                this.batchNumber = invoice.batchNumber || '';
-                this.supplierId = invoice.supplierId || '';
-                this.supplierName = invoice.supplierName || '';
-                this.accountNumber = invoice.accountNumber || '';
-                this.address = invoice.address || '';
+                this.invoiceId = invoice.id || ''; this.invoiceNumber = invoice.invoiceNumber || ''; this.batchNumber = invoice.batchNumber || '';
+                this.supplierId = invoice.supplierId || ''; this.supplierName = invoice.supplierName || '';
+                this.accountNumber = invoice.accountNumber || ''; this.address = invoice.address || '';
                 this.invoiceDate = isoDate(invoice.invoiceDate) || today;
                 this.projectedPayDate = isoDate(invoice.projectedPayDate) || this.invoiceDate;
-                this.purchaseOrderNumber = invoice.purchaseOrderNumber || '';
-                this.voucherNumber = invoice.voucherNumber || '';
-                this.referenceNumber = invoice.referenceNumber || '';
-                this.description = invoice.description || '';
-                this.currencyId = invoice.currencyId || currencies[0].id;
+                this.purchaseOrderNumber = invoice.purchaseOrderNumber || ''; this.voucherNumber = invoice.voucherNumber || '';
+                this.referenceNumber = invoice.referenceNumber || ''; this.description = invoice.description || '';
+                this.currencyId = invoice.currencyId || (this.currencies[0] ? this.currencies[0].id : '');
                 const currency = this.currencies.find((item) => item.id === this.currencyId);
-                this.currencyName = invoice.currencyName || (currency && currency.name) || '';
-                this.currencyCode = invoice.currencyCode || (currency && currency.code) || '';
+                this.currencyName = invoice.currencyName || (currency && (currency.currencyName || currency.name)) || '';
+                this.currencyCode = invoice.currencyCode || (currency && (currency.currencyCode || currency.code)) || '';
                 this.minorName = invoice.minorName || (currency && currency.minorName) || '';
                 this.buyRate = toNumber(invoice.buyRate, currency ? currency.buyRate : 1);
                 this.sellRate = toNumber(invoice.sellRate, currency ? currency.sellRate : 1);
                 this.isMultiCurrency = asBoolean(invoice.isMultiCurrency);
                 this.isVatWithheld = asBoolean(invoice.isVatWithheld);
-                this.ouId = invoice.ouId || '';
-                this.ouName = invoice.ouName || '';
+                this.ouId = invoice.ouId || ''; this.ouName = invoice.ouName || '';
                 this.liabilityAccountId = invoice.liabilityAccountId || EMPTY_GUID;
                 this.liabilityAccountName = invoice.liabilityAccountName || '';
                 this.vatRate = toNumber(invoice.vatRate, 15);
@@ -498,17 +607,16 @@
                 this.isApproved = asBoolean(invoice.isApproved);
                 this.isPosted = asBoolean(invoice.isPosted);
                 this.isCanceled = asBoolean(invoice.isCanceled);
-
                 this.onSupplierChange();
                 if (invoice.supplierName) this.supplierName = invoice.supplierName;
                 if (invoice.accountNumber) this.accountNumber = invoice.accountNumber;
-                this.taxLevyList = taxCatalog.map((tax) => ({ ...tax, isApplied: false }));
+                this.taxLevyList = this.freshTaxLevies();
                 const savedTaxes = Array.isArray(invoice.invoiceTaxLevies) ? invoice.invoiceTaxLevies : [];
                 const sourceDetails = Array.isArray(invoice.invoiceDetails) ? invoice.invoiceDetails : [];
                 const legacyTaxDetails = sourceDetails.filter((detail) => this.isLegacyTaxRow(detail));
                 const savedTaxKeys = new Set(savedTaxes.flatMap((tax) => [tax.id, tax.taxId, tax.name].filter(Boolean).map((value) => String(value).toLowerCase())));
                 const inferredTaxIds = new Set(legacyTaxDetails.map((detail) => {
-                    const tax = taxCatalog.find((item) => item.id === detail.taxId || item.name.toLowerCase() === String(detail.description || '').toLowerCase());
+                    const tax = this.taxCatalog.find((item) => item.id === detail.taxId || String(item.name).toLowerCase() === String(detail.description || '').toLowerCase());
                     return tax ? tax.id : '';
                 }).filter(Boolean));
                 this.taxLevyList = this.taxLevyList.map((tax) => ({
@@ -521,23 +629,30 @@
             },
             saveInvoice() {
                 this.setMessage('', 'info');
-                if (!this.supplierId) {
-                    this.setMessage('Choose a supplier before saving.', 'error');
-                    this.scrollToAdd();
-                    return;
-                }
-                if (!this.currencyId) {
-                    this.setMessage('Choose a currency before saving.', 'error');
-                    this.scrollToAdd();
-                    return;
-                }
+                if (!this.supplierId) { this.setMessage('Choose a supplier before saving.', 'error'); this.scrollToAdd(); return; }
+                if (!this.currencyId) { this.setMessage('Choose a currency before saving.', 'error'); this.scrollToAdd(); return; }
                 const lineRows = this.detailsList.filter((detail) => !this.isTaxRow(detail));
-                if (!lineRows.length) {
-                    this.setMessage('Add at least one invoice detail row before saving.', 'error');
-                    this.scrollToAdd();
+                if (!lineRows.length) { this.setMessage('Add at least one invoice detail row before saving.', 'error'); this.scrollToAdd(); return; }
+                let hasZeroQuantity = this.detailsList.some(detail => !detail.quantity && detail.quantity !== null);
+                if (hasZeroQuantity) {
+                    this.toastHandler('warning', 'One or more items have quantity 0. Please correct before saving.');
+                    this.isLoading = false;
                     return;
                 }
 
+                let hasZeroUnitPrice = this.detailsList.some(detail => !detail.unitPrice && detail.unitPrice !== null);
+                if (hasZeroUnitPrice) {
+                    this.toastHandler('warning', 'One or more items have unit price 0. Please correct before saving.');
+                    this.isLoading = false;
+                    return;
+                }
+
+                let noDescription = this.detailsList.some(detail => !detail.description || detail.description.trim() === '');
+                if (noDescription) {
+                    this.toastHandler('warning', 'One or more items have no description. Please correct before saving.');
+                    this.isLoading = false;
+                    return;
+                }
                 this.recalculateInvoice();
                 const supplier = this.suppliers.find((item) => item.id === this.supplierId);
                 const currency = this.currencies.find((item) => item.id === this.currencyId);
@@ -546,103 +661,315 @@
                 const invoiceNumber = this.invoiceNumber || this.nextInvoiceNumber();
                 const invoiceId = this.invoiceId || createId('inv');
                 const batchNumber = this.batchNumber || `BATCH-${invoiceNumber.split('-').pop()}`;
-                this.detailsList = this.detailsList.map((detail) => ({
-                    ...detail,
-                    invoiceId,
-                    referenceNumber: detail.referenceNumber || this.referenceNumber || invoiceNumber
-                }));
+                this.detailsList = this.detailsList.map((detail) => ({ ...detail, invoiceId, referenceNumber: detail.referenceNumber || this.referenceNumber || invoiceNumber }));
                 const invoice = {
-                    id: invoiceId,
-                    tenantId: this.tenantId,
-                    invoiceNumber,
-                    batchNumber,
-                    supplierId: this.supplierId,
-                    supplierName: supplier ? supplier.name : this.supplierName,
+                    id: invoiceId, tenantId: this.tenantId, invoiceNumber, batchNumber,
+                    supplierId: this.supplierId, supplierName: supplier ? supplier.name : this.supplierName,
                     accountNumber: supplier ? supplier.accountNumber || '' : this.accountNumber,
                     address: supplier ? supplier.address || '' : this.address,
-                    invoiceDate: this.invoiceDate,
-                    projectedPayDate: this.projectedPayDate,
-                    purchaseOrderNumber: this.purchaseOrderNumber,
-                    voucherNumber: this.voucherNumber,
-                    referenceNumber: this.referenceNumber || invoiceNumber,
-                    description: this.description,
-                    currencyId: this.currencyId,
-                    currencyName: currency ? currency.name : this.currencyName,
-                    currencyCode: currency ? currency.code : this.currencyCode,
+                    invoiceDate: this.invoiceDate, projectedPayDate: this.projectedPayDate,
+                    purchaseOrderNumber: this.purchaseOrderNumber, voucherNumber: this.voucherNumber,
+                    referenceNumber: this.referenceNumber || invoiceNumber, description: this.description,
+                    currencyId: this.currencyId, currencyName: currency ? (currency.currencyName || currency.name) : this.currencyName,
+                    currencyCode: currency ? (currency.currencyCode || currency.code) : this.currencyCode,
                     minorName: currency ? currency.minorName : this.minorName,
-                    buyRate: toNumber(this.buyRate, 1),
-                    sellRate: toNumber(this.sellRate, 1),
-                    amount: this.totalInvoiceAmount,
-                    totalInvoiceAmount: this.totalInvoiceAmount,
-                    paidAmount: Math.max(0, toNumber(this.paidAmount)),
-                    balance: this.invoiceBalance,
-                    vatRate: toNumber(this.vatRate, 0),
-                    vatAmount: this.vatAmount,
-                    withHeldAmount: Math.max(0, toNumber(this.withHeldAmount)),
-                    isVatWithheld: this.isVatWithheld,
-                    accountingPeriod: this.invoiceDate ? this.invoiceDate.slice(0, 7) : '',
-                    ouId: this.ouId,
-                    ouName: ou ? ou.name : this.ouName,
-                    liabilityAccountId: this.liabilityAccountId,
-                    liabilityAccountName: liability ? liability.accountIdentifier : this.liabilityAccountName,
-                    status: this.status === 'Draft' ? 'Pending' : this.status,
-                    isApproved: this.isApproved,
-                    isPosted: this.isPosted,
-                    isCanceled: this.isCanceled,
-                    isMultiCurrency: this.isMultiCurrency,
-                    isVatInclusive: this.isVatInclusive,
+                    buyRate: toNumber(this.buyRate, 1), sellRate: toNumber(this.sellRate, 1),
+                    amount: this.totalInvoiceAmount, totalInvoiceAmount: this.totalInvoiceAmount,
+                    paidAmount: Math.max(0, toNumber(this.paidAmount)), balance: this.invoiceBalance,
+                    vatRate: toNumber(this.vatRate, 0), vatAmount: this.vatAmount, withHeldAmount: Math.max(0, toNumber(this.withHeldAmount)),
+                    isVatWithheld: this.isVatWithheld, accountingPeriod: this.invoiceDate ? this.invoiceDate.slice(0, 7) : '',
+                    ouId: this.ouId, ouName: ou ? ou.name : this.ouName,
+                    liabilityAccountId: this.liabilityAccountId, liabilityAccountName: liability ? liability.accountIdentifier : this.liabilityAccountName,
+                    isMultiCurrency: this.isMultiCurrency, isVatInclusive: this.isVatInclusive,
                     invoiceTaxLevies: this.computedTaxLevies.map((tax) => ({ id: tax.id, name: tax.name, rate: tax.rate, amount: tax.amount })),
                     invoiceDetails: this.detailsList.map((detail) => ({ ...detail, invoiceId }))
                 };
                 const index = this.invoiceList.findIndex((item) => String(item.id) === String(invoice.id));
-                if (index >= 0) this.invoiceList.splice(index, 1, invoice);
-                else this.invoiceList.unshift(invoice);
-                this.invoiceId = invoice.id;
-                this.invoiceNumber = invoice.invoiceNumber;
-                this.batchNumber = invoice.batchNumber;
-                this.isEditing = true;
-                this.status = invoice.status;
-                this.toastHandler('success','saved successfully.');
+                if (index >= 0) this.invoiceList.splice(index, 1, invoice); else this.invoiceList.unshift(invoice);
+                 if (this.isEditing === true)
+                 {
+                     invoice.id = this.invoiceId;
+                     invoice.tenantId = this.tenantId;
+                     axios.post('http://localhost:5300/ApDataEntry/UpdateInvoice', invoice)
+                         .then(async response => {
+                             this.toastHandler('', 'Invoice updated.');
+                             this.isLoading = false;
+                         })
+                         .catch(err => {
+                             this.toastHandler('error', 'Unable to update invoice.');
+                             this.isLoading = false;
+                         });
+     
+                 }else{
+                axios.post('http://localhost:5300/ApDataEntry/CreateInvoice', invoice,
+                   )
+                    .then(async response => {
+                        if (response.data.code === 200) {
+                            this.toastHandler('', 'Invoice saved.');
+                            this.isLoading = false;
+                        } else {
+                            this.toastHandler('error', response.data.message);
+                            this.isLoading = false;
+                        }
+                    })
+                    .catch(err => {
+                        this.isLoading = false;
+                        this.toastHandler('error', 'Unable to save invoice.');
+                      
+                    });
+}
             },
-            cancelSelectedInvoices() {
+         
+            async cancelSelectedInvoices() {
+    const grid = this.$refs.invoices;
+    const selected = grid && typeof grid.selectedRows === 'function'
+        ? grid.selectedRows()
+        : [];
+
+    if (!selected.length) {
+        this.toastHandler('warning', 'Select one or more invoices to cancel.');
+        return;
+    }
+
+    // Validate invoice balances before allowing cancellation.
+    const invalidInvoices = selected.filter(invoice => {
+        const balance = Number(invoice.balance ?? 0);
+        const total = Number(invoice.totalInvoiceAmount ?? 0);
+
+        // Compare monetary values to two decimal places.
+        return !Number.isFinite(balance) ||
+               !Number.isFinite(total) ||
+               Math.round(balance * 100) !== Math.round(total * 100);
+    });
+
+    if (invalidInvoices.length > 0) {
+        const invoiceNumbers = invalidInvoices
+            .map(invoice => {
+                const number = invoice.invoiceNumber || invoice.id || 'Unknown invoice';
+                const balance = this.formatMoney(invoice.balance);
+                const total = this.formatMoney(invoice.totalInvoiceAmount);
+
+                return `<li style="margin-bottom:8px;text-align:left;">
+            <strong>${number}</strong><br>
+        Total: ${total} | Balance: ${balance}
+    </li>`;
+            })
+            .join('');
+
+        await Swal.fire({
+            icon: 'error',
+            title: 'Cancellation Not Allowed',
+            html: `
+    <p style="margin-bottom:12px;">
+        The following invoices cannot be canceled.
+</p>
+    <ul style="padding-left:20px;max-height:250px;overflow-y:auto;">
+        ${invoiceNumbers}
+    </ul>
+    <p style="margin-top:12px;">
+        Resolve the outstanding payments or invoice discrepancies first.
+    </p>
+        `,
+            confirmButtonText: 'Understood',
+            confirmButtonColor: '#dc2626'
+        });
+
+        return;
+    }
+
+    // Ask for confirmation before calling the backend.
+    const result = await Swal.fire({
+        icon: 'warning',
+        title: 'Confirm Cancellation',
+        text: `Are you sure you want to cancel ${selected.length} selected invoice${selected.length === 1 ? '' : 's'}?`,
+        showCancelButton: true,
+        confirmButtonText: 'Yes, cancel',
+        cancelButtonText: 'No, go back',
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#64748b',
+        reverseButtons: true
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+        const invoiceIds = selected.map(invoice => invoice.id);
+
+        const res = await axios.post('http://localhost:5300/ApDataEntry/CancelInvoices', {
+            invoiceIds
+        });
+
+        if (res.data && res.data.success === false) {
+            this.toastHandler(
+                'error',
+                res.data.message || 'Unable to cancel selected invoices.'
+            );
+            return;
+        }
+
+        if (grid.clearSelection) {
+            grid.clearSelection();
+        }
+
+        this.toastHandler('success', 'Canceled successfully.');
+
+        await this.getApInvoices();
+    } catch (error) {
+        console.error('Invoice cancellation failed:', error);
+
+        this.toastHandler(
+            'error',
+            error.response?.data?.message || 'Failed to cancel invoice(s).'
+        );
+    }
+},
+            async approveInvoices() {
                 const grid = this.$refs.invoices;
-                const selected = grid && grid.selectedRows ? grid.selectedRows() : [];
+                const selected = grid && typeof grid.selectedRows === 'function'
+                    ? grid.selectedRows()
+                    : [];
+
                 if (!selected.length) {
-                    this.toastHandler('warning', 'Select one or more invoices to cancel.');
+                    this.toastHandler('warning', 'Select one or more invoices to approve.');
                     return;
                 }
-                selected.forEach((invoice) => {
-                    invoice.isCanceled = true;
-                    invoice.status = 'Canceled';
-                });
-                if (grid.clearSelection) grid.clearSelection();
-                this.setMessage(`${selected.length} invoice${selected.length === 1 ? '' : 's'} canceled.`, 'success');
+
+                // Skip invoices that have already been approved.
+                const invoicesToApprove = selected.filter(invoice =>
+                    invoice.isAproved !== true
+                );
+
+                const skippedCount = selected.length - invoicesToApprove.length;
+
+                if (!invoicesToApprove.length) {
+                    this.toastHandler('info', 'All selected invoices have already been approved.');
+                    return;
+                }
+
+                try {
+                    const invoiceIds = invoicesToApprove.map(invoice => invoice.id);
+
+                    const res = await axios.post(
+                        'http://localhost:5300/ApDataEntry/InvoiceApproval',
+                        { invoiceIds }
+                    );
+
+                    if (res.data && res.data.success === false) {
+                        this.toastHandler(
+                            'error',
+                            res.data.message || 'Unable to approve selected invoices.'
+                        );
+                        return;
+                    }
+
+                    if (grid.clearSelection) {
+                        grid.clearSelection();
+                    }
+
+                    const message = skippedCount > 0
+                        ? `Approved ${invoicesToApprove.length} invoice(s). Skipped ${skippedCount} already-approved invoice(s).`
+                        : 'Approved successfully.';
+
+                    this.toastHandler('success', message);
+
+                    await this.getApInvoices();
+                } catch (error) {
+                    console.error('Invoice approval failed:', error);
+
+                    this.toastHandler(
+                        'error',
+                        error.response?.data?.message || 'Failed to approve invoice(s).'
+                    );
+                }
             },
-            postSelectedInvoices() {
+            async postSelectedInvoices() {
                 const grid = this.$refs.invoices;
-                const selected = grid && grid.selectedRows ? grid.selectedRows() : [];
+                const selected = grid && typeof grid.selectedRows === 'function'
+                    ? grid.selectedRows()
+                    : [];
+
                 if (!selected.length) {
-                    this.setMessage('Select one or more invoices to post.', 'warning');
+                    this.toastHandler('warning', 'Select one or more invoices to post.');
                     return;
                 }
-                const eligible = selected.filter((invoice) => !invoice.isCanceled);
-                if (!eligible.length) {
-                    this.setMessage('Canceled invoices cannot be posted.', 'error');
+
+                // Skip invoices that have already been posted.
+                const invoicesToPost = selected.filter(invoice =>
+                    invoice.isPosted !== true
+                );
+
+                const skippedCount = selected.length - invoicesToPost.length;
+
+                if (!invoicesToPost.length) {
+                    this.toastHandler('info', 'All selected invoices have already been posted.');
                     return;
                 }
-                eligible.forEach((invoice) => {
-                    invoice.isPosted = true;
-                    invoice.status = 'Posted';
+
+                // Confirm before posting.
+                const result = await Swal.fire({
+                    icon: 'warning',
+                    title: 'Confirm Posting',
+                    text: `Are you sure you want to post ${invoicesToPost.length} invoice${invoicesToPost.length === 1 ? '' : 's'}?${skippedCount > 0 ? ` ${skippedCount} already-posted invoice(s) will be skipped.` : ''}`,
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, post',
+                    cancelButtonText: 'No, go back',
+                    confirmButtonColor: '#4f46e5',
+                    cancelButtonColor: '#64748b',
+                    reverseButtons: true
                 });
-                if (grid.clearSelection) grid.clearSelection();
-                this.setMessage(`${eligible.length} invoice${eligible.length === 1 ? '' : 's'} posted.`, 'success');
-            }
+
+                if (!result.isConfirmed) return;
+
+                try {
+                    const invoiceIds = invoicesToPost.map(invoice => invoice.id);
+
+                    const res = await axios.post(
+                        'http://localhost:5300/ApDataEntry/InitPostInvoice/',
+                        { invoiceIds }
+                    );
+
+                    if (res.data && res.data.success === false) {
+                        this.toastHandler(
+                            'error',
+                            res.data.message || 'Unable to post selected invoices.'
+                        );
+                        return;
+                    }
+
+                    if (grid.clearSelection) {
+                        grid.clearSelection();
+                    }
+
+                    this.toastHandler(
+                        'success',
+                        skippedCount > 0
+                            ? `Posted ${invoicesToPost.length} invoice(s). Skipped ${skippedCount} already-posted invoice(s).`
+                            : 'Posted successfully.'
+                    );
+
+                    await this.getApInvoices();
+                } catch (error) {
+                    console.error('Invoice posting failed:', error);
+
+                    this.toastHandler(
+                        'error',
+                        error.response?.data?.message || 'Failed to post invoice(s).'
+                    );
+                }
+            },
         },
-        mounted() {
+        async mounted() {
+            this.isLoading = true;
+            await this.loadLookups();
+            this.getBusinessProfile();
+            this.getDefaultGlSetup();
+            await this.getApInvoices();
             this.recalculateInvoice();
+            this.isLoading = false;
         }
     });
 
     app.use(DataGridPlugin);
+    app.use(WSelectPlugin);
     app.mount('#app');
 })();

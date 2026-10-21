@@ -60,7 +60,7 @@
 
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/line-awesome@1.3.0/dist/line-awesome/css/line-awesome.min.css" />
-    <script src="https://cdn.jsdelivr.net/npm/moment@2.30.1/moment.min.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="~/css/shell.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/card.css" asp-append-version="true" />
@@ -74,9 +74,7 @@
     <script src="~/ejassets/scripts/jsrender.min.js"></script>
     <script src="~/ejassets/scripts/ej.web.all.min.js"></script>
     <link href="~/ejassets/ejthemes/office-365/ej.web.all.min.css" rel="stylesheet" />
-    <!-- Moment -->
-    <script src="https://cdn.jsdelivr.net/npm/moment@2.30.1/moment.min.js"></script>
-
+  
     <!-- Bold Reports Viewer -->
     <script src="~/js/bold.report-viewer.min.js"></script>
     
@@ -473,7 +471,7 @@
 <div class="sidebar-backdrop" data-action="backdrop" hidden></div>
 
 @* ══════════════════════════════ HEADER ══════════════════════════════ *@
-<header class="app-topbar bg-sky-600 dark:bg-sky-950" id="appTopbar">
+<header class="app-topbar bg-zinc-900 dark:bg-sky-950" id="appTopbar">
     <button type="button" class="topbar-btn" data-action="toggle-sidebar" aria-label="Toggle navigation" aria-haspopup="true">
         <i class="bi bi-list" aria-hidden="true"></i>
     </button>
@@ -481,9 +479,9 @@
   
 
 
-    <div class="topbar-search" data-search-wrap>
+    <div class="topbar-search" data-search-wrap >
 
-        <input type="search" id="topbarSearch" data-search-input autocomplete="off" placeholder="Search anything…" aria-label="Search" />
+        <input type="search" id="topbarSearch" data-search-input autocomplete="off" placeholder="Search anything…" aria-label="Search" style="width: 300px"/>
 
         <div class="dropdown-panel search-results" id="searchResults" hidden></div>
     </div>
@@ -508,7 +506,7 @@
                     <span class="topbar-avatar" id="userInitials"></span>
                     <span class="topbar-user-text">
                         <span class="hello">Hello,</span>
-                        <span class="name" id="userFullName"> Loading user...</span>
+                        <span  class="name " id="userFullName"> Loading user...</span>
                        
                     </span>
                     <i class="bi bi-chevron-down topbar-caret" aria-hidden="true"></i>

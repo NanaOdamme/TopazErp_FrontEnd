@@ -1,1688 +1,1664 @@
-﻿const app = Vue.createApp({
-    data() {
-        return {
-            isShimmerLoading: false,
-            isLoading: false,
-            payload: {},
-            emptyGuid: '00000000-0000-0000-0000-000000000000',
-            voucherList:[],
-            vouchers: [
-                {
-                    id: "11111111-aaaa-1111-aaaa-111111111111",
-                    invoiceNumber: "INV-2026-001",
-                    voucherNumber: "PV-2026-001",
-                    supplierName: "Melcom Limited",
-                    description: "Office equipment purchase",
-                    liabilityAccountName: "2001 - Accounts Payable",
-                    bankAccountName: "1002 - Main Bank Account",
-                    vatWithHoldAccountName: "2002 - VAT Withholding Account",
-                    creditAccountName: "2003 - Withholding Tax Payable",
-                    paymentAmount: 5000.00,
-                    netAmount: 4500.00,
-                    vatWithHeld: 250.00,
-                    withHeld: 250.00,
-                    buyRate: 1.00,
-                    ou: "FINANCE",
-                    voucherEntryDate: "2026-10-01T00:00:00",
-                    paymentDate: "2026-10-05T00:00:00",
-                    isPosted: false
-                },
-                {
-                    id: "22222222-bbbb-2222-bbbb-222222222222",
-                    invoiceNumber: "INV-2026-002",
-                    voucherNumber: "PV-2026-002",
-                    supplierName: "Papaye Fast Food",
-                    description: "Catering services",
-                    liabilityAccountName: "2001 - Accounts Payable",
-                    bankAccountName: "1003 - Business Savings Account",
-                    vatWithHoldAccountName: "2002 - VAT Withholding Account",
-                    creditAccountName: "2003 - Withholding Tax Payable",
-                    paymentAmount: 2500.00,
-                    netAmount: 2400.00,
-                    vatWithHeld: 100.00,
-                    withHeld: 0.00,
-                    buyRate: 1.00,
-                    ou: "ADMIN",
-                    voucherEntryDate: "2026-10-03T00:00:00",
-                    paymentDate: "2026-10-07T00:00:00",
-                    isPosted: false
-                },
-                {
-                    id: "33333333-cccc-3333-cccc-333333333333",
-                    invoiceNumber: "INV-2026-003",
-                    voucherNumber: "PV-2026-003",
-                    supplierName: "Office World Ghana",
-                    description: "Stationery supplies",
-                    liabilityAccountName: "2001 - Accounts Payable",
-                    bankAccountName: "1002 - Main Bank Account",
-                    vatWithHoldAccountName: "2002 - VAT Withholding Account",
-                    creditAccountName: "2003 - Withholding Tax Payable",
-                    paymentAmount: 1200.00,
-                    netAmount: 1200.00,
-                    vatWithHeld: 0.00,
-                    withHeld: 0.00,
-                    buyRate: 1.00,
-                    ou: "FINANCE",
-                    voucherEntryDate: "2026-10-06T00:00:00",
-                    paymentDate: "2026-10-10T00:00:00",
-                    isPosted: true
-                },
-                {
-                    id: "44444444-dddd-4444-dddd-444444444444",
-                    invoiceNumber: "INV-2026-004",
-                    voucherNumber: "PV-2026-004",
-                    supplierName: "Accra Stationery Supplies",
-                    description: "Printing materials",
-                    liabilityAccountName: "2001 - Accounts Payable",
-                    bankAccountName: "1004 - Operations Account",
-                    vatWithHoldAccountName: "2002 - VAT Withholding Account",
-                    creditAccountName: "2003 - Withholding Tax Payable",
-                    paymentAmount: 1800.00,
-                    netAmount: 1700.00,
-                    vatWithHeld: 0.00,
-                    withHeld: 100.00,
-                    buyRate: 1.00,
-                    ou: "ADMIN",
-                    voucherEntryDate: "2026-10-08T00:00:00",
-                    paymentDate: "2026-10-12T00:00:00",
-                    isPosted: false
-                }
-            ],
-            invoiceList: [
-                {
-                    id: "11111111-1111-1111-1111-111111111111",
-                    invoiceNumber: "INV-2026-001",
-                    supplierName: "Melcom Limited",
-                    invoiceDate: "2026-10-01T00:00:00",
-                    isPosted: true,
-                    isCanceled: false,
-                    balance: 2500.00,
-                    invoiceDetails: [
-                        {
-                            id: "detail-001",
-                            description: "Office Furniture",
-                            quantity: 2,
-                            unitPrice: 1500.00,
-                            subTotal: 3000.00
-                        },
-                        {
-                            id: "detail-002",
-                            description: "VAT",
-                            quantity: 1,
-                            unitPrice: 450.00,
-                            subTotal: 450.00
-                        },
-                        {
-                            id: "detail-003",
-                            description: "NHIL",
-                            quantity: 1,
-                            unitPrice: 75.00,
-                            subTotal: 75.00
-                        }
-                    ],
-                    invoiceTaxLevies: [
-                    ]
-                },
-                {
-                    id: "22222222-2222-2222-2222-222222222222",
-                    invoiceNumber: "INV-2026-002",
-                    supplierName: "Office World Ghana",
-                    invoiceDate: "2026-10-05T00:00:00",
-                    isPosted: true,
-                    isCanceled: false,
-                    balance: 1800.00,
-                    invoiceDetails: [
-                        {
-                            id: "detail-004",
-                            description: "Printer Paper",
-                            quantity: 10,
-                            unitPrice: 120.00,
-                            subTotal: 1200.00
-                        },
-                        {
-                            id: "detail-005",
-                            description: "Printer Toner",
-                            quantity: 2,
-                            unitPrice: 300.00,
-                            subTotal: 600.00
-                        },
-                        {
-                            id: "detail-006",
-                            description: "VAT",
-                            quantity: 1,
-                            unitPrice: 270.00,
-                            subTotal: 270.00
-                        }
-                    ],
-                    invoiceTaxLevies: [
-                    ]
-                },
-                {
-                    id: "33333333-3333-3333-3333-333333333333",
-                    invoiceNumber: "INV-2026-003",
-                    supplierName: "Accra Stationery Supplies",
-                    invoiceDate: "2026-10-08T00:00:00",
-                    isPosted: true,
-                    isCanceled: false,
-                    balance: 0.00,
-                    invoiceDetails: [
-                        {
-                            id: "detail-007",
-                            description: "Stationery",
-                            quantity: 5,
-                            unitPrice: 200.00,
-                            subTotal: 1000.00
-                        },
-                        {
-                            id: "detail-008",
-                            description: "VAT",
-                            quantity: 1,
-                            unitPrice: 150.00,
-                            subTotal: 150.00
-                        }
-                    ],
-                    invoiceTaxLevies: [
-                        {
-                            id: "122-34",
-                            name: "VAT",
-                            rate: 15,
-                            amount: 100.00,
-                        },
-                        {
-                            id: "122-33",
-                            name: "GETFL",
-                            rate: 15,
-                            amount: 100.00,
-                        },
-                        {
-                            id: "122-34",
-                            name: "NHIL",
-                            rate: 15,
-                            amount: 100.00,
-                        }
-                    ]
-                },
-                {
-                    id: "44444444-4444-4444-4444-444444444444",
-                    invoiceNumber: "INV-2026-004",
-                    supplierName: "Papaye Fast Food",
-                    invoiceDate: "2026-10-10T00:00:00",
-                    isPosted: true,
-                    isCanceled: false,
-                    balance: 900.00,
-                    invoiceDetails: [
-                        {
-                            id: "detail-009",
-                            description: "Catering Services",
-                            quantity: 1,
-                            unitPrice: 900.00,
-                            subTotal: 900.00
-                        }
-                    ],
-                    invoiceTaxLevies: [
-                        {
-                            id: "122-34",
-                            name: "VAT",
-                            rate: 15,
-                            amount: 100.00,
-                        },
-                        {
-                            id: "122-33",
-                            name: "GETFL",
-                            rate: 15,
-                            amount: 100.00,
-                        },
-                        {
-                            id: "122-34",
-                            name: "NHIL",
-                            rate: 15,
-                            amount: 100.00,
-                        }
-                    ]
-                },
-                {
-                    id: "55555555-5555-5555-5555-555555555555",
-                    invoiceNumber: "INV-2026-005",
-                    supplierName: "Ghana Office Solutions",
-                    invoiceDate: "2026-10-12T00:00:00",
-                    isPosted: true,
-                    isCanceled: false,
-                    balance: 1200.00,
-                    invoiceDetails: [
-                        {
-                            id: "detail-010",
-                            description: "Computer Accessories",
-                            quantity: 1,
-                            unitPrice: 1200.00,
-                            subTotal: 1200.00
-                        }
-                    ],
-                    invoiceTaxLevies: [
-                        {
-                            id: "122-34",
-                            name: "VAT",
-                            rate: 15,
-                            amount: 100.00,
-                        },
-                        {
-                            id: "122-33",
-                            name: "GETFL",
-                            rate: 15,
-                            amount: 100.00,
-                        },
-                        {
-                            id: "122-34",
-                            name: "NHIL",
-                            rate: 15,
-                            amount: 100.00,
-                        }
-                    ]
-                }
-            ],
-            voucherNumber: '0',
-            invoiceId: '',
-            invoiceDetailsList: this.detailsList,
-            supplierList: [
-                {
-                    id: "11111111-1111-1111-1111-111111111111",
-                    name: "Accra Stationery Supplies",
-                    statusName: "Active"
-                },
-                {
-                    id: "22222222-2222-2222-2222-222222222222",
-                    name: "Ghana Office Solutions",
-                    statusName: "Active"
-                },
-                {
-                    id: "33333333-3333-3333-3333-333333333333",
-                    name: "Melcom Limited",
-                    statusName: "Active"
-                },
-                {
-                    id: "44444444-4444-4444-4444-444444444444",
-                    name: "Office World Ghana",
-                    statusName: "Inactive"
-                },
-                {
-                    id: "55555555-5555-5555-5555-555555555555",
-                    name: "Papaye Fast Food",
-                    statusName: "Active"
-                },
-                {
-                    id: "66666666-6666-6666-6666-666666666666",
-                    name: "Prime Business Services",
-                    statusName: "Pending"
-                }
-            ],
-            supplierId: '',
-            supplierName: '',
-            referenceNumber: '',
-            accountNumber: '',
-            invoiceNumber: '',
-            currencyList: [
-                {
-                    id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-                    currencyName: "Ghana Cedis",
-                    currencyCode: "GHS",
-                    buyRate: 1.0000
-                },
-                {
-                    id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-                    currencyName: "US Dollar",
-                    currencyCode: "USD",
-                    buyRate: 12.5000
-                },
-                {
-                    id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
-                    currencyName: "British Pound",
-                    currencyCode: "GBP",
-                    buyRate: 16.8000
-                },
-                {
-                    id: "dddddddd-dddd-dddd-dddd-dddddddddddd",
-                    currencyName: "Euro",
-                    currencyCode: "EUR",
-                    buyRate: 14.2000
-                },
-                {
-                    id: "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
-                    currencyName: "Nigerian Naira",
-                    currencyCode: "NGN",
-                    buyRate: 0.0080
-                }
-            ],
-            currencyId: '',
-            currencyName: '',
-            buyRate: '',
-            sellRate: '',
-            invoiceAmount: '',
-            balance: '',
-            minorName: '',
-            description: '',
-            liabilityAccountId: '',
-            liabilityAccountCode: '',
-            bankList: [],
-            bankBranchList: [],
-            bankId: '',
-            bankName: '',
-            bankBranchId: '',
-            bankBranchCode: '',
-            payCurrencyId: '',
-            payCurrencyName: '',
-            payCurrencyCode: '',
-            payCurrencyBuyRate: '',
-            payCurrencySellRate: '',
-            paymentAmount: '0.00',
-            paymentDate: moment().format("YYYY-MM-DD"),
-            modeOfPayment: 'Cash',
-            chequeNumber: '0',
-            voucherDetails: [],
-            withHoldingRate: '0.00',
-            isWithHolding: false,
-            GETFL: false,
-            GETFLRate: 0,
-            NHIL: false,
-            NHILRate: 0,
-            Vat: false,
-            CSTRate: 0,
-            COVIDRate: 0,
-            VatRate: 0,
-            withHeld: '0.00',
-            vatWithheld: '0.00',
-            total: '0.00',
-            vatAmount: '0.00',
-            netAmount: '0.00',
-            vatWithHoldAccountId: '',
-            vatWithHoldAccountName: '',
-            creditAccountId: '',
-            creditAccountName: '',
-            voucherId: '',
-            bankAccountId: '',
-            voucherDescription: '',
-            cash: true,
-            cheque: false,
-            totalTaxAmount: '0.00',
-            VatWithHeldRate: '0.00',
-            isVatWithHolding: false,
-            voucherEntryDate: moment().format("YYYY-MM-DD"),
-            invoiceDate: moment().format("YYYY-MM-DD"),
-            isPosted: false,
-            defaultCurrency: {},
-            batchNumber: '',
-            accountsList: [
-                {
-                    id: "11111111-1111-1111-1111-111111111111",
-                    accountNo: "1001",
-                    accountName: "Cash Account"
-                },
-                {
-                    id: "22222222-2222-2222-2222-222222222222",
-                    accountNo: "1002",
-                    accountName: "Bank Account"
-                },
-                {
-                    id: "33333333-3333-3333-3333-333333333333",
-                    accountNo: "2001",
-                    accountName: "Accounts Payable"
-                },
-                {
-                    id: "44444444-4444-4444-4444-444444444444",
-                    accountNo: "2002",
-                    accountName: "VAT Withholding Account"
-                },
-                {
-                    id: "55555555-5555-5555-5555-555555555555",
-                    accountNo: "3001",
-                    accountName: "Withholding Tax Account"
-                },
-                {
-                    id: "66666666-6666-6666-6666-666666666666",
-                    accountNo: "4001",
-                    accountName: "Office Expenses"
-                }
-            ],
-            taxLevyList: [
-                {
-                    id: "tax-001",
-                    name: "VAT",
-                    type: "VAT",
-                    rate: 15.00,
-                    amount: 0,
-                    isApplied: false,
-                    isDisabled: false
-                },
-                {
-                    id: "tax-002",
-                    name: "NHIL",
-                    type: "VAT",
-                    rate: 2.50,
-                    amount: 0,
-                    isApplied: false,
-                    isDisabled: false
-                },
-                {
-                    id: "tax-003",
-                    name: "GETFL",
-                    type: "VAT",
-                    rate: 2.50,
-                    amount: 0,
-                    isApplied: false,
-                    isDisabled: false
-                },
-                {
-                    id: "tax-004",
-                    name: "COVID",
-                    type: "VAT",
-                    rate: 0.00,
-                    amount: 0,
-                    isApplied: false,
-                    isDisabled: false
-                },
-                {
-                    id: "tax-005",
-                    name: "CST",
-                    type: "VAT",
-                    rate: 0.00,
-                    amount: 0,
-                    isApplied: false,
-                    isDisabled: false
-                }
-            ],
-            covidRate: 0,
-            cstRate: 0,
-            covid: false,
-            cst: false,
-            userIsEditingRate: false,
-            bankAccountList: [
-                {
-                    id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-                    accountNo: "1002",
-                    accountName: "Main Bank Account",
-                    bankName: "GCB Bank",
-                    branchName: "Accra Main Branch",
-                    accountNumber: "0123456789"
-                },
-                {
-                    id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-                    accountNo: "1003",
-                    accountName: "Business Savings Account",
-                    bankName: "Ecobank Ghana",
-                    branchName: "Osu Branch",
-                    accountNumber: "9876543210"
-                },
-                {
-                    id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
-                    accountNo: "1004",
-                    accountName: "Operations Account",
-                    bankName: "Absa Bank Ghana",
-                    branchName: "Airport Branch",
-                    accountNumber: "1234567890"
-                }
-            ],
-           
-            vatInInvoice: true,
-            isVatInclusive: true,
-            baseAmount: '0.00',
-            isMultiCurrency: false,
-            baseAmount2: '0.00',
-            vatCertificate: '',
-            invoiceEditList: []
-        }
-    },
-    methods: {
-        generateRefNo() {   
-            this.referenceNumber = Math.floor(100000 + Math.random() * 900000).toString();
-        },
-        getBusinessProfile() {
-                    this.isVatInclusive = false;
-        },
+﻿(() => {
+    'use strict';
 
-        getDefaultGlSetup() {
-            const responseData = {
-                accountsPayableAccountId: "GL-AP-001",
-                vatPaidAccountId: "GL-VAT-001",
-                accountPayablesBankAccountId: "GL-BANK-001",
-                withholdingTaxAccountId: "GL-WHT-001"
-            };
+    const EMPTY_GUID = '00000000-0000-0000-0000-000000000000';
+    const API_BASE_URL = 'http://localhost:5300';
 
-            this.debitAccountId = responseData.accountsPayableAccountId;
-            this.vatWithHoldAccountId = responseData.vatPaidAccountId;
-            this.bankAccountId = responseData.accountPayablesBankAccountId;
-            this.creditAccountId = responseData.withholdingTaxAccountId;
-        },
+    // Single axios instance: baseURL + cookies for every call (GET and POST).
+    const api = axios.create({ baseURL: API_BASE_URL, withCredentials: true });
 
-        getTaxLevies() {
-            if (this.taxLevyList.length > 0) {
-                const vat = this.taxLevyList.find(
-                    tax => tax.name.toLowerCase() === "vat"
-                );
+    const ENDPOINTS = {
+        vouchers: `${API_BASE_URL}/ApDataEntry/GetVouchers`,
+        createVoucher: `${API_BASE_URL}/ApDataEntry/CreateVoucher`,
+        updateVoucher: `${API_BASE_URL}/ApDataEntry/UpdateVoucher`,
+        deleteVoucher: `${API_BASE_URL}/ApDataEntry/DeleteVoucher/`,
+        invoices: `${API_BASE_URL}/ApDataEntry/GetInvoices`,
+        suppliers: `${API_BASE_URL}/SharedResource/GetSuppliers`,
+        currencies: `${API_BASE_URL}/SharedResource/GetCurrencys`,
+        banks: `${API_BASE_URL}/SharedResource/GetBanks`,
+        accounts: `${API_BASE_URL}/LedgerDataEntry/InitJournalEntry`,
+        bankAccounts: `${API_BASE_URL}/LedgerSetups/GetBankAccounts`,
+        taxLevies: `${API_BASE_URL}/SharedResource/GetTaxLevies`,
+        defaultGlSetup: `${API_BASE_URL}/LedgerSetups/GetDefaultGlSetup`,
+        businessProfile: `${API_BASE_URL}/SharedResource/GetBusinessProfile`
+    };
 
-                const nhil = this.taxLevyList.find(
-                    tax => tax.name.toLowerCase() === "nhil"
-                );
+    // MVC report page - lives on the web app, not on the API host
+    const REPORT_URL = '/ApReports/PrintPaymentVoucher';
 
-                const getfl = this.taxLevyList.find(
-                    tax => tax.name.toLowerCase() === "getfl"
-                );
+    const TAX_DESCRIPTIONS = ['VAT', 'NHIL', 'GETFL', 'COVID', 'CST'];
+    const TAX_DESCRIPTIONS_NO_VAT = ['VAT', 'CST'];
 
-                const covid = this.taxLevyList.find(
-                    tax => tax.name.toLowerCase() === "covid"
-                );
+    const pad = (n) => String(n).padStart(2, '0');
 
-                const cst = this.taxLevyList.find(
-                    tax => tax.name.toLowerCase() === "cst"
-                );
+    const isoDate = (date) => {
+        if (date === null || date === undefined || date === '') return '';
 
-                this.VatRate = vat ? parseFloat(vat.rate).toFixed(2) : "0.00";
-                this.NHILRate = nhil ? parseFloat(nhil.rate).toFixed(2) : "0.00";
-                this.GETFLRate = getfl ? parseFloat(getfl.rate).toFixed(2) : "0.00";
-                this.covidRate = covid ? parseFloat(covid.rate).toFixed(2) : "0.00";
-                this.cstRate = cst ? parseFloat(cst.rate).toFixed(2) : "0.00";
+        if (typeof date === 'string') {
+            const raw = date.trim();
+            if (!raw) return '';
+            if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
 
-                this.vatList = this.taxLevyList.filter(
-                    tax => tax.type.toLowerCase() === "vat"
-                );
-
-                this.NHIL = nhil?.isApplied || false;
-                this.Vat = vat?.isApplied || false;
-                this.GETFL = getfl?.isApplied || false;
-                this.covid = covid?.isApplied || false;
-                this.cst = cst?.isApplied || false;
+            const ms = /\/Date\((-?\d+)/.exec(raw);
+            if (ms) {
+                const d = new Date(Number(ms[1]));
+                return Number.isNaN(d.getTime()) ? '' : `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
             }
-            return this.taxLevyList;
-        },
-        syncTaxFlags() {
-            this.Vat = this.taxLevyList.find(t => t.name.toLowerCase() === 'vat')?.isApplied || false;
-            this.NHIL = this.taxLevyList.find(t => t.name.toLowerCase() === 'nhil')?.isApplied || false;
-            this.GETFL = this.taxLevyList.find(t => t.name.toLowerCase() === 'getfl')?.isApplied || false;
-            this.covid = this.taxLevyList.find(t => t.name.toLowerCase() === 'covid')?.isApplied || false;
-            this.cst = this.taxLevyList.find(t => t.name.toLowerCase() === 'cst')?.isApplied || false;
-        },
 
-        initPaymentVoucher() {
-                this.accountsList.forEach(account => {
-                    account.accountIdentifier =
-                        `${account.accountNo} - ${account.accountName}`;
+            const dmy = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/.exec(raw);
+            if (dmy) return `${dmy[3]}-${pad(dmy[2])}-${pad(dmy[1])}`;
+
+            const ymd = /^(\d{4})[/](\d{1,2})[/](\d{1,2})/.exec(raw);
+            if (ymd) return `${ymd[1]}-${pad(ymd[2])}-${pad(ymd[3])}`;
+        }
+
+        const d = date instanceof Date ? date : new Date(date);
+        if (Number.isNaN(d.getTime())) return '';
+        const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+        return local.toISOString().slice(0, 10);
+    };
+
+    const loadedDate = (value) => {
+        const iso = isoDate(value);
+        if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return '';
+        if (iso.startsWith('0001-') || iso.startsWith('0000-') || iso === '1900-01-01') return '';
+        return iso;
+    };
+
+    // Derives a grouping label from a date: "2026", or "No Date" when there is none.
+    const yearOf = (value) => {
+        const iso = loadedDate(value);
+        return iso ? iso.slice(0, 4) : '';
+    };
+
+    const sameId = (a, b) =>
+        a !== null && a !== undefined && b !== null && b !== undefined &&
+        String(a).toLowerCase() === String(b).toLowerCase();
+
+    const asList = (value) => (Array.isArray(value) ? value : value ? [value] : []);
+    const money = (value) => (parseFloat(value) || 0).toFixed(2);
+    const round2 = (value) => Math.round(((parseFloat(value) || 0) + Number.EPSILON) * 100) / 100;
+    const rate4 = (value) => (parseFloat(value) || 0).toFixed(4);
+
+    const today = isoDate(new Date());
+
+    const unwrapList = (raw, preferredKey) => {
+        if (!raw) return [];
+        if (Array.isArray(raw)) return raw;
+        if (raw.result !== undefined) return unwrapList(raw.result, preferredKey);
+        if (preferredKey && Array.isArray(raw[preferredKey])) return raw[preferredKey];
+        if (Array.isArray(raw.items)) return raw.items;
+        if (Array.isArray(raw.result)) return raw.result;
+        if (Array.isArray(raw.accounts)) return raw.accounts;
+        if (typeof raw === 'object') {
+            const firstArr = Object.values(raw).find(v => Array.isArray(v));
+            if (firstArr) return firstArr;
+        }
+        return asList(raw);
+    };
+
+    const app = Vue.createApp({
+        data() {
+            return {
+                theme: '#0645e7',
+                theme1: '#383636',
+
+                isLoading: false,
+                isShimmerLoading: false,
+                emptyGuid: EMPTY_GUID,
+
+                /* ---------------- lookups ---------------- */
+                suppliers: [],
+                currencies: [],
+                currencyList: [],
+                banks: [],
+                bankList: [],
+                bankBranchList: [],
+                accounts: [],
+                accountsList: [],
+                bankAccountList: [],
+                taxLevyList: [],
+                defaultCurrency: {},
+
+                /* ---------------- registers ---------------- */
+                voucherList: [],
+                invoices: [],
+                invoiceList: [],
+                voucherDetailsMap: {},
+                invoiceDetailsMap: {},
+
+                /* ---------------- state ---------------- */
+                isSettingVoucher: false,
+                loadedVoucherId: '',
+                loadedVoucherDetails: [],
+                userIsEditingRate: false,
+
+                /* ---------------- voucher header ---------------- */
+                voucherId: '',
+                voucherNumber: '',
+                batchNumber: '',
+                referenceNumber: '',
+                voucherDescription: '',
+                voucherEntryDate: today,
+                paymentDate: today,
+                isPosted: false,
+                tenantId: '',
+
+                /* ---------------- invoice ---------------- */
+                invoiceId: '',
+                invoiceNumber: '',
+                invoiceDate: '',
+                invoiceAmount: '0.00',
+                invoiceEditList: [],
+                filteredInvoices: [],
+                invoiceDetailsList: [],
+                totalInvoiceAmount: '0.00',
+                balance: '0.00',
+                liabilityAccountId: '',
+                liabilityAccountCode: '',
+                liabilityAccountName: '',
+                supplierId: '',
+                supplierName: '',
+                accountNumber: '',
+                minorName: '',
+
+                /* ---------------- invoice currency ---------------- */
+                currencyId: '',
+                currencyName: '',
+                currencyCode: '',
+                buyRate: '0.0000',
+                sellRate: '0.0000',
+
+                /* ---------------- payment currency ---------------- */
+                payCurrencyId: '',
+                payCurrencyName: '',
+                payCurrencyCode: '',
+                payCurrencyBuyRate: '0.0000',
+                payCurrencySellRate: '0.0000',
+                isMultiCurrency: false,
+
+                /* ---------------- bank / GL ---------------- */
+                bankId: '',
+                bankName: '',
+                bankBranchId: '',
+                bankBranchName: '',
+                bankAccountId: '',
+                bankAccountName: '',
+                creditAccountId: '',
+                creditAccountName: '',
+                vatWithHoldAccountId: '',
+                vatWithHoldAccountName: '',
+
+                /* ---------------- mode of payment ---------------- */
+                modeOfPayment: 'Cash',
+                cash: true,
+                cheque: false,
+                chequeNumber: '',
+
+                /* ---------------- tax levies ---------------- */
+                vatInInvoice: false,
+                isVatInclusive: true,
+                invoiceTaxLevies: [],
+                Vat: false,
+                NHIL: false,
+                GETFL: false,
+                covid: false,
+                cst: false,
+                VatRate: '0.00',
+                NHILRate: '0.00',
+                GETFLRate: '0.00',
+                covidRate: '0.00',
+                cstRate: '0.00',
+                vatAmount: '0.00',
+                totalTaxAmount: '0.00',
+                baseAmount: '0.00',
+                baseAmount2: '0.00',
+
+                /* ---------------- withholding ---------------- */
+                isWithHolding: false,
+                withHoldingRate: '0.00',
+                isVatWithHolding: false,
+                VatWithHeldRate: '0.00',
+                withHeld: '0.00',
+                vatWithheld: '0.00',
+                total: '0.00',
+                netAmount: '0.00',
+                paymentAmount: '0.00'
+            };
+        },
+        computed: {
+            voucherColumns() {
+                return [
+                    { key: 'id', label: 'ID', type: 'text', hidden: true, width: 74 },
+                    { key: 'tenantId', label: 'Tenant ID', type: 'text', hidden: true, width: 74 },
+                    { key: 'batchNumber', label: 'Batch #', type: 'text', width: 140, searchable: true },
+                    { key: 'voucherNumber', label: 'Voucher No.', type: 'text', width: 160, searchable: true },
+                    // Grouping key for the grid: group-header="voucherYear"
+                    { key: 'voucherYear', label: 'Year', type: 'text', width: 90, searchable: true },
+                    { key: 'voucherEntryDate', label: 'Entry Date', type: 'date', width: 140, searchable: true },
+                    { key: 'paymentDate', label: 'Payment Date', type: 'date', width: 140, searchable: true },
+                    { key: 'supplierName', label: 'Supplier', type: 'text', width: 220, searchable: true },
+                    { key: 'invoiceNumber', label: 'Invoice', type: 'text', width: 150, searchable: true },
+                    { key: 'payCurrencyName', label: 'Currency', type: 'text', width: 120, searchable: true },
+                    { key: 'chequeNumber', label: 'Cheque No.', type: 'text', width: 130, searchable: true },
+                    { key: 'paymentAmount', label: 'Payment', type: 'number', width: 140, decimals: 2 },
+                    { key: 'netAmount', label: 'Net Amount', type: 'number', width: 140, decimals: 2 },
+                    { key: 'isPosted', label: 'Posted', type: 'boolean', width: 100 }
+                ];
+            },
+            voucherDetailsGrid() {
+                return {
+                    key: 'voucherDetails',
+                    title: 'Voucher Entries',
+                    columns: [
+                        { key: 'id', label: 'ID', type: 'text', hidden: true },
+                        { key: 'account', label: 'Account', type: 'text', width: 260, searchable: true },
+                        { key: 'description', label: 'Description', type: 'text', width: 220, searchable: true },
+                        { key: 'debitAmount', label: 'Debit', type: 'number', width: 140, decimals: 2 },
+                        { key: 'creditAmount', label: 'Credit', type: 'number', width: 140, decimals: 2 },
+                        { key: 'buyRate', label: 'Rate', type: 'number', width: 110, decimals: 4 }
+                    ]
+                };
+            },
+            invoiceColumns() {
+                return [
+                    { key: 'id', label: 'ID', type: 'text', hidden: true, width: 74 },
+                    { key: 'tenantId', label: 'Tenant ID', type: 'text', hidden: true, width: 74 },
+                    { key: 'invoiceNumber', label: 'Invoice No.', type: 'text', width: 150, searchable: true },
+                    { key: 'supplierName', label: 'Supplier', type: 'text', width: 200, searchable: true },
+                    { key: 'currencyName', label: 'Currency', type: 'text', width: 110, searchable: true },
+                    { key: 'buyRate', label: 'Rate', type: 'number', width: 110, decimals: 4 },
+                    { key: 'totalInvoiceAmount', label: 'Total Amount', type: 'number', width: 150, decimals: 2 },
+                    { key: 'liabilityAccountName', label: 'Liability G/L', type: 'text', width: 190, searchable: true },
+                    { key: 'balance', label: 'Balance', type: 'number', width: 140, decimals: 2 },
+                    { key: 'invoiceYear', label: 'Year', type: 'text', width: 90, searchable: true },
+                    { key: 'invoiceDate', label: 'Invoice Date', type: 'date', width: 140, searchable: true }
+                ];
+            },
+            invoiceDetailsGrid() {
+                return {
+                    key: 'invoiceDetails',
+                    title: 'Invoice Details',
+                    columns: [
+                        { key: 'id', label: 'ID', type: 'text', hidden: true },
+                        { key: 'invoiceId', label: 'Invoice ID', type: 'text', hidden: true },
+                        { key: 'referenceNumber', label: 'Ref No.', type: 'text', width: 140, searchable: true },
+                        { key: 'description', label: 'Description', type: 'text', width: 220, searchable: true },
+                        { key: 'debitAccountName', label: 'Debit G/L', type: 'text', width: 190, searchable: true },
+                        { key: 'unitPrice', label: 'Unit Price', type: 'number', width: 130, decimals: 2 },
+                        { key: 'quantity', label: 'Quantity', type: 'number', width: 110, decimals: 2 },
+                        { key: 'subTotal', label: 'Sub Total', type: 'number', width: 140, decimals: 2 }
+                    ]
+                };
+            }
+        },
+        methods: {
+            /* ==================================================================
+             * SHELL
+             * ================================================================== */
+            scrollToAdd() {
+                this.$nextTick(() => {
+                    const element = document.querySelector('#add');
+                    if (!element) {
+                        console.error('Cannot find #add. Check where the div is rendered.');
+                        return;
+                    }
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            },
+            toastHandler(type, message = 'An unexpected error occurred.') {
+                if (typeof Swal === 'undefined') {
+                    console.log(`[${type}] ${message}`);
+                    return;
+                }
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'success',
+                    title: message,
+                    showConfirmButton: false,
+                    timer: 4000,
+                    timerProgressBar: true
+                });
+            },
+            apiErrorMessage(error, fallback) {
+                const data = error && error.response && error.response.data;
+                if (!data) return error && error.message ? `${fallback} (${error.message})` : fallback;
+                if (typeof data === 'string') return `${fallback} ${data}`.trim();
+                const abpError = data.error && (data.error.message || data.error.details);
+                return abpError || data.message || data.detail || data.title || fallback;
+            },
+            uuid() {
+                return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+                    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+                );
+            },
+            generateRefNo() {
+                this.referenceNumber = Math.floor(100000 + Math.random() * 900000).toString();
+            },
+            formatDate(dateInput) {
+                return isoDate(dateInput);
+            },
+
+            /* ==================================================================
+             * DATA LOADING
+             * ================================================================== */
+            async fetchList(url, label, preferredKey = null) {
+                try {
+                    const response = await api.get(url);
+                    const list = unwrapList(response.data, preferredKey);
+                    return list.map(item => (item && item.Id && !item.id && typeof normalizeKeys === 'function') ? normalizeKeys(item) : item);
+                } catch (error) {
+                    this.toastHandler('error', `Failed to load ${label}.`);
+                    return [];
+                }
+            },
+
+            async getSuppliers() {
+                const list = await this.fetchList(ENDPOINTS.suppliers, 'suppliers');
+                this.suppliers = list
+                    .map(s => ({ ...s, name: (s.name || '').trim() }))
+                    .filter(s => !s.statusName || s.statusName.trim().toLowerCase() === 'active')
+                    .sort((a, b) => a.name.localeCompare(b.name));
+                return this.suppliers;
+            },
+
+            async getCurrencies() {
+                const list = await this.fetchList(ENDPOINTS.currencies, 'currencies');
+                this.currencies = list.map(c => ({ ...c }));
+                this.currencyList = this.currencies;
+
+                this.defaultCurrency =
+                    this.currencies.find(c => c.isDefault === true) ||
+                    this.currencies.find(c => ['ghana cedis', 'ghana cedi'].includes(String(c.currencyName || '').trim().toLowerCase())) ||
+                    {};
+
+                if (!this.payCurrencyId && this.defaultCurrency.id) {
+                    this.payCurrencyId = this.defaultCurrency.id;
+                    this.onPayCurrencyChange();
+                }
+                return this.currencies;
+            },
+
+            async getBanks() {
+                const list = await this.fetchList(ENDPOINTS.banks, 'banks');
+                this.banks = list.map(b => ({ ...b }));
+                this.bankList = this.banks;
+                return this.banks;
+            },
+
+            async loadAccounts() {
+                const rawAccounts = await this.fetchList(ENDPOINTS.accounts, 'accounts', 'accounts');
+
+                let accounts = rawAccounts.map(a => ({
+                    ...a,
+                    accountIdentifier: a.accountIdentifier || `${a.accountNo ?? ''} - ${a.accountName ?? a.name ?? ''}`.trim().replace(/^ - /, ''),
+                    name: a.accountName || a.name,
+                    accountName: a.accountName || a.name
+                }));
+
+                if (!accounts.length) {
+                    accounts = [{ id: EMPTY_GUID, accountNo: '', accountName: 'No Ledger Available', accountIdentifier: 'No Ledger Available' }];
+                }
+
+                accounts.sort((a, b) => Number(a.accountNo || 0) - Number(b.accountNo || 0));
+
+                this.accounts = accounts;
+                this.accountsList = accounts;
+                return this.accounts;
+            },
+
+            async getBankAccounts() {
+                const list = await this.fetchList(ENDPOINTS.bankAccounts, 'bank accounts');
+                this.bankAccountList = list.map(b => ({ ...b }));
+                return this.bankAccountList;
+            },
+
+            async getTaxLevies() {
+                const list = await this.fetchList(ENDPOINTS.taxLevies, 'tax levies');
+
+                this.taxLevyList = list.map(tax => ({
+                    ...tax,
+                    name: (tax.name || '').trim(),
+                    type: (tax.type || '').trim(),
+                    rate: money(tax.rate),
+                    isApplied: tax.isApplied === true,
+                    defaultIsApplied: tax.isApplied === true,
+                    isDisabled: false,
+                    amount: null
+                }));
+
+                const findRate = (name) => {
+                    const tax = this.taxLevyList.find(t => String(t.name).toLowerCase() === name);
+                    return tax ? money(tax.rate) : '0.00';
+                };
+
+                this.VatRate = findRate('vat');
+                this.NHILRate = findRate('nhil');
+                this.GETFLRate = findRate('getfl');
+                this.covidRate = findRate('covid');
+                this.cstRate = findRate('cst');
+
+                this.syncTaxFlags();
+                return this.taxLevyList;
+            },
+
+            async getBusinessProfile() {
+                try {
+                    const response = await api.get(ENDPOINTS.businessProfile);
+                    if (response.data) {
+                        this.isVatInclusive = response.data.isTaxLeviesInclusive === true;
+                    }
+                } catch (error) {
+                    console.log(error);
+                }
+            },
+
+            async getDefaultGlSetup() {
+                try {
+                    const response = await api.get(ENDPOINTS.defaultGlSetup);
+                    const setup = response.data || {};
+
+                    if (!this.voucherId) {
+                        if (setup.vatPaidAccountId) this.vatWithHoldAccountId = setup.vatPaidAccountId;
+                        if (setup.accountPayablesBankAccountId) this.bankAccountId = setup.accountPayablesBankAccountId;
+                        if (setup.withholdingTaxAccountId) this.creditAccountId = setup.withholdingTaxAccountId;
+                    }
+                } catch (error) {
+                    console.log(error);
+                    this.toastHandler('error', 'Unable to get default GL numbers.');
+                }
+            },
+
+            async getInvoices() {
+                const list = await this.fetchList(ENDPOINTS.invoices, 'AP invoices');
+                if (list.length || !this.invoiceList.length) this.invoices = list;
+
+                this.invoiceList = (this.invoices || []).map(invoice => {
+                    const details = Array.isArray(invoice.invoiceDetails) ? invoice.invoiceDetails : [];
+
+                    return {
+                        ...invoice,
+                        invoiceId: invoice.id,
+                        invoiceDate: loadedDate(invoice.invoiceDate),
+                        invoiceYear: yearOf(invoice.invoiceDate) || 'No Date',
+                        displayText: `${invoice.supplierName || ''} - ${invoice.invoiceNumber || ''}`.trim(),
+                        invoiceDetails: details.map(detail => ({ ...detail, invoiceId: invoice.id })),
+                        baseAmount: details
+                            .filter(detail => !TAX_DESCRIPTIONS.includes(String(detail.description || '').toUpperCase()))
+                            .reduce((sum, detail) => sum + (parseFloat(detail.subTotal) || 0), 0)
+                            .toFixed(2)
+                    };
+                }).sort((a, b) => String(a.invoiceNumber || '').localeCompare(String(b.invoiceNumber || '')));
+
+                this.invoiceDetailsMap = {};
+                this.invoiceList.forEach(invoice => {
+                    this.invoiceDetailsMap[invoice.id] = invoice.invoiceDetails;
                 });
 
-                this.accountsList.sort((a, b) => {
-                    return Number(a.accountNo) - Number(b.accountNo);
-                });
-           
-                return this.accountsList
-           
-        },
-
-      
-        getAccountDetails(id) {
-            return this.accountsList.find(a => a.id === id);
-        },
-        toggleCash() {
-            this.cash = true;
-            this.cheque = false;
-            this.InitModeOfPayment();
-        },
-        toggleCheque() {
-            this.cash = false;
-            this.cheque = true;
-            this.InitModeOfPayment();
-        },
-        InitModeOfPayment() {
-            this.modeOfPayment = this.cash ? 'Cash' : 'Cheque';
-        },
-        getVouchers() {
-            this.voucherList = this.vouchers
-                .filter(voucher => !voucher.isPosted)
-                .sort((a, b) =>
-                    a.invoiceNumber.localeCompare(b.invoiceNumber)
+                this.invoiceEditList = this.invoiceList.filter(invoice =>
+                    invoice.isPosted === true &&
+                    invoice.isCanceled !== true &&
+                    (parseFloat(invoice.balance) || 0) > 0
                 );
 
-            this.voucherDetails = [];
-            this.voucherDetailsMap = {};
+                return this.invoiceList;
+            },
 
-            this.voucherList.forEach(voucher => {
-                const details = [];
+            async getVouchers() {
+                const list = await this.fetchList(ENDPOINTS.vouchers, 'vouchers');
 
-                // Liability (debit)
-                details.push({
-                    id: voucher.id,
+                this.voucherList = list.map(voucher => {
+                    const entryDate = loadedDate(voucher.voucherEntryDate);
+                    const payDate = loadedDate(voucher.paymentDate);
+                    const voucherDate = entryDate
+
+                    const row = {
+                        ...voucher,
+                        voucherEntryDate: entryDate,
+                        paymentDate: payDate,
+                        voucherDate,
+                        voucherYear: yearOf(voucherDate) || 'No Date',
+                        displayText: `${voucher.supplierName || ''} - ${voucher.voucherNumber || ''}`.trim()
+                    };
+                    row.voucherDetails = this.buildVoucherEntries(row);
+                    return row;
+                }).sort((a, b) => {
+                    // Group key first so each year stays one contiguous block (newest year first)
+                    const yearKey = (row) => (/^\d{4}$/.test(row.voucherYear) ? row.voucherYear : '0000');
+                    const byYear = yearKey(b).localeCompare(yearKey(a));
+                    if (byYear !== 0) return byYear;
+                    // Then newest voucher inside the year
+                    return String(b.voucherDate || '').localeCompare(String(a.voucherDate || ''));
+                });
+
+                this.voucherDetailsMap = {};
+                this.voucherList.forEach(voucher => {
+                    this.voucherDetailsMap[voucher.id] = voucher.voucherDetails;
+                });
+
+                return this.voucherList;
+            },
+
+            // Double-entry preview shown in the register's child grid
+            buildVoucherEntries(voucher) {
+                const entries = [];
+                const rate = parseFloat(voucher.buyRate) || 0;
+
+                entries.push({
+                    id: `${voucher.id}-liability`,
                     account: voucher.liabilityAccountName,
                     description: voucher.description,
-                    debitAmount: voucher.paymentAmount,
+                    debitAmount: parseFloat(voucher.paymentAmount) || 0,
                     creditAmount: 0,
-                    buyRate: voucher.buyRate
+                    buyRate: rate
                 });
 
-                // Bank (credit)
-                details.push({
-                    id: voucher.id,
+                entries.push({
+                    id: `${voucher.id}-bank`,
                     account: voucher.bankAccountName,
                     description: voucher.description,
                     debitAmount: 0,
-                    creditAmount: voucher.netAmount,
-                    buyRate: voucher.buyRate
+                    creditAmount: parseFloat(voucher.netAmount) || 0,
+                    buyRate: rate
                 });
 
-                // VAT withheld (credit)
-                if (parseFloat(voucher.vatWithHeld) > 0) {
-                    details.push({
-                        id: voucher.id,
+                const vatWithHeldAmount = parseFloat(voucher.vatWithHeld ?? voucher.vatWithheld) || 0;
+
+                if (vatWithHeldAmount > 0) {
+                    entries.push({
+                        id: `${voucher.id}-vat`,
                         account: voucher.vatWithHoldAccountName,
-                        description: "Withholding VAT",
+                        description: 'Withholding VAT',
                         debitAmount: 0,
-                        creditAmount: voucher.vatWithHeld,
-                        buyRate: voucher.buyRate
+                        creditAmount: vatWithHeldAmount,
+                        buyRate: rate
                     });
                 }
 
-                // Withholding tax (credit)
-                if (parseFloat(voucher.withHeld) > 0) {
-                    details.push({
-                        id: voucher.id,
+                if ((parseFloat(voucher.withHeld) || 0) > 0) {
+                    entries.push({
+                        id: `${voucher.id}-wht`,
                         account: voucher.creditAccountName,
-                        description: "Withholding Amount",
+                        description: 'Withholding Amount',
                         debitAmount: 0,
-                        creditAmount: voucher.withHeld,
-                        ou: voucher.ou,
+                        creditAmount: parseFloat(voucher.withHeld) || 0,
                         referenceNumber: voucher.invoiceNumber,
-                        buyRate: voucher.buyRate
+                        buyRate: rate
                     });
                 }
 
-                // Save voucher details
-                this.voucherDetailsMap[voucher.id] = details;
-                this.voucherDetails.push(...details);
+                return entries;
+            },
 
-                // Dropdown display text
-                voucher.displayText =
-                    `${voucher.supplierName} - ${voucher.voucherNumber}`;
+            /* ==================================================================
+             * LOOKUP HELPERS
+             * ================================================================== */
+            getSupplierDetails(id) {
+                return (this.suppliers || []).find(a => sameId(a.id, id));
+            },
+            getCurrencyDetails(id) {
+                return (this.currencies || []).find(a => sameId(a.id, id));
+            },
+            getBankDetails(id) {
+                return (this.banks || []).find(a => sameId(a.id, id));
+            },
+            getBankBranchDetails(id) {
+                return (this.bankBranchList || []).find(a => sameId(a.id, id));
+            },
+            getAccountDetails(id) {
+                return (this.accounts || []).find(a => sameId(a.id, id));
+            },
+            getInvoiceDetails(id) {
+                return (this.invoiceList || []).find(a => sameId(a.id, id));
+            },
+            getVoucherDetails(id) {
+                return (this.voucherList || []).find(a => sameId(a.id, id));
+            },
+            getSelectedVoucherRow() {
+                const grid = this.$refs.vouchers;
+                const rows = grid && typeof grid.selectedRows === 'function' ? grid.selectedRows() : [];
+                return Array.isArray(rows) && rows.length ? rows[0] : null;
+            },
+            async findVoucherById(id) {
+                if (!id) return null;
+                let row = (this.voucherList || []).find(v => sameId(v.id, id));
+                if (row) return row;
+                await this.getVouchers();
+                return (this.voucherList || []).find(v => sameId(v.id, id)) || null;
+            },
+            ensureInvoiceOption(invoice) {
+                if (!invoice || !invoice.id) return;
+                if ((this.invoiceEditList || []).some(i => sameId(i.id, invoice.id))) return;
+                this.invoiceEditList = [...(this.invoiceEditList || []), invoice];
+            },
 
-                // Format dates
-                voucher.voucherEntryDate =
-                    this.formatDate(voucher.voucherEntryDate);
+            /* ==================================================================
+             * MODE OF PAYMENT
+             * ================================================================== */
+            toggleCash() {
+                this.cash = true;
+                this.cheque = false;
+                this.InitModeOfPayment();
+            },
+            toggleCheque() {
+                this.cash = false;
+                this.cheque = true;
+                this.InitModeOfPayment();
+            },
+            InitModeOfPayment() {
+                this.modeOfPayment = this.cash ? 'Cash' : 'Cheque';
+            },
 
-                voucher.paymentDate =
-                    this.formatDate(voucher.paymentDate);
-            });
+            onPayCurrencyChange() {
+                const currency = this.getCurrencyDetails(this.payCurrencyId);
+                if (!currency) return;
 
-            // Build grid
-            this.dataTable(this.voucherList, this.voucherDetails);
+                this.payCurrencyName = currency.currencyName;
+                this.payCurrencyCode = currency.currencyCode;
+                this.payCurrencyBuyRate = rate4(currency.buyRate);
+                this.payCurrencySellRate = rate4(currency.sellRate);
 
-        },
-        getVoucherDetails(id) {
-            return this.voucherList.find(a => a.id === id);
-        },
-        dataTable(responseData, voucherDetails) {
-            $("#dataTable").ejGrid({
-                dataSource: responseData,
-                allowPaging: true,
-                allowSorting: true,
-                isResponsive: true,
-                scrollSettings: { width: "1200px", height: "400px" },
-                editSettings: { allowDeleting: true, showDeleteConfirmDialog: true },
-                toolbarSettings: { showToolbar: true, toolbarItems: [ej.Grid.ToolBarItems.Delete, ej.Grid.ToolBarItems.Update, ej.Grid.ToolBarItems.Cancel, ej.Grid.ToolBarItems.Search] },
-                childGrid: {
-                    dataSource: voucherDetails,
-                    queryString: "id",
-                    allowPaging: true,
-                    allowSorting: true,
-                    isResponsive: true,
-                    pageSettings: { pageSize: 10 },
-                    editSettings: {},
-                    toolbarSettings: { showToolbar: true, toolbarItems: [ej.Grid.ToolBarItems.Cancel, ej.Grid.ToolBarItems.Search] },
-                    columns: [
-                        { field: "id", headerText: 'Id', visible: false, isPrimaryKey: true },
-                        { field: "account", headerText: "Account", width: 100 },
-                        { field: "description", headerText: 'Description', textAlign: ej.TextAlign.Left, width: 120 },
-                        { field: "debitAmount", headerText: "Debit Amount", width: 80, format: "{0:n2}" },
-                        { field: "creditAmount", headerText: "Credit Amount", width: 80, format: "{0:n2}" },
-                        { field: "buyRate", headerText: "Buy Rate", format: "{0:n4}", width: 80 }
-                    ],
-                },
+                this.isMultiCurrency = this.defaultCurrency && this.defaultCurrency.id
+                    ? !sameId(this.payCurrencyId, this.defaultCurrency.id)
+                    : currency.isDefault !== true;
+            },
 
-                columns: [
-                    { field: "id", headerText: "Id", width: 75, visible: false, isPrimaryKey: true },
-                    { field: "batchNumber", headerText: "Batch Number", width: 65 },
-                    { field: "voucherEntryDate", headerText: "Entry Date", width: 75, format: "{0:yyyy-MM-dd}" },
-                    { field: "supplierName", headerText: "Recipient", textAlign: ej.TextAlign.Left, width: 85 },
-                    { field: "payCurrencyName", headerText: "Currency", textAlign: ej.TextAlign.Left, width: 75 },
-                    { field: "chequeNumber", headerText: "Cheque No.", width: 65, textAlign: ej.TextAlign.Left, },
-                    { field: "tenantId", visible: false, headerText: "Tenant Id", width: 15 }
-                ],
-                endDelete: (args) => {
-                    this.deleteVoucher(args.data.id);
+            onBankChange() {
+                const bank = this.getBankDetails(this.bankId);
+
+                this.bankName = bank ? bank.name : '';
+                this.bankBranchList = bank && Array.isArray(bank.bankBranches)
+                    ? [...bank.bankBranches].sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')))
+                    : [];
+
+                if (this.bankBranchId && !this.bankBranchList.some(b => sameId(b.id, this.bankBranchId))) {
+                    this.bankBranchId = '';
+                    this.bankBranchName = '';
                 }
-            });
-        },
-        getInvoices() {
-            
-            // Sort invoices by invoice number
-            this.invoiceList.sort((a, b) =>
-                a.invoiceNumber.localeCompare(b.invoiceNumber)
-            );
+            },
 
-            // Only posted, uncanceled invoices with an outstanding balance
-            this.invoiceList.filter(invoice =>
-                invoice.isPosted === true &&
-                invoice.isCanceled === false &&
-                invoice.balance > 0
-            );
+            syncBankFromAccount(accountId) {
+                if (!accountId || sameId(accountId, this.emptyGuid)) {
+                    this.bankId = '';
+                    this.bankName = '';
+                    this.bankBranchId = '';
+                    this.bankBranchName = '';
+                    this.bankBranchList = [];
+                    return;
+                }
 
-            this.invoiceDetailsMap = {};
+                const account = this.getAccountDetails(accountId);
+                if (account) {
+                    this.bankAccountName = account.accountIdentifier || `${account.accountNo} - ${account.accountName}`;
+                }
 
-            this.invoiceList.forEach(invoice => {
-                invoice.invoiceId = invoice.id;
+                const bankAccount = (this.bankAccountList || []).find(ba => sameId(ba.accountId, accountId));
+                if (!bankAccount) return;
 
-                invoice.invoiceDate = this.formatDate(invoice.invoiceDate);
+                const bank = (this.bankList || []).find(b =>
+                    String(b.name || '').toLowerCase() === String(bankAccount.bankName || '').toLowerCase()
+                );
+                if (!bank) return;
 
-                invoice.displayText =
-                    `${invoice.supplierName} - ${invoice.invoiceNumber}`;
+                this.bankId = bank.id;
+                this.onBankChange();
 
-                const descriptions = ["VAT", "NHIL", "GETFL", "COVID", "CST"];
+                const branch = (this.bankBranchList || []).find(br => sameId(br.id, bankAccount.bankBranchId));
+                if (branch) {
+                    this.bankBranchId = branch.id;
+                    this.bankBranchName = branch.name;
+                }
+            },
 
-                invoice.baseAmount = (invoice.invoiceDetails || [])
-                    .filter(detail =>
-                        !descriptions.includes(detail.description)
-                    )
-                    .reduce(
-                        (sum, detail) => sum + parseFloat(detail.subTotal || 0),
-                        0
-                    )
-                    .toFixed(2);
+            /* ==================================================================
+             * TAX LEVIES
+             * ================================================================== */
+            syncTaxFlags() {
+                const applied = (name) => (this.taxLevyList || []).find(
+                    t => String(t.name).toLowerCase() === name
+                )?.isApplied === true;
 
-                this.baseAmount = invoice.baseAmount;
+                this.Vat = applied('vat');
+                this.NHIL = applied('nhil');
+                this.GETFL = applied('getfl');
+                this.covid = applied('covid');
+                this.cst = applied('cst');
+            },
 
-                this.invoiceDetailsMap[invoice.id] =
-                    (invoice.invoiceDetails || []).map(detail => {
-                        detail.invoiceId = invoice.id;
-                        return detail;
+            toggleTaxLevy(taxId) {
+                const selectedTax = (this.taxLevyList || []).find(t => sameId(t.id, taxId));
+                if (!selectedTax) return;
+
+                const type = String(selectedTax.type || '').toLowerCase();
+                const isCST = String(selectedTax.name).toUpperCase() === 'CST' && type === 'others';
+                const isVAT = String(selectedTax.name).toUpperCase() === 'VAT' && type === 'vat';
+
+                this.taxLevyList = this.taxLevyList.map(tax => {
+                    if (isCST || isVAT) {
+                        const isOther =
+                            (String(tax.name).toUpperCase() === 'CST' && String(tax.type || '').toLowerCase() === 'others') ||
+                            (String(tax.name).toUpperCase() === 'VAT' && String(tax.type || '').toLowerCase() === 'vat');
+
+                        if (isOther) {
+                            return { ...tax, isApplied: sameId(tax.id, taxId) ? !selectedTax.isApplied : false };
+                        }
+                    }
+                    return sameId(tax.id, taxId) ? { ...tax, isApplied: !tax.isApplied } : tax;
+                });
+
+                this.syncTaxFlags();
+                this.calculateTotalTaxAmount();
+            },
+
+            // Rates of every levy that is currently switched on (percent)
+            appliedTaxRates() {
+                const rate = (isOn, value) => (isOn ? (parseFloat(value) || 0) : 0);
+
+                return {
+                    vat: rate(this.Vat, this.VatRate),
+                    nhil: rate(this.NHIL, this.NHILRate),
+                    getfl: rate(this.GETFL, this.GETFLRate),
+                    covid: rate(this.covid, this.covidRate),
+                    cst: rate(this.cst, this.cstRate)
+                };
+            },
+
+            calculateTotalTaxAmount() {
+                const rates = this.appliedTaxRates();
+                const totalRate = Object.values(rates).reduce((sum, r) => sum + r, 0);
+
+                if (this.isVatInclusive) {
+                    /* ------------------------------------------------------------------
+                     * VAT INCLUSIVE
+                     * The invoice total already contains the levies, so each levy is
+                     * extracted out of it instead of being added on top.
+                     *
+                     *   gross 4000, VAT 15% + NHIL 2.5% + GETFL 2.5%  ->  totalRate 20
+                     *   VAT   = 4000 * 15   / 120 = 500.00
+                     *   NHIL  = 4000 * 2.5  / 120 =  83.33
+                     *   GETFL = 4000 * 2.5  / 120 =  83.33
+                     *   total tax   = 666.66
+                     *   base amount = 4000 - 666.66 = 3333.34
+                     * ------------------------------------------------------------------ */
+                    const gross = parseFloat(this.totalInvoiceAmount) || 0;
+                    const divisor = 100 + totalRate;
+
+                    const levy = (rate) => (totalRate > 0 && gross > 0 ? round2(gross * rate / divisor) : 0);
+
+                    const vatAmount = levy(rates.vat);
+                    const taxAmount = round2(
+                        vatAmount +
+                        levy(rates.nhil) +
+                        levy(rates.getfl) +
+                        levy(rates.covid) +
+                        levy(rates.cst)
+                    );
+
+                    this.vatAmount = vatAmount.toFixed(2);
+                    this.totalTaxAmount = taxAmount.toFixed(2);
+                    this.baseAmount = round2(gross - taxAmount).toFixed(2);
+
+                    // Live amounts on the levy buttons
+                    this.taxLevyList = (this.taxLevyList || []).map(tax => {
+                        const key = String(tax.name || '').toLowerCase();
+                        if (!(key in rates)) return tax;
+                        return { ...tax, amount: tax.isApplied ? levy(rates[key]).toFixed(2) : null };
                     });
-            });
 
-            // Initialize invoice data table
-            this.invoiceDataTable([]);
+                    return;
+                }
 
-            return this.invoiceList;
-        },
-        invoiceDataTable(responseData) {
-            $("#invoiceDataTable").ejGrid({
-                dataSource: responseData,
-                allowPaging: true,
-                allowSorting: true,
-                isResponsive: true,
-                toolbarSettings: { showToolbar: true, toolbarItems: [ej.Grid.ToolBarItems.Search] },
+                /* ------------------------------------------------------------------
+                 * VAT EXCLUSIVE - levies are added on top of the base amount
+                 * ------------------------------------------------------------------ */
+                const subTotal = Array.isArray(this.invoiceDetailsList)
+                    ? this.invoiceDetailsList.reduce((acc, detail) => {
+                        if (TAX_DESCRIPTIONS.includes(String(detail.description || '').toUpperCase())) return acc;
+                        return acc + (parseFloat(detail.subTotal) || 0);
+                    }, 0)
+                    : 0;
 
-                childGrid: {
-                    dataSource: this.invoiceDetailsList,
-                    queryString: "invoiceId",
-                    allowPaging: true,
-                    allowSorting: true,
-                    isResponsive: true,
-                    pageSettings: { pageSize: 10 },
-                    toolbarSettings: { showToolbar: true, toolbarItems: [ej.Grid.ToolBarItems.Search] },
-                    columns: [
-                        { field: "id", headerText: 'Id', visible: false, isPrimaryKey: true, width: 80 },
-                        { field: "invoiceId", headerText: 'Invoice Id', visible: false, width: 80 },
-                        { field: "referenceNumber", headerText: 'Ref No', textAlign: ej.TextAlign.Left, width: 60 },
-                        { field: "description", headerText: "Description", width: 80 },
-                        { field: "unitPrice", headerText: "Unit Price", width: 65, format: "{0:n2}" },
-                        { field: "quantity", headerText: "Quantity", width: 65 },
-                        { field: "subTotal", headerText: "Sub Total", width: 65, format: "{0:n2}" },
-                    ]
-                },
-                columns: [
-                    { field: "id", headerText: "Id", width: 75, visible: false, isPrimaryKey: true },
-                    { field: "supplierName", headerText: "Supplier", textAlign: ej.TextAlign.Left, width: 75 },
-                    { field: "currencyName", headerText: "Currency", textAlign: ej.TextAlign.Left, width: 75 },
-                    {
-                        field: "buyRate",
-                        headerText: "Currency Rate",
-                        format: "{0:n4}",
-                        textAlign: ej.TextAlign.Left,
-                        width: 75
-                    },
-                    { field: "totalInvoiceAmount", headerText: "Total Amount", width: 80, format: "{0:n2}" },
-                    {
-                        field: "liabilityAccountName",
-                        headerText: "Liability G/L:",
-                        width: 80,
-                        textAlign: ej.TextAlign.Left
-                    },
-                    { field: "balance", headerText: "Balance", width: 80, format: "{0:n2}" },
-                    { field: "invoiceDate", headerText: "Invoice Date", width: 75, format: "{0:yyyy-MM-dd}" },
-                    { field: "tenantId", visible: false, headerText: "Tenant Id", width: 15 }
-                ],
-                summaryRows: [{
-                    title: "Base Amount :",
-                    summaryColumns: [{
-                        summaryType: ej.Grid.SummaryType.Sum,
-                        displayColumn: "invoiceDate",
-                        dataMember: "baseAmount",
-                        format: "{0:n2}"
-                    }]
-                }]
-            });
+                const pct = (rate) => round2(subTotal * rate / 100);
 
-        },
-        setCurrentInvoice() {
-            if (this.invoiceId) {
-                const invoice = this.invoiceList.find(a => a.id === this.invoiceId);
+                const vatAmount = pct(rates.vat);
+                const taxAmount = round2(
+                    vatAmount + pct(rates.nhil) + pct(rates.getfl) + pct(rates.covid) + pct(rates.cst)
+                );
 
-                this.InvoiceId = invoice.id;
-                this.supplierId = invoice.supplierId;
-                this.supplierName = invoice.supplierName;
-                this.accountNumber = invoice.accountNumber;
+                this.vatAmount = vatAmount.toFixed(2);
+                this.totalTaxAmount = taxAmount.toFixed(2);
+                this.baseAmount = subTotal.toFixed(2);
+            },
+
+            // Inclusive: every levy stays clickable. Exclusive: only levies on the invoice.
+            syncTaxLevyAvailability() {
+                const levies = this.invoiceTaxLevies || [];
+                const includeAll = this.isVatInclusive === true;
+
+                this.taxLevyList = (this.taxLevyList || []).map(tax => {
+                    const invoiceTax = levies.find(v =>
+                        String(v.name || '').toUpperCase() === String(tax.name || '').toUpperCase()
+                    );
+
+                    return {
+                        ...tax,
+                        isDisabled: includeAll ? false : (levies.length === 0 || !invoiceTax),
+                        amount: includeAll
+                            ? tax.amount
+                            : (invoiceTax && String(tax.name).toLowerCase() !== 'vat'
+                                ? money(invoiceTax.amount)
+                                : null)
+                    };
+                });
+            },
+
+            /* ==================================================================
+             * WITHHOLDING / TOTALS
+             * ================================================================== */
+            calculateWithHeldDetails() {
+                const paymentAmount = parseFloat(this.paymentAmount) || 0;
+                const taxableBase = (parseFloat(this.totalInvoiceAmount) || 0) - (parseFloat(this.totalTaxAmount) || 0);
+
+                this.total = paymentAmount.toFixed(2);
+                this.withHeld = '0.00';
+                this.vatWithheld = '0.00';
+
+                if (this.isWithHolding) {
+                    this.withHeld = (taxableBase * (parseFloat(this.withHoldingRate) || 0) / 100).toFixed(2);
+                }
+
+                if (this.isVatWithHolding) {
+                    this.vatWithheld = (taxableBase * (parseFloat(this.VatWithHeldRate) || 0) / 100).toFixed(2);
+                }
+
+                this.netAmount = (
+                    paymentAmount -
+                    (parseFloat(this.withHeld) || 0) -
+                    (parseFloat(this.vatWithheld) || 0)
+                ).toFixed(2);
+
+                if (!this.isWithHolding && !this.isVatWithHolding) {
+                    this.withHeld = '0.00';
+                    this.vatWithheld = '0.00';
+                }
+            },
+
+            /* ==================================================================
+             * INVOICE SELECTION
+             * ================================================================== */
+            onInvoiceChange() {
+                const value = this.invoiceId;
+
+                if (!value) {
+                    this.filteredInvoices = [];
+                    return;
+                }
+
+                // Block only when ANOTHER active, unposted voucher already exists for this invoice
+                const openVoucher = (this.voucherList || []).find(voucher =>
+                    sameId(voucher.invoiceId, value) &&
+                    voucher.isPosted !== true &&
+                    voucher.isDeleted !== true &&
+                    !sameId(voucher.id, this.voucherId)
+                );
+
+                if (openVoucher) {
+                    this.toastHandler('warning', 'Please post the outstanding payment for this invoice before proceeding.');
+                    this.invoiceId = '';
+                    this.filteredInvoices = [];
+                    return;
+                }
+
+                this.setCurrentInvoice(value);
+            },
+
+            setCurrentInvoice(invoiceOrId) {
+                const invoice = (invoiceOrId && typeof invoiceOrId === 'object')
+                    ? invoiceOrId
+                    : this.getInvoiceDetails(invoiceOrId || this.invoiceId);
+
+                if (!invoice) return;
+
+                const supplier = this.getSupplierDetails(invoice.supplierId);
+
+                this.invoiceId = invoice.id;
                 this.invoiceNumber = invoice.invoiceNumber;
+                this.supplierId = invoice.supplierId;
+                this.supplierName = invoice.supplierName || (supplier && supplier.name) || '';
+                this.accountNumber = invoice.accountNumber || (supplier && supplier.accountNumber) || '';
                 this.currencyId = invoice.currencyId;
                 this.currencyName = invoice.currencyName;
                 this.currencyCode = invoice.currencyCode;
-                this.buyRate = parseFloat(invoice.buyRate).toFixed(4);
-                this.sellRate = parseFloat(invoice.sellRate).toFixed(4);
-                this.invoiceAmount = parseFloat(invoice.totalInvoiceAmount).toFixed(2);
-                this.balance = parseFloat(invoice.balance).toFixed(2);
+                this.buyRate = rate4(invoice.buyRate);
+                this.sellRate = rate4(invoice.sellRate);
+                this.minorName = invoice.minorName || '';
+                this.invoiceAmount = money(invoice.totalInvoiceAmount);
+                this.totalInvoiceAmount = money(invoice.totalInvoiceAmount);
+                this.balance = money(invoice.balance);
                 this.liabilityAccountId = invoice.liabilityAccountId;
                 this.liabilityAccountCode = invoice.liabilityAccountCode;
-                this.vatWithHoldingAccountId = invoice.vatWithHoldingAccountId;
-                this.vatWithHoldingAccountName = invoice.vatWithHoldingAccountName;
-                this.invoiceDetailsList = invoice.invoiceDetails;
-                this.invoiceDate = this.formatDate(invoice.invoiceDate);
-                this.totalInvoiceAmount = invoice.totalInvoiceAmount;
+                this.liabilityAccountName = invoice.liabilityAccountName;
+                this.invoiceDate = loadedDate(invoice.invoiceDate);
+                this.invoiceDetailsList = Array.isArray(invoice.invoiceDetails) ? invoice.invoiceDetails : [];
+
                 if (!this.voucherId) {
-                    this.paymentAmount = parseFloat(invoice.balance).toFixed(2);
+                    this.paymentAmount = money(invoice.balance);
                 }
-                this.voucherDescription = invoice.invoiceDetails.map(d => d.description).join(', ');
 
-                $("#voucherId").ejDropDownList({ value: '' });
-                this.invoiceDataTable([invoice]);
+                this.voucherDescription = this.invoiceDetailsList
+                    .map(d => d.description)
+                    .filter(Boolean)
+                    .join(', ');
 
-                  // tax levies
-                  const invoiceLevyNames = invoice.invoiceTaxLevies.map(v => v.name);
-                  this.vatInInvoice = invoice.invoiceTaxLevies.some(v => v.name === 'VAT');
-  
-                  this.taxLevyList = this.taxLevyList.map(tax => {
-                      const invoiceTax = invoice.invoiceTaxLevies.find(v => v.name === tax.name);
-  
-                      return {
-                          ...tax,
-                          isApplied: !!invoiceTax,
-                          isDisabled: invoice.invoiceTaxLevies.length === 0 || !invoiceTax,
-                          amount: (invoiceTax && tax.name.toLowerCase() !== 'vat')
-                              ? parseFloat(invoiceTax.amount).toFixed(2)
-                              : null
-                      };
-                  });
-  
-                  const taxSum = invoice.invoiceTaxLevies.reduce((sum, tax) => sum + parseFloat(tax.amount || 0), 0);
-                  this.totalTaxAmount = parseFloat(taxSum).toFixed(2);
-                  this.VatRate = parseFloat(invoice.vatRate).toFixed(2);
-                  this.vatAmount = parseFloat(invoice.vatAmount).toFixed(2);
+                this.filteredInvoices = [{ ...invoice, invoiceDetails: this.invoiceDetailsList }];
+                this.ensureInvoiceOption(invoice);
 
-                // ✅ Compute base amounts here instead of in getInvoices()
-                const descriptions = ["VAT", "NHIL", "GETFL", "COVID", "CST"];
-                const descriptionsNoVat = ["VAT", "CST"];
+                // ---- tax levies carried on the invoice ----
+                const levies = Array.isArray(invoice.invoiceTaxLevies) ? invoice.invoiceTaxLevies : [];
+                this.invoiceTaxLevies = levies;
+                this.vatInInvoice = levies.some(v => String(v.name || '').toUpperCase() === 'VAT');
 
-                this.baseAmount = (invoice.invoiceDetails || [])
-                    .filter(detail => !descriptions.includes(detail.description))
-                    .reduce((sum, detail) => sum + parseFloat(detail.subTotal || 0), 0)
-                    .toFixed(2);
-
-                this.baseAmount2 = (invoice.invoiceDetails || [])
-                    .filter(detail => !descriptionsNoVat.includes(detail.description))
-                    .reduce((sum, detail) => sum + parseFloat(detail.subTotal || 0), 0)
-                    .toFixed(2);
-            }
-        },
-
-        /* toggleTaxLevy(taxId) {
-             this.taxLevyList = this.taxLevyList.map(tax =>
-                 tax.id === taxId ? { ...tax, isApplied: !tax.isApplied } : tax
-             );
-             this.syncTaxFlags();
-             this.calculateTotalTaxAmount();
-         },*/
-        toggleTaxLevy(taxId) {
-            const selectedTax = this.taxLevyList.find(t => t.id === taxId);
-            if (!selectedTax) return;
-
-            const isCST = selectedTax.name === 'CST' && selectedTax.type.toLowerCase() === 'others';
-            const isVAT = selectedTax.name === 'VAT' && selectedTax.type.toLowerCase() === 'vat';
-
-            this.taxLevyList = this.taxLevyList.map(tax => {
-                if (isCST || isVAT) {
-                    const isOther = (tax.name === 'CST' && tax.type.toLowerCase() === 'others') ||
-                        (tax.name === 'VAT' && tax.type.toLowerCase() === 'vat');
-
-                    if (isOther) {
+                if (this.isVatInclusive) {
+                    // Inclusive: the user may add ANY levy, so nothing is pre-applied or locked.
+                    this.syncTaxLevyAvailability();
+                } else {
+                    this.taxLevyList = (this.taxLevyList || []).map(tax => {
+                        const invoiceTax = levies.find(v => String(v.name || '').toUpperCase() === String(tax.name).toUpperCase());
                         return {
                             ...tax,
-                            isApplied: tax.id === taxId ? !selectedTax.isApplied : false
-                        };
-                    }
-                }
-                return tax.id === taxId
-                    ? { ...tax, isApplied: !tax.isApplied }
-                    : tax;
-            });
-
-            this.syncTaxFlags();
-            this.calculateTotalTaxAmount();
-        },
-        getSuppliers() {
-           
-
-            // Sort suppliers alphabetically and keep active suppliers only
-            this.supplierList.sort((a, b) => a.name.localeCompare(b.name));
-            
-        },
-
-        getCurrency() {
-            
-
-            // Find Ghana cedi as the default currency
-            this.defaultCurrency = this.currencyList.find(currency => {
-                const name = (currency.currencyName || "").trim().toLowerCase();
-
-                return name === "ghana cedis" || name === "ghana cedi";
-            });
-
-            if (this.defaultCurrency) {
-                this.payCurrencyId = this.defaultCurrency.id;
-                this.payCurrencyBuyRate = parseFloat(
-                    this.defaultCurrency.buyRate
-                ).toFixed(4);
-            }
-
-            // Initialize currency dropdown
-            $("#payCurrencyId").ejDropDownList({
-                dataSource: this.currencyList,
-                width: "100%",
-                watermarkText: "Select Currency",
-                fields: {
-                    id: "id",
-                    text: "currencyName",
-                    value: "id"
-                },
-                enableFilterSearch: true,
-                value: this.payCurrencyId,
-                change: (args) => {
-                    this.payCurrencyId = args.value;
-
-                    // Update the buy rate for the selected currency
-                    const selectedCurrency = this.currencyList.find(
-                        currency => currency.id === args.value
-                    );
-
-                    if (selectedCurrency) {
-                        this.payCurrencyBuyRate = parseFloat(
-                            selectedCurrency.buyRate
-                        ).toFixed(4);
-                    }
-                }
-            });
-        },
-        getSupplierDetails(id) {
-            return this.supplierList.find(a => a.id === id);
-        },
-       
-        getCurrencyDetails(id) {
-            return this.currencyList.find(a => a.id === id);
-        },
-        getBanks() {
-            this.bankList = [
-                {
-                    id: "11111111-aaaa-1111-aaaa-111111111111",
-                    name: "GCB Bank"
-                },
-                {
-                    id: "22222222-bbbb-2222-bbbb-222222222222",
-                    name: "Ecobank Ghana"
-                },
-                {
-                    id: "33333333-cccc-3333-cccc-333333333333",
-                    name: "Absa Bank Ghana"
-                },
-                {
-                    id: "44444444-dddd-4444-dddd-444444444444",
-                    name: "Fidelity Bank Ghana"
-                },
-                {
-                    id: "55555555-eeee-5555-eeee-555555555555",
-                    name: "Stanbic Bank Ghana"
-                },
-                {
-                    id: "66666666-ffff-6666-ffff-666666666666",
-                    name: "Zenith Bank Ghana"
-                },
-                {
-                    id: "77777777-aaaa-7777-aaaa-777777777777",
-                    name: "CalBank"
-                },
-                {
-                    id: "88888888-bbbb-8888-bbbb-888888888888",
-                    name: "Access Bank Ghana"
-                }
-            ];
-
-            $("#bankId").ejDropDownList({
-                dataSource: this.bankList,
-                watermarkText: "Select Bank",
-                width: "100%",
-                fields: {
-                    id: "id",
-                    text: "name",
-                    value: "id"
-                },
-                enableFilterSearch: true,
-                change: (args) => {
-                    this.bankId = args.value;
-                }
-            });
-        },
-        getBankDetails(id) {
-
-            return this.bankList.find(a => a.id === id);
-        },
-        getBankBranchDetails(id) {
-
-            return this.bankBranchList.find(a => a.id === id);
-        },
-        getInvoiceDetails(id) {
-            return this.invoiceList.find(a => a.id === id);
-        },
-        formatDate(dateInput) {
-
-            return moment(dateInput).format("YYYY-MM-DD");
-
-        },
-       
-        uuid() {
-
-            return([1e7]+ -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
-                (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-            );
-        },
-        saveVoucher() {
-            this.isLoading = true;
-            this.InitModeOfPayment();
-            let payload = {};
-            if (this.voucherNumber === null || this.voucherNumber === '') {
-                payload.voucherNumber = '0';
-            }
-            console.log("CreditAccountId:", this.creditAccountId);
-
-            payload.voucherNumber = this.voucherNumber;
-            payload.chequeNumber = this.chequeNumber;
-            if (this.invoiceId) {
-                let invoiceInfo = this.getInvoiceDetails(this.invoiceId);
-                if (invoiceInfo) {
-                    payload.invoiceId = invoiceInfo.id;
-                    payload.invoiceNumber = invoiceInfo.invoiceNumber;
-                    payload.invoiceAmount = invoiceInfo.totalInvoiceAmount;
-                    payload.invoiceDate = invoiceInfo.invoiceDate;
-                    payload.currencyId = invoiceInfo.currencyId;
-                    payload.currencyName = invoiceInfo.currencyName;
-                    payload.currencyCode = invoiceInfo.currencyCode;
-                    payload.buyRate = invoiceInfo.buyRate;
-                    payload.sellRate = invoiceInfo.sellRate;
-                    payload.balance = invoiceInfo.balance;
-                    payload.liabilityAccountId = invoiceInfo.liabilityAccountId;
-                    payload.liabilityAccountCode = invoiceInfo.liabilityAccountCode;
-                    payload.liabilityAccountName = invoiceInfo.liabilityAccountName;
-                    payload.supplierId = invoiceInfo.supplierId;
-                    payload.supplierName = invoiceInfo.supplierName;
-                    payload.accountNumber = invoiceInfo.accountNumber;
-                    
-                    let mappedVoucherDetails = invoiceInfo.invoiceDetails.map(detail => {
-                        return {
-                            id: this.uuid(),
-                            description: detail.description || 'N/A',
-                            amount: detail.subTotal || 0,
-                            isWithHolding: false,
+                            isApplied: !!invoiceTax,
+                            isDisabled: levies.length === 0 || !invoiceTax,
+                            amount: (invoiceTax && String(tax.name).toLowerCase() !== 'vat')
+                                ? money(invoiceTax.amount)
+                                : null
                         };
                     });
-                    payload.details = mappedVoucherDetails;
-                }
-            }
-            if (this.payCurrencyId) {
-                let currencyInfo = this.getCurrencyDetails(this.payCurrencyId);
-                if (currencyInfo) {
-                    payload.payCurrencyId = this.payCurrencyId;
-                    payload.payCurrencyName = currencyInfo.currencyName;
-                    payload.payCurrencyCode = currencyInfo.currencyCode;
-                    payload.minorName = currencyInfo.minorName;
-                    payload.payCurrencyBuyRate = currencyInfo.buyRate;
-                    payload.payCurrencySellRate = currencyInfo.sellRate;
-                }
-            }
-            if (this.bankId) {
-
-                let bankInfo = this.getBankDetails(this.bankId);
-                if (bankInfo) {
-                    payload.bankId = this.bankId;
-                    payload.bankName = bankInfo.name;
                 }
 
-            } else {
-
-                payload.bankId = this.emptyGuid;
-            }
-            if (this.bankBranchId) {
-
-                let bankBranchInfo = this.getBankBranchDetails(this.bankBranchId);
-                if (bankBranchInfo) {
-                    payload.bankBranchId = this.bankBranchId;
-                    payload.departmentName = bankBranchInfo.name;
+                if (invoice.vatRate !== undefined && invoice.vatRate !== null) {
+                    this.VatRate = money(invoice.vatRate);
                 }
 
+                // ---- base amounts ----
+                const details = this.invoiceDetailsList;
 
-            } else {
-                payload.bankBranchId = this.emptyGuid;
-            }
-            payload.voucherEntryDate = this.voucherEntryDate;
-            payload.paymentDate = this.paymentDate;
-            payload.VatWithHeldRate = this.VatWithHeldRate;
-            payload.paymentAmount = this.paymentAmount;
-            payload.modeOfPayment = this.modeOfPayment;
-            payload.checkNumber = this.checkNumber;
-            payload.batchNumber = this.batchNumber;
-            payload.getfl = this.GETFL;
-            payload.getflRate = this.GETFLRate;
-            payload.nhil = this.NHIL;
-            payload.nhilRate = this.NHILRate;
-            payload.vat = this.Vat;
-            payload.vatRate = this.VatRate;
-            payload.covid = this.covid;
-            payload.covidRate = this.covidRate;
-            payload.cst = this.cst;
-            payload.cstRate = this.cstRate;
-            payload.withHeld = this.withHeld;
-            payload.vatWithheld = this.vatWithheld;
-            payload.total = this.total;
-            payload.vatAmount = this.vatAmount;
-            payload.netAmount = this.netAmount;
-            payload.isWithHolding = this.isWithHolding;
-            payload.withHoldingRate = this.withHoldingRate;
-            payload.isMultiCurrency = this.isMultiCurrency;
-            payload.referenceNumber = this.referenceNumber;
-           if (this.vatWithHoldAccountId) {
-                let vatWithHoldingAccount = this.getAccountDetails(this.vatWithHoldAccountId);
-                if (vatWithHoldingAccount) {
-                    payload.vatWithHoldAccountId = this.vatWithHoldAccountId;
-                    payload.vatWithHoldAccountName = `${vatWithHoldingAccount.accountNo} - ${vatWithHoldingAccount.accountName}`;
-                }
-            }
-            else {
-                payload.vatWithHoldAccountId = this.emptyGuid;
-                payload.vatWithHoldAccountName = '';
-            }
-           
-            if (this.creditAccountId) {
-                let creditAccount = this.getAccountDetails(this.creditAccountId);
-                if (creditAccount) {
-                    payload.creditAccountId = this.creditAccountId;
-                    payload.creditAccountName = `${creditAccount.accountNo} - ${creditAccount.accountName}`;
-                }
-            } else {
-                payload.creditAccountId = this.emptyGuid;
-                payload.creditAccountName = '';
-            }
-            
-            if (this.bankAccountId) {
-                let bankGlAccount = this.getAccountDetails(this.bankAccountId);
-                if (bankGlAccount) {
-                    payload.bankAccountId = this.bankAccountId;
-                    payload.bankAccountName = `${bankGlAccount.accountNo} - ${bankGlAccount.accountName}`;
-                }
-            } else {
-                payload.bankAccountId = this.emptyGuid;
-                payload.bankGlAccountName = '';
-            }
-            payload.description = this.voucherDescription;
-            payload.isWithHolding = this.isWithHolding;
-            payload.isVatWithHolding = this.isVatWithHolding;
-            payload.totalTaxAmount = this.totalTaxAmount;
-            payload.isPosted = this.isPosted;
+                this.baseAmount2 = details
+                    .filter(detail => !TAX_DESCRIPTIONS_NO_VAT.includes(String(detail.description || '').toUpperCase()))
+                    .reduce((sum, detail) => sum + (parseFloat(detail.subTotal) || 0), 0)
+                    .toFixed(2);
 
-            if (this.voucherId) {
-                payload.id = this.voucherId;
-                payload.tenantId = this.tenantId;
-                axios.post('/ApDataEntry/UpdateVoucher', payload)
-                    .then(response => {
-                        this.getVouchers();
-                        this.isLoading = false;
-                        this.toastHandler('', 'voucher updated.');
-                    })
-                    // redirect to voucher action page
-                    
-                    .catch(err => {
-                        this.isLoading = false;
-                        this.toastHandler('error', 'Unable to update voucher.');
-                    });
-            } else {
-                axios.post('/ApDataEntry/CreateVoucher', payload)
-                    .then(response => {
-                        if (response.data.code === 200) {
-                            this.toastHandler('', 'Voucher saved.');
-                            this.getVouchers();
-                            this.isLoading = false;
-                            this.voucherId = response.data.id;
-                            this.voucherNumber = response.data.voucherNumber;
-                            // redirect to voucher action page
-                           window.location.href = `/ApDataEntry/VoucherAction`;
-                        } else {
-                            this.isLoading = false;
-                            this.toastHandler('error', response.data.message);
+                if (this.isVatInclusive) {
+                    // Levies are extracted from the invoice total (4000 -> 3333.34 + 666.66)
+                    this.calculateTotalTaxAmount();
+                } else {
+                    const taxSum = levies.reduce((sum, tax) => sum + (parseFloat(tax.amount) || 0), 0);
+                    this.totalTaxAmount = taxSum.toFixed(2);
+
+                    if (invoice.vatAmount !== undefined && invoice.vatAmount !== null) {
+                        this.vatAmount = money(invoice.vatAmount);
+                    }
+
+                    this.baseAmount = details
+                        .filter(detail => !TAX_DESCRIPTIONS.includes(String(detail.description || '').toUpperCase()))
+                        .reduce((sum, detail) => sum + (parseFloat(detail.subTotal) || 0), 0)
+                        .toFixed(2);
+                }
+
+                this.calculateWithHeldDetails();
+            },
+
+            /* ==================================================================
+             * EDIT: load an existing voucher into the form
+             * ================================================================== */
+            async setCurrentVoucher(voucher = null) {
+                if (this.isSettingVoucher) return;
+
+                this.scrollToAdd();
+
+                let info = null;
+                if (voucher && typeof voucher === 'object') {
+                    info = voucher;
+                } else if (typeof voucher === 'string') {
+                    info = this.getVoucherDetails(voucher);
+                } else {
+                    info = this.getVoucherDetails(this.voucherId) || this.getSelectedVoucherRow();
+                }
+
+                if (!info) {
+                    this.toastHandler('warning', 'Please select a voucher first.');
+                    return;
+                }
+
+                // Suppress watchers while hydrating
+                this.isSettingVoucher = true;
+
+                try {
+                    this.voucherId = info.id;
+                    this.tenantId = info.tenantId || '';
+                    this.batchNumber = info.batchNumber || '';
+                    this.voucherNumber = info.voucherNumber || '';
+                    this.isPosted = info.isPosted === true;
+                    this.referenceNumber = info.referenceNumber || this.referenceNumber;
+                    this.voucherDescription = info.description || '';
+                    this.voucherEntryDate = loadedDate(info.voucherEntryDate) || this.voucherEntryDate;
+                    this.paymentDate = loadedDate(info.paymentDate) || this.paymentDate;
+
+                    this.invoiceId = info.invoiceId || '';
+                    this.invoiceNumber = info.invoiceNumber || '';
+                    this.invoiceDate = loadedDate(info.invoiceDate);
+                    this.invoiceAmount = money(info.invoiceAmount);
+                    this.totalInvoiceAmount = money(info.invoiceAmount || info.totalInvoiceAmount);
+                    this.balance = money(info.balance);
+
+                    this.supplierId = info.supplierId || '';
+                    this.supplierName = info.supplierName || (this.getSupplierDetails(info.supplierId) || {}).name || '';
+                    this.accountNumber = info.accountNumber || '';
+                    this.minorName = info.minorName || '';
+
+                    this.currencyId = info.currencyId || '';
+                    this.currencyName = info.currencyName || '';
+                    this.currencyCode = info.currencyCode || '';
+                    this.buyRate = rate4(info.buyRate);
+                    this.sellRate = rate4(info.sellRate);
+
+                    this.liabilityAccountId = info.liabilityAccountId || '';
+                    this.liabilityAccountCode = info.liabilityAccountCode || '';
+                    this.liabilityAccountName = info.liabilityAccountName || '';
+
+                    this.payCurrencyId = info.payCurrencyId || this.payCurrencyId;
+                    this.payCurrencyName = info.payCurrencyName || '';
+                    this.payCurrencyCode = info.payCurrencyCode || '';
+                    this.payCurrencyBuyRate = rate4(info.payCurrencyBuyRate);
+                    this.payCurrencySellRate = rate4(info.payCurrencySellRate);
+                    this.isMultiCurrency = info.isMultiCurrency === true;
+
+                    this.modeOfPayment = info.modeOfPayment || 'Cash';
+                    this.cash = this.modeOfPayment === 'Cash';
+                    this.cheque = this.modeOfPayment === 'Cheque';
+                    this.chequeNumber = info.chequeNumber || '';
+
+                    this.paymentAmount = money(info.paymentAmount);
+                    this.total = money(info.total);
+                    this.withHeld = money(info.withHeld);
+                    this.vatWithheld = money(info.vatWithHeld ?? info.vatWithheld);
+                    this.netAmount = money(info.netAmount);
+                    this.vatAmount = money(info.vatAmount);
+                    this.totalTaxAmount = money(info.totalTaxAmount);
+
+                    this.isWithHolding = info.isWithHolding === true;
+                    this.isVatWithHolding = info.isVatWithHolding === true;
+                    this.withHoldingRate = money(info.withHoldingRate);
+                    this.VatWithHeldRate = money(info.VatWithHeldRate);
+
+                    this.bankAccountId = info.bankAccountId || '';
+                    this.bankAccountName = info.bankAccountName || '';
+                    this.creditAccountId = info.creditAccountId || '';
+                    this.creditAccountName = info.creditAccountName || '';
+                    this.vatWithHoldAccountId = info.vatWithHoldAccountId || '';
+                    this.vatWithHoldAccountName = info.vatWithHoldAccountName || '';
+
+                    // Bank / branch: populate branch options BEFORE assigning the branch id
+                    this.bankId = info.bankId || '';
+                    this.bankBranchId = '';
+                    this.bankBranchName = '';
+                    if (this.bankId) this.onBankChange();
+                    this.bankName = info.bankName || this.bankName;
+
+                    const branchId = info.bankBranchId || '';
+                    if (branchId) {
+                        this.bankBranchId = branchId;
+                        const branch = this.getBankBranchDetails(branchId);
+                        this.bankBranchName = info.bankBranchName || (branch && branch.name) || '';
+                    }
+
+                    // Tax levy flags/rates of the voucher
+                    this.Vat = info.vat === true;
+                    this.NHIL = info.nhil === true;
+                    this.GETFL = info.getfl === true;
+                    this.covid = info.covid === true;
+                    this.cst = info.cst === true;
+
+                    this.taxLevyList = (this.taxLevyList || []).map(tax => {
+                        switch (String(tax.name).toLowerCase()) {
+                            case 'vat': return { ...tax, isApplied: this.Vat, isDisabled: false };
+                            case 'nhil': return { ...tax, isApplied: this.NHIL, isDisabled: false };
+                            case 'getfl': return { ...tax, isApplied: this.GETFL, isDisabled: false };
+                            case 'covid': return { ...tax, isApplied: this.covid, isDisabled: false };
+                            case 'cst': return { ...tax, isApplied: this.cst, isDisabled: false };
+                            default: return tax;
                         }
-                    })
-                    .catch(err => {
-                        this.isLoading = false;
-                        this.toastHandler('error', 'Unable to raise voucher.');
                     });
-            }
 
-        },
-        calculateWithHeldDetails() {
-            this.total = parseFloat(this.paymentAmount).toFixed(2);
-            this.netAmount = this.total;
+                    const rateKeys = [
+                        ['vat', 'VatRate'],
+                        ['nhil', 'NHILRate'],
+                        ['getfl', 'GETFLRate'],
+                        ['covid', 'covidRate'],
+                        ['cst', 'cstRate']
+                    ];
 
-            // reset first
-            this.withHeld = 0;
-            this.vatWithheld = 0;
+                    rateKeys.forEach(([taxName, rateKey]) => {
+                        const voucherRate = parseFloat(info[rateKey]);
+                        if (!voucherRate) {
+                            const tax = (this.taxLevyList || []).find(t => String(t.name).toLowerCase() === taxName);
+                            this[rateKey] = tax ? money(tax.rate) : '0.00';
+                        } else {
+                            this[rateKey] = voucherRate.toFixed(2);
+                        }
+                    });
 
-            // Normal Withholding
-            if (this.isWithHolding) {
-                this.withHeld = ((this.totalInvoiceAmount - this.totalTaxAmount) * this.withHoldingRate / 100).toFixed(2);
-            }
+                    // Invoice rows shown in the invoice grid
+                    const invoice = this.getInvoiceDetails(info.invoiceId);
+                    if (invoice) {
+                        this.invoiceDetailsList = invoice.invoiceDetails || [];
+                        this.filteredInvoices = [{ ...invoice }];
+                        this.ensureInvoiceOption(invoice);
+                    } else if (info.invoiceId) {
+                        // The invoice is closed/paid - still show it so the form makes sense
+                        const fallback = {
+                            id: info.invoiceId,
+                            invoiceNumber: info.invoiceNumber,
+                            supplierName: info.supplierName,
+                            supplierId: info.supplierId,
+                            currencyId: info.currencyId,
+                            currencyName: info.currencyName,
+                            buyRate: parseFloat(info.buyRate) || 0,
+                            totalInvoiceAmount: parseFloat(info.invoiceAmount) || 0,
+                            liabilityAccountName: info.liabilityAccountName,
+                            balance: parseFloat(info.balance) || 0,
+                            invoiceDate: loadedDate(info.invoiceDate),
+                            invoiceYear: yearOf(info.invoiceDate) || 'No Date',
+                            displayText: `${info.supplierName || ''} - ${info.invoiceNumber || ''}`.trim(),
+                            invoiceDetails: []
+                        };
+                        this.invoiceDetailsList = [];
+                        this.filteredInvoices = [fallback];
+                        this.ensureInvoiceOption(fallback);
+                    } else {
+                        this.invoiceDetailsList = [];
+                        this.filteredInvoices = [];
+                    }
 
-            // VAT Withholding (independent of WithHolding)
-            if (this.isVatWithHolding) {
-                this.vatWithheld = ((this.totalInvoiceAmount - this.totalTaxAmount) * this.VatWithHeldRate / 100).toFixed(2);
-            }
+                    this.loadedVoucherDetails = Array.isArray(info.details) ? info.details : [];
+                    this.loadedVoucherId = info.id;
+                } catch (error) {
+                    console.error('setCurrentVoucher failed:', error);
+                    this.toastHandler('error', 'Unable to load the voucher details.');
+                } finally {
+                    await this.$nextTick();
+                    this.isSettingVoucher = false;
 
-            // Calculate Net Amount after deductions
-            this.netAmount = (this.total - this.withHeld - this.vatWithheld).toFixed(2);
+                    if (this.isVatInclusive) this.calculateTotalTaxAmount();
+                    this.calculateWithHeldDetails();
+                }
+            },
 
-            // If neither is selected, reset everything
-            if (!this.isWithHolding && !this.isVatWithHolding) {
+            /* ==================================================================
+             * NEW / RESET
+             * ================================================================== */
+            resetVoucherFields() {
+                this.voucherId = '';
+                this.loadedVoucherId = '';
+                this.loadedVoucherDetails = [];
+                this.tenantId = '';
+                this.voucherNumber = '';
+                this.batchNumber = '';
+                this.isPosted = false;
+                this.voucherDescription = '';
+                this.voucherEntryDate = isoDate(new Date());
+                this.paymentDate = isoDate(new Date());
+
+                this.invoiceId = '';
+                this.invoiceNumber = '';
+                this.invoiceDate = '';
+                this.invoiceAmount = '0.00';
+                this.totalInvoiceAmount = '0.00';
+                this.balance = '0.00';
+                this.filteredInvoices = [];
+                this.invoiceDetailsList = [];
+                this.liabilityAccountId = '';
+                this.liabilityAccountCode = '';
+                this.liabilityAccountName = '';
+
+                this.supplierId = '';
+                this.supplierName = '';
+                this.accountNumber = '';
+
+                this.currencyId = '';
+                this.currencyName = '';
+                this.currencyCode = '';
+                this.buyRate = '0.0000';
+                this.sellRate = '0.0000';
+
+                this.bankId = '';
+                this.bankName = '';
+                this.bankBranchId = '';
+                this.bankBranchName = '';
+                this.bankBranchList = [];
+
+                this.modeOfPayment = 'Cash';
+                this.cash = true;
+                this.cheque = false;
+                this.chequeNumber = '';
+
+                this.paymentAmount = '0.00';
+                this.total = '0.00';
                 this.withHeld = '0.00';
                 this.vatWithheld = '0.00';
+                this.netAmount = '0.00';
+
+                this.isWithHolding = false;
+                this.isVatWithHolding = false;
+                this.withHoldingRate = '0.00';
                 this.VatWithHeldRate = '0.00';
-            }
-        },
-        calculateTotalTaxAmount() {
-            let subTotal = Array.isArray(this.invoiceDetailsList)
-                ? this.invoiceDetailsList.reduce((acc, detail) => {
-                    // Exclude if description matches any of the tax items
-                    if (
-                        !['VAT', 'NHIL', 'GETFL', 'COVID', 'CST'].includes(
-                            (detail.description || '').toUpperCase()
-                        )
-                    ) {
-                        return acc + parseFloat(detail.subTotal || 0);
-                    }
-                    return acc;
-                }, 0)
-                : 0;
 
+                this.vatAmount = '0.00';
+                this.totalTaxAmount = '0.00';
+                this.baseAmount = '0.00';
+                this.baseAmount2 = '0.00';
+                this.vatInInvoice = false;
+                this.invoiceTaxLevies = [];
 
-            const nhilAmount = this.NHIL && parseFloat(this.NHILRate) > 0
-                ? subTotal * parseFloat(this.NHILRate) / 100
-                : 0;
+                this.taxLevyList = (this.taxLevyList || []).map(tax => ({
+                    ...tax,
+                    isApplied: tax.defaultIsApplied === true,
+                    isDisabled: false,
+                    amount: null
+                }));
+                this.syncTaxFlags();
 
-            const getflAmount = this.GETFL && parseFloat(this.GETFLRate) > 0
-                ? subTotal * parseFloat(this.GETFLRate) / 100
-                : 0;
+                this.bankAccountId = '';
+                this.bankAccountName = '';
+                this.creditAccountId = '';
+                this.creditAccountName = '';
+                this.vatWithHoldAccountId = '';
+                this.vatWithHoldAccountName = '';
 
-            const covidAmount = this.covid && parseFloat(this.covidRate) > 0
-                ? subTotal * parseFloat(this.covidRate) / 100
-                : 0;
+                this.generateRefNo();
+                this.getDefaultGlSetup();
 
-            const cstAmount = this.cst && parseFloat(this.cstRate) > 0
-                ? subTotal * parseFloat(this.cstRate) / 100
-                : 0;
-            const vatAmount = this.Vat && parseFloat(this.VatRate) > 0
-                ? subTotal * parseFloat(this.VatRate) / 100
-                : 0;
+                if (this.payCurrencyId) this.onPayCurrencyChange();
+            },
 
-            const newAmount = subTotal + nhilAmount + getflAmount + covidAmount + cstAmount + vatAmount;
+            newVoucher() {
+                this.resetVoucherFields();
+                this.scrollToAdd();
+            },
 
-           /* let vatAmount = 0;
-            if (this.Vat && parseFloat(this.VatRate) > 0) {
-                vatAmount = newAmount * parseFloat(this.VatRate) / 100;
-            }*/
+            clearForm() {
+                this.newVoucher();
+            },
 
-            this.vatAmount = vatAmount.toFixed(2);
-            this.totalTaxAmount = (vatAmount + nhilAmount + getflAmount + covidAmount + cstAmount).toFixed(2);
-          
-        },
-        setCurrentVoucher() {
-            if (this.voucherId) {
-                const voucher = this.voucherList.find(a => a.id === this.voucherId);
-                this.batchNumber = voucher.batchNumber;
-                this.voucherNumber = voucher.voucherNumber;
-                this.invoiceId = voucher.invoiceId;
-                this.invoiceNumber = voucher.invoiceNumber;
-                this.supplierId = voucher.supplierId;
-                this.supplierName = voucher.supplierName;
-                this.accountNumber = voucher.accountNumber;
-                this.minorName = voucher.minorName;
-                this.currencyId = voucher.currencyId;
-                this.currencyName = voucher.currencyName;
-                this.currencyCode = voucher.currencyCode;
-                this.buyRate = parseFloat(voucher.buyRate).toFixed(4);
-                this.sellRate = parseFloat(voucher.sellRate).toFixed(4);
-                this.invoiceAmount = parseFloat(voucher.invoiceAmount).toFixed(2);
-                this.voucherEntryDate = this.formatDate(voucher.voucherEntryDate);
-                this.balance = parseFloat(voucher.balance).toFixed(2);
-                this.liabilityAccountId = voucher.liabilityAccountId;
-                this.liabilityAccountCode = voucher.liabilityAccountCode;
-                this.liabilityAccountName = voucher.liabilityAccountName;
-                this.bankId = voucher.bankId;
-                this.bankName = voucher.bankName;
-                this.bankBranchId = voucher.bankBranchId;
-                this.bankBranchCode = voucher.bankBranchCode;
-                this.bankBranchName = voucher.bankBranchName;
-                this.paymentDate = this.formatDate(voucher.paymentDate);
-                this.paymentAmount = parseFloat(voucher.paymentAmount).toFixed(2);
-                this.modeOfPayment = voucher.modeOfPayment;
-                if (this.modeOfPayment === 'Cash') {
-                    this.cash = true;
-                    this.cheque = false;
+            /* ==================================================================
+             * SAVE
+             * ================================================================== */
+            buildVoucherPayload() {
+                const payload = {};
+                const invoice = this.getInvoiceDetails(this.invoiceId);
+
+                payload.voucherNumber = this.voucherNumber || '0';
+                payload.chequeNumber = this.chequeNumber;
+                payload.checkNumber = this.chequeNumber; // legacy name kept for the existing API contract
+
+                if (invoice) {
+                    const details = Array.isArray(invoice.invoiceDetails) ? invoice.invoiceDetails : [];
+
+                    payload.invoiceId = invoice.id;
+                    payload.invoiceNumber = invoice.invoiceNumber;
+                    payload.invoiceAmount = invoice.totalInvoiceAmount;
+                    payload.invoiceDate = loadedDate(invoice.invoiceDate) || this.invoiceDate;
+                    payload.currencyId = invoice.currencyId;
+                    payload.currencyName = invoice.currencyName;
+                    payload.currencyCode = invoice.currencyCode;
+                    payload.buyRate = parseFloat(invoice.buyRate) || 1;
+                    payload.sellRate = invoice.sellRate;
+                    payload.balance = invoice.balance;
+                    payload.liabilityAccountId = invoice.liabilityAccountId;
+                    payload.liabilityAccountCode = invoice.liabilityAccountCode;
+                    payload.liabilityAccountName = invoice.liabilityAccountName;
+                    payload.supplierId = invoice.supplierId;
+                    payload.supplierName = invoice.supplierName || this.supplierName;
+                    payload.accountNumber = invoice.accountNumber || this.accountNumber;
+
+                    payload.details = details.map(detail => ({
+                        id: this.uuid(),
+                        description: detail.description || 'N/A',
+                        amount: detail.subTotal || 0,
+                        isWithHolding: false
+                    }));
                 } else {
-                    this.cash = false;
-                    this.cheque = true;
+                    // Editing a voucher whose invoice is no longer in the open-invoice list
+                    payload.invoiceId = this.invoiceId;
+                    payload.invoiceNumber = this.invoiceNumber;
+                    payload.invoiceAmount = this.invoiceAmount;
+                    payload.invoiceDate = this.invoiceDate;
+                    payload.currencyId = this.currencyId;
+                    payload.currencyName = this.currencyName;
+                    payload.currencyCode = this.currencyCode;
+                    payload.buyRate = parseFloat(this.buyRate) || 1;
+                    payload.sellRate = this.sellRate;
+                    payload.balance = this.balance;
+                    payload.liabilityAccountId = this.liabilityAccountId;
+                    payload.liabilityAccountCode = this.liabilityAccountCode;
+                    payload.liabilityAccountName = this.liabilityAccountName;
+                    payload.supplierId = this.supplierId;
+                    payload.supplierName = this.supplierName;
+                    payload.accountNumber = this.accountNumber;
+
+                    // Keep the voucher's existing detail lines instead of dropping them
+                    const savedDetails = Array.isArray(this.loadedVoucherDetails) ? this.loadedVoucherDetails : [];
+                    payload.details = savedDetails.map(detail => ({
+                        id: detail.id || this.uuid(),
+                        description: detail.description || 'N/A',
+                        amount: detail.amount || 0,
+                        isWithHolding: detail.isWithHolding === true
+                    }));
                 }
-                this.chequeNumber = voucher.chequeNumber;
-                this.GETFL = voucher.getfl;
-                this.GETFLRate = voucher.getflRate;
-                this.NHIL = voucher.nhil;
-                this.NHILRate = voucher.nhilRate;
-                this.Vat = voucher.vat;
-                this.VatRate = voucher.vatRate;
-                this.covid = voucher.covid;
-                this.covidRate = voucher.covidRate;
-                this.cst = voucher.cst;
-                this.cstRate = voucher.cstRate;
-                this.payCurrencyId = voucher.payCurrencyId;
-                this.payCurrencyName = voucher.payCurrencyName;
-                this.payCurrencyCode = voucher.payCurrencyCode;
-                this.payCurrencyBuyRate = parseFloat(voucher.payCurrencyBuyRate).toFixed(4);
-                this.payCurrencySellRate = voucher.payCurrencySellRate;
-                this.withHeld = voucher.withHeld;
-                this.isVatWithHolding = voucher.isVatWithHolding;
-                this.total = voucher.total;
-                this.isWithHolding = voucher.isWithHolding;
-                this.withHoldingRate = parseFloat(voucher.withHoldingRate).toFixed(2);
-                this.vatAmount = voucher.vatAmount;
-                this.netAmount = voucher.netAmount;
-                this.vatWithHoldingAccountId = voucher.vatWithHoldingAccountId;
-                this.vatWithHoldingAccountName = voucher.vatWithHoldingAccountName;
-                this.creditAccountId = voucher.creditAccountId;
-                this.creditAccountName = voucher.creditAccountName;
-                this.bankGlAccountId = voucher.bankGlAccountId;
-                this.voucherDescription = voucher.description;
-                this.voucherDetails = voucher.details;
-                this.totalTaxAmount = voucher.totalTaxAmount;
-                this.isPosted = voucher.isPosted;
-                this.referenceNumber = voucher.referenceNumber;
-                this.tenantId = voucher.tenantId;
-                this.taxLevyList = this.taxLevyList.map(tax => {
-                    switch (tax.name.toLowerCase()) {
-                        case 'vat':
-                            return { ...tax, isApplied: this.Vat };
-                        case 'nhil':
-                            return { ...tax, isApplied: this.NHIL };
-                        case 'getfl':
-                            return { ...tax, isApplied: this.GETFL };
-                        case 'covid':
-                            return { ...tax, isApplied: this.covid };
-                        case 'cst':
-                            return { ...tax, isApplied: this.cst };
-                        default:
-                            return tax;
-                    }
-                });
-                const taxNames = ['vat', 'nhil', 'getfl', 'covid', 'cst'];
 
-                taxNames.forEach(taxName => {
-                    const rateKey = `${taxName}Rate`;
-                    const voucherRate = voucher[rateKey];
+                const currency = this.getCurrencyDetails(this.payCurrencyId);
+                payload.payCurrencyId = this.payCurrencyId;
+                payload.payCurrencyName = currency ? currency.currencyName : this.payCurrencyName;
+                payload.payCurrencyCode = currency ? currency.currencyCode : this.payCurrencyCode;
+                payload.minorName = currency ? currency.minorName : this.minorName;
+                payload.payCurrencyBuyRate = parseFloat(this.payCurrencyBuyRate) || 1;
+                payload.payCurrencySellRate = currency ? currency.sellRate : this.payCurrencySellRate;
 
-                    if (!voucherRate || voucherRate === 0) {
-                        const tax = this.taxLevyList.find(t => t.name.toLowerCase() === taxName);
-                        this[rateKey] = tax ? parseFloat(tax.rate).toFixed(2) : "0.00";
-                    } else {
-                        this[rateKey] = parseFloat(voucherRate).toFixed(2);
-                    }
-                });
+                const bank = this.getBankDetails(this.bankId);
+                payload.bankId = bank ? bank.id : this.emptyGuid;
+                payload.bankName = bank ? bank.name : '';
 
-                this.$nextTick(() => {
-                    this.calculateWithHeldDetails();
-                });
-            }
-        },
-        validateAndSaveVoucher() {
-            if (this.$refs.voucherForm.checkValidity()) {
+                const branch = this.getBankBranchDetails(this.bankBranchId);
+                payload.bankBranchId = branch ? branch.id : this.emptyGuid;
+                payload.bankBranchName = branch ? branch.name : '';
+                payload.departmentName = payload.bankBranchName; // legacy field name used by the old payload
+
+                payload.voucherEntryDate = loadedDate(this.voucherEntryDate) || today;
+                payload.paymentDate = loadedDate(this.paymentDate) || today;
+
+                payload.VatWithHeldRate = parseFloat(this.VatWithHeldRate) || 0;
+                payload.paymentAmount = parseFloat(this.paymentAmount) || 0;
+                payload.modeOfPayment = this.modeOfPayment;
+                payload.batchNumber = this.batchNumber || '';
+
+                payload.getfl = this.GETFL === true;
+                payload.getflRate = parseFloat(this.GETFLRate) || 0;
+                payload.nhil = this.NHIL === true;
+                payload.nhilRate = parseFloat(this.NHILRate) || 0;
+                payload.vat = this.Vat === true;
+                payload.vatRate = parseFloat(this.VatRate) || 0;
+                payload.covid = this.covid === true;
+                payload.covidRate = parseFloat(this.covidRate) || 0;
+                payload.cst = this.cst === true;
+                payload.cstRate = parseFloat(this.cstRate) || 0;
+
+                payload.withHeld = parseFloat(this.withHeld) || 0;
+                payload.vatWithheld = parseFloat(this.vatWithheld) || 0;
+                payload.total = parseFloat(this.total) || 0;
+                payload.vatAmount = parseFloat(this.vatAmount) || 0;
+                payload.netAmount = parseFloat(this.netAmount) || 0;
+                payload.totalTaxAmount = parseFloat(this.totalTaxAmount) || 0;
+
+                payload.isWithHolding = this.isWithHolding === true;
+                payload.withHoldingRate = parseFloat(this.withHoldingRate) || 0;
+                payload.isVatWithHolding = this.isVatWithHolding === true;
+                payload.isMultiCurrency = this.isMultiCurrency === true;
+                payload.referenceNumber = this.referenceNumber;
+
+                const vatAccount = this.getAccountDetails(this.vatWithHoldAccountId);
+                payload.vatWithHoldAccountId = vatAccount ? vatAccount.id : this.emptyGuid;
+                payload.vatWithHoldAccountName = vatAccount
+                    ? `${vatAccount.accountNo} - ${vatAccount.accountName}`
+                    : '';
+
+                const creditAccount = this.getAccountDetails(this.creditAccountId);
+                payload.creditAccountId = creditAccount ? creditAccount.id : this.emptyGuid;
+                payload.creditAccountName = creditAccount
+                    ? `${creditAccount.accountNo} - ${creditAccount.accountName}`
+                    : '';
+
+                const bankGlAccount = this.getAccountDetails(this.bankAccountId);
+                payload.bankAccountId = bankGlAccount ? bankGlAccount.id : this.emptyGuid;
+                payload.bankAccountName = bankGlAccount
+                    ? `${bankGlAccount.accountNo} - ${bankGlAccount.accountName}`
+                    : '';
+                payload.bankGlAccountName = payload.bankAccountName; // legacy name
+
+                payload.description = this.voucherDescription;
+                payload.isPosted = this.isPosted === true;
+
+                return payload;
+            },
+
+            validateAndSaveVoucher() {
                 this.saveVoucher();
-            } else {
-                this.$refs.voucherForm.reportValidity();
-            }
-        },
-        deleteVoucher(id) {
+            },
 
-            axios.get('/ApDataEntry/DeleteVoucher/?id=' + id).then(response => {
+            async saveVoucher() {
+                if (this.isLoading) return;
 
-               this.getVouchers();
-
-                this.toastHandler('', 'Voucher deleted.');
-
-
-            }).catch(err => {
-
-                this.toastHandler('error', 'Unable to delete Voucher.');
-
-            });
-        },
-        printReport() {
-            let voucherId = this.voucherId || '';
-            let reportUrl = `/ApReports/PrintPaymentVoucher?id=${voucherId}`;
-            window.open(reportUrl, '_blank');
-        },
-        clearForm() {
-            window.location.reload();
-        },
-        setBuyRate() {
-            if (this.payCurrencyId) {
-                const currency = this.currencyList.find(a => a.id === this.payCurrencyId);
-                this.payCurrencyBuyRate = parseFloat(currency.buyRate).toFixed(4);
-            }
-        },
-        toastHandler(type, message = 'An unexpected error occurred.') {
-            if (typeof Swal === 'undefined') {
-                console.log(message);
-                return;
-            }
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'success',
-                title: message,
-                showConfirmButton: false,
-                timer: 4000,
-                timerProgressBar: true
-            });
-
-        },
-        resetBankFields() {
-            this.bankId = '';
-            this.bankName = '';
-            this.bankBranchId = '';
-            this.bankBranchName = '';
-        },
-    },
-    watch: {
-        
-        isVatWithHolding(newValue) {
-           this.VatWithHeldRate = newValue ? '7.00' : '0.00';
-            this.calculateWithHeldDetails();
-        },
-        VatWithHeldRate() {
-            this.calculateWithHeldDetails();
-        },
-        withHoldingRate() {
-            this.calculateWithHeldDetails();
-        },
-        isWithHolding(newValue) {
-            this.withHoldingRate = newValue ? '7.5' : '0.00';
-            this.calculateWithHeldDetails();
-        },
-        paymentAmount(newAmount) {
-            this.total = parseFloat(newAmount).toFixed(2);
-            this.calculateWithHeldDetails();
-        },
-
-        VatRate(newVal, oldVal) {
-            if (this.userIsEditingRate) {
-                this.calculateTotalTaxAmount();
-            }
-        },
-        invoiceId(val) {
-            if (!val) return;
-
-            // find any ACTIVE (not deleted), UNPOSTED voucher for this invoice
-            const openVoucher = Array.isArray(this.voucherList)
-                ? this.voucherList.find(v =>
-                    v.invoiceId === val &&
-                    v.isPosted === false &&
-                    v.isDeleted === false
-                )
-                : null;
-
-            // block only if another active unposted voucher exists
-            if (openVoucher && this.voucherId !== openVoucher.id) {
-                this.toastHandler(
-                    'warning',
-                    'Please post the outstanding payment for this invoice before proceeding.'
-                );
-
-                // reset model
-                this.invoiceId = '';
-                
-
-                return;
-            }
-
-            // ✅ allowed:
-            // - no unposted voucher
-            // - OR voucher exists but isDeleted === true
-            // - OR editing the same voucher
-            this.setCurrentInvoice(val);
-        },
-
-        voucherId(val) {
-          
-            if (val) {
-                
-                this.setCurrentVoucher();
-               
-            }
-        },
-        bankAccountId(newVal) {
-            if (!newVal) {
-                this.bankName = '';
-                this.bankBranchName = '';
-                this.bankId = '';
-                this.bankBranchId = '';
-                return;
-            }
-            const selectedAccount = this.accountsList.find(
-                acc => acc.id === newVal
-            );
-            const bankAccount = this.bankAccountList.find(
-                ba => ba.accountId === selectedAccount.id
-            );
-            const bank = this.bankList.find(
-                b => b.name.toLowerCase() === bankAccount.bankName.toLowerCase()
-            );
-
-            this.bankId = bank.id;
-            this.bankName = bank.name;
-
-            $("#bankId").ejDropDownList("option", "value", bank.id);
-
-            const branch = bank.bankBranches.find(
-                br => br.id === bankAccount.bankBranchId
-            );
-
-            if (!branch) {
-                this.bankBranchId = '';
-                this.bankBranchName = '';
-                return;
-            }
-
-            this.bankBranchId = branch.id;
-            this.bankBranchName = branch.name;
-
-            $("#bankBranchId").ejDropDownList("option", "value", branch.id);
-        },
-        bankId(val) {
-            if (val) {
-                const bankInfo = this.getBankDetails(val);
-
-                if (bankInfo) {
-                    this.bankBranchList = [...bankInfo.bankBranches].sort((a, b) => {
-                        const nameA = a?.name || "";
-                        const nameB = b?.name || "";
-                        return nameA.localeCompare(nameB);
-                    });
-                    $("#branchId").ejDropDownList({
-                        dataSource: this.bankBranchList,
-                        watermarkText: "Select Branch",
-                        width: "100%",
-                        fields: { id: "id", text: "name", value: "id" },
-                        enableFilterSearch: true,
-                        change: (args) => {
-                            this.bankBranchId = args.value;
-                        }
-                    });
-
-                    // 🔥 Important: Set the selected branch **after** dropdown is recreated
-                    this.$nextTick(() => {
-                        if (this.bankBranchId) {
-                            $("#branchId").ejDropDownList("option", "value", this.bankBranchId);
-                        }
-                    });
+                if (!this.invoiceId) {
+                    this.toastHandler('warning', 'Please select a supplier invoice.');
+                    return;
                 }
+                if ((parseFloat(this.paymentAmount) || 0) <= 0) {
+                    this.toastHandler('warning', 'Payment amount must be greater than zero.');
+                    return;
+                }
+                if (!this.voucherDescription) {
+                    this.toastHandler('warning', 'Please enter a description.');
+                    return;
+                }
+
+                this.isLoading = true;
+
+                try {
+                    this.InitModeOfPayment();
+                    const payload = this.buildVoucherPayload();
+
+                    // ---------- UPDATE ----------
+                    if (this.voucherId) {
+                        payload.id = this.voucherId;
+                        payload.tenantId = this.tenantId;
+
+                        const response = await api.post(ENDPOINTS.updateVoucher, payload);
+                        const body = response.data || {};
+                        const updatedId = body.id || body.voucherId || this.voucherId;
+
+                        await this.getVouchers();
+                        const row = await this.findVoucherById(updatedId);
+                        if (row) await this.setCurrentVoucher(row);
+
+                        this.toastHandler('', 'Voucher updated.');
+                        return;
+                    }
+
+                    // ---------- CREATE ----------
+                    const response = await api.post(ENDPOINTS.createVoucher, payload);
+                    const body = response.data || {};
+                    const createdId = body.id || body.voucherId;
+
+                    await this.getVouchers();
+
+                    const created = createdId ? await this.findVoucherById(createdId) : null;
+
+                    if (created) {
+                        await this.setCurrentVoucher(created);
+                    } else {
+                        if (createdId) this.voucherId = createdId;
+                        if (body.voucherNumber) this.voucherNumber = body.voucherNumber;
+                    }
+
+                    this.toastHandler('', 'Voucher saved.');
+
+                    // Old behaviour redirected to the voucher action page; uncomment if you still want it.
+                    // window.location.href = '/ApDataEntry/VoucherAction';
+                } catch (error) {
+                    console.error('saveVoucher failed:', error && error.response ? error.response.data : error);
+                    this.toastHandler('error', this.apiErrorMessage(error, 'Unable to save the voucher.'));
+                } finally {
+                    this.isLoading = false;
+                }
+            },
+
+            /* ==================================================================
+             * DELETE
+             * ================================================================== */
+            async deleteVoucher(id) {
+                const row = this.getSelectedVoucherRow();
+                const voucherId = (id && typeof id === 'object')
+                    ? (id.id || id.voucherId)
+                    : (id || (row && row.id) || this.voucherId);
+
+                if (!voucherId) {
+                    this.toastHandler('warning', 'Please select a voucher first.');
+                    return;
+                }
+                if (this.isLoading) return;
+
+                if (typeof Swal !== 'undefined') {
+                    const confirmed = await Swal.fire({
+                        title: 'Delete voucher?',
+                        text: 'This will delete the payment voucher.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Delete',
+                        confirmButtonColor: '#d33',
+                        cancelButtonText: 'Cancel'
+                    });
+                    if (!confirmed.isConfirmed) return;
+                }
+
+                this.isLoading = true;
+
+                try {
+                    // Existing API contract: GET /ApDataEntry/DeleteVoucher/?id=...
+                    await api.get(ENDPOINTS.deleteVoucher, { params: { id: voucherId } });
+
+                    const wasCurrent = sameId(voucherId, this.voucherId);
+
+                    await this.getVouchers();
+
+                    if (wasCurrent) {
+                        this.resetVoucherFields();
+                        await this.getInvoices();
+
+                        const grid = this.$refs.vouchers;
+                        if (grid && typeof grid.clearSelection === 'function') grid.clearSelection();
+                    }
+
+                    this.toastHandler('', 'Voucher deleted.');
+                } catch (error) {
+                    console.error('deleteVoucher failed:', error && error.response ? error.response.data : error);
+                    this.toastHandler('error', this.apiErrorMessage(error, 'Unable to delete the voucher.'));
+                } finally {
+                    this.isLoading = false;
+                }
+            },
+
+            /* ==================================================================
+             * PRINT
+             * ================================================================== */
+            printReport() {
+                const row = this.getSelectedVoucherRow();
+                const voucherId = this.voucherId || (row && row.id);
+
+                if (!voucherId) {
+                    this.toastHandler('warning', 'No voucher selected for printing.');
+                    return;
+                }
+
+                window.open(`${REPORT_URL}?id=${voucherId}`, '_blank');
             }
         },
-
-        payCurrencyId(val) {
-            if (val) {
-                this.setBuyRate();
-                this.isMultiCurrency = val !== this.defaultCurrency.id;
-
+        watch: {
+            invoiceId(val) {
+                if (this.isSettingVoucher) return;
+                this.onInvoiceChange();
+            },
+            voucherId(val) {
+                if (this.isSettingVoucher) return;
+                if (val && val !== this.loadedVoucherId) this.setCurrentVoucher();
+            },
+            payCurrencyId(val) {
+                if (this.isSettingVoucher) return;
+                if (val) this.onPayCurrencyChange();
+            },
+            bankId(val) {
+                if (this.isSettingVoucher) return;
+                this.onBankChange();
+            },
+            bankAccountId(val) {
+                if (this.isSettingVoucher) return;
+                this.syncBankFromAccount(val);
+            },
+            isWithHolding(val) {
+                if (this.isSettingVoucher) return;
+                this.withHoldingRate = val ? '7.5' : '0.00';
+                this.calculateWithHeldDetails();
+            },
+            withHoldingRate() {
+                if (this.isSettingVoucher) return;
+                this.calculateWithHeldDetails();
+            },
+            isVatWithHolding(val) {
+                if (this.isSettingVoucher) return;
+                this.VatWithHeldRate = val ? '7.00' : '0.00';
+                this.calculateWithHeldDetails();
+            },
+            VatWithHeldRate() {
+                if (this.isSettingVoucher) return;
+                this.calculateWithHeldDetails();
+            },
+            paymentAmount(val) {
+                if (this.isSettingVoucher) return;
+                this.calculateWithHeldDetails();
+            },
+            VatRate() {
+                if (this.userIsEditingRate) this.calculateTotalTaxAmount();
+            },
+            isVatInclusive(val) {
+                if (this.isSettingVoucher) return;
+                // Inclusive <-> exclusive changes both what is clickable and how the tax is derived
+                this.syncTaxLevyAvailability();
+                this.calculateTotalTaxAmount();
+            },
+            voucherEntryDate(val) {
+                const iso = isoDate(val);
+                if (iso && iso !== val) this.voucherEntryDate = iso;
+            },
+            paymentDate(val) {
+                const iso = isoDate(val);
+                if (iso && iso !== val) this.paymentDate = iso;
             }
         },
-        
-    },
-    mounted() {
-        this.getBusinessProfile();
-        this.initPaymentVoucher();
-       // this.getBankAccounts();
-        this.getCurrency();
-        this.getTaxLevies();
-        this.setCurrentInvoice();
-        this.calculateWithHeldDetails();
-        this.getInvoices();
-        this.getSuppliers();
-        this.getVouchers();
-        this.getBanks();
-        this.getDefaultGlSetup();
-        this.getVouchers();
-        this.generateRefNo();
-    }
-    
-});
-app.use(DataGridPlugin);
-app.use(WSelectPlugin);
+        async mounted() {
+            this.isShimmerLoading = true;
+
+            await Promise.all([
+                this.getSuppliers(),
+                this.getCurrencies(),
+                this.getBanks(),
+                this.loadAccounts(),
+                this.getBankAccounts(),
+                this.getTaxLevies(),
+                this.getBusinessProfile()
+            ]);
+
+            // Needs accountsList / bankAccountList to resolve the bank + branch
+            await this.getDefaultGlSetup();
+
+            await this.getInvoices();
+            await this.getVouchers();
+
+            this.generateRefNo();
+            this.calculateWithHeldDetails();
+
+            this.isShimmerLoading = false;
+        }
+    });
+
+    app.use(DataGridPlugin);
+    app.use(WSelectPlugin);
     app.mount('#app');
+})();

@@ -322,18 +322,23 @@
         name: 'DataGridForm',
         props: { columns: { type: Array, required: true }, row: { type: Object, default: null }, mode: { type: String, default: 'create' },
             itemLabel: { type: String, default: 'record' }, parentLabel: { type: String, default: '' },
-            theme: { type: String, default: '#2563eb' } },
+            theme: { type: String, default: '#2563eb' }, rowDisabled: { type: Function, default: null } },
         emits: ['submit', 'close'],
         data() { return { values: {}, errors: {} }; },
         created() { this.build(); },
         computed: {
             isEdit() { return this.mode === 'update'; },
+            isReadOnly() { return this.isEdit && typeof this.rowDisabled === 'function' && !!this.rowDisabled(this.row); },
             themeStyle() { return { '--dt-theme': this.theme || '#2563eb' }; }
         },
         methods: {
             t: typeOf,
             optionList(c) { return optionList(c); },
             label(c) { return c.label ?? c.key; },
+            isDisabled(c) {
+                if (this.isReadOnly) return true;
+                return typeof c.disabled === 'function' ? !!c.disabled(this.row, this.mode, c) : c.disabled === true;
+            },
             inputStep(c) {
                 if (c.step !== undefined) return c.step;
                 if (typeOf(c).step !== undefined) return typeOf(c).step;
@@ -376,10 +381,11 @@
                 return '';
             },
             submit() {
+                if (this.isReadOnly) return;
                 const data = {}; const errors = {}; let firstBad = null;
                 this.columns.forEach((c) => {
                     const val = this.parse(c);
-                    const err = this.validate(c, val);
+                    const err = this.isDisabled(c) ? '' : this.validate(c, val);
                     if (err) { errors[c.key] = err; firstBad = firstBad || this.idOf(c); }
                     setIn(data, c.key, val);
                 });
@@ -410,7 +416,7 @@
               </span>
               <div>
                 <h3 class="text-base font-semibold text-slate-900 dark:text-white">{{ isEdit ? 'Edit ' + itemLabel : 'New ' + itemLabel }}</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400">{{ isEdit ? (row && row.name ? String(row.name) : 'Update the details below') : (parentLabel || 'Fill in the details below.') }}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">{{ isReadOnly ? 'This posted record is read-only.' : (isEdit ? (row && row.name ? String(row.name) : 'Update the details below') : (parentLabel || 'Fill in the details below.')) }}</p>
               </div>
             </div>
             <button type="button" class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800" @click="$emit('close')"><i class="bi bi-x-lg text-sm"></i></button>
@@ -424,18 +430,18 @@
               </label>
 
               <!-- checkbox -->
-              <label v-if="t(c).input === 'checkbox'" class="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-                <input :id="idOf(c)" v-model="values[c.key]" type="checkbox" class="dt-check h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500">
+              <label v-if="t(c).input === 'checkbox'" class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300" :class="isDisabled(c) ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'">
+                <input :id="idOf(c)" v-model="values[c.key]" type="checkbox" :disabled="isDisabled(c)" class="dt-check h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500">
                 {{ c.checkboxLabel || 'Yes, active' }}
               </label>
 
               <!-- textarea -->
-              <textarea v-else-if="t(c).input === 'textarea'" :id="idOf(c)" v-model="values[c.key]" rows="3"
-                class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"></textarea>
+              <textarea v-else-if="t(c).input === 'textarea'" :id="idOf(c)" v-model="values[c.key]" rows="3" :disabled="isDisabled(c)"
+                class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"></textarea>
 
               <!-- select -->
-              <select v-else-if="t(c).input === 'select'" :id="idOf(c)" v-model="values[c.key]"
-                class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+              <select v-else-if="t(c).input === 'select'" :id="idOf(c)" v-model="values[c.key]" :disabled="isDisabled(c)"
+                class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm focus:border-primary-500 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
                 <option value="">— Select —</option>
                 <option v-for="o in optionList(c)" :key="String(o.value)" :value="o.value">
                   {{ o.label ?? o.value }}
@@ -444,15 +450,15 @@
 
               <!-- number / currency -->
               <div v-else-if="t(c).input === 'number'" class="relative">
-                <input :id="idOf(c)" v-model="values[c.key]" type="number" :step="inputStep(c)" :min="c.min" :max="c.max"
-                  class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-                  :class="c.type === 'currency' ? 'pl-12' : ''">
+                <input :id="idOf(c)" v-model="values[c.key]" type="number" :step="inputStep(c)" :min="c.min" :max="c.max" :disabled="isDisabled(c)"
+                  class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                  :class="[c.type === 'currency' ? 'pl-12' : '', isDisabled(c) ? 'cursor-not-allowed opacity-60' : '']">
                 <span v-if="c.type === 'currency'" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">{{ c.currencySymbol || 'GH₵' }}</span>
               </div>
 
               <!-- everything else (text, email, tel, url, date, datetime, time, color, tags) -->
-              <input v-else :id="idOf(c)" v-model="values[c.key]" :type="t(c).input"
-                class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              <input v-else :id="idOf(c)" v-model="values[c.key]" :type="t(c).input" :disabled="isDisabled(c)"
+                class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                 :placeholder="t(c).input === 'tags' ? 'Comma separated, e.g. Vue, Tailwind' : (c.placeholder || '')">
 
               <p v-if="c.help" class="mt-1 text-[11px] text-slate-400">{{ c.help }}</p>
@@ -464,8 +470,8 @@
             <p class="text-[11px] text-slate-400"><span class="text-rose-500">*</span> required fields</p>
             <div class="flex gap-2">
               <button type="button" class="h-9 rounded-lg border border-slate-300 bg-white px-3.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200" @click="$emit('close')">Cancel</button>
-              <button type="submit" class="inline-flex h-9 items-center gap-2 rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-primary-700">
-                <i class="bi bi-check-lg"></i>{{ isEdit ? 'Save changes' : 'Create' }}
+              <button type="submit" :disabled="isReadOnly" class="inline-flex h-9 items-center gap-2 rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50">
+                <i class="bi bi-check-lg"></i>{{ isReadOnly ? 'Read only' : (isEdit ? 'Save changes' : 'Create') }}
               </button>
             </div>
           </div>
@@ -484,6 +490,7 @@
             child: { type: Object, default: null },         // { key, title, columns, child }
             rowId: { type: String, default: 'id' },
             groupHeader: { type: String, default: '' }, // column/property key used to group visible rows
+            rowDisabled: { type: Function, default: null }, // return true for rows that cannot be selected/edited/deleted
             labelKey: { type: String, default: 'name' },
             title: { type: String, default: '' },
             subtitle: { type: String, default: '' },
@@ -644,7 +651,17 @@
                     isComplete: group.entries.length === group.count
                 }));
             },
-            allPageSelected() { const ids = this.pageRows.map((r, i) => this.keyOf(r, i)); return ids.length > 0 && ids.every((id) => this.selected.includes(id)); },
+            selectedCount() {
+                const disabledIds = new Set(this.rows.map((row, index) => this.isRowDisabled(row) ? this.keyOf(row, index) : null).filter((id) => id !== null));
+                return this.selected.filter((id) => !disabledIds.has(id)).length;
+            },
+            selectablePageRows() {
+                return this.pageRows.map((row, index) => ({ row, index, id:this.keyOf(row, index) })).filter((entry) => !this.isRowDisabled(entry.row));
+            },
+            allPageSelected() {
+                const ids = this.selectablePageRows.map((entry) => entry.id);
+                return ids.length > 0 && ids.every((id) => this.selected.includes(id));
+            },
             footer() {
                 if (!this.aggregates) return null;
                 const out = {}; const scope = this.sorted;
@@ -691,6 +708,7 @@
             /* ---- helpers exposed to templates ---- */
             esc, typeOf, getIn, setIn, fmtNum, fmtMoney, fmtDate, optionList, optionLabel, colorOf, badge, dotPill, bar, stars, tagsHtml, truncate, isNil,
             keyOf(row, i) { return String(getIn(row, this.rowId) ?? ('__idx' + i)); },
+            isRowDisabled(row) { return typeof this.rowDisabled === 'function' && !!this.rowDisabled(row); },
             groupValueKey(value) { return isNil(value) ? 'empty:' : typeof value + ':' + String(value); },
             groupLabel(value) {
                 if (isNil(value)) return 'Unassigned';
@@ -764,28 +782,34 @@
 
             /* ---- selection ---- */
             setSelectedIds(ids) {
-                const next = normalizeIds(ids);
+                const disabledIds = new Set(this.rows.map((row, index) => this.isRowDisabled(row) ? this.keyOf(row, index) : null).filter((id) => id !== null));
+                const next = normalizeIds(ids).filter((id) => !disabledIds.has(id));
                 if (next.length !== this.selected.length || next.some((id, index) => id !== this.selected[index])) this.selected = next;
             },
             emitSelectionChange() {
-                const ids = this.selected.slice();
+                const disabledIds = new Set(this.rows.map((row, index) => this.isRowDisabled(row) ? this.keyOf(row, index) : null).filter((id) => id !== null));
+                const ids = this.selected.filter((id) => !disabledIds.has(id));
+                this.selected = ids;
                 this.$emit('update:selectedIds', ids);
                 this.emit('selection-change', { ids, rows:this.selectedRows() });
             },
             toggleRow(id, ev) {
                 id = String(id);
+                const row = this.pageRows.find((item, index) => this.keyOf(item, index) === id);
+                if (row && this.isRowDisabled(row)) { if (ev && ev.target) ev.target.checked = false; return; }
                 const checked = ev && ev.target ? ev.target.checked : !this.selected.includes(id);
                 this.selected = checked ? Array.from(new Set(this.selected.concat([id]))) : this.selected.filter((x) => x !== id);
                 this.emitSelectionChange();
             },
             toggleAll(ev) {
                 const checked = ev && ev.target ? ev.target.checked : true;
-                const ids = this.pageRows.map((r, i) => this.keyOf(r, i));
-                this.selected = checked ? normalizeIds(this.selected.concat(ids)) : this.selected.filter((id) => !ids.includes(id));
+                const pageIds = this.pageRows.map((row, index) => this.keyOf(row, index));
+                const enabledIds = this.selectablePageRows.map((entry) => entry.id);
+                this.selected = checked ? normalizeIds(this.selected.concat(enabledIds)) : this.selected.filter((id) => !pageIds.includes(id));
                 this.emitSelectionChange();
             },
             clearSelection() { this.selected = []; this.emitSelectionChange(); },
-            selectedRows() { return this.sorted.filter((r, i) => this.selected.includes(this.keyOf(r, i))); },
+            selectedRows() { return this.sorted.filter((r, i) => this.selected.includes(this.keyOf(r, i)) && !this.isRowDisabled(r)); },
 
 
             /* ---- column / density prefs ---- */
@@ -869,10 +893,9 @@
             },
             closeForm() { this.form = { open: false, mode: 'create', row: null }; },
             submitForm(values) {
-                if (this.form.mode === 'update') this.updateRow(this.form.row, values);
-                else this.createRow(values);
-                const label = String(getIn(values, this.labelKey) || values[this.rowId] || '');
-                this.notifyToast({ type:'success', title: this.form.mode === 'update' ? 'Changes saved' : this.itemLabel.charAt(0).toUpperCase() + this.itemLabel.slice(1) + ' created', body: label });
+                if (this.form.mode === 'update') {
+                    if (!this.updateRow(this.form.row, values)) return;
+                } else this.createRow(values);
                 this.closeForm();
             },
             createRow(values) {
@@ -890,15 +913,17 @@
                 this.emit('change', { row, mode:'create' });
             },
             updateRow(row, values) {
-                const target = row || this.form.row; if (!target) return;
+                const target = row || this.form.row; if (!target || this.isRowDisabled(target)) return false;
                 Object.keys(values).forEach((k) => setIn(target, k, values[k]));
                 const id = String(getIn(target, this.rowId));
                 this.$nextTick(() => this.flash(id));
                 this.emit('update', { row: target, data: values });
                 this.emit('change', { row: target, mode:'update' });
+                return true;
             },
             async removeRows(rows) {
-                const targets = Array.isArray(rows) && rows.length ? Array.from(new Set(rows)) : this.selectedRows();
+                const requested = Array.isArray(rows) && rows.length ? Array.from(new Set(rows)) : this.selectedRows();
+                const targets = requested.filter((row) => !this.isRowDisabled(row));
                 if (!targets.length) return;
                 const one = targets.length === 1;
                 const firstLabel = getIn(targets[0], this.labelKey);
@@ -906,7 +931,7 @@
                     theme: this.theme, danger: true, okText: 'Delete',
                     title: 'Delete ' + (one ? 'this ' + this.itemLabel : targets.length + ' ' + this.itemLabelPlural) + '?',
                     message: (one ? String(firstLabel || 'This ' + this.itemLabel) : 'These ' + this.itemLabelPlural) +
-                        ' will be removed' + (this.child ? ' together with their nested ' + (this.child.title || 'children').toLowerCase() : '') + '. You can undo right after.'
+                        ' will be removed' + (this.child ? ' together with their nested ' + (this.child.title || 'children').toLowerCase() : '') + '. This action cannot be undone.'
                 });
                 if (!ok) return;
 
@@ -926,19 +951,9 @@
                 this.emit('change', { rows: removedRows, mode:'delete' });
                 const maxPage = Math.max(1, Math.ceil(this.total / this.size));
                 if (this.page > maxPage) this.page = maxPage;
-                this.notifyToast({ type:'danger', title:'Deleted ' + (one ? this.itemLabel : snapshots.length + ' ' + this.itemLabelPlural), duration: 7000,
-                    body: one ? String(firstLabel || '') : '',
-                    action: { label:'Undo', onClick: () => {
-                            snapshots.slice().sort((a, b) => a.index - b.index)
-                                .forEach((snapshot) => collection.splice(Math.min(snapshot.index, collection.length), 0, snapshot.row));
-                            if (this.serverSide) this.totalLocal += snapshots.length;
-                            const undoMaxPage = Math.max(1, Math.ceil(this.total / this.size));
-                            if (this.page > undoMaxPage) this.page = undoMaxPage;
-                            this.notifyToast({ type:'info', title:'Restored', body: snapshots.length + ' ' + this.itemLabelPlural + ' put back.' });
-                        } } });
             },
             addChild(row, index) {
-                if (!this.hasChildSchema) return;
+                if (!this.hasChildSchema || this.isRowDisabled(row)) return;
                 const id = this.keyOf(row, index);
                 if (!Array.isArray(getIn(row, this.child.key))) setIn(row, this.child.key, []);
                 this.childAddRequest = id;
@@ -1074,8 +1089,8 @@
               <template v-if="isLoading"><span class="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400"></span>Loading…</template>
               <template v-else><i class="bi bi-collection"></i>{{ total }} {{ total === 1 ? itemLabel : itemLabelPlural }}</template>
             </span>
-            <span v-if="selected.length" class="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 text-[11px] font-semibold text-primary-700 dark:bg-primary-500/10 dark:text-primary-300">
-              <i class="bi bi-check2-circle"></i>{{ selected.length }} selected
+            <span v-if="selectedCount" class="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 text-[11px] font-semibold text-primary-700 dark:bg-primary-500/10 dark:text-primary-300">
+              <i class="bi bi-check2-circle"></i>{{ selectedCount }} selected
             </span>
           </div>
 
@@ -1170,8 +1185,8 @@
 
         <!-- bulk selection bar -->
         <transition name="pop">
-          <div v-if="selected.length" data-bulkbar class="flex flex-wrap items-center gap-2 rounded-lg border border-primary-200 bg-primary-50/70 px-3 py-2 dark:border-primary-500/30 dark:bg-primary-500/10">
-            <span class="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-800 dark:text-primary-200"><i class="bi bi-check2-square"></i>{{ selected.length }} selected</span>
+          <div v-if="selectedCount" data-bulkbar class="flex flex-wrap items-center gap-2 rounded-lg border border-primary-200 bg-primary-50/70 px-3 py-2 dark:border-primary-500/30 dark:bg-primary-500/10">
+            <span class="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-800 dark:text-primary-200"><i class="bi bi-check2-square"></i>{{ selectedCount }} selected</span>
             <span class="mx-1 h-5 w-px bg-primary-200 dark:bg-primary-500/30"></span>
             <button data-action="bulk-export" @click="exportCsv(selectedRows())" class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-primary-300 bg-white px-2.5 text-xs font-medium text-primary-700 hover:bg-primary-50 dark:border-primary-500/40 dark:bg-slate-900 dark:text-primary-300"><i class="bi bi-download"></i>Export selected</button>
             <button v-if="canDelete" data-action="bulk-delete" @click="removeRows(selectedRows())" class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-rose-300 bg-white px-2.5 text-xs font-medium text-rose-700 hover:bg-rose-50 dark:border-rose-500/40 dark:bg-slate-900 dark:text-rose-300"><i class="bi bi-trash3"></i>Delete</button>
@@ -1193,8 +1208,8 @@
             <tr class="dt-theme-header border-b border-slate-200 backdrop-blur dark:border-slate-700">
               <th v-if="showExpander" class="dt-th"><span class="sr-only">Expand</span></th>
               <th v-if="selectable" class="dt-th">
-                <input type="checkbox" class="dt-check h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500" data-action="select-all"
-                  :checked="allPageSelected" :indeterminate.prop="selected.length > 0 && !allPageSelected" aria-label="Select all rows on this page" @click="toggleAll($event)">
+                <input type="checkbox" class="dt-check h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-40" data-action="select-all"
+                  :checked="allPageSelected" :indeterminate.prop="selectedCount > 0 && !allPageSelected" :disabled="!selectablePageRows.length" aria-label="Select all selectable rows on this page" @click="toggleAll($event)">
               </th>
               <th v-for="c in visibleCols" :key="c.key" class="dt-th group relative whitespace-nowrap text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400"
                   :class="alignClass(c)" :data-col="c.key" :data-sortable="isSortable(c)" :tabindex="isSortable(c) ? 0 : -1" :role="isSortable(c) ? 'button' : null"
@@ -1289,7 +1304,8 @@
                 <template v-if="!isGroupCollapsed(group.key)">
                   <template v-for="entry in group.entries" :key="keyOf(entry.row, entry.index)">
                     <tr class="dt-row dt-theme-row group border-b border-slate-100 transition-colors dark:border-slate-800"
-                        :data-row="keyOf(entry.row, entry.index)" :class="[ selected.includes(keyOf(entry.row, entry.index)) ? 'dt-row-selected bg-primary-50/70 dark:bg-primary-500/10' : (striped && entry.index % 2 ? 'bg-slate-50/60 dark:bg-slate-900/40' : ''), flashId === keyOf(entry.row, entry.index) ? 'dt-flash' : '' ]">
+                        :data-row="keyOf(entry.row, entry.index)" :aria-disabled="isRowDisabled(entry.row) ? 'true' : null"
+                        :class="[ selected.includes(keyOf(entry.row, entry.index)) && !isRowDisabled(entry.row) ? 'dt-row-selected bg-primary-50/70 dark:bg-primary-500/10' : (striped && entry.index % 2 ? 'bg-slate-50/60 dark:bg-slate-900/40' : ''), isRowDisabled(entry.row) ? 'dt-row-disabled opacity-60' : '', flashId === keyOf(entry.row, entry.index) ? 'dt-flash' : '' ]">
                       <td v-if="showExpander" class="dt-cell text-center">
                         <template v-if="rowHasChildren(entry.row)">
                           <button data-action="toggle" :data-id="keyOf(entry.row, entry.index)" :aria-expanded="isExpanded(entry.row, entry.index)" :title="isExpanded(entry.row, entry.index) ? 'Collapse' : 'Expand'"
@@ -1298,16 +1314,16 @@
                           </button>
                           <span v-if="rowChildren(entry.row).length" class="ml-0.5 text-[10px] font-semibold tabular-nums text-slate-400">{{ rowChildren(entry.row).length }}</span>
                         </template>
-                        <button v-else-if="canAdd" data-action="add-child" :data-id="keyOf(entry.row, entry.index)"
-                          :title="'Add ' + (child.title || 'child').replace(/s$/, '').toLowerCase()"
+                        <button v-else-if="canAdd" data-action="add-child" :data-id="keyOf(entry.row, entry.index)" :disabled="isRowDisabled(entry.row)"
+                          :title="isRowDisabled(entry.row) ? 'This row is locked' : 'Add ' + (child.title || 'child').replace(/s$/, '').toLowerCase()"
                           :aria-label="'Add ' + (child.title || 'child').replace(/s$/, '').toLowerCase() + ' to ' + (getIn(entry.row, labelKey) || 'this row')"
-                          class="grid h-7 w-7 place-items-center rounded-md bg-primary-50 text-primary-700 transition hover:bg-primary-100 hover:text-primary-600 dark:bg-primary-500/10 dark:text-primary-300 dark:hover:bg-primary-500/20" @click="addChild(entry.row, entry.index)">
+                          class="grid h-7 w-7 place-items-center rounded-md bg-primary-50 text-primary-700 transition hover:bg-primary-100 hover:text-primary-600 disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-40 dark:bg-primary-500/10 dark:text-primary-300 dark:hover:bg-primary-500/20" @click="addChild(entry.row, entry.index)">
                           <i class="bi bi-plus-lg text-[11px]"></i>
                         </button>
                       </td>
                       <td v-if="selectable" class="dt-cell text-center">
-                        <input type="checkbox" class="dt-check h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500" data-action="select-row" :data-id="keyOf(entry.row, entry.index)"
-                          :checked="selected.includes(keyOf(entry.row, entry.index))" aria-label="Select row" @click="toggleRow(keyOf(entry.row, entry.index), $event)">
+                        <input type="checkbox" class="dt-check h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-40" data-action="select-row" :data-id="keyOf(entry.row, entry.index)"
+                          :checked="!isRowDisabled(entry.row) && selected.includes(keyOf(entry.row, entry.index))" :disabled="isRowDisabled(entry.row)" :aria-label="isRowDisabled(entry.row) ? 'Posted row cannot be selected' : 'Select row'" @click="toggleRow(keyOf(entry.row, entry.index), $event)">
                       </td>
                       <td v-for="c in visibleCols" :key="c.key" class="dt-cell text-sm text-slate-700 dark:text-slate-300" :class="[alignClass(c), typeOf(c).wrap ? 'whitespace-normal' : '']">
                         <component v-if="c.component" :is="c.component" :value="getIn(entry.row, c.key)" :row="entry.row" :column="c" :grid="gridApi" :search="search" />
@@ -1315,10 +1331,10 @@
                       </td>
                       <td v-if="showActionsColumn" class="dt-cell">
                         <div class="flex items-center justify-end gap-0.5">
-                          <button v-if="canEdit" data-action="edit" :data-id="keyOf(entry.row, entry.index)" title="Edit" @click="openForm('update', entry.row)"
-                            class="grid h-7 w-7 place-items-center rounded-md text-slate-400 transition hover:bg-primary-50 hover:text-primary-600 hover:shadow-sm dark:hover:bg-primary-500/10 dark:hover:text-primary-300"><i class="bi bi-pencil-square text-[13px]"></i></button>
-                          <button v-if="canDelete" data-action="delete" :data-id="keyOf(entry.row, entry.index)" title="Delete" @click="removeRows([entry.row])"
-                            class="grid h-7 w-7 place-items-center rounded-md text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 hover:shadow-sm dark:hover:bg-rose-500/10 dark:hover:text-rose-400"><i class="bi bi-trash3 text-[13px]"></i></button>
+                          <button v-if="canEdit" data-action="edit" :data-id="keyOf(entry.row, entry.index)" :title="isRowDisabled(entry.row) ? 'View read-only record' : 'Edit'" @click="openForm('update', entry.row)"
+                            class="grid h-7 w-7 place-items-center rounded-md text-slate-400 transition hover:bg-primary-50 hover:text-primary-600 hover:shadow-sm dark:hover:bg-primary-500/10 dark:hover:text-primary-300"><i class="bi text-[13px]" :class="isRowDisabled(entry.row) ? 'bi-eye' : 'bi-pencil-square'"></i></button>
+                          <button v-if="canDelete" data-action="delete" :data-id="keyOf(entry.row, entry.index)" :title="isRowDisabled(entry.row) ? 'This row is locked' : 'Delete'" :disabled="isRowDisabled(entry.row)" @click="removeRows([entry.row])"
+                            class="grid h-7 w-7 place-items-center rounded-md text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 hover:shadow-sm disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-40 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"><i class="bi bi-trash3 text-[13px]"></i></button>
                         </div>
                       </td>
                     </tr>
@@ -1334,7 +1350,7 @@
                               :initial-state="childInitial(keyOf(entry.row, entry.index))"
                               :selectable="selectable" :actions="actions" :searchable="true" :filter-row="false"
                               :resizable="resizable" :aggregates="rowChildren(entry.row).length > 4" :expand-all="true"
-                              :add-button="canAdd" :edit-button="canEdit" :delete-button="canDelete"
+                              :add-button="canAdd && !isRowDisabled(entry.row)" :edit-button="canEdit && !isRowDisabled(entry.row)" :delete-button="canDelete && !isRowDisabled(entry.row)"
                               :column-toggle="false" :density-toggle="false" :export-menu="false" :refresh-button="false"
                               :page-size="5" :page-sizes="[5, 10, 25]"
                               max-height="none" :skeleton-rows="3"
@@ -1393,7 +1409,7 @@
         @update:page="page = $event" @update:pageSize="size = $event" />
 
       <data-grid-form v-if="form.open" :columns="editableCols" :row="form.row" :mode="form.mode" :item-label="itemLabel"
-        :parent-label="form.parentLabel" :theme="theme" @submit="submitForm" @close="closeForm" />
+        :parent-label="form.parentLabel" :theme="theme" :row-disabled="rowDisabled" @submit="submitForm" @close="closeForm" />
     </section>`
     };
 

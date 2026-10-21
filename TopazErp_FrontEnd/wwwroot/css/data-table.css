@@ -139,10 +139,10 @@ tr.dt-flash > td{ animation:dt-flash 1.8s ease-out }
 [data-dt-theme-scope] .dt-table tbody tr.dt-group-header .dt-group-toggle:hover {
     background-color:var(--dt-table-group-hover-bg) !important;
 }
-[data-dt-theme-scope] .dt-table tbody tr.dt-theme-row:not(.dt-row-selected):hover {
+[data-dt-theme-scope] .dt-table tbody tr.dt-theme-row:not(.dt-row-selected):not(.dt-row-disabled):hover {
     background-color:var(--dt-table-hover-bg) !important;
 }
-[data-dt-theme-scope] .dt-table tbody tr.dt-theme-row.dt-row-selected:hover {
+[data-dt-theme-scope] .dt-table tbody tr.dt-theme-row.dt-row-selected:not(.dt-row-disabled):hover {
     background-color:var(--dt-table-selected-hover-bg) !important;
 }
 [data-dt-theme-scope] .dt-table tbody tr.dt-group-total {

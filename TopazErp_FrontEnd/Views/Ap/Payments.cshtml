@@ -20,13 +20,24 @@
 
     <div id="app" class="space-y-6">
             <div class="card" data-card-title="Payments">
-            <div class="flex justify-end gap-2 mb-2 flex-wrap">
-            <button type="button" class="border border-green-500 text-green-500 px-4 py-2 rounded-xl hover:bg-green-500 hover:text-white" @@click="scrollToAdd"><i class="bi bi-plus"></i> Add</button>
-            <button type="button" class="border border-blue-800 text-blue-800 px-4 py-2 rounded-xl hover:bg-blue-800 hover:text-white" @@click="setCurrentPayment()"><i class="bi bi-pen"></i> Edit</button>
-            <button class="border border-rose-500 text-rose-500 px-4 py-2 rounded-xl hover:bg-red-500 hover:text-white"><i class="bi bi-x-circle"></i> Cancel Payment (s)</button>
-            <button class="border border-blue-500 text-blue-500 px-4 py-2 rounded-xl hover:bg-blue-500 hover:text-white"><i class="bi bi-send"></i> Post Payment (s)</button>
-            <button @@click="printReport" class="border border-indigo-500 text-indigo-500 px-4 py-2 rounded-xl hover:bg-indigo-500 hover:text-white"> <i class="bi bi-printer"></i> Print </button>
         
+            <div class="flex justify-end gap-1.5 mb-2 flex-wrap">
+                <button type="button" @@click="scrollToAdd" class="border border-blue-600 text-blue-600 px-2.5 py-1.5 text-xs rounded-lg hover:bg-blue-600 hover:text-white">
+                    <i class="bi bi-plus-lg mr-1"></i>New
+                </button>
+                <button type="button" @@click="setCurrentPayment()" class="border border-slate-500 text-slate-600 px-2.5 py-1.5 text-xs rounded-lg hover:bg-slate-600 hover:text-white">
+                    <i class="bi bi-pencil-square mr-1"></i>Edit
+                </button>
+            
+                <button type="button" @@click="cancelSelectedPayments" class="border border-rose-600 text-rose-600 px-2.5 py-1.5 text-xs rounded-lg hover:bg-rose-600 hover:text-white">
+                    <i class="bi bi-x-circle mr-1"></i>Cancel
+                </button>
+                <button type="button" @@click="postSelectedPayments" class="border border-indigo-600 text-indigo-600 px-2.5 py-1.5 text-xs rounded-lg hover:bg-indigo-600 hover:text-white">
+                    <i class="bi bi-send-check mr-1"></i>Post
+                </button>
+                <button type="button" class="border border-sky-600 text-sky-600 px-2.5 py-1.5 text-xs rounded-lg hover:bg-sky-600 hover:text-white">
+                    <i class="bi bi-printer mr-1"></i>Print
+                </button>
             </div>
                 <div id="paymentApp">
                     <data-grid
@@ -44,7 +55,8 @@
                         add-label="Add Payment"
                         :page-size="5"
                         :selectable="true"
-                        :allow-add="false" :allow-edit="false" :allow-delete="false">
+                        :allow-add="false" :allow-edit="false" :allow-delete="false"
+                        group-header="currencyName">
                     </data-grid>
                     
                     <div id="add" class="my-5">
@@ -104,7 +116,7 @@
                         id="batchNumber"
                         v-model="batchNumber"
                         type="text"
-                        placeholder="2321"
+                        placeholder="Assigned on save"
                         disabled
                          class="input-control"
                     />
@@ -114,9 +126,10 @@
                 <div>
                 
                     <w-select
+                        @@change="onInvoiceTypeChange"
                         v-model="invoiceTypeId"
                         :options="invoiceTypeList"
-                        display-key="name"
+                        display-key="currencyName"
                         value-key="id"
                         label="Invoice Type:"
                         required>
@@ -155,9 +168,10 @@
                 <div>
             
                     <w-select
+                        @@change="onCurrencyChange" 
                         v-model="currencyId"
-                        :options="currencyList"
-                        display-key="name"
+                        :options="currencies"
+                        display-key="currencyName"
                         value-key="id"
                         label="Currency:"
                         required>
@@ -273,8 +287,9 @@
                 <div>
                 
                     <w-select
+                        @@change="onBankChange"
                         v-model="bankId"
-                        :options="bankList"
+                        :options="banks"
                         display-key="name"
                         value-key="id"
                         label="Banks:"
@@ -293,7 +308,7 @@
                        >
                     </w-select>
                 </div>
-        
+               
                 <!-- Reference Number -->
                 <div>
                     <label for="refNumber" class="label mb-1.5 block text-sm font-semibold text-gray-700">
@@ -349,7 +364,18 @@
                         Is Multi-Currency
                     </label>
                 </div>
-        
+                <div>
+                
+                    <w-select
+                        v-if="isOu"
+                        v-model="ouId"
+                        :options="ouList"
+                        display-key="name"
+                        value-key="id"
+                        label="OU / Cost Center:"
+                    >
+                    </w-select>
+                </div>
             </div>
 
                        </div>
@@ -357,10 +383,10 @@
                        
                        
                         <hr/>
-                        <button @*v-if="isAutomatic"*@ type="button" @@click="ApplyPayment" class="mt-2 bg-zinc-500 px-2 py-2 rounded text-white">
+                        <button  type="button" @@click="ApplyPayment" class="mt-2 bg-zinc-500 px-2 py-1 rounded text-white">
                             Apply Payment
                         </button>
-                        @*<div class="mt-5" id="dataTable"></div>*@
+                      
                         <div class="my-5">
                         
                             <data-grid
@@ -391,7 +417,7 @@
                         :disabled="isLoading"
                         class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60">
                         <i v-if="isLoading" class="la la-circle-o-notch animate-spin text-lg"></i>
-                        <i v-else class="la la-save text-lg"></i>
+                        <i v-else class="bi bi-check text-lg"></i>
                         {{ isLoading ? 'Saving Payment...' : 'Save Payment' }}
                     </button>
                 </div>

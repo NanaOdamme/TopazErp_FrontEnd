@@ -16,7 +16,7 @@
         <div class="card" data-card-title="Invoices">
             <data-grid
                 title="Opening Balances"
-                :columns="openingBalanceColumns"
+                :columns="columns"
                 :data="openingBalanceList"
                 :theme="theme"
                 row-id="id"
@@ -28,9 +28,11 @@
                 :page-size="10"
                 :selectable="true"
                 :actions="true"
+                data-density="compact"
                 @@create="onCreate"
                 @@update="onUpdate"
-                @@delete="onDelete">
+                @@delete="onDelete"
+                :row-disabled="isPosted">
             </data-grid>
                
         </div>

@@ -10,22 +10,46 @@
             <i class="bi bi-chevron-right text-xs"></i>
             <span class="text-blue-600 font-medium">Invoices</span>
         </div>
+        
+        <div class="flex items-center gap-3">
+
+          <div class="page-title">
+            <h2 class="text-2xl font-semibold text-gray-800">
+              AP Invoices
+            </h2>
+        
+                
+          </div>
+        </div>
+        
     </div>
 
-    <div id="app" class="space-y-6">
+    <div id="app">
             <div class="card" data-card-title="Invoices">
-                <div class="flex justify-end gap-2 mb-2 flex-wrap">
-                  <button type="button" @@click="createNewInvoice" class="border border-green-500 text-green-500 px-4 py-2 rounded-xl hover:bg-green-500 hover:text-white"><i class="bi bi-plus-lg mr-1"></i>New</button>
-                  <button type="button" @@click="setCurrentInvoice" class="border border-blue-800 text-blue-800 px-4 py-2 rounded-xl hover:bg-blue-800 hover:text-white"><i class="bi bi-pencil-square mr-1"></i>Edit</button>
-                  <button type="button" @@click="cancelSelectedInvoices" class="border border-rose-500 text-rose-500 px-4 py-2 rounded-xl hover:bg-red-500 hover:text-white"><i class="bi bi-x-circle mr-1"></i>Cancel</button>
-                  <button type="button" @@click="postSelectedInvoices" class="border border-blue-500 text-blue-500 px-4 py-2 rounded-xl hover:bg-blue-500 hover:text-white"><i class="bi bi-send mr-1"></i>Post</button>
-                  <button @@click="printReport" class="border border-indigo-500 text-indigo-500 px-4 py-2 rounded-xl hover:bg-indigo-500 hover:text-white"> <i class="bi bi-printer"></i> Print </button>
-        
-                </div>
+              <div class="flex justify-end gap-1.5 mb-2 flex-wrap">
+                <button type="button" @@click="createNewInvoice" class="border border-blue-600 text-blue-600 px-2.5 py-1.5 text-xs rounded-lg hover:bg-blue-600 hover:text-white">
+                  <i class="bi bi-plus-lg mr-1"></i>New
+                </button>
+                <button type="button" @@click="setCurrentInvoice" class="border border-slate-500 text-slate-600 px-2.5 py-1.5 text-xs rounded-lg hover:bg-slate-600 hover:text-white">
+                  <i class="bi bi-pencil-square mr-1"></i>Edit
+                </button>
+                <button type="button" @@click="approveInvoices" class="border border-emerald-600 text-emerald-600 px-2.5 py-1.5 text-xs rounded-lg hover:bg-emerald-600 hover:text-white">
+                  <i class="bi bi-check-circle mr-1"></i>Approve
+                </button>
+                <button type="button" @@click="cancelSelectedInvoices" class="border border-rose-600 text-rose-600 px-2.5 py-1.5 text-xs rounded-lg hover:bg-rose-600 hover:text-white">
+                  <i class="bi bi-x-circle mr-1"></i>Cancel
+                </button>
+                <button type="button" @@click="postSelectedInvoices" class="border border-indigo-600 text-indigo-600 px-2.5 py-1.5 text-xs rounded-lg hover:bg-indigo-600 hover:text-white">
+                  <i class="bi bi-send-check mr-1"></i>Post
+                </button>
+                <button type="button" class="border border-sky-600 text-sky-600 px-2.5 py-1.5 text-xs rounded-lg hover:bg-sky-600 hover:text-white">
+                  <i class="bi bi-printer mr-1"></i>Print
+                </button>
+              </div>
                 
                 <data-grid
                     ref="invoices"
-                    title="Invoices"
+                    title="Invoice List"
                     :columns="invoiceColumns"
                     :data="invoiceList"
                     :child="invoiceDetailChild"
@@ -37,6 +61,7 @@
                     :page-size="5"
                     :selectable="true"
                     :actions="false"
+                    data-density="compact"
                     :allow-add="false"
                     :allow-edit="false"
                     :allow-delete="false">
@@ -58,34 +83,26 @@
         </div>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 my-4">
-         <label  class="label block text-sm font-medium text-slate-700 dark:text-white">Supplier <span class="text-rose-500">*</span>
-           
-            <select v-model="supplierId" @@change="onSupplierChange" required
-            class="select">
-              <option value="" class="bg-white text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                Select supplier…
-              </option>
-              <option
-                v-for="supplier in suppliers"
-                :key="supplier.id"
-                :value="supplier.id"
-                class="bg-white text-slate-900 dark:bg-slate-800 dark:text-slate-100"
-              >
-                {{ supplier.name }}
-              </option>
-            </select>
-
-          </label>
+          <w-select
+            @@change="onSupplierChange" 
+            v-model="supplierId"
+            :options="suppliers"
+            display-key="name"
+            value-key="id"
+            label="Supplier:"
+            required>
+          </w-select>
          <label  class="label block text-sm font-medium text-slate-700 dark:text-white">Supplier account no.
             <input v-model="accountNumber" type="text" readonly class="input-control rounded-lg">
           </label>
-      
-         <label  class="label block text-sm font-medium text-slate-700 dark:text-white">Currency <span class="text-rose-500">*</span>
-            <select v-model="currencyId" @@change="onCurrencyChange" required class="select">
-              <option value="">Select currency…</option>
-              <option v-for="currency in currencies" :key="currency.id" :value="currency.id">{{ currency.name }}</option>
-            </select>
-          </label>
+          <w-select
+            @@change="onCurrencyChange" 
+            v-model="currencyId"
+            :options="currencies"
+            display-key="currencyName"
+            value-key="id"
+            label="Currency:"
+            required></w-select>
          <label  class="label block text-sm font-medium text-slate-700 dark:text-white">Buy rate
             <input v-model.number="buyRate" type="number" min="0" step="0.0001" class="input-control rounded-lg">
           </label>
@@ -93,8 +110,8 @@
             <input v-model="isMultiCurrency" type="checkbox" disabled class="input-control rounded-lg"> Is multi-currency
           </label>
 
-         <label  class="label block text-sm font-medium text-slate-700 dark:text-white">Invoice no.
-            <input :value="invoiceNumber || 'Assigned on save'" type="text" readonly class="input-control rounded-lg">
+          <label  class="label block text-sm font-medium text-slate-700 dark:text-white">Invoice No.
+            <input v-model="invoiceNumber" type="text" readonly placeholder="Assigned on save" class="input-control rounded-lg">
           </label>
          <label  class="label block text-sm font-medium text-slate-700 dark:text-white">Invoice date <span class="text-rose-500">*</span>
             <input v-model="invoiceDate" type="date" required class="input-control rounded-lg">
@@ -110,19 +127,26 @@
             <input v-model.trim="purchaseOrderNumber" type="text" class="input-control rounded-lg">
           </label>
         
-         <label  class="label block text-sm font-medium text-slate-700 dark:text-white">OU / cost centre
-            <select v-model="ouId" @@change="onOuChange" class="select">
-              <option value="">Select OU…</option>
-              <option v-for="unit in organizationalUnits" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
-            </select>
-          </label>
-         <label  class="label block text-sm font-medium text-slate-700 dark:text-white">Liability G/L
-            <select v-model="liabilityAccountId" @@change="onLiabilityAccountChange" class="select">
-              <option value="">Select account…</option>
-              <option v-for="account in accounts" :key="account.id" :value="account.id">{{ account.accountIdentifier }}</option>
-            </select>
-          </label>
-
+      
+          <w-select
+             v-if="isOu"
+            @@change="onOuChange"
+            v-model="ouId"
+            :options="organizationalUnits"
+            display-key="name"
+            value-key="id"
+            label="OU / cost centre:"
+            ></w-select>
+        
+          <w-select
+            @@change="onLiabilityAccountChange"
+            v-model="liabilityAccountId"
+            :options="accounts"
+            display-key="accountIdentifier"
+            value-key="id"
+            label="Liability G/L:"
+          
+          ></w-select>
          <label  class="label block text-sm font-medium text-slate-700 dark:text-white">Batch no.
             <input v-model="batchNumber" type="text" readonly placeholder="Assigned on save" class="input-control rounded-lg">
           </label>
@@ -150,7 +174,7 @@
               <div class="flex flex-wrap gap-2">
                 <button v-for="tax in taxLevyList" :key="tax.id" type="button" @@click="toggleTaxLevy(tax.id)" :disabled="isVatInclusive || tax.isActive === false" :aria-pressed="tax.isApplied"
                   :class="tax.isApplied ? 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-950' : 'border-slate-300 bg-white text-slate-700 hover:border-blue-400 hover:bg-blue-50 dark:bg-transparent dark:text-blue-50'"
-                  class="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50">
+                  class="dark:bg-transparent inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50">
                   <i :class="tax.isApplied ? 'bi bi-check-circle-fill' : 'bi bi-plus-circle'"></i>
                   <span>{{ tax.name }}</span>
                   <span class="rounded bg-black/5 px-1.5 py-0.5 text-xs" :class="tax.isApplied ? 'bg-white/20' : ''">{{ (tax.type === 'vat' ? vatRate : tax.rate).toFixed(2) }}</span>
@@ -165,7 +189,7 @@
             </label>
            <label  class="label flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 dark:bg-transparent">
               <input v-model="isVatInclusive" type="checkbox" class="input-control" disabled>
-              VAT-inclusive pricing
+              VAT-inclusive pricing (GETFL, etc.)
             </label>
           </div>
           <div v-if="computedTaxLevies.length" class="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-200 pt-3">
@@ -202,6 +226,7 @@
             :allow-add="true"
             :allow-edit="true"
             :allow-delete="true"
+            data-density="compact"
             @@create="onCreateDetail"
             @@update="onUpdateDetail"
             @@delete="onDeleteDetail">
