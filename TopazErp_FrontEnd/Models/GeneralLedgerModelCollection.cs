@@ -7,10 +7,29 @@ public class GeneralLedgerModelCollection
 
 public class AccountHead: AuditedEntity<Guid>
 {
+    public Guid ParentId { get; set; }
+    public int TenantId { get; set; }
+    public int StandardAccountType { get; set; }
     public string Name { get; set; }
-    public int AccountHeadType { get; set; }
 }
 
+public enum StandardAccountType
+{
+    // Balance Sheet accounts
+    Asset = 1,
+    Liability = 2,
+    Equity = 3,
+    // Income Statement accounts (General)
+    Revenue = 4,
+    Expense = 5,
+    // Other Income/Expense (General)
+    OtherIncome = 6,
+    OtherExpense = 7,
+    // Selling Company specific
+    Sales = 8,
+    CostOfSales = 9,
+    SellingExpenses = 10
+}
 
 public class BankAccount : AuditedEntity<Guid>
 {
@@ -36,33 +55,26 @@ public class BankAccount : AuditedEntity<Guid>
 
 public class CoaControl : AuditedEntity<Guid>
 {
-    public string Name { get; set; }
+    public string AccountHeaderName { get; set; }
     public int MinAccount { get; set; }
     public int MaxAccount { get; set; }
-    
-    public Guid AccountHeadId { get; set; }
-    
-    public int AccountHeadType { get; set; }
-    
-    public Guid ParentControlId { get; set; }
+    public Guid AccountGroupId { get; set; }
+    public Guid ParentAccountHeaderId { get; set; }
 }
 
 public class CoaDetail: AuditedEntity<Guid>
 {
-    public string Name { get; set; }
     public string AccountName { get; set; }
     public int AccountNo { get; set; }
-    public int Status { get; set; }
-     
+    public string Status { get; set; }
     public Guid AccountControlId { get; set; }
-     
     public string AccountControlName { get; set; }
-    
     public Guid CurrencyId { get; set; }
     public string CurrencyName { get; set; }
     public string CurrencyCode { get; set; }
     public decimal CurrentBalance { get; set; }
     public decimal CurrentForeignBalance { get; set; }
+    public int StandardAccountType { get; set; }
     
 }
 

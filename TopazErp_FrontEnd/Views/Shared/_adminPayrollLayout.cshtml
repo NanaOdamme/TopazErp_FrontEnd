@@ -1,0 +1,701 @@
+@* ============================================================================
+   _adminPayrollLayout.cshtml — Payroll & HR Compensation Shell for Topaz ERP
+   Enterprise Human Resource & Payroll UI with Tailwind, Modern Sidebar & Relatable Icons
+   ============================================================================ *@
+@{
+    var title = ViewData["Title"] as string ?? "Payroll Management";
+    var subtitle = ViewData["Subtitle"] as string ?? "HR & Compensation Management System";
+    var userName = User?.Identity?.Name ?? "Administrator";
+    var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, StringSplitOptions.RemoveEmptyEntries)
+        .Take(2).Select(p => char.ToUpper(p[0])));
+    if (string.IsNullOrWhiteSpace(initials)) { initials = "HR"; }
+}
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@title - Topaz ERP Payroll</title>
+
+    <script>
+        /* Options for shell.js / app-shell.js */
+        window.__SHELL__ = {
+            breakpoint: 1024,
+            railWidth: 72,
+            minWidth: 220,
+            maxWidth: 420,
+            storagePrefix: 'topaz_payroll_shell'
+        };
+    </script>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS with Forms -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            200: '#fde68a',
+                            300: '#fcd34d',
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                            700: '#b45309',
+                            800: '#92400e',
+                            900: '#78350f',
+                            950: '#451a03'
+                        },
+                        payroll: {
+                            amber: '#f59e0b',
+                            navy: '#0f172a',
+                            surface: '#f8fafc'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif']
+                    },
+                    boxShadow: {
+                        'glow-sm': '0 0 15px rgba(245, 158, 11, 0.15)',
+                        'glow-md': '0 0 25px rgba(245, 158, 11, 0.25)',
+                        'card-elevated': '0 4px 20px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04)'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Core Libraries -->
+    <script src="~/libs/jquery/jquery.js" asp-append-version="true"></script>
+
+    <environment names="Development">
+        <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    </environment>
+    <environment names="Production">
+        <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    </environment>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/line-awesome@1.3.0/dist/line-awesome/css/line-awesome.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.30.1/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Shell and Component Stylesheets -->
+    <link rel="stylesheet" href="~/css/shell.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/card.css" asp-append-version="true" />
+
+    <!-- Syncfusion EJ1 / Essential JavaScript & Report Viewer -->
+    <script src="~/ejassets/scripts/jsrender.min.js"></script>
+    <script src="~/ejassets/scripts/ej.web.all.min.js"></script>
+    <script src="~/js/bold.report-viewer.min.js"></script>
+    <link href="~/ejassets/ejthemes/office-365/ej.web.all.min.css" rel="stylesheet" />
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+    <script>
+        var abp = abp || {};
+        abp.appPath = '@Url.Content("~/")';
+        var reportApiBaseUrl = 'http://108.181.191.134:78/api/ReportApi';
+    </script>
+
+    @await RenderSectionAsync("Styles", required: false)
+
+    <!-- Enhanced Payroll UI Styling Overrides -->
+    <style>
+        :root {
+            --shell-accent: #d97706;
+            --shell-accent-soft: rgba(217, 119, 6, 0.12);
+            --shell-accent-strong: #b45309;
+        }
+        .dark {
+            --shell-accent: #fbbf24;
+            --shell-accent-soft: rgba(251, 191, 36, 0.15);
+            --shell-accent-strong: #fde68a;
+        }
+
+        /* Topbar Executive Theme */
+        .app-topbar-erp {
+            background: #0f172a !important;
+            border-bottom: 1px solid #1e293b !important;
+            color: #f8fafc;
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.25);
+        }
+        .dark .app-topbar-erp {
+            background: #090d16 !important;
+            border-bottom: 1px solid #1e293b !important;
+        }
+
+        /* Subtle glow for Payroll active items */
+        .nav-item.active > a, .nav-item > a.active {
+            background: var(--shell-accent-soft) !important;
+            color: var(--shell-accent-strong) !important;
+            font-weight: 600;
+        }
+        .nav-item.active > a::before {
+            background: #f59e0b !important;
+            width: 4px;
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
+        }
+        .nav-item > a:hover {
+            color: #0f172a;
+        }
+        .dark .nav-item > a:hover {
+            color: #f8fafc;
+        }
+
+        /* Module Switcher Dropdown Grid */
+        .module-switcher-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.5rem;
+            padding: 0.75rem;
+        }
+        .module-switcher-card {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            padding: 0.625rem 0.75rem;
+            border-radius: 0.625rem;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: #334155;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            border: 1px solid transparent;
+        }
+        .module-switcher-card:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+            border-color: #e2e8f0;
+            transform: translateY(-1px);
+        }
+        .dark .module-switcher-card {
+            color: #cbd5e1;
+        }
+        .dark .module-switcher-card:hover {
+            background: #1e293b;
+            color: #ffffff;
+            border-color: #334155;
+        }
+        .module-icon-wrap {
+            width: 2rem;
+            height: 2rem;
+            display: grid;
+            place-items: center;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+
+<body class="h-full min-h-full bg-slate-50 font-sans text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-200">
+
+@* ══════════════════════════════ SIDEBAR ══════════════════════════════ *@
+<aside class="app-sidebar" id="appSidebar" aria-label="Main navigation">
+
+    <!-- Sidebar Brand -->
+    <div class="sidebar-brand">
+        <a asp-area="" asp-controller="Dashboard" asp-action="Payroll" class="sidebar-brand-link">
+            <span class="sidebar-logo">
+                <img class="brand-logo h-8 w-auto object-contain" alt="Topaz ERP" src="/app-assets/images/topazLogo.png" onerror="this.src='https://placehold.co/36x36/f59e0b/ffffff?text=T'">
+            </span>
+            <span class="sidebar-brand-text">
+                <span class="sidebar-brand-name flex items-center gap-1.5 font-bold tracking-tight text-slate-900 dark:text-white">
+                    Topaz ERP
+                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">HR</span>
+                </span>
+                <span class="sidebar-brand-sub text-xs text-slate-500 dark:text-slate-400">Payroll Management</span>
+            </span>
+        </a>
+        <button type="button" class="sidebar-icon-btn" data-action="collapse" title="Collapse sidebar (Ctrl+B)" aria-label="Collapse sidebar">
+            <i class="bi bi-chevron-double-left" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="sidebar-icon-btn sidebar-close" data-action="close-drawer" aria-label="Close navigation">
+            <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
+    </div>
+
+    @* ───────────────────────── PAYROLL NAVIGATION MENU ───────────────────────── *@
+    <nav class="app-nav" id="appNav" aria-label="Main menu">
+        <ul class="nav-menu" data-menu-level="0">
+
+            <!-- 1. DASHBOARD -->
+            <li class="nav-item">
+                <a class="menu-link" asp-area="" asp-controller="Dashboard" asp-action="Payroll">
+                    <i class="bi bi-speedometer2 text-amber-600 dark:text-amber-400" aria-hidden="true"></i>
+                    <span class="menu-title font-medium">Dashboard</span>
+                    <span class="badge menu-badge bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300">Live</span>
+                </a>
+            </li>
+
+            <!-- SECTION: PAYROLL SETUPS & POLICIES -->
+            <li class="nav-section">
+                <span class="menu-title">Payroll Setups</span>
+            </li>
+
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-sliders" aria-hidden="true"></i>
+                    <span class="menu-title">Policies &amp; Schemes</span>
+                </a>
+                <ul class="menu-content">
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Payroll" asp-action="Index">
+                            <i class="bi bi-calendar3" aria-hidden="true"></i>
+                            <span class="menu-title">Pay Calendar &amp; Periods</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Payroll" asp-action="Index">
+                            <i class="bi bi-gift" aria-hidden="true"></i>
+                            <span class="menu-title">Allowance Types &amp; Rates</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Payroll" asp-action="Index">
+                            <i class="bi bi-gem" aria-hidden="true"></i>
+                            <span class="menu-title">Benefits In Kind (BIK)</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Payroll" asp-action="Index">
+                            <i class="bi bi-dash-circle" aria-hidden="true"></i>
+                            <span class="menu-title">Deduction Types &amp; Rates</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Payroll" asp-action="Index">
+                            <i class="bi bi-stopwatch" aria-hidden="true"></i>
+                            <span class="menu-title">Overtime Schemes &amp; Rates</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Payroll" asp-action="Index">
+                            <i class="bi bi-tags" aria-hidden="true"></i>
+                            <span class="menu-title">Employee Categories</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Payroll" asp-action="Index">
+                            <i class="bi bi-award" aria-hidden="true"></i>
+                            <span class="menu-title">Employee Ranks &amp; Grades</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Payroll" asp-action="Index">
+                            <i class="bi bi-bank2" aria-hidden="true"></i>
+                            <span class="menu-title">Loan Types &amp; Policies</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Payroll" asp-action="Index">
+                            <i class="bi bi-heart-pulse" aria-hidden="true"></i>
+                            <span class="menu-title">Gratuity Schemes</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Payroll" asp-action="Index">
+                            <i class="bi bi-table" aria-hidden="true"></i>
+                            <span class="menu-title">Tax Tables &amp; Slabs</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Payroll" asp-action="Index">
+                            <i class="bi bi-shield-slash" aria-hidden="true"></i>
+                            <span class="menu-title">Tax Reliefs</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- SECTION: STAFF COMPENSATION -->
+            <li class="nav-section">
+                <span class="menu-title">Compensation</span>
+            </li>
+
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-people" aria-hidden="true"></i>
+                    <span class="menu-title">Staff Compensation</span>
+                </a>
+                <ul class="menu-content">
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Payroll" asp-action="Index">
+                            <i class="bi bi-person-lines-fill" aria-hidden="true"></i>
+                            <span class="menu-title">Employee Bio Data</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Payroll" asp-action="Index">
+                            <i class="bi bi-cash-stack" aria-hidden="true"></i>
+                            <span class="menu-title">Salary &amp; Wage Structures</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Payroll" asp-action="Index">
+                            <i class="bi bi-shield-check" aria-hidden="true"></i>
+                            <span class="menu-title">SSNIT &amp; Pension Setup</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Payroll" asp-action="Index">
+                            <i class="bi bi-wallet2" aria-hidden="true"></i>
+                            <span class="menu-title">Staff Loans &amp; Advances</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Payroll" asp-action="Index">
+                            <i class="bi bi-credit-card-2-front" aria-hidden="true"></i>
+                            <span class="menu-title">Bank Accounts Mapping</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- SECTION: PAYROLL PROCESSING -->
+            <li class="nav-section">
+                <span class="menu-title">Operations</span>
+            </li>
+
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-gear-wide-connected" aria-hidden="true"></i>
+                    <span class="menu-title">Payroll Processing</span>
+                </a>
+                <ul class="menu-content">
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Payroll" asp-action="Index">
+                            <i class="bi bi-play-circle-fill text-emerald-500" aria-hidden="true"></i>
+                            <span class="menu-title font-semibold text-slate-900 dark:text-white">Run Monthly Payroll</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Payroll" asp-action="Index">
+                            <i class="bi bi-cpu" aria-hidden="true"></i>
+                            <span class="menu-title">Computation &amp; Review</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" href="#" onclick="return false;">
+                            <i class="bi bi-lock" aria-hidden="true"></i>
+                            <span class="menu-title">Approval &amp; Freeze</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" href="#" onclick="return false;">
+                            <i class="bi bi-send-check" aria-hidden="true"></i>
+                            <span class="menu-title">Bank Payment Advice</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" href="#" onclick="return false;">
+                            <i class="bi bi-receipt" aria-hidden="true"></i>
+                            <span class="menu-title">Payslip Distribution</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- SECTION: STATUTORY & REPORTS -->
+            <li class="nav-section">
+                <span class="menu-title">Statutory &amp; Reports</span>
+            </li>
+
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-bar-chart-steps" aria-hidden="true"></i>
+                    <span class="menu-title">Payroll Reports</span>
+                </a>
+                <ul class="menu-content">
+                    <li class="nav-item">
+                        <a class="menu-link" href="#" onclick="return false;">
+                            <i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i>
+                            <span class="menu-title">Payroll Master Sheet</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" href="#" onclick="return false;">
+                            <i class="bi bi-file-earmark-text" aria-hidden="true"></i>
+                            <span class="menu-title">GRA / PAYE Tax Returns</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" href="#" onclick="return false;">
+                            <i class="bi bi-file-earmark-check" aria-hidden="true"></i>
+                            <span class="menu-title">SSNIT Tier 1 &amp; 2 Schedules</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" href="#" onclick="return false;">
+                            <i class="bi bi-pie-chart" aria-hidden="true"></i>
+                            <span class="menu-title">Departmental Labor Cost</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Manage" asp-action="AuditTrail">
+                            <i class="bi bi-shield-lock" aria-hidden="true"></i>
+                            <span class="menu-title">Payroll Audit Trail</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+        </ul>
+    </nav>
+
+    <!-- Sidebar Footer: User Card + Rail Expand -->
+    <div class="sidebar-foot">
+        <div class="sidebar-user">
+            <span class="sidebar-avatar bg-amber-600 text-white font-bold ring-2 ring-amber-400/30">@initials</span>
+            <span class="sidebar-user-text">
+                <span class="sidebar-user-name font-semibold text-slate-800 dark:text-slate-100">@userName</span>
+                <span class="sidebar-user-role text-[11px] text-amber-600 dark:text-amber-400 font-medium">@(User?.IsInRole("Admin") == true ? "HR & Payroll Admin" : "HR Officer")</span>
+            </span>
+            <form class="sidebar-signout" asp-area="" asp-controller="Account" asp-action="Login" method="get">
+                <button type="submit" class="sidebar-icon-btn hover:text-rose-500" title="Sign out" aria-label="Sign out">
+                    <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                </button>
+            </form>
+        </div>
+        <button type="button" class="sidebar-icon-btn sidebar-expand" data-action="expand" title="Expand sidebar (Ctrl+B)">
+            <i class="bi bi-chevron-double-right" aria-hidden="true"></i>
+        </button>
+    </div>
+
+    <!-- Drag Resizer -->
+    <span class="sidebar-resizer" data-action="resize" role="separator" aria-orientation="vertical"
+          title="Drag to resize · double-click to reset"></span>
+</aside>
+
+<div class="sidebar-backdrop" data-action="backdrop" hidden></div>
+
+@* ══════════════════════════════ EXECUTIVE TOPBAR ══════════════════════════════ *@
+<header class="app-topbar app-topbar-erp" id="appTopbar">
+    
+    <!-- Mobile / Drawer Toggle -->
+    <button type="button" class="topbar-btn hover:bg-slate-800" data-action="toggle-sidebar" aria-label="Toggle navigation" aria-haspopup="true">
+        <i class="bi bi-list text-xl text-slate-200" aria-hidden="true"></i>
+    </button>
+
+    <!-- Active Module Pill Indicator -->
+    <div class="hidden sm:flex items-center gap-2 pl-1">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-sm">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+            Payroll &amp; HR
+        </span>
+    </div>
+
+    <!-- Global Omnibar Search -->
+    <div class="topbar-search" data-search-wrap>
+        <div class="relative w-full max-w-md group">
+            <i class="bi bi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none group-focus-within:text-amber-400 transition-colors"></i>
+            <input type="search" id="topbarSearch" data-search-input autocomplete="off"
+                   class="w-full h-9 pl-9 pr-14 rounded-xl text-sm bg-slate-800/80 hover:bg-slate-800 focus:bg-slate-900 text-slate-100 placeholder-slate-400 border border-slate-700/80 focus:border-amber-500/80 focus:ring-2 focus:ring-amber-500/20 transition-all outline-none"
+                   placeholder="Search employees, allowances, payslips… (Press '/' to focus)" aria-label="Search" />
+            <kbd class="hidden sm:inline-flex items-center absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 bg-slate-900/80 rounded border border-slate-700 pointer-events-none">Ctrl+K</kbd>
+        </div>
+        <div class="dropdown-panel search-results shadow-2xl rounded-xl border border-slate-700 bg-slate-900 text-slate-100" id="searchResults" hidden></div>
+    </div>
+
+    <!-- Topbar Actions -->
+    <div class="topbar-actions flex items-center gap-1.5">
+
+        <!-- Mobile Search Trigger -->
+        <button type="button" class="topbar-btn md:hidden hover:bg-slate-800 text-slate-300" data-action="mobile-search" aria-label="Search">
+            <i class="bi bi-search" aria-hidden="true"></i>
+        </button>
+
+        <!-- Quick Action: Run Payroll -->
+        <div class="dropdown hidden md:block" data-dropdown="quickaction">
+            <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-500 text-white shadow-sm transition-all focus:outline-none" data-toggle aria-haspopup="menu">
+                <i class="bi bi-play-circle font-bold"></i>
+                <span>Run Payroll</span>
+                <i class="bi bi-chevron-down text-[10px] opacity-75"></i>
+            </button>
+            <div class="dropdown-panel w-56 p-1.5 shadow-2xl rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900" role="menu">
+                <div class="px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800">
+                    Payroll Actions
+                </div>
+                <ul class="py-1 text-xs">
+                    <li>
+                        <a asp-area="" asp-controller="Payroll" asp-action="Index" class="flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:text-amber-600">
+                            <i class="bi bi-play-circle-fill text-amber-500 text-sm"></i>
+                            <span>Process Monthly Run</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-area="" asp-controller="Payroll" asp-action="Index" class="flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:text-amber-600">
+                            <i class="bi bi-person-plus text-blue-500 text-sm"></i>
+                            <span>Add Employee Record</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-area="" asp-controller="Payroll" asp-action="Index" class="flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:text-amber-600">
+                            <i class="bi bi-cash text-emerald-500 text-sm"></i>
+                            <span>Process Staff Loan</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-area="" asp-controller="Payroll" asp-action="Index" class="flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:text-amber-600">
+                            <i class="bi bi-receipt text-indigo-500 text-sm"></i>
+                            <span>Generate Payslips</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ERP Module Hub Switcher -->
+        <div class="dropdown" data-dropdown="moduleswitcher">
+            <button type="button" class="topbar-btn hover:bg-slate-800 text-slate-300" data-toggle title="Topaz ERP Modules" aria-label="Switch modules" aria-haspopup="menu">
+                <i class="bi bi-grid-3x3-gap-fill text-lg" aria-hidden="true"></i>
+            </button>
+            <div class="dropdown-panel w-72 shadow-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900" role="menu">
+                <div class="dropdown-head border-b border-slate-100 dark:border-slate-800 px-4 py-3 flex items-center justify-between">
+                    <div>
+                        <p class="font-semibold text-sm text-slate-900 dark:text-white">ERP Applications</p>
+                        <p class="text-[11px] text-slate-400">Switch workspace</p>
+                    </div>
+                    <a asp-area="" asp-controller="Manage" asp-action="Modules" class="text-xs text-amber-600 hover:underline font-medium">All Modules</a>
+                </div>
+                <div class="module-switcher-grid">
+                    <a href="/Dashboard/GeneralLedger" class="module-switcher-card">
+                        <div class="module-icon-wrap bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+                            <i class="bi bi-journal-text"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span>General Ledger</span>
+                            <span class="text-[10px] text-slate-400">Finance &amp; Ledger</span>
+                        </div>
+                    </a>
+                    <a href="/Dashboard/Payroll" class="module-switcher-card ring-1 ring-amber-500/50 bg-amber-500/10">
+                        <div class="module-icon-wrap bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+                            <i class="bi bi-people"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="font-semibold text-slate-900 dark:text-white">Payroll</span>
+                            <span class="text-[10px] text-amber-600 dark:text-amber-400">Active</span>
+                        </div>
+                    </a>
+                    <a href="/Dashboard/Ap" class="module-switcher-card">
+                        <div class="module-icon-wrap bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300">
+                            <i class="bi bi-receipt"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span>Payables</span>
+                            <span class="text-[10px] text-slate-400">Vendors &amp; Bills</span>
+                        </div>
+                    </a>
+                    <a href="/Dashboard/Ar" class="module-switcher-card">
+                        <div class="module-icon-wrap bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300">
+                            <i class="bi bi-cash-stack"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span>Receivables</span>
+                            <span class="text-[10px] text-slate-400">Billing &amp; Receipts</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dark / Light Theme Toggle -->
+        <button type="button" class="topbar-btn hover:bg-slate-800 text-slate-300" data-action="theme" title="Toggle color mode" aria-label="Toggle dark mode">
+            <i class="bi bi-moon-stars" data-theme-icon aria-hidden="true"></i>
+        </button>
+
+        <!-- Divider -->
+        <span class="h-6 w-px bg-slate-700/80 mx-1"></span>
+
+        <!-- User Profile Dropdown -->
+        <div class="dropdown" data-dropdown="user">
+            <button type="button" class="topbar-user flex items-center gap-2 p-1 rounded-xl hover:bg-slate-800 transition-colors" data-toggle aria-haspopup="menu">
+                <span class="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-600 to-orange-400 text-white font-bold flex items-center justify-center text-xs shadow-sm ring-2 ring-amber-400/40">@initials</span>
+                <span class="topbar-user-text hidden lg:flex flex-col text-left leading-tight">
+                    <span class="text-[10px] uppercase tracking-wider text-slate-400">HR Manager</span>
+                    <span class="text-xs font-semibold text-slate-100">@userName</span>
+                </span>
+                <i class="bi bi-chevron-down text-slate-400 text-xs ml-0.5" aria-hidden="true"></i>
+            </button>
+            <div class="dropdown-panel dropdown-panel-user w-64 shadow-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900" role="menu">
+                <div class="dropdown-head user-head p-4 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
+                    <span class="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-600 to-orange-400 text-white font-bold flex items-center justify-center text-sm shadow-sm ring-2 ring-amber-500/30">@initials</span>
+                    <div class="user-head-text flex flex-col min-w-0">
+                        <span class="name font-bold text-sm text-slate-900 dark:text-white truncate">@userName</span>
+                        <span class="email text-xs text-slate-500 dark:text-slate-400 truncate">@(User?.FindFirst("email")?.Value ?? "hr@topaz.erp")</span>
+                        <span class="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-100 dark:bg-amber-950 dark:text-amber-300 px-2 py-0.5 rounded-full w-max">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                            @(User?.IsInRole("Admin") == true ? "HR Administrator" : "Payroll Officer")
+                        </span>
+                    </div>
+                </div>
+                <ul class="dropdown-menu-list py-1.5 text-sm">
+                    <li><a asp-area="" asp-controller="Manage" asp-action="Profile"><i class="bi bi-person-circle"></i>My Profile</a></li>
+                    <li><a asp-area="" asp-controller="Manage" asp-action="Users"><i class="bi bi-sliders"></i>Manage Users</a></li>
+                    <li><a asp-area="" asp-controller="Manage" asp-action="UpdatePassword"><i class="bi bi-key"></i>Security &amp; Password</a></li>
+                    <li><a asp-area="" asp-controller="Manage" asp-action="AuditTrail"><i class="bi bi-clock-history"></i>Audit Trail</a></li>
+                    <li><a asp-area="" asp-controller="Manage" asp-action="Modules"><i class="bi bi-grid"></i>Topaz Modules</a></li>
+                </ul>
+                <div class="dropdown-foot signout p-2 border-t border-slate-100 dark:border-slate-800">
+                    <a asp-area="" asp-controller="Account" asp-action="Login" class="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span>Sign out of ERP</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Mobile Search Drawer Overlay -->
+    <div class="topbar-mobile-search" id="topbarMobileSearch" hidden>
+        <input type="search" id="topbarSearchMobile" data-search-input autocomplete="off" placeholder="Search employees, allowances, payslips…" aria-label="Search" />
+        <div class="dropdown-panel search-results" id="searchResultsMobile" hidden></div>
+    </div>
+</header>
+
+@* ══════════════════════════════ PAGE MAIN CONTAINER ══════════════════════════════ *@
+<main role="main" class="page-main">
+    <div class="page-container">
+        @RenderBody()
+    </div>
+</main>
+
+<!-- Modern ERP Page Footer -->
+<footer class="page-footer border-t border-slate-200/80 bg-white/70 dark:border-slate-800/80 dark:bg-slate-900/70 backdrop-blur-md">
+    <div class="page-container page-footer-inner flex flex-wrap items-center justify-between gap-4 py-3 text-xs text-slate-500 dark:text-slate-400">
+        <div class="flex items-center gap-3">
+            <span class="font-medium text-slate-700 dark:text-slate-300">&copy; @DateTime.Now.Year Topaz ERP</span>
+            <span class="inline-block w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700"></span>
+            <span>Payroll &amp; Human Capital Management</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span> System Connected
+            </span>
+            <a href="#" class="hover:text-amber-600 transition-colors">Documentation</a>
+            <a href="#" class="hover:text-amber-600 transition-colors">Support</a>
+        </div>
+    </div>
+</footer>
+
+<!-- Core Shell Scripts -->
+<script src="~/js/app-shell.js" asp-append-version="true"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+<script src="~/js/card.js" asp-append-version="true"></script>
+
+@await RenderSectionAsync("Scripts", required: false)
+
+</body>
+</html>

@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewBag.Title = "Banks & Branches";
     Layout = "~/Views/Shared/_adminApLayout.cshtml";
 }
@@ -22,7 +22,7 @@
     </div>
     <div class="card" data-card-title="Banks & Branches">
         <div id="app">
-          <data-grid
+            <data-grid
                 title="Banks &amp; Branches"
                 :columns="bankColumns"
                 :data="bankList"
@@ -30,16 +30,18 @@
                 :theme="theme"
                 row-id="id"
                 label-key="name"
-                item-label="bank"
-                item-label-plural="banks"
-                add-label="Add"
+                item-label="Bank"
+                item-label-plural="Banks"
+                add-label="Add Bank"
                 :page-size="10"
                 :selectable="true"
                 :actions="true"
+                :aggregates="false"
+                :loading="isShimmerLoading"
                 @@create="onCreate"
                 @@update="onUpdate"
-              
-          ></data-grid>
+                @@delete="onDelete"
+            ></data-grid>
           
         </div>
        

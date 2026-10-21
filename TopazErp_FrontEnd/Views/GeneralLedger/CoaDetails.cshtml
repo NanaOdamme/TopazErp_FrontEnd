@@ -1,0 +1,48 @@
+@{
+    ViewBag.Title = "Chart of Accounts Details";
+    Layout = "~/Views/Shared/_adminLedgerLayout.cshtml";
+}
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>GL - Account Setup</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Chart of Accounts Details</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="page-title">
+                <h2 class="text-2xl font-semibold text-gray-800">
+                    Chart of Accounts Details
+                </h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" data-card-title="Chart of Accounts Details">
+        <div id="app">
+            <data-grid
+                title="Chart of Accounts Details"
+                :columns="coaDetailCol"
+                :data="coaDetailList"
+                :theme="theme"
+                row-id="id"
+                label-key="accountName"
+                item-label="Account Detail"
+                item-label-plural="Account Details"
+                add-label="Add"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                :aggregates="false"
+                :show-row-numbers="false"
+                :loading="isShimmerLoading"
+                @@create="onCreate"
+                @@update="onUpdate"
+                @@delete="onDelete"
+            ></data-grid>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/shared/vue3/coa-details.js" asp-append-version="true"></script>

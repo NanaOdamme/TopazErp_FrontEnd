@@ -375,6 +375,15 @@
                 if (typeof c.validate === 'function') { const r = c.validate(val, this.row); if (r !== true && r) return r; }
                 return '';
             },
+            onFieldChange(c, ev) {
+                const t = typeOf(c);
+                const val = (t.input === 'checkbox' && ev?.target) ? ev.target.checked
+                    : ((ev && ev.target && ev.target.value !== undefined) ? ev.target.value : this.values[c.key]);
+                this.values[c.key] = val;
+                if (typeof c.onChange === 'function') {
+                    c.onChange(val, this.values, this.row, ev);
+                }
+            },
             submit() {
                 const data = {}; const errors = {}; let firstBad = null;
                 this.columns.forEach((c) => {
@@ -425,16 +434,16 @@
 
               <!-- checkbox -->
               <label v-if="t(c).input === 'checkbox'" class="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-                <input :id="idOf(c)" v-model="values[c.key]" type="checkbox" class="dt-check h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500">
+                <input :id="idOf(c)" v-model="values[c.key]" @change="onFieldChange(c, $event)" type="checkbox" class="dt-check h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500">
                 {{ c.checkboxLabel || 'Yes, active' }}
               </label>
 
               <!-- textarea -->
-              <textarea v-else-if="t(c).input === 'textarea'" :id="idOf(c)" v-model="values[c.key]" rows="3"
+              <textarea v-else-if="t(c).input === 'textarea'" :id="idOf(c)" v-model="values[c.key]" @change="onFieldChange(c, $event)" rows="3"
                 class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"></textarea>
 
               <!-- select -->
-              <select v-else-if="t(c).input === 'select'" :id="idOf(c)" v-model="values[c.key]"
+              <select v-else-if="t(c).input === 'select'" :id="idOf(c)" v-model="values[c.key]" @change="onFieldChange(c, $event)"
                 class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
                 <option value="">— Select —</option>
                 <option v-for="o in optionList(c)" :key="String(o.value)" :value="o.value">
@@ -444,14 +453,14 @@
 
               <!-- number / currency -->
               <div v-else-if="t(c).input === 'number'" class="relative">
-                <input :id="idOf(c)" v-model="values[c.key]" type="number" :step="inputStep(c)" :min="c.min" :max="c.max"
+                <input :id="idOf(c)" v-model="values[c.key]" @change="onFieldChange(c, $event)" type="number" :step="inputStep(c)" :min="c.min" :max="c.max"
                   class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                   :class="c.type === 'currency' ? 'pl-12' : ''">
                 <span v-if="c.type === 'currency'" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">{{ c.currencySymbol || 'GH₵' }}</span>
               </div>
 
               <!-- everything else (text, email, tel, url, date, datetime, time, color, tags) -->
-              <input v-else :id="idOf(c)" v-model="values[c.key]" :type="t(c).input"
+              <input v-else :id="idOf(c)" v-model="values[c.key]" @change="onFieldChange(c, $event)" :type="t(c).input"
                 class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                 :placeholder="t(c).input === 'tags' ? 'Comma separated, e.g. Vue, Tailwind' : (c.placeholder || '')">
 
@@ -496,6 +505,8 @@
             filterRow: { type: Boolean, default: false },
             resizable: { type: Boolean, default: true },
             aggregates: { type: Boolean, default: true },
+            rowNumbers: { type: Boolean, default: false },
+            showChildCount: { type: Boolean, default: false },
             expandAll: { type: Boolean, default: true },
             addButton: { type: Boolean, default: true }, // legacy visibility prop; use allowAdd for CRUD permissions
             editButton: { type: Boolean, default: true }, // legacy visibility prop; use allowEdit for CRUD permissions
@@ -658,7 +669,7 @@
                 });
                 return Object.keys(out).length ? out : null;
             },
-            colspan() { return this.visibleCols.length + (this.showExpander ? 1 : 0) + (this.selectable ? 1 : 0) + (this.showActionsColumn ? 1 : 0); },
+            colspan() { return this.visibleCols.length + (this.showExpander ? 1 : 0) + (this.rowNumbers ? 1 : 0) + (this.selectable ? 1 : 0) + (this.showActionsColumn ? 1 : 0); },
             allExpanded() {
                 const rows = this.pageRows.map((row, index) => ({ row, index })).filter(({ row }) => this.rowHasChildren(row));
                 return rows.length > 0 && rows.every(({ row, index }) => this.expanded.includes(this.keyOf(row, index)));
@@ -1185,6 +1196,7 @@
         <table class="dt-table w-full min-w-full text-sm" data-table>
           <colgroup>
             <col v-if="showExpander" :style="{ width: (widths.__exp || 44) + 'px' }">
+            <col v-if="rowNumbers" :style="{ width: (widths.__num || 54) + 'px' }">
             <col v-if="selectable" :style="{ width: (widths.__sel || 44) + 'px' }">
             <col v-for="c in visibleCols" :key="c.key" :style="{ width: colWidth(c) + 'px' }">
             <col v-if="showActionsColumn" :style="{ width: (widths.__act || 132) + 'px' }">
@@ -1192,6 +1204,7 @@
           <thead class="text-slate-600 dark:text-slate-300">
             <tr class="dt-theme-header border-b border-slate-200 backdrop-blur dark:border-slate-700">
               <th v-if="showExpander" class="dt-th"><span class="sr-only">Expand</span></th>
+              <th v-if="rowNumbers" class="dt-th whitespace-nowrap text-center text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">#</th>
               <th v-if="selectable" class="dt-th">
                 <input type="checkbox" class="dt-check h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500" data-action="select-all"
                   :checked="allPageSelected" :indeterminate.prop="selected.length > 0 && !allPageSelected" aria-label="Select all rows on this page" @click="toggleAll($event)">
@@ -1212,6 +1225,7 @@
 
             <tr v-if="showFilters" class="dt-theme-filter border-b border-slate-200 dark:border-slate-700">
               <th v-if="showExpander"></th>
+              <th v-if="rowNumbers"></th>
               <th v-if="selectable"></th>
               <th v-for="c in visibleCols" :key="c.key" class="py-1.5 font-normal">
                 <span v-if="typeOf(c).kind === 'number'" class="flex items-center gap-1">
@@ -1242,6 +1256,7 @@
             <template v-if="isLoading">
               <tr v-for="i in skeletonRows" :key="'sk'+i" class="border-b border-slate-100 dark:border-slate-800">
                 <td v-if="showExpander"></td>
+                <td v-if="rowNumbers"><div class="dt-skel mx-auto h-4 w-4"></div></td>
                 <td v-if="selectable"><div class="dt-skel mx-auto h-4 w-4"></div></td>
                 <td v-for="c in visibleCols" :key="c.key" class="dt-cell">
                   <div class="dt-skel h-4" :class="typeOf(c).align === 'right' ? 'ml-auto' : ''" :style="{ width: (35 + ((c.key.length * 13 + i * 11) % 55)) + '%' }"></div>
@@ -1296,7 +1311,7 @@
                             class="grid h-6 w-6 place-items-center rounded-md text-slate-400 hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-500/10 dark:hover:text-primary-300" @click="toggleExpand(keyOf(entry.row, entry.index))">
                             <i class="bi text-[11px] transition-transform" :class="isExpanded(entry.row, entry.index) ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
                           </button>
-                          <span v-if="rowChildren(entry.row).length" class="ml-0.5 text-[10px] font-semibold tabular-nums text-slate-400">{{ rowChildren(entry.row).length }}</span>
+                          <span v-if="showChildCount && rowChildren(entry.row).length" class="ml-0.5 text-[10px] font-semibold tabular-nums text-slate-400">{{ rowChildren(entry.row).length }}</span>
                         </template>
                         <button v-else-if="canAdd" data-action="add-child" :data-id="keyOf(entry.row, entry.index)"
                           :title="'Add ' + (child.title || 'child').replace(/s$/, '').toLowerCase()"
@@ -1304,6 +1319,9 @@
                           class="grid h-7 w-7 place-items-center rounded-md bg-primary-50 text-primary-700 transition hover:bg-primary-100 hover:text-primary-600 dark:bg-primary-500/10 dark:text-primary-300 dark:hover:bg-primary-500/20" @click="addChild(entry.row, entry.index)">
                           <i class="bi bi-plus-lg text-[11px]"></i>
                         </button>
+                      </td>
+                      <td v-if="rowNumbers" class="dt-cell text-center text-xs font-medium text-slate-500 dark:text-slate-400 tabular-nums">
+                        {{ (page - 1) * size + entry.index + 1 }}
                       </td>
                       <td v-if="selectable" class="dt-cell text-center">
                         <input type="checkbox" class="dt-check h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500" data-action="select-row" :data-id="keyOf(entry.row, entry.index)"
@@ -1361,6 +1379,7 @@
 
                   <tr v-if="groupHeader && group.isComplete && groupHasTotals(group)" class="dt-group-total border-b border-slate-200 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200" :data-group-total="group.key">
                     <td v-if="showExpander"></td>
+                    <td v-if="rowNumbers"></td>
                     <td v-if="selectable"></td>
                     <td v-for="(c, index) in visibleCols" :key="c.key" class="dt-cell tabular-nums" :class="alignClass(c)">
                       <span v-if="index === 0" class="mr-2 text-[10px] uppercase tracking-wide text-primary-700 dark:text-primary-300">Group total</span>
@@ -1376,6 +1395,7 @@
           <tfoot v-if="footer && !isLoading">
             <tr class="dt-theme-footer border-t-2 border-slate-200 text-xs font-medium text-slate-600 dark:border-slate-700 dark:text-slate-300">
               <td v-if="showExpander"></td>
+              <td v-if="rowNumbers"></td>
               <td v-if="selectable"></td>
               <td v-for="(c, idx) in visibleCols" :key="c.key" class="tabular-nums" :class="alignClass(c)">
                 <span v-if="idx === 0" class="inline-flex items-center gap-1.5 whitespace-nowrap text-[10px] uppercase tracking-wide text-primary-700 dark:text-primary-300">

@@ -1,28 +1,20 @@
-﻿const app = Vue.createApp({
+const app = Vue.createApp({
 
     data() {
         return {
             theme: '#0645e7',
             isShimmerLoading: false,
-            isLoading: false,
-            payload: {},
             emptyGuid: '00000000-0000-0000-0000-000000000000',
-            departmentList: [],
-            departmentNameList: [],
-            departmentHierarchyList: [],
-            name: '',
-            parentId: '',
-            /* departmentCol: [
-                 { key:'id',         label:'ID',         type:'text', hidden:true,   width:74, help:'Auto-filled, but you can change it' },
-                 { key: "name", label: "Department", type:'text', required:true, searchable:true, width: 80 },
-                 { key: "parentName", label: "Parent Hierarchy", type:'select',options:this.departmentHierarchyList, required:true, searchable:true, width: 80 },
-                 { key: "parentId", hidden: true, type:'text', label: "ParentId", width: 15, },
-                 { key:'tenantId',      label:'Tenant',      type:'number', hidden:true, minWidth:74 }
-             ],*/
+
+            costCenterList: [],          // raw flat list from server (with parentName resolved)
+            costCenterHierarchyList: [], // [{ label, value }] for the parent-select dropdown
         };
     },
+
     computed: {
-        departmentCol() {
+        // Computed columns so the parent-select options update reactively whenever
+        // costCenterHierarchyList changes after a fetch/create/update.
+        costCenterCol() {
             return [
                 {
                     key: 'id',
@@ -32,25 +24,31 @@
                 },
                 {
                     key: 'name',
-                    label: 'Department',
-                    type: 'text',
+                    label: 'Cost Center',
+                    type: 'avatar',
+                    width: 280,
+                    minWidth: 220,
                     required: true,
-                    searchable: true
+                    searchable: true,
+                    subtitleKey: 'parentName'
                 },
                 {
                     key: 'parentId',
-                    label: 'Parent Department',
+                    label: 'Parent Cost Center',
                     type: 'select',
-                    options: this.departmentHierarchyList,
+                    options: this.costCenterHierarchyList,
                     required: false,
-                    searchable: true
+                    searchable: true,
+                    width: 260
                 },
                 {
                     key: 'parentName',
-                    label: 'Hierarchy',
+                    label: 'Hierarchy Path',
                     type: 'text',
                     searchable: true,
-                    help: 'Generated from the department hierarchy'
+                    editable: false,
+                    width: 320,
+                    help: 'Full path generated from the cost center hierarchy'
                 },
                 {
                     key: 'tenantId',
@@ -61,429 +59,244 @@
             ];
         }
     },
+
     methods: {
-        async onCreate(event) {
+
+        /* ── Fetch ──────────────────────────────────────────────── */
+
+        async getCostCenters() {
+            this.isShimmerLoading = true;
             try {
-                const row = event?.row;
+                const response = await axios.get('/SharedResource/GetCostCenters?pageNo=1&pageSize=2000');
+                const res = response.data;
 
-                if (!row || !this.validateRecord(row)) {
-                    return;
-                }
+                // Handle paginated { result: { data: [] } }, { result: [] }, or flat []
+                const rawList = res?.result?.data || res?.result || (Array.isArray(res) ? res : []);
 
-                this.isShimmerLoading = true;
-
-                const parentId = row.parentId || this.emptyGuid;
-
-                const parent = this.departmentList.find(
-                    department => department.id === parentId
-                );
-
-                const createPayload = {
-                    name: row.name.trim(),
-                    parentId,
-                    parentName: parent
-                        ? `${parent.parentName}/${row.name.trim()}`
-                        : row.name.trim()
-                };
-
-                const createdRecord = {
-                    ...createPayload,
-                    id: this.generateId(),
-                    tenantId: this.currentTenantId
-                };
-
-
-                this.buildDepartmentHierarchy();
-
-                this.toastHandler('Department created successfully.');
+                this.costCenterList = rawList;
+                this.buildHierarchy();
             } catch (error) {
-                console.error('Create failed:', error);
-                this.toastHandler('Failed to create department.', 'error');
+                console.error('Failed to load cost centers:', error);
+                this.toastHandler('error', 'Unable to load cost centers.');
+            } finally {
+                this.isShimmerLoading = false;
+            }
+        },
+
+        /* ── CRUD handlers wired to <data-grid> events ──────────── */
+
+        async onCreate(event) {
+            const row = event?.row || event?.data;
+            if (!row || !this.validateRecord(row)) return;
+
+            const parentId = row.parentId || this.emptyGuid;
+            const parent   = this.costCenterList.find(c => c.id === parentId);
+
+            const payload = {
+                name:       String(row.name || '').trim(),
+                parentId,
+                parentName: parent
+                    ? `${parent.parentName}/${String(row.name || '').trim()}`
+                    : String(row.name || '').trim()
+            };
+
+            this.isShimmerLoading = true;
+            try {
+                await axios.post('/SharedResource/CreateCostCenter', payload);
+                await this.getCostCenters();
+                this.toastHandler('success', 'Cost center created successfully.');
+            } catch (err) {
+                console.error('Create failed:', err);
+                this.toastHandler('error', 'Failed to create cost center.');
             } finally {
                 this.isShimmerLoading = false;
             }
         },
 
         async onUpdate(event) {
+            const row = event?.row || event?.data;
+            if (!row || !this.validateRecord(row)) return;
+
+            const existing = this.costCenterList.find(
+                c => String(c.id) === String(row.id)
+            );
+
+            if (!existing) {
+                this.toastHandler('error', 'Cost center record was not found.');
+                return;
+            }
+
+            const parentId = row.parentId || this.emptyGuid;
+            const parent   = this.costCenterList.find(c => c.id === parentId);
+
+            const payload = {
+                ...existing,
+                ...row,
+                id:         existing.id,
+                tenantId:   existing.tenantId,
+                name:       String(row.name || '').trim(),
+                parentId,
+                parentName: parent
+                    ? `${parent.parentName}/${String(row.name || '').trim()}`
+                    : String(row.name || '').trim()
+            };
+
+            this.isShimmerLoading = true;
             try {
-                const row = event?.row;
+                await axios.post('/SharedResource/UpdateCostCenter', payload);
 
-                if (!row || !this.validateRecord(row)) {
-                    return;
+                // Optimistically patch the local list
+                const idx = this.costCenterList.findIndex(
+                    c => String(c.id) === String(existing.id)
+                );
+                if (idx !== -1) {
+                    this.costCenterList.splice(idx, 1, { ...payload });
                 }
 
-                const parentId = row.parentId || this.emptyGuid;
-
-                const parent = this.departmentList.find(
-                    department => department.id === parentId
-                );
-
-                const updatePayload = {
-                    id: existingRecord.id,
-                    tenantId: existingRecord.tenantId,
-                    name: row.name.trim(),
-                    parentId,
-                    parentName: parent
-                        ? `${parent.parentName}/${row.name.trim()}`
-                        : row.name.trim()
-                };
-
-                const index = this.departmentList.findIndex(
-                    department => department.id === existingRecord.id
-                );
-
-                if (index !== -1) {
-                    this.departmentList.splice(index, 1, updatePayload);
-                }
-
-                this.buildDepartmentHierarchy();
-                this.toastHandler('Department updated successfully.');
-            } catch (error) {
-                console.error('Update failed:', error);
-                this.toastHandler('Failed to update department.', 'error');
+                this.buildHierarchy();
+                this.toastHandler('success', 'Cost center updated successfully.');
+            } catch (err) {
+                console.error('Update failed:', err);
+                this.toastHandler('error', 'Failed to update cost center.');
+                await this.getCostCenters(); // re-sync on failure
             } finally {
                 this.isShimmerLoading = false;
             }
         },
-        getSetupData() {
-            const EMPTY_GUID = '00000000-0000-0000-0000-000000000000';
 
-            const mockDepartments = [
-                // Root departments
-                {
-                    id: '10000000-0000-4000-8000-000000000001',
-                    tenantId: 2,
-                    name: 'Administration',
-                    parentId: EMPTY_GUID
-                },
-                {
-                    id: '10000000-0000-4000-8000-000000000002',
-                    tenantId: 2,
-                    name: 'Finance',
-                    parentId: EMPTY_GUID
-                },
-                {
-                    id: '10000000-0000-4000-8000-000000000003',
-                    tenantId: 2,
-                    name: 'Human Resources',
-                    parentId: EMPTY_GUID
-                },
-                {
-                    id: '10000000-0000-4000-8000-000000000004',
-                    tenantId: 2,
-                    name: 'Information Technology',
-                    parentId: EMPTY_GUID
-                },
-                {
-                    id: '10000000-0000-4000-8000-000000000005',
-                    tenantId: 2,
-                    name: 'Academic Affairs',
-                    parentId: EMPTY_GUID
-                },
-                {
-                    id: '10000000-0000-4000-8000-000000000006',
-                    tenantId: 2,
-                    name: 'Operations',
-                    parentId: EMPTY_GUID
-                },
-                {
-                    id: '10000000-0000-4000-8000-000000000007',
-                    tenantId: 2,
-                    name: 'Internal Audit',
-                    parentId: EMPTY_GUID
-                },
+        async onDelete(event) {
+            const rows = event?.rows;
+            if (!Array.isArray(rows) || !rows.length) return;
 
-                // Finance subdepartments
-                {
-                    id: '20000000-0000-4000-8000-000000000001',
-                    tenantId: 2,
-                    name: 'Accounts Payable',
-                    parentId: '10000000-0000-4000-8000-000000000002'
-                },
-                {
-                    id: '20000000-0000-4000-8000-000000000002',
-                    tenantId: 2,
-                    name: 'Accounts Receivable',
-                    parentId: '10000000-0000-4000-8000-000000000002'
-                },
-                {
-                    id: '20000000-0000-4000-8000-000000000003',
-                    tenantId: 2,
-                    name: 'Payroll',
-                    parentId: '10000000-0000-4000-8000-000000000002'
-                },
-                {
-                    id: '20000000-0000-4000-8000-000000000004',
-                    tenantId: 2,
-                    name: 'Treasury',
-                    parentId: '10000000-0000-4000-8000-000000000002'
-                },
+            this.isShimmerLoading = true;
+            try {
+                const results = await Promise.allSettled(
+                    rows.map(r => axios.get('/SharedResource/DelCostCenter?id=' + r.id))
+                );
 
-                // HR subdepartments
-                {
-                    id: '30000000-0000-4000-8000-000000000001',
-                    tenantId: 2,
-                    name: 'Recruitment',
-                    parentId: '10000000-0000-4000-8000-000000000003'
-                },
-                {
-                    id: '30000000-0000-4000-8000-000000000002',
-                    tenantId: 2,
-                    name: 'Staff Welfare',
-                    parentId: '10000000-0000-4000-8000-000000000003'
-                },
-                {
-                    id: '30000000-0000-4000-8000-000000000003',
-                    tenantId: 2,
-                    name: 'Training and Development',
-                    parentId: '10000000-0000-4000-8000-000000000003'
-                },
-
-                // IT subdepartments
-                {
-                    id: '40000000-0000-4000-8000-000000000001',
-                    tenantId: 2,
-                    name: 'Software Development',
-                    parentId: '10000000-0000-4000-8000-000000000004'
-                },
-                {
-                    id: '40000000-0000-4000-8000-000000000002',
-                    tenantId: 2,
-                    name: 'IT Support',
-                    parentId: '10000000-0000-4000-8000-000000000004'
-                },
-                {
-                    id: '40000000-0000-4000-8000-000000000003',
-                    tenantId: 2,
-                    name: 'Network and Infrastructure',
-                    parentId: '10000000-0000-4000-8000-000000000004'
-                },
-
-                // Academic subdepartments
-                {
-                    id: '50000000-0000-4000-8000-000000000001',
-                    tenantId: 2,
-                    name: 'Admissions',
-                    parentId: '10000000-0000-4000-8000-000000000005'
-                },
-                {
-                    id: '50000000-0000-4000-8000-000000000002',
-                    tenantId: 2,
-                    name: 'Examinations',
-                    parentId: '10000000-0000-4000-8000-000000000005'
-                },
-                {
-                    id: '50000000-0000-4000-8000-000000000003',
-                    tenantId: 2,
-                    name: 'Student Records',
-                    parentId: '10000000-0000-4000-8000-000000000005'
-                },
-
-                // Operations subdepartments
-                {
-                    id: '60000000-0000-4000-8000-000000000001',
-                    tenantId: 2,
-                    name: 'Procurement',
-                    parentId: '10000000-0000-4000-8000-000000000006'
-                },
-                {
-                    id: '60000000-0000-4000-8000-000000000002',
-                    tenantId: 2,
-                    name: 'Facilities Management',
-                    parentId: '10000000-0000-4000-8000-000000000006'
-                },
-
-                // Third level: Finance > Accounts Payable
-                {
-                    id: '70000000-0000-4000-8000-000000000001',
-                    tenantId: 2,
-                    name: 'Supplier Payments',
-                    parentId: '20000000-0000-4000-8000-000000000001'
-                },
-                {
-                    id: '70000000-0000-4000-8000-000000000002',
-                    tenantId: 2,
-                    name: 'Invoice Processing',
-                    parentId: '20000000-0000-4000-8000-000000000001'
-                },
-
-                // Third level: IT > Software Development
-                {
-                    id: '80000000-0000-4000-8000-000000000001',
-                    tenantId: 2,
-                    name: 'ERP Development',
-                    parentId: '40000000-0000-4000-8000-000000000001'
-                },
-                {
-                    id: '80000000-0000-4000-8000-000000000002',
-                    tenantId: 2,
-                    name: 'Application Support',
-                    parentId: '40000000-0000-4000-8000-000000000001'
+                const failed = results.filter(r => r.status === 'rejected').length;
+                if (failed) {
+                    this.toastHandler(
+                        'warning',
+                        `${rows.length - failed} deleted; ${failed} failed.`
+                    );
+                    await this.getCostCenters();
+                } else {
+                    this.toastHandler(
+                        'success',
+                        `${rows.length} cost center${rows.length !== 1 ? 's' : ''} deleted.`
+                    );
                 }
-            ];
-            this.departmentList = mockDepartments.map(item => ({
-                ...item
-            }));
-
-            this.buildDepartmentHierarchy();
-
+            } catch (err) {
+                console.error('Delete failed:', err);
+                this.toastHandler('error', 'Failed to delete cost center.');
+                await this.getCostCenters();
+            } finally {
+                this.isShimmerLoading = false;
+            }
         },
 
-        buildDepartmentHierarchy() {
-            const departments = this.departmentList.filter(
-                department => department.tenantId === this.currentTenantId
+        /* ── Hierarchy builder ──────────────────────────────────── */
+
+        // Resolves the full breadcrumb path for each cost center and builds
+        // the parent-select dropdown options.
+        buildHierarchy() {
+            const listMap = new Map(
+                this.costCenterList.map(c => [c.id, c])
             );
 
-            const departmentMap = new Map(
-                departments.map(department => [department.id, department])
-            );
+            // Recursively build "Root / Child / Grandchild" path
+            const getPath = (item, visited = new Set()) => {
+                if (!item || visited.has(item.id)) return item?.name || '';
+                visited.add(item.id);
 
-            const getPath = (department, visited = new Set()) => {
-                if (!department || visited.has(department.id)) {
-                    return department?.name || '';
+                if (!item.parentId || item.parentId === this.emptyGuid) {
+                    return item.name;
                 }
 
-                visited.add(department.id);
+                const parent = listMap.get(item.parentId);
+                if (!parent) return item.name;
 
-                if (
-                    !department.parentId ||
-                    department.parentId === this.emptyGuid
-                ) {
-                    return department.name;
-                }
-
-                const parent = departmentMap.get(department.parentId);
-
-                if (!parent) {
-                    return department.name;
-                }
-
-                const parentPath = getPath(parent, visited);
-
-                return `${parentPath}/${department.name}`;
+                return `${getPath(parent, visited)} / ${item.name}`;
             };
 
-            this.departmentList = departments.map(department => ({
-                ...department,
-                parentName: getPath(department)
+            // Annotate each record with its computed parentName
+            this.costCenterList = this.costCenterList.map(c => ({
+                ...c,
+                parentName: getPath(c)
             }));
 
-            this.departmentNameList = this.departmentList.map(department => ({
-                ...department
-            }));
-
-            this.departmentHierarchyList = [
-                {
-                    label: 'No Parent (Root Department)',
-                    value: this.emptyGuid
-                },
-                ...this.departmentList.map(department => ({
-                    label: department.parentName,
-                    value: department.id
+            // Rebuild the parent-select options
+            this.costCenterHierarchyList = [
+                { label: 'No Parent (Root)', value: this.emptyGuid },
+                ...this.costCenterList.map(c => ({
+                    label: c.parentName,
+                    value: c.id
                 }))
             ];
         },
 
+        /* ── Validation ─────────────────────────────────────────── */
+
         validateRecord(row) {
-            if (!row.name || !row.name.trim()) {
-                this.toastHandler(
-                    'Department name is required.',
-                    'warning'
-                );
+            if (!row.name || !String(row.name).trim()) {
+                this.toastHandler('warning', 'Cost center name is required.');
                 return false;
             }
 
-            if (row.parentId) {
-                const parent = this.departmentList.find(
-                    department => department.id === row.parentId
-                );
+            if (row.parentId && row.parentId !== this.emptyGuid) {
+                const parent = this.costCenterList.find(c => c.id === row.parentId);
 
-                if (!parent && row.parentId !== this.emptyGuid) {
-                    this.toastHandler(
-                        'Selected parent department does not exist.',
-                        'error'
-                    );
+                if (!parent) {
+                    this.toastHandler('error', 'Selected parent cost center does not exist.');
                     return false;
                 }
 
                 if (row.id && row.parentId === row.id) {
-                    this.toastHandler(
-                        'A department cannot be its own parent.',
-                        'warning'
-                    );
+                    this.toastHandler('warning', 'A cost center cannot be its own parent.');
                     return false;
                 }
 
-                // Prevent assigning a department beneath one of its descendants.
-                let current = this.departmentList.find(
-                    department => department.id === row.parentId
-                );
-
+                // Guard against circular hierarchy
+                let current = this.costCenterList.find(c => c.id === row.parentId);
                 const visited = new Set();
 
                 while (current && !visited.has(current.id)) {
                     if (current.id === row.id) {
-                        this.toastHandler(
-                            'This change would create a circular hierarchy.',
-                            'warning'
-                        );
+                        this.toastHandler('warning', 'This change would create a circular hierarchy.');
                         return false;
                     }
-
                     visited.add(current.id);
-
-                    current = this.departmentList.find(
-                        department => department.id === current.parentId
-                    );
+                    current = this.costCenterList.find(c => c.id === current.parentId);
                 }
             }
 
             return true;
         },
 
-        generateId() {
-            if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-                return crypto.randomUUID();
-            }
-
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
-                /[xy]/g,
-                character => {
-                    const random = Math.random() * 16 | 0;
-                    const value = character === 'x'
-                        ? random
-                        : (random & 0x3 | 0x8);
-
-                    return value.toString(16);
-                }
-            );
-        },
-
+        /* ── Helpers ─────────────────────────────────────────────── */
 
         toastHandler(type, message = 'An unexpected error occurred.') {
-            if (typeof Swal === 'undefined') {
-                console.log(message);
-                return;
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'success',
+                    title: message,
+                    showConfirmButton: false,
+                    timer: 4000,
+                    timerProgressBar: true
+                });
+            } else {
+                console.log(`[${type.toUpperCase()}] ${message}`);
             }
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'success',
-                title: message,
-                showConfirmButton: false,
-                timer: 4000,
-                timerProgressBar: true
-            });
-
-        },
-
-
+        }
     },
 
     mounted() {
-
-        this.getSetupData();
-    },
+        this.getCostCenters();
+    }
 });
+
 app.use(DataGridPlugin);
 app.mount('#app');
