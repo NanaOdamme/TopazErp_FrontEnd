@@ -11,6 +11,10 @@ public interface ITopazErpApi
     Task<VerifyOtpResponse> VerifyOtp(string otp, string authToken);
     Task<SubscriptionInfoResponse> GetSubscriptionInfo();
     
+    //business profile
+    Task<BaseApiResponse> CreateCompanyProfile(object dto);
+    Task<CompanyProfileResponse> GetBusinessProfile();
+    
     //shared 
     Task<BankResponse> GetBanks(int pageNo, int pageSize, string query);
     Task<BaseApiResponse> CreateBank(object dto);
@@ -23,11 +27,58 @@ public interface ITopazErpApi
     //settings / system numbers
     Task<SystemNumberResponse> GetSystemNumbers(string key);
     Task<BaseApiResponse> UpdateSystemNumber(object dto);
+    
     //cost centers
     Task<CostCenterResponse> GetCostCenters(int pageNo, int pageSize, string query);
     Task<BaseApiResponse> CreateCostCenter(object dto);
     Task<BaseApiResponse> UpdateCostCenter(object dto);
     Task<BaseApiResponse> DeleteCostCenter(Guid id);
+    
+    //Customer Groups
+    Task<CustomerGroupResponse> GetCustomerGroups(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreateCustomerGroup(object dto);
+    Task<BaseApiResponse> UpdateCustomerGroup(object dto);
+    Task<BaseApiResponse> DeleteCustomerGroup(Guid id);
+    
+    //Customers...
+    Task<CustomerResponse> GetCustomers(int pageNo, int pageSize, string query);
+    Task<CustomersResponse> GetCustomersByGroup(Guid groupId);
+    Task<BaseApiResponse> CreateCustomer(object dto);
+    Task<BaseApiResponse> UpdateCustomer(object dto);
+    Task<BaseApiResponse> DeleteCustomer(Guid id);
+    
+    //Supplier Groups ...
+    Task<SupplierGroupResponse> GetSupplierGroups(int pageNo, int pageSize, string query);
+    Task<SuppliersResponse> GetSuppliersByGroup(Guid groupId);
+    Task<BaseApiResponse> CreateSupplierGroup(object dto);
+    Task<BaseApiResponse> UpdateSupplierGroup(object dto);
+    Task<BaseApiResponse> DeleteSupplierGroup(Guid id);
+    
+    //Supplier
+    Task<SupplierResponse> GetSuppliers(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreateSupplier(object dto);
+    Task<BaseApiResponse> UpdateSupplier(object dto);
+    Task<BaseApiResponse> DeleteSupplier(Guid id);
+    
+    //Department
+    Task<DepartmentResponse> GetDepartments(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreateDepartment(object dto);
+    Task<BaseApiResponse> UpdateDepartment(object dto);
+    Task<BaseApiResponse> DeleteDepartment(Guid id);
+    
+    //Tax levy
+    Task<TaxLevyResponse> GetTaxLevies(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreateTaxLevy(object dto);
+    Task<BaseApiResponse> UpdateTaxLevy(object dto);
+    Task<BaseApiResponse> DeleteTaxLevy(Guid id);
+    
+    //currency
+    Task<CurrencyResponse> GetCurrencies(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreateCurrency(object dto);
+    Task<BaseApiResponse> UpdateCurrency(object dto);
+    Task<BaseApiResponse> DeleteCurrency(Guid id);
+    
+    
     //payroll
     
     // allowance types

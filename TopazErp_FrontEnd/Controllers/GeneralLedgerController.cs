@@ -24,11 +24,6 @@ public class GeneralLedgerController : Controller
         return View();
     }
 
-    public IActionResult SystemNumbers()
-    {
-        return View();
-    }
-
     public IActionResult SupplierGroups()
     {
         return View();
@@ -36,6 +31,7 @@ public class GeneralLedgerController : Controller
 
     public IActionResult CustomerGroups()
     {
+         
         return View();
     }
 
@@ -63,62 +59,9 @@ public class GeneralLedgerController : Controller
         return View();
     }
 
-    public IActionResult DefaultSystemNumbers()
+    public IActionResult SystemNumbers()
     {
         return View();
-    }
-    
-    public IActionResult Statuses()
-    {
-        return View();
-    }
-    // GET
-    public async Task<IActionResult> Budget(string query, int pageNo = 1, int pageSize = 100)
-    {
-        dynamic viewmodel = new ExpandoObject();
-        
-        var result = await _topazErpApi.GetBudgets(pageNo, pageSize, query);
-        
-        viewmodel.PagedBudgets = result.Result;
-        viewmodel.Query = query;
-
-        return View(viewmodel);
-    }
-    public async Task<IActionResult> AccountHeads(string query, int pageNo = 1, int pageSize = 10)
-    {
-        dynamic viewmodel = new ExpandoObject();
-        
-        var result = await _topazErpApi.GetAccountHeads(pageNo, pageSize, query);
-        
-        viewmodel.PagedAccountHeads = result.Result;
-        viewmodel.Query = query;
-        
-        return View(viewmodel);
-
-    }
-    
-    public async Task<IActionResult> CoaControl(string query, Guid accountHeadId, int pageNo = 1, int pageSize = 1000)
-    {
-        dynamic viewmodel = new ExpandoObject();
-        
-        var result = await _topazErpApi.GetAccountControls(pageNo, pageSize, query, accountHeadId);
-        
-        viewmodel.PagedAccountControls = result.Result;
-        viewmodel.Query = query;
-
-        return View(viewmodel);
-    }
-    
-    public async Task<IActionResult> CoaDetails(string query, int pageNo = 1, int pageSize = 100)
-    {
-        dynamic viewmodel = new ExpandoObject();
-        
-        var result = await _topazErpApi.GetAccountDetails(pageNo, pageSize, query, true);
-        
-        viewmodel.PagedAccountDetails = result.Result;
-        viewmodel.Query = query;
-
-        return View(viewmodel);
     }
     
     public IActionResult DefaultGlNumbers()
@@ -126,46 +69,31 @@ public class GeneralLedgerController : Controller
         return View();
     }
     
-    
-    public async Task<IActionResult> CostCenters(string query, int pageNo = 1, int pageSize = 1000)
+    public IActionResult AccountHeads()
     {
-        dynamic viewmodel = new ExpandoObject();
-        
-        var result = await _topazErpApi.GetCostCenters(pageNo, pageSize, query);
-        
-        viewmodel.PagedCostCenters = result.Result;
-        viewmodel.Query = query;
-        
-        return View(viewmodel);
+        return View();
     }
     
-    public async Task<IActionResult> BankAccounts(string query, int pageNo = 1, int pageSize = 100)
+    public IActionResult CoaControl()
     {
-        dynamic viewmodel = new ExpandoObject();
-        
-        var result = await _topazErpApi.GetBankAccounts(pageNo, pageSize, query);
-        
-        viewmodel.PagedBankAccounts = result.Result;
-        viewmodel.Query = query;
-
-        return View(viewmodel);
-    }
-    public async Task<IActionResult> Journal(string batchNumber, DateTime? startDate = null, DateTime? endDate = null, bool? isPosted = null, bool? isMultiCurrency = null, int pageNo = 1, int pageSize = 10)
-    {
-        dynamic viewmodel = new ExpandoObject();
-        
-        var result = await _topazErpApi.GetJournalTransactions(pageNo, pageSize, batchNumber, startDate, endDate, isPosted, isMultiCurrency);
-        
-        viewmodel.PagedJournalTransactions = result.Result;
-        viewmodel.BatchNumber = batchNumber;
-        viewmodel.StartDate = startDate;
-        viewmodel.EndDate = endDate;
-        viewmodel.IsPosted = isPosted;
-        viewmodel.IsMultiCurrency = isMultiCurrency;
-        
-        return View(viewmodel);
+        return View();
     }
     
+    public IActionResult CoaDetails()
+    {
+        return View();
+    }
+    
+    
+    public IActionResult BankAccounts()
+    {
+        return View();
+    }
+    
+    
+    
+    
+     
     public IActionResult JournalHistory()
     {
         return View();
@@ -194,5 +122,93 @@ public class GeneralLedgerController : Controller
     public IActionResult CreateCustomerVoucher()
     {
         return View();
+    }
+    
+    //api
+    
+    public async Task<IActionResult> GetAccountHeads([FromQuery]int pageNo, int pageSize, string query)
+    {
+        var results = await _topazErpApi.GetAccountHeads(pageNo, pageSize, query);
+        return Json(results);
+    }
+    
+    public async Task<IActionResult> CreateAccountHead([FromBody] object dto)
+    {
+        var results = await _topazErpApi.CreateAccountHead(dto);
+        return Json(results);
+    }
+    
+    public async Task<IActionResult> UpdateAccountHead([FromBody]object dto)
+    {
+        var results = await _topazErpApi.UpdateAccountHead(dto);
+        return Json(results);
+    }
+    
+    public async Task<IActionResult> DeleteAccountHead([FromQuery]Guid id)
+    {
+        var results = await _topazErpApi.DeleteAccountHead(id);
+        return Json(results);
+    }
+    
+    //chart of account control
+    public async Task<IActionResult> GetAccountControls([FromQuery]int pageNo = 1, [FromQuery]int pageSize = 2000, [FromQuery]string query = null, [FromQuery]Guid? accountHeadId = null)
+    {
+        var results = await _topazErpApi.GetAccountControls(pageNo, pageSize, query, accountHeadId ?? Guid.Empty);
+        return Json(results);
+    }
+    
+    public async Task<IActionResult> GetControlsByAccountHead([FromQuery]Guid id)
+    {
+        var results = await _topazErpApi.GetControlsByAccountHead(id);
+        return Json(results);
+    }
+    
+    public async Task<IActionResult> CreateAccountControl([FromBody] object dto)
+    {
+        var results = await _topazErpApi.CreateAccountControl(dto);
+        return Json(results);
+    }
+    
+    public async Task<IActionResult> UpdateAccountControl([FromBody] object dto)
+    {
+        var results = await _topazErpApi.UpdateAccountControl(dto);
+        return Json(results);
+    }
+    
+    public async Task<IActionResult> DeleteAccountControl([FromQuery] Guid id)
+    {
+        var results = await _topazErpApi.DeleteAccountControl(id);
+        return Json(results);
+    }
+    
+    //chart of account detail
+    public async Task<IActionResult> GetAccountDetails([FromQuery]int pageNo = 1, [FromQuery]int pageSize = 2000, [FromQuery]string query = null, [FromQuery]bool isActive = true)
+    {
+        var results = await _topazErpApi.GetAccountDetails(pageNo, pageSize, query, isActive);
+        return Json(results);
+    }
+    
+    public async Task<IActionResult> CreateAccountDetail([FromBody] object dto)
+    {
+        var results = await _topazErpApi.CreateAccountDetail(dto);
+        return Json(results);
+    }
+    
+    public async Task<IActionResult> UpdateAccountDetail([FromBody] object dto)
+    {
+        var results = await _topazErpApi.UpdateAccountDetail(dto);
+        return Json(results);
+    }
+    
+    public async Task<IActionResult> DeleteAccountDetail([FromQuery] Guid id)
+    {
+        var results = await _topazErpApi.DeleteAccountDetail(id);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> CheckAccountDetails([FromQuery] int accountNumber, [FromQuery] Guid accountControlId)
+    {
+        var results = await _topazErpApi.CheckAccountDetails(accountNumber, accountControlId);
+        return Json(results);
     }
 }

@@ -15,6 +15,68 @@ public class Bank: AuditedEntity<Guid>
     public List<BankBranch> BankBranches { get; set; }
 }
 
+public class CompanyProfile: AuditedEntity<Guid>
+{
+     public int TenantId { get; set; }
+        public string CompanyName { get; set; }
+        public string CountryName { get; set; }
+        public string CityName { get; set; }
+        public string PhoneNo { get; set; }
+        public string Address { get; set; }
+        public Guid CountryId { get; set; }
+        public Guid CountryStateId { get; set; }
+        public string CompanyTin { get; set; }
+        public string Email { get; set; }
+        public string SenderId { get; set; }
+        public string ClientId { get; set; }
+        public string ClientSecret { get; set; }
+        public int FirstMonthOfFiscalYear { get; set; }
+        public string VATNo { get; set; }
+
+        //Social Security Rates...
+        public string EmployerSocialSecurityNo { get; set; }
+        public bool PaySocialSecurityFund { get; set; }
+        public decimal SocialSecurityFundEmployeeRate { get; set; }
+        public decimal SocialSecurityFundEmployerRate { get; set; }
+
+        //Provident Fund Rates...
+        public bool PayProvidentFund { get; set; }
+        public decimal ProvidentFundEmployeeRate { get; set; }
+        public decimal ProvidentFundEmployerRate { get; set; }
+        public bool ProvidentFundTreatAsSocialSecurityFund { get; set; }
+        public bool ProvidentFundTaxEmployerPortion { get; set; }
+
+        // 2nd provident fund
+        public bool PaySecondProvidentOrOthers { get; set; }
+        public decimal SecondProvidentEmployeeRate { get; set; }
+        public decimal SecondProvidentEmployerRate { get; set; }
+        public bool TreatSecondProvidentAsSsf { get; set; }
+        public bool SecondProvidentTaxEmployerPortion { get; set; }
+
+        //Overtime Percentage...
+        public bool OvertimePercentageOnBasicSalary { get; set; }
+
+        public bool OvertimePercentageOnDailyWage { get; set; }
+        public Guid DefaultCurrenyId { get; set; }
+
+        //email settings
+        public string MailHostName { get; set; }
+        public bool IsSSLEnabled { get; set; }
+        public int PortNumber { get; set; }
+        public string PrimaryEmailAddress { get; set; }
+        public string EmailPassword { get; set; }
+
+        //tax levies inclusive
+        public bool IsTaxLeviesInclusive { get; set; }
+        // aprove invoice before payment
+        public bool ApproveInvoiceBeforePayment { get; set; }
+        public byte[] CompanyLogo { get; set; }
+        public string CompanyLogoUrl { get; set; }
+
+        // gl
+        public bool EnforceOu { get; set; }
+}
+
 public class BankBranch
 {
     public Guid Id { get; set; }
@@ -55,18 +117,14 @@ public class SubscriptionInfo
 
 public class SystemNumber: AuditedEntity<Guid>
 {
-    public int ModuleId { get; set; }
-    
     public string ItemName { get; set; }
     public string Key { get; set; }
     public string Prefix { get; set; }
-    
     public string Suffix { get; set; }
-    
     public string FormatPattern { get; set; } // eg. {PREFIX}{NO}{SUFFIX}
-    
     public int Padding { get; set; }
     public int LastNo { get; set; }
+    public int TenantId { get; set; }
 }
 
 public class CostCenter: AuditedEntity<Guid>
@@ -75,10 +133,45 @@ public class CostCenter: AuditedEntity<Guid>
     public string Name { get; set; }
 }
 
-public class Currency: AuditedEntity<Guid>
+public class CustomerGroup: AuditedEntity<Guid>
 {
     public string Name { get; set; }
-    public string Code { get; set; }
+}
+
+public class SupplierGroup: AuditedEntity<Guid>
+{
+    public string Name { get; set; }
+}
+
+public class Customer: AuditedEntity<Guid>
+{
+    public string Name { get; set; }
+}
+
+
+public class Supplier: AuditedEntity<Guid>
+{
+    public string Name { get; set; }
+}
+
+public class Department: AuditedEntity<Guid>
+{
+    public Guid ParentId { get; set; }
+    public string Name { get; set; }
+}
+
+public class TaxLevy: AuditedEntity<Guid>
+{
+    public string Name { get; set; }
+    public decimal Rate { get; set; }
+    public string Type { get; set; } //vat, others
+}
+
+
+public class Currency: AuditedEntity<Guid>
+{
+    public string CurrencyName { get; set; }
+    public string CurrencyCode { get; set; }
     public string MinorName { get; set; }
     public decimal BuyRate { get; set; }
     public decimal SellRate { get; set; }

@@ -1,54 +1,39 @@
 @* ============================================================================
-   _Layout.cshtml — sidebar + header shell for TopazErp_FrontEnd.
-
-   How the menu works
-   ------------------
-   The links are ordinary Razor markup with tag helpers, exactly like:
-
-       <a asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-
-   The only extra things are the classes the CSS/JS expect:
-
-       ul.nav-menu                the list
-       li.nav-item                one row
-       li.nav-item.has-sub        this row opens a submenu
-       a.menu-link (top level)    the clickable row   →  a.menu-item inside a submenu
-       span.menu-title            the label
-       ul.menu-content            the submenu <ul> (put it right after the <a>)
-       li.nav-section             a group heading
-       span.badge.menu-badge      optional counter
-
-   That's all: no models, no services. Highlighting the current page is done by
-   wwwroot/js/shell.js, which compares each rendered href with the current URL —
-   so plain asp-controller/asp-action links work on their own. (If you prefer to
-   set it server side, just add class="active" / "open" yourself; the script
-   leaves your markup alone when no link matches.)
-
-   Contract with your pages: wrap the body in <main class="page-main"> and the
-   shell lays itself out around it. Everything else is optional.
+   _adminLedgerLayout.cshtml — General Ledger Shell for Topaz ERP
+   Enterprise Financial ERP UI with Tailwind, Modern Sidebar & Relatable Icons
    ============================================================================ *@
 @{
-var title = ViewData["Title"] as string ?? "Dashboard";
-var subtitle = ViewData["Subtitle"] as string ?? "Topaz ERP";
-var userName = User?.Identity?.Name ?? "Admin";
-var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, StringSplitOptions.RemoveEmptyEntries)
-.Take(2).Select(p => char.ToUpper(p[0])));
+    var title = ViewData["Title"] as string ?? "General Ledger";
+    var subtitle = ViewData["Subtitle"] as string ?? "Financial Management System";
+    var userName = User?.Identity?.Name ?? "Administrator";
+    var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, StringSplitOptions.RemoveEmptyEntries)
+        .Take(2).Select(p => char.ToUpper(p[0])));
+    if (string.IsNullOrWhiteSpace(initials)) { initials = "AD"; }
 }
 <!DOCTYPE html>
 <html lang="en" class="h-full">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@title - TopazErp_FrontEnd</title>
+    <title>@title - Topaz ERP General Ledger</title>
 
     <script>
-        /* options for wwwroot/js/shell.js — no menu data here, the menu is markup */
+        /* Options for shell.js / app-shell.js */
         window.__SHELL__ = {
-            breakpoint: 1024,          // below this width the sidebar becomes a drawer
-            railWidth: 72, minWidth: 210, maxWidth: 420,
-            storagePrefix: 'shell'     // localStorage keys: shell:collapsed, shell:w, shell:theme
+            breakpoint: 1024,
+            railWidth: 72,
+            minWidth: 220,
+            maxWidth: 420,
+            storagePrefix: 'topaz_gl_shell'
         };
     </script>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS with Forms -->
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
     <script>
         tailwind.config = {
@@ -57,84 +42,187 @@ var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, String
                 extend: {
                     colors: {
                         primary: {
-                            50:'#eff6ff', 100:'#dbeafe', 200:'#bfdbfe', 300:'#93c5fd', 400:'#60a5fa',
-                            500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8', 800:'#1e40af', 900:'#1e3a8a', 950:'#172554'
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            200: '#a7f3d0',
+                            300: '#6ee7b7',
+                            400: '#34d399',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            800: '#065f46',
+                            900: '#064e3b',
+                            950: '#022c22'
+                        },
+                        ledger: {
+                            emerald: '#10b981',
+                            navy: '#0f172a',
+                            surface: '#f8fafc'
                         }
                     },
-                    fontFamily: { sans: ['Inter','ui-sans-serif','system-ui','-apple-system','Segoe UI','Roboto','sans-serif'] },
-                    boxShadow: { card: '0 1px 2px 0 rgb(0 0 0 / 0.04), 0 8px 24px -12px rgb(15 23 42 / 0.18)' }
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif']
+                    },
+                    boxShadow: {
+                        'glow-sm': '0 0 15px rgba(16, 185, 129, 0.15)',
+                        'glow-md': '0 0 25px rgba(16, 185, 129, 0.25)',
+                        'card-elevated': '0 4px 20px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04)'
+                    }
                 }
             }
         }
     </script>
-    <script src="~/libs/jquery/jquery.js" asp-append-version="true"></script>
 
+    <!-- Core Libraries -->
+    <script src="~/libs/jquery/jquery.js" asp-append-version="true"></script>
 
     <environment names="Development">
         <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     </environment>
-
     <environment names="Production">
         <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     </environment>
+    
+    
+    <link rel="stylesheet" href="~/css/data-table.css" asp-append-version="true" />
+    <script src="~/js/components/dataTable.js" asp-append-version="true"></script>
+    <script src="~/js/components/select-input.js" asp-append-version="true"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
-
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/line-awesome@1.3.0/dist/line-awesome/css/line-awesome.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/line-awesome@1.3.0/dist/line-awesome/css/line-awesome.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/moment@2.30.1/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Shell and Component Stylesheets -->
     <link rel="stylesheet" href="~/css/shell.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/card.css" asp-append-version="true" />
-    @await RenderSectionAsync("Styles", required: false)
 
-    <!-- Report Viewer component script-->
-    <script src="~/libs/jquery/jquery.js" asp-append-version="true"></script>
-
-    <!-- Syncfusion EJ1 / Essential JavaScript -->
+    <!-- Syncfusion EJ1 / Essential JavaScript & Report Viewer -->
     <script src="~/ejassets/scripts/jsrender.min.js"></script>
     <script src="~/ejassets/scripts/ej.web.all.min.js"></script>
-
-    <!-- Moment -->
-    <script src="https://cdn.jsdelivr.net/npm/moment@2.30.1/moment.min.js"></script>
-
-    <!-- Bold Reports Viewer -->
     <script src="~/js/bold.report-viewer.min.js"></script>
-
-    <script>
-        // Application root path.
-        // Supports applications hosted under an IIS virtual directory.
-        var abp = abp || {};
-        abp.appPath = '@Url.Content("~/")';
-
-        var reportApiBaseUrl = 'http://108.181.191.134:78/api/ReportApi';
-    </script>
     <link href="~/ejassets/ejthemes/office-365/ej.web.all.min.css" rel="stylesheet" />
-
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 
+    <script>
+        var abp = abp || {};
+        abp.appPath = '@Url.Content("~/")';
+        var reportApiBaseUrl = 'http://108.181.191.134:78/api/ReportApi';
+    </script>
+
+    @await RenderSectionAsync("Styles", required: false)
+
+    <!-- Enhanced ERP UI Styling Overrides -->
+    <style>
+        :root {
+            --shell-accent: #059669;
+            --shell-accent-soft: rgba(5, 150, 105, 0.12);
+            --shell-accent-strong: #047857;
+        }
+        .dark {
+            --shell-accent: #34d399;
+            --shell-accent-soft: rgba(52, 211, 153, 0.15);
+            --shell-accent-strong: #6ee7b7;
+        }
+
+        /* Topbar Executive Theme */
+        .app-topbar-erp {
+            background: #0f172a !important;
+            border-bottom: 1px solid #1e293b !important;
+            color: #f8fafc;
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.25);
+        }
+        .dark .app-topbar-erp {
+            background: #090d16 !important;
+            border-bottom: 1px solid #1e293b !important;
+        }
+
+        /* Subtle glow for GL active items */
+        .nav-item.active > a, .nav-item > a.active {
+            background: var(--shell-accent-soft) !important;
+            color: var(--shell-accent-strong) !important;
+            font-weight: 600;
+        }
+        .nav-item.active > a::before {
+            background: #10b981 !important;
+            width: 4px;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+        }
+        .nav-item > a:hover {
+            color: #0f172a;
+        }
+        .dark .nav-item > a:hover {
+            color: #f8fafc;
+        }
+
+        /* Module Switcher Dropdown Grid */
+        .module-switcher-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.5rem;
+            padding: 0.75rem;
+        }
+        .module-switcher-card {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            padding: 0.625rem 0.75rem;
+            border-radius: 0.625rem;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: #334155;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            border: 1px solid transparent;
+        }
+        .module-switcher-card:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+            border-color: #e2e8f0;
+            transform: translateY(-1px);
+        }
+        .dark .module-switcher-card {
+            color: #cbd5e1;
+        }
+        .dark .module-switcher-card:hover {
+            background: #1e293b;
+            color: #ffffff;
+            border-color: #334155;
+        }
+        .module-icon-wrap {
+            width: 2rem;
+            height: 2rem;
+            display: grid;
+            place-items: center;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+    </style>
 </head>
 
-<body class="h-full min-h-full bg-grey-50 font-sans text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-200">
+<body class="h-full min-h-full bg-slate-50 font-sans text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-200">
 
 @* ══════════════════════════════ SIDEBAR ══════════════════════════════ *@
 <aside class="app-sidebar" id="appSidebar" aria-label="Main navigation">
 
+    <!-- Sidebar Brand -->
     <div class="sidebar-brand">
-        <div class="sidebar-brand-link">
-            <span class="sidebar-logo"> <img class="brand-logo" alt="" src="/app-assets/images/topazLogo.png"></span>
+        <a asp-area="" asp-controller="Dashboard" asp-action="GeneralLedger" class="sidebar-brand-link">
+            <span class="sidebar-logo">
+                <img class="brand-logo h-8 w-auto object-contain" alt="Topaz ERP" src="/app-assets/images/topazLogo.png" onerror="this.src='https://placehold.co/36x36/10b981/ffffff?text=T'">
+            </span>
             <span class="sidebar-brand-text">
-                    <span class="sidebar-brand-name">Topaz ERP</span>
-                
+                <span class="sidebar-brand-name flex items-center gap-1.5 font-bold tracking-tight text-slate-900 dark:text-white">
+                    Topaz ERP
+                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">GL</span>
                 </span>
-        </div>
+                <span class="sidebar-brand-sub text-xs text-slate-500 dark:text-slate-400">General Ledger</span>
+            </span>
+        </a>
         <button type="button" class="sidebar-icon-btn" data-action="collapse" title="Collapse sidebar (Ctrl+B)" aria-label="Collapse sidebar">
             <i class="bi bi-chevron-double-left" aria-hidden="true"></i>
         </button>
@@ -143,125 +231,371 @@ var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, String
         </button>
     </div>
 
-    @* ───────────────────────── THE MENU ─────────────────────────
-           Add a link:  <li class="nav-item">
-                            <a class="menu-link" asp-area="" asp-controller="Home" asp-action="Index">
-                              <i class="bi bi-speedometer2"></i><span class="menu-title">Dashboard</span>
-                            </a>
-                        </li>
-
-           Add a submenu: wrap the parent in li.nav-item.has-sub (link href="#")
-                          and put <ul class="menu-content"> right after the <a>.
-        *@
+    @* ───────────────────────── GENERAL LEDGER NAVIGATION MENU ───────────────────────── *@
     <nav class="app-nav" id="appNav" aria-label="Main menu">
         <ul class="nav-menu" data-menu-level="0">
-            <!-- General Setups -->
-            <li class="nav-section"><span class="menu-title">General</span></li>
-           
-            <li class="nav-item has-sub">
-    <a href="#" class="menu-link">
-        <i class="bi bi-share"></i>
-        <span class="menu-title">General Setups</span>
-    </a>
-<ul class="menu-content">
 
-    <li class="nav-item">
-        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="CompanyProfile">
-            <i class="bi bi-building"></i>
-            <span class="menu-title">Company Profile</span>
-        </a>
-    </li>
-
-    <li class="nav-item">
-        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Departments">
-            <i class="bi bi-diagram-3"></i>
-            <span class="menu-title">Departments</span>
-        </a>
-    </li>
-
-    <li class="nav-item">
-        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="CostCenters">
-            <i class="bi bi-pie-chart"></i>
-            <span class="menu-title">Cost Centers</span>
-        </a>
-    </li>
-
-    <li class="nav-item">
-        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Currencies">
-            <i class="bi bi-currency-exchange"></i>
-            <span class="menu-title">Currencies</span>
-        </a>
-    </li>
-
-    <li class="nav-item">
-        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="BanksBranches">
-            <i class="bi bi-bank"></i>
-            <span class="menu-title">Banks &amp; Branches</span>
-        </a>
-    </li>
-
-    <li class="nav-item">
-        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Suppliers">
-            <i class="bi bi-truck"></i>
-            <span class="menu-title">Suppliers</span>
-        </a>
-    </li>
-
-    <li class="nav-item">
-        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="SupplierGroups">
-            <i class="bi bi-people"></i>
-            <span class="menu-title">Supplier Groups</span>
-        </a>
-    </li>
-
-    <li class="nav-item">
-        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="SystemNumbers">
-            <i class="bi bi-hash"></i>
-            <span class="menu-title">System Numbers</span>
-        </a>
-    </li>
-
-    <li class="nav-item">
-        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Statuses">
-            <i class="bi bi-check-circle"></i>
-            <span class="menu-title">Statuses</span>
-        </a>
-    </li>
-
-    <li class="nav-item">
-        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="DefaultGlNumbers">
-            <i class="bi bi-journal-text"></i>
-            <span class="menu-title">Default GL Numbers</span>
-        </a>
-    </li>
-
-</ul>
-
-
-</li>
-
-
-            @* a disabled row *@
-            <li class="nav-item is-disabled">
-                <a class="menu-link" href="#" tabindex="-1" aria-disabled="true">
-                    <i class="bi bi-life-preserver" aria-hidden="true"></i>
-                    <span class="menu-title">Help &amp; Support</span>
-                    <span class="badge menu-badge is-soon">Soon</span>
+            <!-- 1. DASHBOARD -->
+            <li class="nav-item">
+                <a class="menu-link" asp-area="" asp-controller="Dashboard" asp-action="GeneralLedger">
+                    <i class="bi bi-speedometer2 text-emerald-600 dark:text-emerald-400" aria-hidden="true"></i>
+                    <span class="menu-title font-medium">Dashboard</span>
+                    <span class="badge menu-badge bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">Live</span>
                 </a>
             </li>
+
+            <!-- SECTION: GENERAL SETUPS -->
+            <li class="nav-section">
+                <span class="menu-title">General Setups</span>
+            </li>
+
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-sliders2" aria-hidden="true"></i>
+                    <span class="menu-title">Shared Configurations</span>
+                </a>
+                <ul class="menu-content">
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="CompanyProfile">
+                            <i class="bi bi-building" aria-hidden="true"></i>
+                            <span class="menu-title">Company Profile</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="Departments">
+                            <i class="bi bi-diagram-3" aria-hidden="true"></i>
+                            <span class="menu-title">Departments</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="CostCenters">
+                            <i class="bi bi-pie-chart" aria-hidden="true"></i>
+                            <span class="menu-title">Cost Centers</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="Currencies">
+                            <i class="bi bi-currency-exchange" aria-hidden="true"></i>
+                            <span class="menu-title">Currencies</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="BanksBranches">
+                            <i class="bi bi-bank" aria-hidden="true"></i>
+                            <span class="menu-title">Banks &amp; Branches</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="Suppliers">
+                            <i class="bi bi-truck" aria-hidden="true"></i>
+                            <span class="menu-title">Suppliers</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="SupplierGroups">
+                            <i class="bi bi-people" aria-hidden="true"></i>
+                            <span class="menu-title">Supplier Groups</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="SystemNumbers">
+                            <i class="bi bi-hash" aria-hidden="true"></i>
+                            <span class="menu-title">System Numbers</span>
+                        </a>
+                    </li>
+                     
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="DefaultGlNumbers">
+                            <i class="bi bi-bookmark-check" aria-hidden="true"></i>
+                            <span class="menu-title">Default GL Numbers</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- SECTION: LEDGER CORE & CHART OF ACCOUNTS -->
+            <li class="nav-section">
+                <span class="menu-title">Ledger Core</span>
+            </li>
+
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-diagram-2" aria-hidden="true"></i>
+                    <span class="menu-title">Account Setup</span>
+                </a>
+                <ul class="menu-content">
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="AccountHeads">
+                            <i class="bi bi-folder2-open" aria-hidden="true"></i>
+                            <span class="menu-title">Account Heads</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="CoaControl">
+                            <i class="bi bi-list-nested" aria-hidden="true"></i>
+                            <span class="menu-title">Chart of Accounts Control</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="CoaDetails">
+                            <i class="bi bi-card-checklist" aria-hidden="true"></i>
+                            <span class="menu-title">Chart of Account Details</span>
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="BankAccounts">
+                            <i class="bi bi-wallet2" aria-hidden="true"></i>
+                            <span class="menu-title">Bank Accounts</span>
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="DefaultGlNumbers">
+                            <i class="bi bi-journal-check" aria-hidden="true"></i>
+                            <span class="menu-title">Default GL Accounts</span>
+                        </a>
+                    </li>
+                    
+                </ul>
+            </li>
+
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-calculator" aria-hidden="true"></i>
+                    <span class="menu-title">Budgets &amp; Planning</span>
+                </a>
+                <ul class="menu-content">
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="Budget">
+                            <i class="bi bi-calendar2-range" aria-hidden="true"></i>
+                            <span class="menu-title">Budget Allocations</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" href="#" onclick="return false;">
+                            <i class="bi bi-graph-up-arrow" aria-hidden="true"></i>
+                            <span class="menu-title">Budget Monitoring</span>
+                            <span class="badge menu-badge is-soon">Soon</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- SECTION: TRANSACTIONS & VOUCHERS -->
+            <li class="nav-section">
+                <span class="menu-title">Transactions</span>
+            </li>
+
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-journal-text" aria-hidden="true"></i>
+                    <span class="menu-title">Journal Transactions</span>
+                </a>
+                <ul class="menu-content">
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="Journal">
+                            <i class="bi bi-journal-plus" aria-hidden="true"></i>
+                            <span class="menu-title">Journal Entries</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="Journal">
+                            <i class="bi bi-check2-all" aria-hidden="true"></i>
+                            <span class="menu-title">Post Journal Batches</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="JournalHistory">
+                            <i class="bi bi-clock-history" aria-hidden="true"></i>
+                            <span class="menu-title">Journal History</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" href="#" onclick="return false;">
+                            <i class="bi bi-arrow-left-right" aria-hidden="true"></i>
+                            <span class="menu-title">Multi-Currency Batches</span>
+                            <span class="badge menu-badge is-soon">Soon</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-receipt-cutoff" aria-hidden="true"></i>
+                    <span class="menu-title">Payment Vouchers</span>
+                </a>
+                <ul class="menu-content">
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="Vouchers">
+                            <i class="bi bi-card-list" aria-hidden="true"></i>
+                            <span class="menu-title">All Vouchers</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="CreateSupplierVoucher">
+                            <i class="bi bi-file-earmark-person" aria-hidden="true"></i>
+                            <span class="menu-title">Supplier Voucher</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="CreateEmployeeVoucher">
+                            <i class="bi bi-person-badge" aria-hidden="true"></i>
+                            <span class="menu-title">Employee Voucher</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="CreateCustomerVoucher">
+                            <i class="bi bi-person-check" aria-hidden="true"></i>
+                            <span class="menu-title">Customer Voucher</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="VoucherHistory">
+                            <i class="bi bi-archive" aria-hidden="true"></i>
+                            <span class="menu-title">Voucher History</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- SECTION: TREASURY & CASH -->
+            <li class="nav-section">
+                <span class="menu-title">Treasury &amp; Cash</span>
+            </li>
+
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-cash-coin" aria-hidden="true"></i>
+                    <span class="menu-title">Accountable Imprest</span>
+                </a>
+                <ul class="menu-content">
+                    <li class="nav-item">
+                        <a class="menu-link" href="#" onclick="return false;">
+                            <i class="bi bi-send-plus" aria-hidden="true"></i>
+                            <span class="menu-title">Imprest Requests</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" href="#" onclick="return false;">
+                            <i class="bi bi-shield-check" aria-hidden="true"></i>
+                            <span class="menu-title">Imprest Approvals</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" href="#" onclick="return false;">
+                            <i class="bi bi-check-square" aria-hidden="true"></i>
+                            <span class="menu-title">Imprest Retirement</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" href="#" onclick="return false;">
+                            <i class="bi bi-table" aria-hidden="true"></i>
+                            <span class="menu-title">Imprest Register</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-wallet-fill" aria-hidden="true"></i>
+                    <span class="menu-title">Petty Cash</span>
+                </a>
+                <ul class="menu-content">
+                    <li class="nav-item">
+                        <a class="menu-link" href="#" onclick="return false;">
+                            <i class="bi bi-cash-stack" aria-hidden="true"></i>
+                            <span class="menu-title">Cash Requisitions</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" href="#" onclick="return false;">
+                            <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+                            <span class="menu-title">Disbursements</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" href="#" onclick="return false;">
+                            <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
+                            <span class="menu-title">Float Reimbursements</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" href="#" onclick="return false;">
+                            <i class="bi bi-book-half" aria-hidden="true"></i>
+                            <span class="menu-title">Petty Cash Ledger</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- SECTION: FINANCIAL STATEMENTS & AUDIT -->
+            <li class="nav-section">
+                <span class="menu-title">Statements &amp; Reports</span>
+            </li>
+
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-bar-chart-line" aria-hidden="true"></i>
+                    <span class="menu-title">Financial Reports</span>
+                </a>
+                <ul class="menu-content">
+                    <li class="nav-item">
+                        <a class="menu-link" href="#" onclick="return false;">
+                            <i class="bi bi-scale" aria-hidden="true"></i>
+                            <span class="menu-title">Trial Balance</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" href="#" onclick="return false;">
+                            <i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i>
+                            <span class="menu-title">Balance Sheet</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" href="#" onclick="return false;">
+                            <i class="bi bi-graph-up" aria-hidden="true"></i>
+                            <span class="menu-title">Profit &amp; Loss (P&amp;L)</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" href="#" onclick="return false;">
+                            <i class="bi bi-journal-richtext" aria-hidden="true"></i>
+                            <span class="menu-title">General Ledger Summary</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" href="#" onclick="return false;">
+                            <i class="bi bi-activity" aria-hidden="true"></i>
+                            <span class="menu-title">Cash Flow Statement</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Manage" asp-action="AuditTrail">
+                            <i class="bi bi-shield-lock" aria-hidden="true"></i>
+                            <span class="menu-title">Audit Trail &amp; Logs</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
         </ul>
     </nav>
 
-    @* signed-in user + rail expand button *@
+    <!-- Sidebar Footer: User Card + Rail Expand -->
     <div class="sidebar-foot">
         <div class="sidebar-user">
-            <span class="sidebar-avatar">@initials</span>
+            <span class="sidebar-avatar bg-emerald-600 text-white font-bold ring-2 ring-emerald-400/30">@initials</span>
             <span class="sidebar-user-text">
-                    <span class="sidebar-user-name">@userName</span>
-                    <span class="sidebar-user-role">@(User?.IsInRole("Admin") == true ? "Administrator" : "User")</span>
-                </span>
-            <form class="sidebar-signout" asp-area="" asp-controller="Home" asp-action="Index" onsubmit="return false">
-                <button type="submit" class="sidebar-icon-btn" title="Sign out"><i class="bi bi-box-arrow-right" aria-hidden="true"></i></button>
+                <span class="sidebar-user-name font-semibold text-slate-800 dark:text-slate-100">@userName</span>
+                <span class="sidebar-user-role text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">@(User?.IsInRole("Admin") == true ? "GL Administrator" : "Finance Officer")</span>
+            </span>
+            <form class="sidebar-signout" asp-area="" asp-controller="Account" asp-action="Login" method="get">
+                <button type="submit" class="sidebar-icon-btn hover:text-rose-500" title="Sign out" aria-label="Sign out">
+                    <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                </button>
             </form>
         </div>
         <button type="button" class="sidebar-icon-btn sidebar-expand" data-action="expand" title="Expand sidebar (Ctrl+B)">
@@ -269,131 +603,231 @@ var initials = string.Concat(userName.Split(new[] { '.', ' ', '_', '-' }, String
         </button>
     </div>
 
+    <!-- Drag Resizer -->
     <span class="sidebar-resizer" data-action="resize" role="separator" aria-orientation="vertical"
           title="Drag to resize · double-click to reset"></span>
 </aside>
 
 <div class="sidebar-backdrop" data-action="backdrop" hidden></div>
 
-@* ══════════════════════════════ HEADER ══════════════════════════════ *@
-<header class="app-topbar bg-info" id="appTopbar">
-    <button type="button" class="topbar-btn" data-action="toggle-sidebar" aria-label="Toggle navigation" aria-haspopup="true">
-        <i class="bi bi-list" aria-hidden="true"></i>
+@* ══════════════════════════════ EXECUTIVE TOPBAR ══════════════════════════════ *@
+<header class="app-topbar app-topbar-erp" id="appTopbar">
+    
+    <!-- Mobile / Drawer Toggle -->
+    <button type="button" class="topbar-btn hover:bg-slate-800" data-action="toggle-sidebar" aria-label="Toggle navigation" aria-haspopup="true">
+        <i class="bi bi-list text-xl text-slate-200" aria-hidden="true"></i>
     </button>
 
-    @*<div class="topbar-title">
-            <h1>@title</h1>
-            <p>@subtitle</p>
-        </div>*@
-
-
-    <div class="topbar-search" data-search-wrap>
-
-        <input type="search" id="topbarSearch" data-search-input autocomplete="off"
-               placeholder="Search anything…" aria-label="Search" />
-
-        <div class="dropdown-panel search-results" id="searchResults" hidden></div>
+    <!-- Active Module Pill Indicator -->
+    
+    <div class="hidden sm:flex items-center gap-2 pl-1">
+        <span class="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-400">
+            <span class="relative flex h-2 w-2">
+                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/60"></span>
+                <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-400"></span>
+            </span>
+            General Ledger
+        </span>
     </div>
 
-    <div class="topbar-actions">
-        <button type="button" class="topbar-btn md:hidden" data-action="mobile-search" aria-label="Search">
+
+    <!-- Global Omnibar Search -->
+    <div class="topbar-search" data-search-wrap>
+        <div class="relative w-full max-w-md group">
+            <i class="bi bi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none group-focus-within:text-emerald-400 transition-colors"></i>
+            <input type="search" id="topbarSearch" data-search-input autocomplete="off"
+                   class="w-full h-9 pl-9 pr-14 rounded-xl text-sm bg-slate-800/80 hover:bg-slate-800 focus:bg-slate-900 text-slate-100 placeholder-slate-400 border border-slate-700/80 focus:border-emerald-500/80 focus:ring-2 focus:ring-emerald-500/20 transition-all outline-none"
+                   placeholder="Search accounts, journals, reports… (Press '/' to focus)" aria-label="Search" />
+            <kbd class="hidden sm:inline-flex items-center absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 bg-slate-900/80 rounded border border-slate-700 pointer-events-none">Ctrl+K</kbd>
+        </div>
+        <div class="dropdown-panel search-results shadow-2xl rounded-xl border border-slate-700 bg-slate-900 text-slate-100" id="searchResults" hidden></div>
+    </div>
+
+    <!-- Topbar Actions -->
+    <div class="topbar-actions flex items-center gap-1.5">
+
+        <!-- Mobile Search Trigger -->
+        <button type="button" class="topbar-btn md:hidden hover:bg-slate-800 text-slate-300" data-action="mobile-search" aria-label="Search">
             <i class="bi bi-search" aria-hidden="true"></i>
         </button>
 
-        <button type="button" class="topbar-btn" data-action="theme" title="Dark mode" aria-label="Toggle dark mode">
-            <i class="bi bi-moon-stars" data-theme-icon aria-hidden="true"></i>
-        </button>
-
-        @*<div class="dropdown" data-dropdown="notif">
-                <button type="button" class="topbar-btn" data-toggle aria-label="Notifications" aria-haspopup="menu">
-                    <i class="bi bi-bell" aria-hidden="true"></i>
-                    @if (unreadCount > 0)
-                    {
-                        <span class="topbar-badge" data-unread-count>@unreadCount</span>
-                    }
-                </button>
-                <div class="dropdown-panel dropdown-panel-notif" role="menu">
-                    <div class="dropdown-head">
-                        <p>Notifications</p>
-                        <button type="button" data-action="mark-read">Mark all read</button>
-                    </div>
-                    <ul class="notif-list">
-                        @foreach (var n in notifications)
-                        {
-                            <li class="@(n.Unread ? "is-unread" : "")">
-                                <span class="notif-icon tone-@n.Tone"><i class="bi @n.Icon" aria-hidden="true"></i></span>
-                                <span class="notif-body">
-                                    <span class="notif-title">@n.Title <i class="notif-dot" aria-hidden="true"></i></span>
-                                    <span class="notif-text">@n.Body</span>
-                                    <span class="notif-time">@n.Time</span>
-                                </span>
-                            </li>
-                        }
-                    </ul>
-                    <div class="dropdown-foot"><a href="#">View all notifications</a></div>
-                </div>
-            </div>*@
-
-        <span class="topbar-divider"></span>
-
-        @* Hello Admin *@
-        <div class="dropdown" data-dropdown="user">
-            <button type="button" class="topbar-user" data-toggle aria-haspopup="menu">
-                <span class="topbar-avatar">@initials</span>
-                <span class="topbar-user-text">
-                        <span class="hello">Hello,</span>
-                        <span class="name">@userName</span>
-                    </span>
-                <i class="bi bi-chevron-down topbar-caret" aria-hidden="true"></i>
+        <!-- Quick Action: New Journal Entry -->
+        <div class="dropdown hidden md:block" data-dropdown="quickaction">
+            <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all focus:outline-none" data-toggle aria-haspopup="menu">
+                <i class="bi bi-plus-circle font-bold"></i>
+                <span>New Batch</span>
+                <i class="bi bi-chevron-down text-[10px] opacity-75"></i>
             </button>
-            <div class="dropdown-panel dropdown-panel-user" role="menu">
-                <div class="dropdown-head user-head">
-                    <span class="topbar-avatar lg">@initials</span>
-                    <span class="user-head-text">
-                            <span class="name">@userName</span>
-                            <span class="email">@(User?.FindFirst("email")?.Value ?? "admin@topaz.erp")</span>
-                            <span class="role">@(User?.IsInRole("Admin") == true ? "Administrator" : "User")</span>
-                        </span>
+            <div class="dropdown-panel w-56 p-1.5 shadow-2xl rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900" role="menu">
+                <div class="px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800">
+                    Quick Transactions
                 </div>
-                <ul class="dropdown-menu-list">
-                    <li><a asp-area="" asp-controller="Manage" asp-action="Profile"><i class="bi bi-person-circle"></i>My Profile</a></li>
-                    <li><a asp-area="" asp-controller="Manage" asp-action="Users"><i class="bi bi-sliders"></i>Manage Users</a></li>
-                    <li><a asp-area="" asp-controller="Manage" asp-action="UpdatePassword"><i class="bi bi-key"></i>Update Password</a></li>
-                    <li><a asp-area="" asp-controller="Manage" asp-action="Modules"><i class="bi bi-gear"></i>Modules</a></li>
-                    <li><a href="#"><i class="bi bi-question-circle"></i>Help &amp; Support</a></li>
+                <ul class="py-1 text-xs">
+                    <li>
+                        <a asp-area="" asp-controller="GeneralLedger" asp-action="Journal" class="flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-600">
+                            <i class="bi bi-journal-plus text-emerald-500 text-sm"></i>
+                            <span>Create Journal Batch</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-area="" asp-controller="GeneralLedger" asp-action="CreateSupplierVoucher" class="flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-600">
+                            <i class="bi bi-file-earmark-person text-blue-500 text-sm"></i>
+                            <span>Supplier Payment Voucher</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-area="" asp-controller="GeneralLedger" asp-action="CreateEmployeeVoucher" class="flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-600">
+                            <i class="bi bi-person-badge text-purple-500 text-sm"></i>
+                            <span>Employee Imprest Voucher</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-area="" asp-controller="GeneralLedger" asp-action="Budget" class="flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-600">
+                            <i class="bi bi-calculator text-amber-500 text-sm"></i>
+                            <span>Budget Setup</span>
+                        </a>
+                    </li>
                 </ul>
-                <div class="dropdown-foot signout">
-                    <a asp-area="" asp-controller="Account" asp-action="Login" >
-                        <button ><i class="bi bi-box-arrow-right"></i>Sign out</button>
+            </div>
+        </div>
+
+        <!-- ERP Module Hub Switcher -->
+        <div class="dropdown" data-dropdown="moduleswitcher">
+            <button type="button" class="topbar-btn hover:bg-slate-800 text-slate-300" data-toggle title="Topaz ERP Modules" aria-label="Switch modules" aria-haspopup="menu">
+                <i class="bi bi-grid-3x3-gap-fill text-lg" aria-hidden="true"></i>
+            </button>
+            <div class="dropdown-panel w-72 shadow-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900" role="menu">
+                <div class="dropdown-head border-b border-slate-100 dark:border-slate-800 px-4 py-3 flex items-center justify-between">
+                    <div>
+                        <p class="font-semibold text-sm text-slate-900 dark:text-white">ERP Applications</p>
+                        <p class="text-[11px] text-slate-400">Switch workspace</p>
+                    </div>
+                    <a asp-area="" asp-controller="Manage" asp-action="Modules" class="text-xs text-emerald-600 hover:underline font-medium">All Modules</a>
+                </div>
+                <div class="module-switcher-grid">
+                    <a href="/Dashboard/GeneralLedger" class="module-switcher-card ring-1 ring-emerald-500/50 bg-emerald-500/10">
+                        <div class="module-icon-wrap bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+                            <i class="bi bi-journal-text"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="font-semibold text-slate-900 dark:text-white">General Ledger</span>
+                            <span class="text-[10px] text-emerald-600 dark:text-emerald-400">Active</span>
+                        </div>
+                    </a>
+                    <a href="/Dashboard/Payroll" class="module-switcher-card">
+                        <div class="module-icon-wrap bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+                            <i class="bi bi-people"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span>Payroll</span>
+                            <span class="text-[10px] text-slate-400">HR &amp; Salaries</span>
+                        </div>
+                    </a>
+                    <a href="/Dashboard/Ap" class="module-switcher-card">
+                        <div class="module-icon-wrap bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300">
+                            <i class="bi bi-receipt"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span>Payables</span>
+                            <span class="text-[10px] text-slate-400">Vendors &amp; Bills</span>
+                        </div>
+                    </a>
+                    <a href="/Dashboard/Ar" class="module-switcher-card">
+                        <div class="module-icon-wrap bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300">
+                            <i class="bi bi-cash-stack"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span>Receivables</span>
+                            <span class="text-[10px] text-slate-400">Billing &amp; Receipts</span>
+                        </div>
                     </a>
                 </div>
             </div>
         </div>
+
+        <!-- Dark / Light Theme Toggle -->
+        <button type="button" class="topbar-btn hover:bg-slate-800 text-slate-300" data-action="theme" title="Toggle color mode" aria-label="Toggle dark mode">
+            <i class="bi bi-moon-stars" data-theme-icon aria-hidden="true"></i>
+        </button>
+
+        <!-- Divider -->
+        <span class="h-6 w-px bg-slate-700/80 mx-1"></span>
+
+        <!-- User Profile Dropdown -->
+        <div class="dropdown" data-dropdown="user">
+            <button type="button" class="topbar-user flex items-center gap-2 p-1 rounded-xl hover:bg-slate-800 transition-colors" data-toggle aria-haspopup="menu">
+                <span class="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 text-white font-bold flex items-center justify-center text-xs shadow-sm ring-2 ring-emerald-400/40">@initials</span>
+                <span class="topbar-user-text hidden lg:flex flex-col text-left leading-tight">
+                    <span class="text-[10px] uppercase tracking-wider text-slate-400">Finance User</span>
+                    <span class="text-xs font-semibold text-slate-100">@userName</span>
+                </span>
+                <i class="bi bi-chevron-down text-slate-400 text-xs ml-0.5" aria-hidden="true"></i>
+            </button>
+            <div class="dropdown-panel dropdown-panel-user w-64 shadow-2xl rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900" role="menu">
+                <div class="dropdown-head user-head p-4 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
+                    <span class="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 text-white font-bold flex items-center justify-center text-sm shadow-sm ring-2 ring-emerald-500/30">@initials</span>
+                    <div class="user-head-text flex flex-col min-w-0">
+                        <span class="name font-bold text-sm text-slate-900 dark:text-white truncate">@userName</span>
+                        <span class="email text-xs text-slate-500 dark:text-slate-400 truncate">@(User?.FindFirst("email")?.Value ?? "admin@topaz.erp")</span>
+                        <span class="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 rounded-full w-max">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            @(User?.IsInRole("Admin") == true ? "GL Administrator" : "Finance Officer")
+                        </span>
+                    </div>
+                </div>
+                <ul class="dropdown-menu-list py-1.5 text-sm">
+                    <li><a asp-area="" asp-controller="Manage" asp-action="Profile"><i class="bi bi-person-circle"></i>My Profile</a></li>
+                    <li><a asp-area="" asp-controller="Manage" asp-action="Users"><i class="bi bi-sliders"></i>Manage Users</a></li>
+                    <li><a asp-area="" asp-controller="Manage" asp-action="UpdatePassword"><i class="bi bi-key"></i>Security &amp; Password</a></li>
+                    <li><a asp-area="" asp-controller="Manage" asp-action="AuditTrail"><i class="bi bi-clock-history"></i>Audit Trail</a></li>
+                    <li><a asp-area="" asp-controller="Manage" asp-action="Modules"><i class="bi bi-grid"></i>Topaz Modules</a></li>
+                </ul>
+                <div class="dropdown-foot signout p-2 border-t border-slate-100 dark:border-slate-800">
+                    <a asp-area="" asp-controller="Account" asp-action="Login" class="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span>Sign out of ERP</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
     </div>
 
+    <!-- Mobile Search Drawer Overlay -->
     <div class="topbar-mobile-search" id="topbarMobileSearch" hidden>
-        <input type="search" id="topbarSearchMobile" data-search-input autocomplete="off" placeholder="Search anything…" aria-label="Search" />
+        <input type="search" id="topbarSearchMobile" data-search-input autocomplete="off" placeholder="Search accounts, journals, reports…" aria-label="Search" />
         <div class="dropdown-panel search-results" id="searchResultsMobile" hidden></div>
     </div>
 </header>
 
-@* ══════════════════════════════ PAGE ══════════════════════════════ *@
+@* ══════════════════════════════ PAGE MAIN CONTAINER ══════════════════════════════ *@
 <main role="main" class="page-main">
     <div class="page-container">
         @RenderBody()
     </div>
 </main>
 
-<footer class="page-footer">
-    <div class="page-container page-footer-inner">
-        <span>&copy; @DateTime.Now.Year - Topaz, All rights reserved.</span>
-        <a href="#">Privacy</a>
+<!-- Modern ERP Page Footer -->
+<footer class="page-footer border-t border-slate-200/80 bg-white/70 dark:border-slate-800/80 dark:bg-slate-900/70 backdrop-blur-md">
+    <div class="page-container page-footer-inner flex flex-wrap items-center justify-between gap-4 py-3 text-xs text-slate-500 dark:text-slate-400">
+        <div class="flex items-center gap-3">
+            <span class="font-medium text-slate-700 dark:text-slate-300">&copy; @DateTime.Now.Year Topaz ERP</span>
+            <span class="inline-block w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700"></span>
+        </div>
+        <div class="flex items-center gap-4">
+             
+            <a href="#" class="hover:text-emerald-600 transition-colors">Documentation</a>
+            <a href="#" class="hover:text-emerald-600 transition-colors">Support</a>
+        </div>
     </div>
 </footer>
 
+<!-- Core Shell Scripts -->
 <script src="~/js/app-shell.js" asp-append-version="true"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
 <script src="~/js/card.js" asp-append-version="true"></script>
+
 @await RenderSectionAsync("Scripts", required: false)
+
 </body>
 </html>

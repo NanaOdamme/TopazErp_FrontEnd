@@ -1,291 +1,343 @@
-﻿const app = Vue.createApp({
+const app = Vue.createApp({
     data() {
         return {
             isShimmerLoading: false,
-            payload: {},
             theme: '#0645e7',
             bankList: [],
-            bankBranchList: [],
-            bankColumns : [
-                { key:'id',         label:'ID',         type:'text', hidden:true,   width:74, help:'Auto-filled, but you can change it' },
-                { key:'name',       label:'Name',     type:'avatar',   width:250, minWidth:250, required:true, searchable:true, subtitleKey:'email' },
-                { key:'contactPerson',      label:'Contact Person',      type:'text',    width:230, searchable:true,},
-                { key:'email',      label:'Email',      type:'email',    width:250,  required:true, searchable:true,},
-                { key:'contactNo',       label:'Contact No',       type:'text',  width:150, searchable:true, },
-                { key:'bankCode', label:'Bank Code', type:'text',  width:120, searchable:true, },
-                { key:'tenantId',      label:'Tenant',      type:'number', hidden:true, minWidth:74 }
+
+            bankColumns: [
+                { key: 'id',            label: 'ID',             type: 'text',   hidden: true, width: 74 },
+                { key: 'name',          label: 'Bank Name',      type: 'avatar', width: 250, minWidth: 250, required: true, searchable: true, subtitleKey: 'bankCode' },
+                { key: 'bankCode',      label: 'Bank Code',      type: 'text',   width: 130, searchable: true },
+                { key: 'contactPerson', label: 'Contact Person', type: 'text',   width: 200, searchable: true },
+                { key: 'email',         label: 'Email',          type: 'email',  width: 240, required: true, searchable: true },
+                { key: 'contactNo',     label: 'Contact No',     type: 'phone',  width: 160, searchable: true },
+                { key: 'tenantId',      label: 'Tenant',         type: 'number', hidden: true }
             ],
-            childSchema : { },
-            branchCol : {
-                key:'bankBranches', title:'Branch',
+
+            branchCol: {
+                key: 'bankBranches',
+                title: 'Branches',
                 columns: [
-        { key:'id',         label:'ID',         type:'text', hidden:true,   width:74, help:'Auto-filled, but you can change it' },
-        { key:'bankId',         label:'Bank ID',  hidden:true, type:'text', },
-        { key:'name',       label:'Name',     type:'avatar',   width:250, minWidth:250, required:true, searchable:true, subtitleKey:'email' },
-        { key:'contactPerson',      label:'Contact Person',      type:'text',    width:230, searchable:true,},
-        { key:'email',      label:'Email',      type:'email',    width:250,  required:true, searchable:true,},
-        { key:'contactNo',       label:'Contact No',       type:'text',  width:150, searchable:true, },
-    ]
-            },
-               
-           
-        }
+                    { key: 'id',            label: 'ID',             type: 'text',   hidden: true, width: 74 },
+                    { key: 'bankId',        label: 'Bank ID',        type: 'text',   hidden: true },
+                    { key: 'name',          label: 'Branch Name',    type: 'avatar', width: 250, minWidth: 250, required: true, searchable: true, subtitleKey: 'email' },
+                    { key: 'contactPerson', label: 'Contact Person', type: 'text',   width: 200, searchable: true },
+                    { key: 'email',         label: 'Email',          type: 'email',  width: 240, required: true, searchable: true },
+                    { key: 'contactNo',     label: 'Contact No',     type: 'phone',  width: 160, searchable: true }
+                ]
+            }
+        };
     },
 
     methods: {
-       
+        /* ── Fetch ──────────────────────────────────────────────── */
 
-        // Create a unique mock ID
-        generateId(prefix = 'BANK') {
-            return `${prefix}-${Date.now()}-${Math.floor(
-                Math.random() * 1000
-            )}`;
+        async getBanks() {
+            this.isShimmerLoading = true;
+            try {
+                const response = await axios.get('/SharedResource/GetBanks?pageNo=1&pageSize=1000');
+                const res = response.data;
+                const rawList = res?.result?.data || res?.result || res?.data || (Array.isArray(res) ? res : []);
+
+                this.bankList = rawList.map(bank => {
+                    const branches = bank.bankBranches || bank.BankBranches || [];
+                    branches.forEach(branch => {
+                        branch.bankId = branch.bankId || bank.id;
+                    });
+                    return {
+                        ...bank,
+                        bankBranches: branches
+                    };
+                });
+            } catch (error) {
+                console.error('Failed to load banks:', error);
+                this.toastHandler('error', 'Unable to load banks.');
+            } finally {
+                this.isShimmerLoading = false;
+            }
         },
 
-        // Basic validation before simulating requests
-        validateRecord(row) {
-            if (!row.name || !row.name.trim()) {
-                this.toastHandler('Name is required.', 'warning');
-                return false;
+        /* ── CRUD Dispatchers wired to <data-grid> events ───────── */
+
+        // @create — fired after grid form submit (mode='create')
+        // event shape: { grid, level, row, data }
+        async onCreate(event) {
+            const row = event?.row || event?.data;
+            if (!row) return;
+
+            // level 1 = child grid (Branch), level 0 = parent grid (Bank)
+            if (event?.level === 1) {
+                await this.createBranch(row, event?.grid);
+            } else {
+                await this.createBank(row);
+            }
+        },
+
+        // @update — fired after grid form submit (mode='update')
+        // event shape: { grid, level, row, data }
+        async onUpdate(event) {
+            const row = event?.row || event?.data;
+            if (!row) return;
+
+            if (event?.level === 1) {
+                await this.updateBranch(row, event?.grid);
+            } else {
+                await this.updateBank(row);
+            }
+        },
+
+        // @delete — fired after delete confirmation dialog
+        // event shape: { grid, level, rows }
+        async onDelete(event) {
+            const rows = event?.rows;
+            if (!Array.isArray(rows) || !rows.length) return;
+
+            if (event?.level === 1) {
+                await this.deleteBranch(rows, event?.grid);
+            } else {
+                await this.deleteBank(rows);
+            }
+        },
+
+        /* ── Bank CRUD ──────────────────────────────────────────── */
+
+        async createBank(row) {
+            if (!this.validateBank(row)) return;
+
+            const payload = {
+                name: String(row.name || '').trim(),
+                contactPerson: String(row.contactPerson || '').trim(),
+                email: String(row.email || '').trim(),
+                contactNo: String(row.contactNo || '').trim(),
+                bankCode: String(row.bankCode || '').trim(),
+                bankBranches: []
+            };
+
+            this.isShimmerLoading = true;
+            try {
+                await axios.post('/SharedResource/CreateBank', payload);
+                await this.getBanks();
+                this.toastHandler('success', 'Bank created successfully.');
+            } catch (err) {
+                console.error('Failed to create bank:', err);
+                this.toastHandler('error', 'Failed to create bank.');
+            } finally {
+                this.isShimmerLoading = false;
+            }
+        },
+
+        async updateBank(row) {
+            if (!this.validateBank(row)) return;
+
+            const existing = this.bankList.find(b => b.id === row.id);
+            if (!existing) {
+                this.toastHandler('error', 'Bank record was not found.');
+                return;
             }
 
-            if (!row.email || !row.email.trim()) {
-                this.toastHandler('Email is required.', 'warning');
-                return false;
+            const payload = {
+                ...existing,
+                ...row,
+                id: existing.id,
+                tenantId: existing.tenantId,
+                name: String(row.name || '').trim(),
+                contactPerson: String(row.contactPerson || '').trim(),
+                email: String(row.email || '').trim(),
+                contactNo: String(row.contactNo || '').trim(),
+                bankCode: String(row.bankCode || '').trim()
+            };
+
+            this.isShimmerLoading = true;
+            try {
+                await axios.post('/SharedResource/UpdateBank', payload);
+                const idx = this.bankList.findIndex(b => b.id === payload.id);
+                if (idx !== -1) {
+                    this.bankList.splice(idx, 1, {
+                        ...this.bankList[idx],
+                        ...payload,
+                        bankBranches: this.bankList[idx].bankBranches || []
+                    });
+                }
+                this.toastHandler('success', 'Bank updated successfully.');
+            } catch (err) {
+                console.error('Failed to update bank:', err);
+                this.toastHandler('error', 'Failed to update bank.');
+                await this.getBanks();
+            } finally {
+                this.isShimmerLoading = false;
+            }
+        },
+
+        async deleteBank(rows) {
+            this.isShimmerLoading = true;
+            try {
+                const results = await Promise.allSettled(
+                    rows.map(r => axios.get('/SharedResource/DelBank?id=' + r.id))
+                );
+
+                const failed = results.filter(r => r.status === 'rejected').length;
+                if (failed) {
+                    this.toastHandler('warning', `${rows.length - failed} bank(s) deleted; ${failed} failed.`);
+                    await this.getBanks();
+                } else {
+                    this.toastHandler('success', `${rows.length} bank(s) deleted successfully.`);
+                }
+            } catch (err) {
+                console.error('Failed to delete bank:', err);
+                this.toastHandler('error', 'Failed to delete bank.');
+                await this.getBanks();
+            } finally {
+                this.isShimmerLoading = false;
+            }
+        },
+
+        /* ── Branch CRUD ────────────────────────────────────────── */
+
+        findParentBank(branch, grid) {
+            if (!branch) return null;
+
+            // 1. By direct bankId
+            if (branch.bankId) {
+                const found = this.bankList.find(b => b.id === branch.bankId);
+                if (found) return found;
             }
 
+            // 2. By searching bankBranches collection
+            const foundInBranches = this.bankList.find(b =>
+                (b.bankBranches || []).some(br => br === branch || (br.id && br.id === branch.id))
+            );
+            if (foundInBranches) return foundInBranches;
+
+            // 3. Fallback: through grid parentLabel if available
+            if (grid?.parentLabel) {
+                const labelMatch = this.bankList.find(b => grid.parentLabel.includes(b.name));
+                if (labelMatch) return labelMatch;
+            }
+
+            return null;
+        },
+
+        async createBranch(row, grid) {
+            if (!this.validateBranch(row)) return;
+
+            const parentBank = this.findParentBank(row, grid);
+            const bankId = parentBank ? parentBank.id : row.bankId;
+
+            if (!bankId) {
+                this.toastHandler('error', 'Parent bank could not be determined.');
+                return;
+            }
+
+            const branchId = row.id && !String(row.id).startsWith('row-') ? row.id : this.uuid();
+            row.id = branchId;
+            row.bankId = bankId;
+
+            const payload = {
+                id: branchId,
+                bankId: bankId,
+                name: String(row.name || '').trim(),
+                contactPerson: String(row.contactPerson || '').trim(),
+                email: String(row.email || '').trim(),
+                contactNo: String(row.contactNo || '').trim()
+            };
+
+            this.isShimmerLoading = true;
+            try {
+                await axios.post('/SharedResource/CreateBankBranch', payload);
+                await this.getBanks();
+                this.toastHandler('success', 'Branch created successfully.');
+            } catch (err) {
+                console.error('Failed to create branch:', err);
+                this.toastHandler('error', 'Failed to create branch.');
+            } finally {
+                this.isShimmerLoading = false;
+            }
+        },
+
+        async updateBranch(row, grid) {
+            if (!this.validateBranch(row)) return;
+
+            const parentBank = this.findParentBank(row, grid);
+            const bankId = parentBank ? parentBank.id : row.bankId;
+
+            const payload = {
+                id: row.id,
+                bankId: bankId,
+                name: String(row.name || '').trim(),
+                contactPerson: String(row.contactPerson || '').trim(),
+                email: String(row.email || '').trim(),
+                contactNo: String(row.contactNo || '').trim()
+            };
+
+            this.isShimmerLoading = true;
+            try {
+                await axios.post('/SharedResource/UpdateBankBranch', payload);
+                await this.getBanks();
+                this.toastHandler('success', 'Branch updated successfully.');
+            } catch (err) {
+                console.error('Failed to update branch:', err);
+                this.toastHandler('error', 'Failed to update branch.');
+                await this.getBanks();
+            } finally {
+                this.isShimmerLoading = false;
+            }
+        },
+
+        async deleteBranch(rows, grid) {
+            this.isShimmerLoading = true;
+            try {
+                const results = await Promise.allSettled(
+                    rows.map(r => {
+                        const parent = this.findParentBank(r, grid);
+                        const bankId = parent ? parent.id : r.bankId;
+                        return axios.post('/SharedResource/DelBankBranch', {
+                            id: r.id,
+                            bankId: bankId
+                        });
+                    })
+                );
+
+                const failed = results.filter(r => r.status === 'rejected').length;
+                if (failed) {
+                    this.toastHandler('warning', `${rows.length - failed} branch(es) deleted; ${failed} failed.`);
+                } else {
+                    this.toastHandler('success', `${rows.length} branch(es) deleted successfully.`);
+                }
+                await this.getBanks();
+            } catch (err) {
+                console.error('Failed to delete branch:', err);
+                this.toastHandler('error', 'Failed to delete branch.');
+                await this.getBanks();
+            } finally {
+                this.isShimmerLoading = false;
+            }
+        },
+
+        /* ── Helpers & Validation ───────────────────────────────── */
+
+        validateBank(row) {
+            if (!row.name || !String(row.name).trim()) {
+                this.toastHandler('error', 'Bank Name is required.');
+                return false;
+            }
+            if (!row.email || !String(row.email).trim()) {
+                this.toastHandler('error', 'Email is required.');
+                return false;
+            }
             return true;
         },
 
-        // CREATE
-        async onCreate(event) {
-            try {
-                const row = event?.row;
-
-                if (!row || !this.validateRecord(row)) {
-                    return;
-                }
-
-                // Create payload excludes ID and tenant ID.
-                const {
-                    id,
-                    tenantId,
-                    ...createPayload
-                } = row;
-
-                // Simulated request payload.
-                console.log('CREATE PAYLOAD:', createPayload);
-
-                this.isShimmerLoading = true;
-
-                // Simulate backend assigning ID and tenant.
-                const createdRecord = {
-                    ...createPayload,
-                    id: this.generateId('BANK'),
-                    tenantId: this.currentTenantId
-                };
-
-               // this.bankList.unshift(createdRecord);
-
-                this.toastHandler('Bank created successfully.');
-
-                console.log('CREATED RECORD:', createdRecord);
-
-            } catch (error) {
-                console.error('Create failed:', error);
-                this.toastHandler('Failed to create bank.', 'error');
-            } finally {
-                this.isShimmerLoading = false;
+        validateBranch(row) {
+            if (!row.name || !String(row.name).trim()) {
+                this.toastHandler('error', 'Branch Name is required.');
+                return false;
             }
-        },
-
-        // UPDATE
-        async onUpdate(event) {
-            try {
-                const row = event?.row;
-
-                if (!row || !this.validateRecord(row)) {
-                    return;
-                }
-
-                // Find the original record so ID and tenant ID
-                // are retained even if the editor omits them.
-                const existingRecord = this.bankList.find(
-                    item => item.id === row.id
-                );
-
-                if (!existingRecord) {
-                    this.toastHandler('Bank record was not found.', 'error');
-                    return;
-                }
-
-                // ID and tenant ID are automatically included.
-                const updatePayload = {
-                    ...existingRecord,
-                    ...row,
-                    id: existingRecord.id,
-                    tenantId: existingRecord.tenantId
-                };
-
-                console.log('UPDATE PAYLOAD:', updatePayload);
-
-                this.isShimmerLoading = true;
-
-                const index = this.bankList.findIndex(
-                    item => item.id === updatePayload.id
-                );
-
-                if (index !== -1) {
-                    this.bankList.splice(index, 1, {
-                        ...updatePayload
-                    });
-                }
-
-                this.toastHandler('Bank updated successfully.');
-
-                console.log('UPDATED RECORD:', updatePayload);
-
-            } catch (error) {
-                console.error('Update failed:', error);
-                this.toastHandler('Failed to update bank.', 'error');
-            } finally {
-                this.isShimmerLoading = false;
+            if (!row.email || !String(row.email).trim()) {
+                this.toastHandler('error', 'Email is required.');
+                return false;
             }
-        },
-
-      
-        onDelete(event) { console.info('Delete record(s)', event.rows); },
-        // =========================
-        // LOAD DATA
-        // =========================
-       /* getSetupData() {
-            axios.get('http://localhost:5300/SharedResource/GetBanks', {withCredentials: true})
-                .then(response => {
-
-                    this.bankList = response.data;
-                    this.bankBranchList = [];
-
-                    this.bankList.forEach(bank => {
-                        
-                        bank.bankId = bank.id;
-                        
-                        if (bank.bankBranches && bank.bankBranches.length > 0) {
-                            bank.bankBranches.forEach(branch => {
-                                branch.bankId = bank.id;
-                                this.bankBranchList.push(branch);
-
-                            });
-                        }
-
-                    });
-                      this.childSchema = {key:'bankBranches', title:'Branches', columns: this.branchCol}
-                  //  this.renderTable(this.bankList, this.bankBranchList);
-
-                })
-                .catch(err => {
-                    console.error(err);
-                    this.toastHandler('error', 'Unable to get banks.');
-                });
-        },*/
-        
-        // =========================
-        // BANK CRUD
-        // =========================
-        saveBank(payload) {
-
-            delete payload.id;
-            delete payload.tenantId;
-
-            axios.post('http://localhost:5300/SharedResource/CreateBank', payload, {  withCredentials: true})
-                .then(response => {
-
-                    this.getSetupData();
-
-                    if (response.data.code === 200) {
-                        this.toastHandler('', 'Bank saved.');
-                    } else {
-                        this.toastHandler('error', response.data.message);
-                    }
-
-                })
-                .catch(() => {
-                    this.toastHandler('error', 'Unable to save bank.');
-                });
-        },
-
-        updateBank(payload) {
-
-            axios.post('/SharedResource/UpdateBank', payload)
-                .then(() => {
-                    this.getSetupData();
-                    this.toastHandler('', 'Bank updated.');
-                })
-                .catch(() => {
-                    this.toastHandler('error', 'Unable to update bank.');
-                });
-        },
-
-        deleteBank(id) {
-
-            axios.get('/SharedResource/DelBank?id=' + id)
-                .then(() => {
-                    this.getSetupData();
-                    this.toastHandler('', 'Bank deleted.');
-                })
-                .catch(() => {
-                    this.toastHandler('error', 'Unable to delete bank.');
-                });
-        },
-
-        // =========================
-        // BRANCH CRUD
-        // =========================
-        saveBranch(payload) {
-
-            payload.id = this.uuid();
-
-            axios.post('/SharedResource/CreateBankBranch', payload)
-                .then(response => {
-
-                    if (response.data.code === 200) {
-                        this.toastHandler('', 'Bank Branch saved.');
-                    } else {
-                        this.toastHandler('error', response.data.message);
-                    }
-
-                })
-                .catch(() => {
-                    this.toastHandler('error', 'Unable to save bank branch.');
-                });
-        },
-
-        updateBranch(payload) {
-
-            axios.post('/SharedResource/UpdateBankBranch', payload)
-                .then(() => {
-                    this.toastHandler('', 'Bank Branch updated.');
-                })
-                .catch(() => {
-                    this.toastHandler('error', 'Unable to update bank branch.');
-                });
-        },
-
-        delBranch(payload) {
-
-            axios.post('/SharedResource/DelBankBranch', payload)
-                .then(() => {
-                    this.toastHandler('', 'Bank Branch deleted.');
-                })
-                .catch(() => {
-                    this.toastHandler('error', 'Unable to delete bank branch.');
-                });
-        },
-
-        // =========================
-        // HELPERS
-        // =========================
-        getBankDetails(id) {
-            return this.bankList.find(b => b.id === id);
+            return true;
         },
 
         uuid() {
@@ -295,31 +347,26 @@
         },
 
         toastHandler(type, message = 'An unexpected error occurred.') {
-            if (typeof Swal === 'undefined') {
-                console.log(message);
-                return;
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'success',
+                    title: message,
+                    showConfirmButton: false,
+                    timer: 4000,
+                    timerProgressBar: true
+                });
+            } else {
+                console.log(`[${type.toUpperCase()}] ${message}`);
             }
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'success',
-                title: message,
-                showConfirmButton: false,
-                timer: 4000,
-                timerProgressBar: true
-            });
-
-        },
-
+        }
     },
 
     mounted() {
-     //   this.getSetupData();
+        this.getBanks();
     }
 });
+
 app.use(DataGridPlugin);
-
 app.mount('#app');
-
-
-
