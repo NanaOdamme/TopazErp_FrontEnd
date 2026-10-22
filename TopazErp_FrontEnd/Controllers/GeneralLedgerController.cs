@@ -91,7 +91,15 @@ public class GeneralLedgerController : Controller
     }
     
     
+    public IActionResult Journal()
+    {
+        return View();
+    }
     
+    public IActionResult CreateJournal()
+    {
+        return View();
+    }
     
      
     public IActionResult JournalHistory()
@@ -210,5 +218,86 @@ public class GeneralLedgerController : Controller
     {
         var results = await _topazErpApi.CheckAccountDetails(accountNumber, accountControlId);
         return Json(results);
+    }
+
+    // Bank Accounts
+    public async Task<IActionResult> GetBankAccounts([FromQuery] int pageNo = 1, [FromQuery] int pageSize = 2000, [FromQuery] string query = null)
+    {
+        var results = await _topazErpApi.GetBankAccounts(pageNo, pageSize, query);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> CreateBankAccount([FromBody] object dto)
+    {
+        var results = await _topazErpApi.CreateBankAccount(dto);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> UpdateBankAccount([FromBody] object dto)
+    {
+        var results = await _topazErpApi.UpdateBankAccount(dto);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> DeleteBankAccount([FromQuery] Guid id)
+    {
+        var results = await _topazErpApi.DeleteBankAccount(id);
+        return Json(results);
+    }
+
+    // Journal Transactions
+    public async Task<IActionResult> GetJournalTransactions(
+        [FromQuery] int pageNo = 1,
+        [FromQuery] int pageSize = 1000,
+        [FromQuery] string batchNumber = null,
+        [FromQuery] DateTime? startDate = null,
+        [FromQuery] DateTime? endDate = null,
+        [FromQuery] bool? isPosted = null,
+        [FromQuery] bool? isMultiCurrency = null)
+    {
+        var results = await _topazErpApi.GetJournalTransactions(pageNo, pageSize, batchNumber, startDate, endDate, isPosted, isMultiCurrency);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> GetJournalDetails([FromQuery] Guid id)
+    {
+        var results = await _topazErpApi.GetJournalDetails(id);
+        return Json(results);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteJournalBatch([FromQuery] Guid id)
+    {
+        var results = await _topazErpApi.DeleteJournalBatch(id);
+        return Json(results);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteJournalBatches([FromBody] List<Guid> ids)
+    {
+        if (ids == null || ids.Count == 0) return Json(new { success = false, message = "No IDs provided" });
+        foreach (var id in ids)
+        {
+            await _topazErpApi.DeleteJournalBatch(id);
+        }
+        return Json(new { success = true });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> PostJournalBatch([FromQuery] Guid id)
+    {
+        var results = await _topazErpApi.PostJournal(id);
+        return Json(results);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> PostJournalBatches([FromBody] List<Guid> ids)
+    {
+        if (ids == null || ids.Count == 0) return Json(new { success = false, message = "No IDs provided" });
+        foreach (var id in ids)
+        {
+            await _topazErpApi.PostJournal(id);
+        }
+        return Json(new { success = true });
     }
 }

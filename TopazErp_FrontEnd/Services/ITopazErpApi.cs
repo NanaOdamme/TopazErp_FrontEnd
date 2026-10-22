@@ -256,4 +256,6 @@ public interface ITopazErpApi
 
     Task<BaseApiResponse> DeleteJournalBatch(Guid id);
 
+    Task<BaseApiResponse> PostJournal(Guid id);
+
 }

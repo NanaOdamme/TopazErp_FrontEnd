@@ -80,11 +80,21 @@ public class CompanyProfile: AuditedEntity<Guid>
 public class BankBranch
 {
     public Guid Id { get; set; }
+    public Guid BankId { get; set; }
     public string Name { get; set; }
     public string ContactPerson { get; set; }
     public string ContactNo { get; set; }
     public string Email { get; set; }
-    
+}
+
+public class BranchInput
+{
+    public Guid BankId { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Name { get; set; }
+    public string ContactPerson { get; set; }
+    public string ContactNo { get; set; }
+    public string Email { get; set; }
 }
 
 public class SubscriptionInfo

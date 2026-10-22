@@ -1,976 +1,270 @@
-const app= Vue.createApp({
+const app = Vue.createApp({
     data() {
         return {
             isShimmerLoading: false,
             isLoading: false,
-            payload: {},
-            ledgerAccountList: [],
+            coaList: [],                         // Chart of Account Details list
             emptyGuid: '00000000-0000-0000-0000-000000000000',
-            id: '',
-            tenantId: '',
-            accountPayablesBankAccountId: '',
-            payRollBankAccountId: '',
-            accountsReceivableBankAccountId: '',
-            salesBankAccountId: '',
-            accountsReceivableAccountId: '',
-            accountsPayableAccountId: '',
-            withholdingTaxAccountId: '',
-            imprestCategoryId: '',
-            creditPurchasesAccountId: '',
-            advanceFromCustomerAccountId: '',
-            covidTaxRecievedAccountId: '',
-            communicationsServiceTaxReceivedAccountId: '',
-            inventoryAccountId: '',
-            salesRevenueAccountId: '',
-            stockPurchasesAccountId: '',
-            currentEarningsAccountId: '',
-            retainedEarningsAccountId: '',
-            vatReceivedAccountId: '',
-            imprestGlAccountId: '',
-            purchasesBankAccountId: '',
-            advanceToSupplierAccountId: '',
-            covidTaxPaidAccountId: '',
-            communicationsServiceTaxPaidAccountId: '',
-            vatRate: 0,
-            goodsInTransitAccountId: '',
-            unrealizedFxLossAccountId: '',
-            unrealizedFxGainAccountId: '',
-            realizedFxLossAccountId: '',
-            realizedFxGainAccountId: '',
-            vatPaidAccountId: '',
-            getflReceivedAccountId: '',
-            getflPaidAccountId: '',
-            nhilReceivedAccountId: '',
-            nhilPaidAccountId: '',
-            socialSecurityFundEmployerRate: 0,
-            socialSecurityFundEmployeeRate: 0,
-            socialSecurityEmployerPortionDefaultExpenseGl: '',
-            socialSecurityEmployeePortionDefaultExpenseGl: '',
-            socialSecurityEmployerPortionDefaultLiabilityGl: '',
-            socialSecurityEmployeePortionDefaultLiabilityGl: '',
 
+            // Existing record identifiers (set when a saved config is loaded)
+            existingId: null,
+            existingTenantId: null,
 
-        }
+            // ── Reactive form object — every key maps 1-to-1 to a backend field ──
+            form: {
+                // Banking
+                accountPayablesBankAccountId:               '',
+                payRollBankAccountId:                       '',
+                accountsReceivableBankAccountId:            '',
+                salesBankAccountId:                         '',
+                purchasesBankAccountId:                     '',
+
+                // Payables & Receivables
+                accountsReceivableAccountId:                '',
+                accountsPayableAccountId:                   '',
+                withholdingTaxAccountId:                    '',
+                creditPurchasesAccountId:                   '',
+                advanceFromCustomerAccountId:               '',
+                advanceToSupplierAccountId:                 '',
+                imprestCategoryId:                          '',
+                imprestGlAccountId:                         '',
+
+                // Tax
+                vatReceivedAccountId:                       '',
+                vatPaidAccountId:                           '',
+                vatRate:                                    0,
+                getflReceivedAccountId:                     '',
+                getflPaidAccountId:                         '',
+                nhilReceivedAccountId:                      '',
+                nhilPaidAccountId:                          '',
+                covidTaxRecievedAccountId:                  '',
+                covidTaxPaidAccountId:                      '',
+                communicationsServiceTaxReceivedAccountId:  '',
+                communicationsServiceTaxPaidAccountId:      '',
+
+                // Inventory & Revenue
+                inventoryAccountId:                         '',
+                salesRevenueAccountId:                      '',
+                stockPurchasesAccountId:                    '',
+                goodsInTransitAccountId:                    '',
+
+                // FX & Earnings
+                currentEarningsAccountId:                   '',
+                retainedEarningsAccountId:                  '',
+                unrealizedFxLossAccountId:                  '',
+                unrealizedFxGainAccountId:                  '',
+                realizedFxLossAccountId:                    '',
+                realizedFxGainAccountId:                    '',
+
+                // Social Security
+                socialSecurityFundEmployerRate:             0,
+                socialSecurityFundEmployeeRate:             0,
+                socialSecurityEmployerPortionDefaultExpenseGl:   '',
+                socialSecurityEmployeePortionDefaultExpenseGl:   '',
+                socialSecurityEmployerPortionDefaultLiabilityGl: '',
+                socialSecurityEmployeePortionDefaultLiabilityGl: ''
+            },
+
+            // ── Field group definitions (drives the template) ──────────────────
+
+            bankingFields: [
+                { key: 'accountPayablesBankAccountId',    label: 'A/P Bank Account'     },
+                { key: 'payRollBankAccountId',            label: 'Payroll Bank Account'  },
+                { key: 'accountsReceivableBankAccountId', label: 'A/R Bank Account'      },
+                { key: 'salesBankAccountId',              label: 'Sales Bank Account'    },
+                { key: 'purchasesBankAccountId',          label: 'Purchases Bank'        }
+            ],
+
+            apArFields: [
+                { key: 'accountsReceivableAccountId',  label: 'Accounts Receivable'    },
+                { key: 'accountsPayableAccountId',     label: 'Accounts Payable'       },
+                { key: 'withholdingTaxAccountId',      label: 'Withholding Tax'        },
+                { key: 'creditPurchasesAccountId',     label: 'Credit Purchases'       },
+                { key: 'advanceFromCustomerAccountId', label: 'Advance From Customer'  },
+                { key: 'advanceToSupplierAccountId',   label: 'Advance to Supplier'    },
+                { key: 'imprestCategoryId',            label: 'Imprest Category'       },
+                { key: 'imprestGlAccountId',           label: 'Imprest GL #'           }
+            ],
+
+            taxFields: [
+                { key: 'vatReceivedAccountId',                      label: 'VAT Received'                       },
+                { key: 'vatPaidAccountId',                          label: 'VAT Paid'                           },
+                { key: 'vatRate',                                   label: 'VAT Rate (%)',  type: 'number'       },
+                { key: 'getflReceivedAccountId',                    label: 'GETFL Received'                     },
+                { key: 'getflPaidAccountId',                        label: 'GETFL Paid'                         },
+                { key: 'nhilReceivedAccountId',                     label: 'NHIL Received'                      },
+                { key: 'nhilPaidAccountId',                         label: 'NHIL Paid'                          },
+                { key: 'covidTaxRecievedAccountId',                 label: 'COVID Tax Received'                 },
+                { key: 'covidTaxPaidAccountId',                     label: 'COVID Tax Paid'                     },
+                { key: 'communicationsServiceTaxReceivedAccountId', label: 'Comms Service Tax Received'         },
+                { key: 'communicationsServiceTaxPaidAccountId',     label: 'Comms Service Tax Paid'             }
+            ],
+
+            inventoryFields: [
+                { key: 'inventoryAccountId',     label: 'Inventory'         },
+                { key: 'salesRevenueAccountId',  label: 'Sales (Revenue)'   },
+                { key: 'stockPurchasesAccountId',label: 'Stock Purchases'   },
+                { key: 'goodsInTransitAccountId',label: 'Goods in Transit'  }
+            ],
+
+            fxFields: [
+                { key: 'currentEarningsAccountId',   label: 'Current Earnings'    },
+                { key: 'retainedEarningsAccountId',  label: 'Retained Earnings'   },
+                { key: 'unrealizedFxLossAccountId',  label: 'Unrealized FX Loss'  },
+                { key: 'unrealizedFxGainAccountId',  label: 'Unrealized FX Gain'  },
+                { key: 'realizedFxLossAccountId',    label: 'Realized FX Loss'    },
+                { key: 'realizedFxGainAccountId',    label: 'Realized FX Gain'    }
+            ],
+
+            ssfFields: [
+                { key: 'socialSecurityFundEmployerRate',             label: "Employer SSF Rate (%)",      type: 'number' },
+                { key: 'socialSecurityFundEmployeeRate',             label: "Employee SSF Rate (%)",      type: 'number' },
+                { key: 'socialSecurityEmployerPortionDefaultExpenseGl',   label: 'Employer SSF Expense GL'   },
+                { key: 'socialSecurityEmployeePortionDefaultExpenseGl',   label: 'Employee SSF Expense GL'   },
+                { key: 'socialSecurityEmployerPortionDefaultLiabilityGl', label: 'Employer SSF Liability GL' },
+                { key: 'socialSecurityEmployeePortionDefaultLiabilityGl', label: 'Employee SSF Liability GL' }
+            ]
+        };
     },
+
     methods: {
 
-        getDefaultGlSetup() {
-
-            axios.get('/LedgerSetups/GetDefaultGlSetup').then(response => {
-
-                let responseData = response.data;
-
-                if (responseData) {
-
-                    this.id = responseData.id;
-                    this.tenantId = responseData.tenantId;
-
-                    $("#accountPayablesBankAccountId").ejDropDownList({
-
-                        value: responseData.accountPayablesBankAccountId,
-
-                    });
-
-                    $("#payRollBankAccountId").ejDropDownList({
-
-                        value: responseData.payRollBankAccountId,
-
-                    });
-
-                    $("#accountsReceivableBankAccountId").ejDropDownList({
-
-                        value: responseData.accountsReceivableBankAccountId,
-
-                    });
-
-                    $("#salesBankAccountId").ejDropDownList({
-
-                        value: responseData.salesBankAccountId,
-
-                    });
-
-                    $("#accountsReceivableAccountId").ejDropDownList({
-
-                        value: responseData.accountsReceivableAccountId,
-
-                    });
-
-                    $("#accountsPayableAccountId").ejDropDownList({
-
-                        value: responseData.accountsPayableAccountId,
-
-                    });
-
-                    $("#withholdingTaxAccountId").ejDropDownList({
-
-                        value: responseData.withholdingTaxAccountId,
-
-                    });
-
-                    $("#imprestCategoryId").ejDropDownList({
-
-                        value: responseData.imprestCategoryId,
-
-                    });
-
-                    $("#creditPurchasesAccountId").ejDropDownList({
-
-                        value: responseData.creditPurchasesAccountId,
-
-                    });
-
-                    $("#advanceFromCustomerAccountId").ejDropDownList({
-
-                        value: responseData.advanceFromCustomerAccountId,
-
-                    });
-
-                    $("#covidTaxRecievedAccountId").ejDropDownList({
-
-                        value: responseData.covidTaxReceivedAccountId
-
-                    });
-
-                    $("#communicationsServiceTaxReceivedAccountId").ejDropDownList({
-
-                        value: responseData.communicationsServiceTaxReceivedAccountId,
-
-                    });
-
-                    $("#inventoryAccountId").ejDropDownList({
-
-                        value: responseData.inventoryAccountId,
-
-                    });
-
-                    $("#salesRevenueAccountId").ejDropDownList({
-
-                        value: responseData.salesRevenueAccountId,
-
-                    });
-
-                    $("#stockPurchasesAccountId").ejDropDownList({
-
-                        value: responseData.stockPurchasesAccountId,
-
-                    });
-
-                    $("#currentEarningsAccountId").ejDropDownList({
-
-                        value: responseData.currentEarningsAccountId,
-
-                    });
-
-                    $("#retainedEarningsAccountId").ejDropDownList({
-
-                        value: responseData.retainedEarningsAccountId,
-
-                    });
-
-                    $("#vatReceivedAccountId").ejDropDownList({
-
-                        value: responseData.vatReceivedAccountId,
-
-                    });
-
-                    $("#imprestGlAccountId").ejDropDownList({
-
-                        value: responseData.imprestGlAccountId,
-
-                    });
-
-                    $("#purchasesBankAccountId").ejDropDownList({
-
-                        value: responseData.purchasesBankAccountId,
-
-                    });
-
-                    $("#advanceToSupplierAccountId").ejDropDownList({
-
-                        value: responseData.advanceToSupplierAccountId,
-
-                    });
-
-                    $("#covidTaxPaidAccountId").ejDropDownList({
-
-                        value: responseData.covidTaxPaidAccountId,
-
-                    });
-
-                    $("#communicationsServiceTaxPaidAccountId").ejDropDownList({
-
-                        value: responseData.communicationsServiceTaxPaidAccountId,
-
-                    });
-
-                    $("#vatRate").ejNumericTextbox({ value: responseData.vatRate, minValue: 0, maxValue: 100, decimalPlaces: 2, watermarkText: "0.00", width: 'inherit', });
-
-                    $("#goodsInTransitAccountId").ejDropDownList({
-
-                        value: responseData.goodsInTransitAccountId,
-
-                    });
-
-                    $("#unrealizedFxLossAccountId").ejDropDownList({
-
-                        value: responseData.unrealizedFxLossAccountId,
-
-                    });
-
-                    $("#unrealizedFxGainAccountId").ejDropDownList({
-
-                        value: responseData.unrealizedFxGainAccountId,
-
-                    });
-
-                    $("#realizedFxLossAccountId").ejDropDownList({
-
-                        value: responseData.realizedFxLossAccountId,
-
-                    });
-
-                    $("#realizedFxGainAccountId").ejDropDownList({
-
-                        value: responseData.realizedFxGainAccountId,
-
-                    });
-
-                    $("#vatPaidAccountId").ejDropDownList({
-
-                        value: responseData.vatPaidAccountId,
-
-                    });
-
-                    $("#getflReceivedAccountId").ejDropDownList({
-
-                        value: responseData.getflReceivedAccountId,
-
-                    });
-
-                    $("#getflPaidAccountId").ejDropDownList({
-
-                        value: responseData.getflPaidAccountId,
-
-                    });
-
-                    $("#nhilReceivedAccountId").ejDropDownList({
-
-                        value: responseData.nhilReceivedAccountId,
-
-                    });
-
-                    $("#nhilPaidAccountId").ejDropDownList({
-
-                        value: responseData.nhilPaidAccountId,
-
-                    });
-
-
-                    $("#socialSecurityEmployerPortionDefaultExpenseGl").ejDropDownList({
-
-                        value: responseData.socialSecurityEmployerPortionDefaultExpenseGl,
-
-                    });
-
-                    $("#socialSecurityEmployeePortionDefaultExpenseGl").ejDropDownList({
-
-                        value: responseData.socialSecurityEmployeePortionDefaultExpenseGl,
-
-                    });
-
-                    $("#socialSecurityEmployerPortionDefaultLiabilityGl").ejDropDownList({
-
-                        value: responseData.socialSecurityEmployerPortionDefaultLiabilityGl,
-
-                    });
-
-                    $("#socialSecurityEmployeePortionDefaultLiabilityGl").ejDropDownList({
-
-                        value: responseData.socialSecurityEmployeePortionDefaultLiabilityGl,
-
-                    });
-
-                }
-
-
-            }).catch(err => {
-
-                console.log(err);
-
-                this.toastHandler('error', 'Unable to get default GL numbers.');
-
-            });
+        /* ── Data Fetch ──────────────────────────────────────────────── */
+
+        async getCoaDetails() {
+            try {
+                const res = await axios.get('/GeneralLedger/GetCoaDetails?pageNo=1&pageSize=5000');
+                const raw = res.data?.result?.data || res.data?.result || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+                this.coaList = raw;
+            } catch (err) {
+                console.error('Failed to load CoA details:', err);
+                this.toastHandler('error', 'Unable to load Chart of Accounts.');
+            }
         },
 
-        getBusinessProfile() {
+        async getDefaultGlSetup() {
+            try {
+                const res = await axios.get('/LedgerSetups/GetDefaultGlSetup');
+                const d = res.data;
+                if (!d) return;
 
-            axios.get('/SharedResource/GetBusinessProfile').then(response => {
+                this.existingId       = d.id       || null;
+                this.existingTenantId = d.tenantId  || null;
 
-
-                if (response.data) {
-
-                    let businessProfile = response.data;
-
-                    this.socialSecurityFundEmployerRate = businessProfile.socialSecurityFundEmployeeRate;
-                    this.socialSecurityFundEmployeeRate = businessProfile.socialSecurityFundEmployeeRate;
-
-                    $("#socialSecurityFundEmployerRate").ejNumericTextbox({ value: businessProfile.socialSecurityFundEmployerRate, minValue: 0, maxValue: 100, decimalPlaces: 2, watermarkText: "0.00", width: 'inherit', });
-
-                    $("#socialSecurityFundEmployeeRate").ejNumericTextbox({ value: businessProfile.socialSecurityFundEmployeeRate, minValue: 0, maxValue: 100, decimalPlaces: 2, watermarkText: "0.00", width: 'inherit', });
-
-
-                }
-
-            }).catch(err => {
-
-                console.log(err);
-
-            });
-        },
-
-        getLedgerAccounts() {
-
-            axios.get('/LedgerSetups/GetLedgerAccounts').then(response => {
-
-                this.ledgerAccountList = response.data;
-
-                response.data.forEach((v) => {
-
-                    v.accountIdentifier = `${v.accountNo} - ${v.accountName}`;
-
+                // Map every backend field directly into the form object
+                const guidKeys = Object.keys(this.form).filter(k => k.endsWith('Id') || k.endsWith('Gl'));
+                guidKeys.forEach(k => {
+                    const val = d[k];
+                    // Treat empty guid as unselected
+                    this.form[k] = (val && val !== this.emptyGuid) ? val : '';
                 });
 
-                this.initControls(response.data);
+                // Numeric fields
+                if (d.vatRate                       !== undefined) this.form.vatRate                       = d.vatRate;
+                if (d.socialSecurityFundEmployerRate !== undefined) this.form.socialSecurityFundEmployerRate = d.socialSecurityFundEmployerRate;
+                if (d.socialSecurityFundEmployeeRate !== undefined) this.form.socialSecurityFundEmployeeRate = d.socialSecurityFundEmployeeRate;
 
+                // Backend uses covidTaxReceivedAccountId (no typo) — handle both spellings
+                if (d.covidTaxReceivedAccountId && d.covidTaxReceivedAccountId !== this.emptyGuid) {
+                    this.form.covidTaxRecievedAccountId = d.covidTaxReceivedAccountId;
+                }
 
-            }).catch(err => {
-
-                this.toastHandler('error', 'Unable to get ledger accounts.');
-
-            });
+            } catch (err) {
+                console.error('Failed to load default GL setup:', err);
+                this.toastHandler('error', 'Unable to load default GL numbers.');
+            }
         },
 
-        getImprestCategories() {
-
-            axios.get('/LedgerSetups/GetImprestCategories').then(response => {
-
-                $("#imprestCategoryId").ejDropDownList({
-                    dataSource: response.data,
-                    watermarkText: "Select Imprest Category",
-                    width: "100%",
-                    fields: { id: "id", text: "name", value: "id" },
-                    enableFilterSearch: true,
-                    change: (args) => {
-
-                        this.imprestCategoryId = args.value;
-                    }
-
-                });
-
-            }).catch(err => {
-
-                this.toastHandler('error', 'Unable to get imprest categories');
-
-            });
+        async getBusinessProfile() {
+            try {
+                const res = await axios.get('/SharedResource/GetBusinessProfile');
+                const bp  = res.data;
+                if (!bp) return;
+                if (bp.socialSecurityFundEmployerRate !== undefined)
+                    this.form.socialSecurityFundEmployerRate = bp.socialSecurityFundEmployerRate;
+                if (bp.socialSecurityFundEmployeeRate !== undefined)
+                    this.form.socialSecurityFundEmployeeRate = bp.socialSecurityFundEmployeeRate;
+            } catch (err) {
+                console.error('Failed to load business profile:', err);
+            }
         },
 
-        saveDefaultGlNumbers() {
+        /* ── Save ────────────────────────────────────────────────────── */
 
+        async saveDefaultGlNumbers() {
             this.isLoading = true;
-
-            let payload = {};
-
-            payload.accountPayablesBankAccountId = !this.accountPayablesBankAccountId ? this.emptyGuid : this.accountPayablesBankAccountId;
-            payload.payRollBankAccountId = !this.payRollBankAccountId ? this.emptyGuid : this.payRollBankAccountId;
-            payload.accountsReceivableBankAccountId = !this.accountsReceivableBankAccountId ? this.emptyGuid : this.accountsReceivableBankAccountId;
-            payload.salesBankAccountId = !this.salesBankAccountId ? this.emptyGuid : this.salesBankAccountId;
-            payload.accountsReceivableAccountId = !this.accountsReceivableAccountId ? this.emptyGuid : this.accountsReceivableAccountId;
-            payload.accountsPayableAccountId = !this.accountsPayableAccountId ? this.emptyGuid : this.accountsPayableAccountId;
-            payload.withholdingTaxAccountId = !this.withholdingTaxAccountId ? this.emptyGuid : this.withholdingTaxAccountId;
-            payload.imprestCategoryId = !this.imprestCategoryId ? this.emptyGuid : this.imprestCategoryId;
-            payload.creditPurchasesAccountId = !this.creditPurchasesAccountId ? this.emptyGuid : this.creditPurchasesAccountId;
-            payload.advanceFromCustomerAccountId = !this.advanceFromCustomerAccountId ? this.emptyGuid : this.advanceFromCustomerAccountId;
-            payload.covidTaxReceivedAccountId = !this.covidTaxRecievedAccountId ? this.emptyGuid : this.covidTaxRecievedAccountId;
-            payload.communicationsServiceTaxReceivedAccountId = !this.communicationsServiceTaxReceivedAccountId ? this.emptyGuid : this.communicationsServiceTaxReceivedAccountId;
-            payload.inventoryAccountId = !this.inventoryAccountId ? this.emptyGuid : this.inventoryAccountId;
-            payload.salesRevenueAccountId = !this.salesRevenueAccountId ? this.emptyGuid : this.salesRevenueAccountId;
-            payload.stockPurchasesAccountId = !this.stockPurchasesAccountId ? this.emptyGuid : this.stockPurchasesAccountId;
-            payload.currentEarningsAccountId = !this.currentEarningsAccountId ? this.emptyGuid : this.currentEarningsAccountId;
-            payload.retainedEarningsAccountId = !this.retainedEarningsAccountId ? this.emptyGuid : this.retainedEarningsAccountId;
-            payload.vatReceivedAccountId = !this.vatReceivedAccountId ? this.emptyGuid : this.vatReceivedAccountId;
-            payload.imprestGlAccountId = !this.imprestGlAccountId ? this.emptyGuid : this.imprestGlAccountId;
-            payload.purchasesBankAccountId = !this.purchasesBankAccountId ? this.emptyGuid : this.purchasesBankAccountId;
-            payload.advanceToSupplierAccountId = !this.advanceToSupplierAccountId ? this.emptyGuid : this.advanceToSupplierAccountId;
-            payload.covidTaxPaidAccountId = !this.covidTaxPaidAccountId ? this.emptyGuid : this.covidTaxPaidAccountId;
-            payload.communicationsServiceTaxPaidAccountId = !this.communicationsServiceTaxPaidAccountId ? this.emptyGuid : this.communicationsServiceTaxPaidAccountId;
-            payload.vatRate = this.vatRate ;
-            payload.goodsInTransitAccountId = !this.goodsInTransitAccountId ? this.emptyGuid : this.goodsInTransitAccountId;
-            payload.unrealizedFxLossAccountId = !this.unrealizedFxLossAccountId ? this.emptyGuid : this.unrealizedFxLossAccountId;
-            payload.unrealizedFxGainAccountId = !this.unrealizedFxGainAccountId ? this.emptyGuid : this.unrealizedFxGainAccountId;
-            payload.realizedFxLossAccountId = !this.realizedFxLossAccountId ? this.emptyGuid : this.realizedFxLossAccountId;
-            payload.realizedFxGainAccountId = !this.realizedFxGainAccountId ? this.emptyGuid : this.realizedFxGainAccountId;
-            payload.vatPaidAccountId = !this.vatPaidAccountId ? this.emptyGuid : this.vatPaidAccountId;
-            payload.getflReceivedAccountId = !this.getflReceivedAccountId ? this.emptyGuid : this.getflReceivedAccountId;
-            payload.getflPaidAccountId = !this.getflPaidAccountId ? this.emptyGuid : this.getflPaidAccountId;
-            payload.nhilReceivedAccountId = !this.nhilReceivedAccountId ? this.emptyGuid : this.nhilReceivedAccountId;
-            payload.nhilPaidAccountId = !this.nhilPaidAccountId ? this.emptyGuid : this.nhilPaidAccountId;
-
-            payload.socialSecurityEmployerPortionDefaultExpenseGl = !this.socialSecurityEmployerPortionDefaultExpenseGl ? this.emptyGuid : this.socialSecurityEmployerPortionDefaultExpenseGl;
-            payload.socialSecurityEmployeePortionDefaultExpenseGl = !this.socialSecurityEmployeePortionDefaultExpenseGl ? this.emptyGuid : this.socialSecurityEmployeePortionDefaultExpenseGl;
-
-            payload.socialSecurityEmployerPortionDefaultLiabilityGl = !this.socialSecurityEmployerPortionDefaultLiabilityGl ? this.emptyGuid : this.socialSecurityEmployerPortionDefaultLiabilityGl;
-            payload.socialSecurityEmployeePortionDefaultLiabilityGl = !this.socialSecurityEmployeePortionDefaultLiabilityGl ? this.emptyGuid : this.socialSecurityEmployeePortionDefaultLiabilityGl;
-
-            if (this.id)
-            {
-                payload.id = this.id;
-                payload.tenantId = this.tenantId;
-
-                axios.post('/LedgerSetups/UpdateDefaultGlNumbers', payload).then(response => {
-
-                    this.toastHandler('', 'Default GL Numbers updated.');
-                    this.isLoading = false;
-
-                }).catch(err => {
-
-                    this.toastHandler('error', 'Unable to update Default GL numbers.');
-                    this.isLoading = false;
-
+            try {
+                // Build payload — replace empty strings with emptyGuid for Guid fields
+                const payload = {};
+                Object.entries(this.form).forEach(([k, v]) => {
+                    if (typeof v === 'number') {
+                        payload[k] = v;
+                    } else {
+                        payload[k] = (v && v.trim()) ? v : this.emptyGuid;
+                    }
                 });
 
+                // Map our internal typo key back to the canonical backend key
+                payload.covidTaxReceivedAccountId = payload.covidTaxRecievedAccountId;
+                delete payload.covidTaxRecievedAccountId;
 
-            }
-            else {
+                const isUpdate = !!this.existingId;
+                if (isUpdate) {
+                    payload.id       = this.existingId;
+                    payload.tenantId = this.existingTenantId;
+                }
 
-                axios.post('/LedgerSetups/SaveDefaultGlNumbers', payload).then(response => {
+                const endpoint = isUpdate
+                    ? '/LedgerSetups/UpdateDefaultGlNumbers'
+                    : '/LedgerSetups/SaveDefaultGlNumbers';
 
-                    this.toastHandler('', 'Default GL Numbers saved.');
-                    this.isLoading = false;
+                await axios.post(endpoint, payload);
 
-                }).catch(err => {
+                this.toastHandler('success', `Default GL Numbers ${isUpdate ? 'updated' : 'saved'} successfully.`);
 
-                    this.toastHandler('error', 'Unable to save Default GL numbers.');
-                    this.isLoading = false;
+                // If newly created, re-fetch to capture the assigned id
+                if (!isUpdate) await this.getDefaultGlSetup();
 
-                });
-
+            } catch (err) {
+                console.error('Failed to save default GL numbers:', err);
+                this.toastHandler('error', 'Unable to save Default GL numbers.');
+            } finally {
+                this.isLoading = false;
             }
         },
 
-        initControls(ledgerAccountList) {
-
-            $("#accountPayablesBankAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.accountPayablesBankAccountId = args.value;
-                }
-
-            });
-
-            $("#payRollBankAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.payRollBankAccountId = args.value;
-                }
-
-            });
-
-            $("#accountsReceivableBankAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.accountsReceivableBankAccountId = args.value;
-                }
-
-            });
-
-            $("#salesBankAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.salesBankAccountId = args.value;
-                }
-
-            });
-
-            $("#accountsReceivableAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.accountsReceivableAccountId = args.value;
-                }
-
-            });
-
-            $("#accountsPayableAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.accountsPayableAccountId = args.value;
-                }
-
-            });
-
-            $("#withholdingTaxAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.withholdingTaxAccountId = args.value;
-                }
-
-            });
-
-            $("#creditPurchasesAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.creditPurchasesAccountId = args.value;
-                }
-
-            });
-
-            $("#advanceFromCustomerAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.advanceFromCustomerAccountId = args.value;
-                }
-
-            });
-
-            $("#covidTaxRecievedAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.covidTaxRecievedAccountId = args.value;
-                }
-
-            });
-
-            $("#communicationsServiceTaxReceivedAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.communicationsServiceTaxReceivedAccountId = args.value;
-                }
-
-            });
-
-            $("#inventoryAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.inventoryAccountId = args.value;
-                }
-
-            });
-
-            $("#salesRevenueAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.salesRevenueAccountId = args.value;
-                }
-
-            });
-
-            $("#stockPurchasesAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.stockPurchasesAccountId = args.value;
-                }
-
-            });
-
-            $("#currentEarningsAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.currentEarningsAccountId = args.value;
-                }
-
-            });
-
-            $("#retainedEarningsAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.retainedEarningsAccountId = args.value;
-                }
-
-            });
-
-            $("#vatReceivedAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.vatReceivedAccountId = args.value;
-                }
-
-            });
-
-            $("#imprestGlAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.imprestGlAccountId = args.value;
-                }
-
-            });
-
-            $("#purchasesBankAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.purchasesBankAccountId = args.value;
-                }
-
-            });
-
-            $("#advanceToSupplierAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.advanceToSupplierAccountId = args.value;
-                }
-
-            });
-
-            $("#covidTaxPaidAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.covidTaxPaidAccountId = args.value;
-                }
-
-            });
-
-            $("#communicationsServiceTaxPaidAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.communicationsServiceTaxPaidAccountId = args.value;
-                }
-
-            });
-
-            $("#goodsInTransitAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.goodsInTransitAccountId = args.value;
-                }
-
-            });
-
-            $("#unrealizedFxLossAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.unrealizedFxLossAccountId = args.value;
-                }
-
-            });
-
-            $("#unrealizedFxGainAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.unrealizedFxGainAccountId = args.value;
-                }
-
-            });
-
-            $("#realizedFxLossAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.realizedFxLossAccountId = args.value;
-                }
-
-            });
-
-            $("#realizedFxGainAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.realizedFxGainAccountId = args.value;
-                }
-
-            });
-
-            $("#vatPaidAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.vatPaidAccountId = args.value;
-                }
-
-            });
-
-            $("#getflReceivedAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.getflReceivedAccountId = args.value;
-                }
-
-            });
-
-            $("#getflPaidAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.getflPaidAccountId = args.value;
-                }
-
-            });
-
-            $("#nhilReceivedAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.nhilReceivedAccountId = args.value;
-                }
-
-            });
-
-            $("#nhilPaidAccountId").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.nhilPaidAccountId = args.value;
-                }
-
-            });
-
-            $("#vatRate").ejNumericTextbox({ value: 0, minValue: 0, maxValue: 100, decimalPlaces: 2, watermarkText: "0.00", width: 'inherit', });
-
-            $("#socialSecurityFundEmployerRate").ejNumericTextbox({ value: 0, minValue: 0, maxValue: 100, decimalPlaces: 2, watermarkText: "0.00", width: 'inherit', });
-
-            $("#socialSecurityFundEmployeeRate").ejNumericTextbox({ value: 0, minValue: 0, maxValue: 100, decimalPlaces: 2, watermarkText: "0.00", width: 'inherit', });
-
-
-            $("#socialSecurityEmployerPortionDefaultExpenseGl").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.socialSecurityEmployerPortionDefaultExpenseGl = args.value;
-                }
-
-            });
-
-            $("#socialSecurityEmployeePortionDefaultExpenseGl").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.socialSecurityEmployeePortionDefaultExpenseGl = args.value;
-                }
-
-            });
-
-
-            $("#socialSecurityEmployerPortionDefaultLiabilityGl").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.socialSecurityEmployerPortionDefaultLiabilityGl = args.value;
-                }
-
-            });
-
-            $("#socialSecurityEmployeePortionDefaultLiabilityGl").ejDropDownList({
-                dataSource: ledgerAccountList,
-                watermarkText: "Select Account",
-                width: "100%",
-                fields: { id: "id", text: "accountIdentifier", value: "id" },
-                enableFilterSearch: true,
-                change: (args) => {
-
-                    this.socialSecurityEmployeePortionDefaultLiabilityGl = args.value;
-                }
-
-            });
-
-            this.getDefaultGlSetup();
-
-
-        },
+        /* ── Helpers ─────────────────────────────────────────────────── */
 
         toastHandler(type, message = 'An unexpected error occurred.') {
-            if (typeof Swal === 'undefined') {
-                console.log(message);
-                return;
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'success',
+                    title: message,
+                    showConfirmButton: false,
+                    timer: 4000,
+                    timerProgressBar: true
+                });
+            } else {
+                console.log(`[${type.toUpperCase()}] ${message}`);
             }
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'success',
-                title: message,
-                showConfirmButton: false,
-                timer: 4000,
-                timerProgressBar: true
-            });
-
-        },
-
-
+        }
     },
 
-    mounted() {
-
-        this.getLedgerAccounts();
-
-        this.getImprestCategories();
-
-        this.getBusinessProfile();
-        
-        //remove d-none class from the div with id = app
-        document.getElementById('app').classList.remove('d-none');
-
-    },
+    async mounted() {
+        this.isShimmerLoading = true;
+        try {
+            // Load CoA list and existing setup in parallel
+            await Promise.all([
+                this.getCoaDetails(),
+                this.getDefaultGlSetup(),
+                this.getBusinessProfile()
+            ]);
+        } finally {
+            this.isShimmerLoading = false;
+        }
+    }
 });
+
 app.mount('#app');

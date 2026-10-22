@@ -281,7 +281,7 @@ public class TopazErpApi: ITopazErpApi
         var authToken = _claimsHelper.GetAuthToken();
         string url = $"{_apiBaseUrl}Bank/UpdateBranch";
 
-        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        var request = new HttpRequestMessage(HttpMethod.Put, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");
         request.Content = JsonContent.Create(dto);  
 
@@ -3207,6 +3207,25 @@ public class TopazErpApi: ITopazErpApi
         string url = $"{_apiBaseUrl}Journal/Delete?id={id}";
 
         var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+
+    public async Task<BaseApiResponse> PostJournal(Guid id)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}Journal/Post?id={id}";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");
 
         var response = await _httpClient.SendAsync(request);

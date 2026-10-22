@@ -1,0 +1,53 @@
+@{
+    ViewBag.Title = "Journal Transactions";
+    Layout = "~/Views/Shared/_adminLedgerLayout.cshtml";
+}
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>GL - Journal</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Journal Transactions</span>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="page-title">
+                <h2 class="text-2xl font-semibold text-gray-800">
+                    Journal Transactions
+                </h2>
+            </div>
+            <a href="/GeneralLedger/CreateJournal"
+               class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition">
+                <i class="bi bi-plus-lg"></i>
+                Create Journal Entry
+            </a>
+        </div>
+    </div>
+
+    <div class="card" data-card-title="Journal Transactions">
+        <div id="app">
+            <data-grid
+                title="Journal Transactions"
+                :columns="journalColumns"
+                :data="journalList"
+                :child="childDetailConfig"
+                :theme="theme"
+                row-id="id"
+                label-key="batchNumber"
+                item-label="Journal Transaction"
+                item-label-plural="Journal Transactions"
+                add-label="Add"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                :aggregates="false"
+                :show-row-numbers="false"
+                :loading="isShimmerLoading"
+                @@update="onUpdate"
+                @@delete="onDelete"
+            ></data-grid>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/gl/journal.js" asp-append-version="true"></script>
