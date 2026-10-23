@@ -89,6 +89,69 @@ public class Budget : AuditedEntity<Guid>
     public List<BudgetDetail> BudgetDetails { get; set; }
 }
 
+public class PettyCashRecipient : AuditedEntity<Guid>
+{
+    public string Recipient { get; set; }
+    public string PhoneNo { get; set; }
+    public string Email { get; set; }
+}
+
+
+public class PettyCash : AuditedEntity<Guid>
+{
+    public DateTime BatchDate { get; set; }
+    public string BatchNo { get; set; }
+    public string SourceDocNo { get; set; }
+
+    public Guid PettyCashAccountId { get; set; }
+    public string PettyCashAccountName { get; set; }
+
+    public string BatchOriginator { get; set; }
+
+    public Guid CurrencyId { get; set; }
+    public string CurrencyName { get; set; }
+
+    public string CurrencyCode { get; set; }
+
+    public decimal CurrencyRate { get; set; }
+    public decimal TotalAmount { get; set; }
+    public bool IsPosted { get; set; }
+
+    public List<PettyCashTransactionDetail> Details { get; set; }
+}
+
+public class PettyCashTransactionDetail
+{
+    public Guid Id { get; set; }
+    public DateTime TransactionDate { get; set; }
+    public string RefNo { get; set; }
+
+    public Guid ExpenseAccountId { get; set; }
+    public string ExpenseAccountName { get; set; }
+
+    public string Description { get; set; }
+    public decimal Amount { get; set; }
+
+    public Guid? OuId { get; set; }
+    public string OuName { get; set; }
+
+    public Guid? RecipientId { get; set; }
+    public string RecipientName { get; set; }    
+}
+
+public class ImprestCategory : AuditedEntity<Guid>
+{
+    public string Name { get; set; }
+}
+
+public class Imprest : AuditedEntity<Guid>
+{
+     
+}
+
+
+
+
 public class BudgetDetail
 {
     public Guid Id { get; set; }

@@ -36,14 +36,14 @@
                 label-key="batchNumber"
                 item-label="Journal Transaction"
                 item-label-plural="Journal Transactions"
-                add-label="Add"
                 :page-size="10"
                 :selectable="true"
                 :actions="true"
+                :allow-add="false"
+                :allow-edit="false"
                 :aggregates="false"
                 :show-row-numbers="false"
                 :loading="isShimmerLoading"
-                @@update="onUpdate"
                 @@delete="onDelete"
             ></data-grid>
         </div>

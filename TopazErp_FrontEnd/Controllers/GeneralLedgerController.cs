@@ -117,20 +117,44 @@ public class GeneralLedgerController : Controller
         return View();
     }
 
-    public IActionResult CreateSupplierVoucher()
+    public IActionResult SupplierPaymentVoucher()
     {
         return View();
     }
 
-    public IActionResult CreateEmployeeVoucher()
+    public IActionResult EmployeePaymentVoucher()
     {
         return View();
     }
 
-    public IActionResult CreateCustomerVoucher()
+    public IActionResult CustomerReceiptVoucher()
     {
         return View();
     }
+    
+    public IActionResult ImprestCategories()
+    {
+        return View();
+    }
+    
+    public IActionResult Imprests()
+    {
+        return View();
+    }
+    
+    public IActionResult PettyCashRecipients()
+    {
+        return View();
+    }
+    
+    public IActionResult PettyCash()
+    {
+        return View();
+    }
+    
+    
+    
+    
     
     //api
     
@@ -244,6 +268,60 @@ public class GeneralLedgerController : Controller
         var results = await _topazErpApi.DeleteBankAccount(id);
         return Json(results);
     }
+    
+    
+    // imprest categories
+    
+    public async Task<IActionResult> GetImprestCategories()
+    {
+        var results = await _topazErpApi.GetImprestCategories(1,100, "");
+        return Json(results);
+    }
+
+    public async Task<IActionResult> CreateImprestCategory([FromBody] object dto)
+    {
+        var results = await _topazErpApi.CreateImprestCategory(dto);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> UpdateImprestCategory([FromBody] object dto)
+    {
+        var results = await _topazErpApi.UpdateImprestCategory(dto);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> DeleteImprestCategory([FromQuery] Guid id)
+    {
+        var results = await _topazErpApi.DeleteImprestCategory(id);
+        return Json(results);
+    }
+    
+    
+    // petty cash recipients
+    public async Task<IActionResult> GetPettyCashRecipients([FromQuery] int pageNo = 1, [FromQuery] int pageSize = 1000, [FromQuery] string query = "")
+    {
+        var results = await _topazErpApi.GetPettyCashRecipients(pageNo, pageSize, query);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> CreatePettyCashRecipient([FromBody] object dto)
+    {
+        var results = await _topazErpApi.CreatePettyCashRecipient(dto);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> UpdatePettyCashRecipient([FromBody] object dto)
+    {
+        var results = await _topazErpApi.UpdatePettyCashRecipient(dto);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> DeletePettyCashRecipient([FromQuery] Guid id)
+    {
+        var results = await _topazErpApi.DeletePettyCashRecipient(id);
+        return Json(results);
+    }
+    
 
     // Journal Transactions
     public async Task<IActionResult> GetJournalTransactions(

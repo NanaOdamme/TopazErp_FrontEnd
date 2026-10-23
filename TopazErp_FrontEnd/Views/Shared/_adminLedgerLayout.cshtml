@@ -411,41 +411,36 @@
                 </a>
                 <ul class="menu-content">
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="Vouchers">
+                        <a class="menu-link" asp-controller="GeneralLedger" asp-action="Vouchers">
                             <i class="bi bi-card-list" aria-hidden="true"></i>
                             <span class="menu-title">All Vouchers</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="CreateSupplierVoucher">
+                        <a class="menu-link" asp-controller="GeneralLedger" asp-action="SupplierPaymentVoucher">
                             <i class="bi bi-file-earmark-person" aria-hidden="true"></i>
                             <span class="menu-title">Supplier Voucher</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="CreateEmployeeVoucher">
+                        <a class="menu-link" asp-controller="GeneralLedger" asp-action="EmployeePaymentVoucher">
                             <i class="bi bi-person-badge" aria-hidden="true"></i>
                             <span class="menu-title">Employee Voucher</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="CreateCustomerVoucher">
+                        <a class="menu-link" asp-controller="GeneralLedger" asp-action="CustomerReceiptVoucher">
                             <i class="bi bi-person-check" aria-hidden="true"></i>
                             <span class="menu-title">Customer Voucher</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="VoucherHistory">
+                        <a class="menu-link" asp-controller="GeneralLedger" asp-action="VoucherHistory">
                             <i class="bi bi-archive" aria-hidden="true"></i>
                             <span class="menu-title">Voucher History</span>
                         </a>
                     </li>
                 </ul>
-            </li>
-
-            <!-- SECTION: TREASURY & CASH -->
-            <li class="nav-section">
-                <span class="menu-title">Treasury &amp; Cash</span>
             </li>
 
             <li class="nav-item has-sub">
@@ -455,27 +450,15 @@
                 </a>
                 <ul class="menu-content">
                     <li class="nav-item">
-                        <a class="menu-link" href="#" onclick="return false;">
+                        <a class="menu-link" asp-controller="GeneralLedger" asp-action="ImprestCategories">
                             <i class="bi bi-send-plus" aria-hidden="true"></i>
-                            <span class="menu-title">Imprest Requests</span>
+                            <span class="menu-title">Imprest Categories</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="menu-link" href="#" onclick="return false;">
+                        <a class="menu-link" asp-controller="GeneralLedger" asp-action="Imprests">
                             <i class="bi bi-shield-check" aria-hidden="true"></i>
-                            <span class="menu-title">Imprest Approvals</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="menu-link" href="#" onclick="return false;">
-                            <i class="bi bi-check-square" aria-hidden="true"></i>
-                            <span class="menu-title">Imprest Retirement</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="menu-link" href="#" onclick="return false;">
-                            <i class="bi bi-table" aria-hidden="true"></i>
-                            <span class="menu-title">Imprest Register</span>
+                            <span class="menu-title">Imprests</span>
                         </a>
                     </li>
                 </ul>
@@ -487,30 +470,21 @@
                     <span class="menu-title">Petty Cash</span>
                 </a>
                 <ul class="menu-content">
+                    
                     <li class="nav-item">
-                        <a class="menu-link" href="#" onclick="return false;">
+                        <a class="menu-link" asp-controller="GeneralLedger" asp-action="PettyCashRecipients">
                             <i class="bi bi-cash-stack" aria-hidden="true"></i>
-                            <span class="menu-title">Cash Requisitions</span>
+                            <span class="menu-title">Petty Cash Recipients</span>
                         </a>
                     </li>
+
                     <li class="nav-item">
-                        <a class="menu-link" href="#" onclick="return false;">
+                        <a class="menu-link" asp-controller="GeneralLedger" asp-action="PettyCash">
                             <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
-                            <span class="menu-title">Disbursements</span>
+                            <span class="menu-title">Petty Cash</span>
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="menu-link" href="#" onclick="return false;">
-                            <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
-                            <span class="menu-title">Float Reimbursements</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="menu-link" href="#" onclick="return false;">
-                            <i class="bi bi-book-half" aria-hidden="true"></i>
-                            <span class="menu-title">Petty Cash Ledger</span>
-                        </a>
-                    </li>
+
                 </ul>
             </li>
 

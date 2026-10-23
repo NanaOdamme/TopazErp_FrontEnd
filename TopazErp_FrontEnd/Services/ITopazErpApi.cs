@@ -245,6 +245,30 @@ public interface ITopazErpApi
     Task<BaseApiResponse> UpdateBudget(object dto);
     Task<BaseApiResponse> DeleteBudget(Guid id);
     
+    //petty cash recipients
+    Task<PettyCashRecipientResponse> GetPettyCashRecipients(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreatePettyCashRecipient(object dto);
+    Task<BaseApiResponse> UpdatePettyCashRecipient(object dto);
+    Task<BaseApiResponse> DeletePettyCashRecipient(Guid id);
+    
+    //petty cash
+    Task<PettyCashResponse> GetPettyTransactions(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreatePettyCash(object dto);
+    Task<BaseApiResponse> UpdatePettyCash(object dto);
+    Task<BaseApiResponse> DeletePettyCash(Guid id);
+    
+    //imprest category
+    Task<ImprestCategoryResponse> GetImprestCategories(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreateImprestCategory(object dto);
+    Task<BaseApiResponse> UpdateImprestCategory(object dto);
+    Task<BaseApiResponse> DeleteImprestCategory(Guid id);
+    
+    //imprest
+    Task<ImprestResponse> GetImprests(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreateImprest(object dto);
+    Task<BaseApiResponse> UpdateImprest(object dto);
+    Task<BaseApiResponse> DeleteImprest(Guid id);
+    
     // Journal
     Task<JournalTransactionResponse> GetJournalTransactions(int pageNo, int pageSize,string batchNumber, DateTime? startDate = null, DateTime? endDate = null, bool? isPosted = null, bool? isMultiCurrency = null);
     

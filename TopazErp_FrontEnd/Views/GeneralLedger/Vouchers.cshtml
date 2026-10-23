@@ -1,0 +1,232 @@
+@{
+    ViewBag.Title = "Vouchers";
+    Layout = "~/Views/Shared/_adminLedgerLayout.cshtml";
+}
+<div class="content">
+    <!-- ── Page Header ─────────────────────────────────────────── -->
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>GL - Vouchers</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Vouchers</span>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="page-title">
+                <h2 class="text-2xl font-semibold text-gray-800">Vouchers</h2>
+            </div>
+
+            <!-- Create Voucher menu button -->
+            <div class="relative" id="createMenuWrapper">
+                <button id="createVoucherBtn" type="button"
+                        class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition"
+                        @@click="showCreateMenu = !showCreateMenu">
+                    <i class="bi bi-plus-lg"></i>
+                    Create Voucher
+                    <i class="bi bi-chevron-down text-xs"></i>
+                </button>
+
+                <transition name="fade">
+                    <div v-if="showCreateMenu"
+                         class="absolute right-0 mt-2 w-68 rounded-xl border border-gray-100 bg-white shadow-lg z-50 overflow-hidden">
+                        <a href="/GeneralLedger/SupplierPaymentVoucher"
+                           class="flex items-start gap-3 px-4 py-3 hover:bg-blue-50 transition group">
+                            <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600 group-hover:bg-blue-200">
+                                <i class="bi bi-building text-sm"></i>
+                            </span>
+                            <div>
+                                <p class="text-sm font-semibold text-gray-800">Supplier Payment Voucher</p>
+                                <p class="text-xs text-gray-500">Create a payment voucher for a supplier</p>
+                            </div>
+                        </a>
+                        <a href="/GeneralLedger/EmployeePaymentVoucher"
+                           class="flex items-start gap-3 px-4 py-3 hover:bg-blue-50 transition group">
+                            <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-purple-100 text-purple-600 group-hover:bg-purple-200">
+                                <i class="bi bi-person-badge text-sm"></i>
+                            </span>
+                            <div>
+                                <p class="text-sm font-semibold text-gray-800">Employee Payment Voucher</p>
+                                <p class="text-xs text-gray-500">Create a payment voucher for an employee</p>
+                            </div>
+                        </a>
+                        <a href="/GeneralLedger/CustomerReceiptVoucher"
+                           class="flex items-start gap-3 px-4 py-3 hover:bg-blue-50 transition group">
+                            <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 group-hover:bg-emerald-200">
+                                <i class="bi bi-receipt text-sm"></i>
+                            </span>
+                            <div>
+                                <p class="text-sm font-semibold text-gray-800">Customer Receipt Voucher</p>
+                                <p class="text-xs text-gray-500">Create a receipt voucher for a customer</p>
+                            </div>
+                        </a>
+                    </div>
+                </transition>
+            </div>
+        </div>
+    </div>
+
+    <div id="app">
+
+        <!-- ── Tab Nav ──────────────────────────────────────────── -->
+        <div class="flex gap-1 border-b border-gray-200 mb-4">
+            <button v-for="tab in tabs" :key="tab.key"
+                    type="button"
+                    @@click="switchTab(tab.key)"
+                    :class="[
+                        'px-4 py-2.5 text-sm font-semibold rounded-t-lg transition border-b-2 -mb-px',
+                        activeTab === tab.key
+                            ? 'border-blue-600 text-blue-600 bg-white'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ]">
+                <i :class="tab.icon + ' mr-1.5'"></i>
+                {{ tab.label }}
+                <span v-if="tab.count > 0"
+                      class="ml-1.5 inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 text-xs font-semibold text-blue-700">
+                    {{ tab.count }}
+                </span>
+            </button>
+        </div>
+
+        <!-- ── Filters Bar ───────────────────────────────────────── -->
+        <div class="card mb-4 p-4">
+            <div class="flex flex-col sm:flex-row flex-wrap items-end gap-3">
+
+                <div class="gl-field w-full sm:w-40">
+                    <label>Start Date</label>
+                    <input type="date" v-model="filterParams.startDate" class="gl-input" />
+                </div>
+
+                <div class="gl-field w-full sm:w-40">
+                    <label>End Date</label>
+                    <input type="date" v-model="filterParams.endDate" class="gl-input" />
+                </div>
+
+                <div class="flex gap-2 items-end">
+                    <button type="button" @@click="loadActiveTab()"
+                            :disabled="isLoading"
+                            class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition disabled:opacity-60 h-[38px]">
+                        <i class="bi bi-funnel"></i>
+                        Filter
+                    </button>
+                    <button type="button" @@click="resetFilters()"
+                            class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition h-[38px]">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                        Reset
+                    </button>
+                </div>
+
+                <!-- Bulk actions: show only when rows are selected -->
+                <div v-if="selectedIds.length > 0" class="ml-auto flex items-end gap-2">
+                    <span class="text-xs font-medium text-gray-500 h-[38px] flex items-center">
+                        {{ selectedIds.length }} selected
+                    </span>
+                    <button type="button" @@click="postSelectedVouchers()"
+                            :disabled="isLoading"
+                            class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 transition disabled:opacity-60 h-[38px]">
+                        <i class="bi bi-check2-circle"></i>
+                        Post Selected
+                    </button>
+                    <button type="button" @@click="deleteSelectedVouchers()"
+                            :disabled="isLoading"
+                            class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 transition disabled:opacity-60 h-[38px]">
+                        <i class="bi bi-trash3"></i>
+                        Delete Selected
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Tab Panels ────────────────────────────────────────── -->
+
+        <!-- Supplier Payment Vouchers -->
+        <div v-show="activeTab === 'supplier'" class="card" data-card-title="Supplier Payment Vouchers">
+            <data-grid
+                title="Supplier Payment Vouchers"
+                :columns="supplierColumns"
+                :data="supplierList"
+                :child="journalLinesConfig"
+                :theme="theme"
+                row-id="id"
+                label-key="batchNumber"
+                item-label="Supplier Voucher"
+                item-label-plural="Supplier Vouchers"
+                :page-size="15"
+                :selectable="true"
+                :actions="true"
+                :allow-add="false"
+                :allow-edit="false"
+                :aggregates="false"
+                :show-row-numbers="false"
+                :loading="isShimmerLoading"
+                @@delete="onDelete"
+                @@selection-change="onSelectionChange"
+            ></data-grid>
+        </div>
+
+        <!-- Employee Payment Vouchers -->
+        <div v-show="activeTab === 'employee'" class="card" data-card-title="Employee Payment Vouchers">
+            <data-grid
+                title="Employee Payment Vouchers"
+                :columns="employeeColumns"
+                :data="employeeList"
+                :child="journalLinesConfig"
+                :theme="theme"
+                row-id="id"
+                label-key="batchNumber"
+                item-label="Employee Voucher"
+                item-label-plural="Employee Vouchers"
+                :page-size="15"
+                :selectable="true"
+                :actions="true"
+                :allow-add="false"
+                :allow-edit="false"
+                :aggregates="false"
+                :show-row-numbers="false"
+                :loading="isShimmerLoading"
+                @@delete="onDelete"
+                @@selection-change="onSelectionChange"
+            ></data-grid>
+        </div>
+
+        <!-- Customer Receipt Vouchers -->
+        <div v-show="activeTab === 'customer'" class="card" data-card-title="Customer Receipt Vouchers">
+            <data-grid
+                title="Customer Receipt Vouchers"
+                :columns="customerColumns"
+                :data="customerList"
+                :child="journalLinesConfig"
+                :theme="theme"
+                row-id="id"
+                label-key="batchNumber"
+                item-label="Receipt Voucher"
+                item-label-plural="Receipt Vouchers"
+                :page-size="15"
+                :selectable="true"
+                :actions="true"
+                :allow-add="false"
+                :allow-edit="false"
+                :aggregates="false"
+                :show-row-numbers="false"
+                :loading="isShimmerLoading"
+                @@delete="onDelete"
+                @@selection-change="onSelectionChange"
+            ></data-grid>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    .gl-field label { display:block; font-size:.75rem; font-weight:500; color:#6b7280; margin-bottom:.375rem; }
+    .gl-input {
+        width:100%; border-radius:.5rem; border:1px solid #d1d5db;
+        padding:.5rem .75rem; font-size:.8125rem; color:#111827; background:#fff;
+        outline:none; transition:border-color .15s,box-shadow .15s;
+    }
+    .gl-input:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.15); }
+
+    .fade-enter-active, .fade-leave-active { transition: opacity .15s, transform .15s; }
+    .fade-enter-from, .fade-leave-to { opacity:0; transform:translateY(-4px); }
+</style>
+
+<script src="~/js/gl/vouchers.js" asp-append-version="true"></script>

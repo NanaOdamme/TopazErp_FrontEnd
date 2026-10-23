@@ -3111,6 +3111,344 @@ public class TopazErpApi: ITopazErpApi
         return new BaseApiResponse { };
     }
     
+    //petty cash recipients
+    public async Task<PettyCashRecipientResponse> GetPettyCashRecipients(int pageNo, int pageSize, string query)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}PettyCashRecipient/ListAll?pageNo={pageNo}&pageSize={pageSize}";
+
+        if (!string.IsNullOrEmpty(query))
+        {
+            url += $"&query={query}";
+        }
+        
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<PettyCashRecipientResponse>(json);
+        }
+
+        return new PettyCashRecipientResponse { };
+    }
+
+    public async Task<BaseApiResponse> CreatePettyCashRecipient(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}PettyCashRecipient/Create";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);  
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+
+    public async Task<BaseApiResponse> UpdatePettyCashRecipient(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}PettyCashRecipient/Update";
+
+        var request = new HttpRequestMessage(HttpMethod.Put, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);  
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+
+    public async Task<BaseApiResponse> DeletePettyCashRecipient(Guid id)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}PettyCashRecipient/Delete?id={id}";
+
+        var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<BaseApiResponse>(json);
+        }
+
+        return new BaseApiResponse { };
+    }
+    
+    //petty cash
+    public async Task<PettyCashResponse> GetPettyTransactions(int pageNo, int pageSize, string query)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}PettyCash/GetAll?pageNo={pageNo}&pageSize={pageSize}";
+
+        if (!string.IsNullOrEmpty(query))
+        {
+            url += $"&query={query}";
+        }
+        
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<PettyCashResponse>(json);
+        }
+
+        return new PettyCashResponse { };
+    }
+
+    public async Task<BaseApiResponse> CreatePettyCash(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}PettyCash/Create";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);  
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+
+    public async Task<BaseApiResponse> UpdatePettyCash(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}PettyCash/Update";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);  
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+
+    public async Task<BaseApiResponse> DeletePettyCash(Guid id)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}PettyCash/Delete?id={id}";
+
+        var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<BaseApiResponse>(json);
+        }
+
+        return new BaseApiResponse { };
+    }
+    
+    //imprest category
+    public async Task<ImprestCategoryResponse> GetImprestCategories(int pageNo, int pageSize, string query)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}ImprestCategory/ListAll?pageNo={pageNo}&pageSize={pageSize}";
+
+        if (!string.IsNullOrEmpty(query))
+        {
+            url += $"&query={query}";
+        }
+        
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ImprestCategoryResponse>(json);
+        }
+
+        return new ImprestCategoryResponse { };
+    }
+
+    public async Task<BaseApiResponse> CreateImprestCategory(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}ImprestCategory/Create";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);  
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+
+    public async Task<BaseApiResponse> UpdateImprestCategory(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}ImprestCategory/Update";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);  
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+
+    public async Task<BaseApiResponse> DeleteImprestCategory(Guid id)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}ImprestCategory/Delete?id={id}";
+
+        var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<BaseApiResponse>(json);
+        }
+
+        return new BaseApiResponse { };
+    }
+    
+    //imprest
+    
+    public async Task<ImprestResponse> GetImprests(int pageNo, int pageSize, string query)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}Imprest/ListAll?pageNo={pageNo}&pageSize={pageSize}";
+
+        if (!string.IsNullOrEmpty(query))
+        {
+            url += $"&query={query}";
+        }
+        
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ImprestResponse>(json);
+        }
+
+        return new ImprestResponse { };
+    }
+
+    public async Task<BaseApiResponse> CreateImprest(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}Imprest/Create";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);  
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+
+    public async Task<BaseApiResponse> UpdateImprest(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}Imprest/Update";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);  
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+
+    public async Task<BaseApiResponse> DeleteImprest(Guid id)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}Imprest/Delete?id={id}";
+
+        var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<BaseApiResponse>(json);
+        }
+
+        return new BaseApiResponse { };
+    }
+    
+    
     // Journal
     public async Task<JournalTransactionResponse> GetJournalTransactions(int pageNo, int pageSize,string batchNumber, DateTime? startDate = null, DateTime? endDate = null, bool? isPosted = null, bool? isMultiCurrency = null)
     {
@@ -3141,6 +3479,7 @@ public class TopazErpApi: ITopazErpApi
 
         return new JournalTransactionResponse { };
     }
+    
     public async Task<BaseApiResponse> CreateJournal(object dto)
     {
         var authToken = _claimsHelper.GetAuthToken();
@@ -3266,6 +3605,7 @@ public class TopazErpApi: ITopazErpApi
 
         return new CurrencyResponse { };
     }
+    
     public async Task<BaseApiResponse> CreateCurrency(object dto)
     {
         var authToken = _claimsHelper.GetAuthToken();
@@ -3287,6 +3627,7 @@ public class TopazErpApi: ITopazErpApi
 
         return new BaseApiResponse { };
     }
+    
     public async Task<BaseApiResponse> UpdateCurrency(object dto)
     {
         var authToken = _claimsHelper.GetAuthToken();
@@ -3307,6 +3648,7 @@ public class TopazErpApi: ITopazErpApi
 
         return new BaseApiResponse { };
     }
+    
     public async Task<BaseApiResponse> DeleteCurrency(Guid id)
     {
         var authToken = _claimsHelper.GetAuthToken();
@@ -3325,6 +3667,5 @@ public class TopazErpApi: ITopazErpApi
 
         return new BaseApiResponse { };
     }
-
 
 }

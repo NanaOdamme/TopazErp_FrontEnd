@@ -112,7 +112,7 @@ const app = Vue.createApp({
                 },
                 {
                     key: 'detailsCount',
-                    label: 'Lines',
+                    label: 'Transaction Count',
                     type: 'number',
                     digits: 0,
                     width: 90

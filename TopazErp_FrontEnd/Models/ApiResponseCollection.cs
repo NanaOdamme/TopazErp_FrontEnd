@@ -94,6 +94,35 @@ public class BudgetResponse : BaseApiResponseModel
     public PagedRecords<Budget> Result { get; set; }
 }
 
+
+public class PettyCashRecipientResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<PettyCashRecipient> Result { get; set; }
+}
+
+public class PettyCashResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<PettyCash> Result { get; set; }
+}
+
+
+public class ImprestCategoryResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ImprestCategory> Result { get; set; }
+}
+
+public class ImprestResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<Imprest> Result { get; set; }
+}
+
+
+
+
 public class EmployeeBioDataResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]
