@@ -25,6 +25,7 @@
             <data-grid
                 title="Bank Accounts"
                 :columns="bankAccountColumns"
+                :form-columns="bankAccountFormColumns"
                 :data="bankAccountList"
                 :theme="theme"
                 row-id="id"
@@ -41,6 +42,7 @@
                 @@create="onCreate"
                 @@update="onUpdate"
                 @@delete="onDelete"
+                @@open-form="onOpenForm"
             ></data-grid>
         </div>
     </div>

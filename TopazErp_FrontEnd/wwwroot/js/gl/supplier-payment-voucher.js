@@ -28,9 +28,11 @@ createApp({
         const proposedJournalHeaderId  = ref('');
         const proposedJournalDetailIdList = ref([]);
 
+        const isShimmerLoading = ref(false);
         const supplierList   = ref([]);
         const accountsList   = ref([]);
         const bankList       = ref([]);
+        const bankAccountList = ref([]);
         const currencyList   = ref([]);
         const costCenterHierachyList = ref([]);
         const costCenterList = ref([]);
@@ -84,6 +86,17 @@ createApp({
             return isRecordCreated.value ? 'Create New' : 'Save';
         });
 
+        const bankGlList = computed(() => {
+            if (bankAccountList.value && bankAccountList.value.length > 0) {
+                if (bankAccountId.value && !bankAccountList.value.some(b => b.id === bankAccountId.value)) {
+                    const acc = accountsList.value.find(a => a.id === bankAccountId.value);
+                    if (acc) return [acc, ...bankAccountList.value];
+                }
+                return bankAccountList.value;
+            }
+            return accountsList.value;
+        });
+
         // ── Helpers ───────────────────────────────────────────────────
         function uuid() {
             return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
@@ -105,24 +118,36 @@ createApp({
         }
 
         function parseCostCenterHierachy(dataArr) {
-            costCenterList.value = dataArr;
-            const list = [];
-            for (let i = 0; i < dataArr.length; i++) {
+            costCenterList.value = dataArr || [];
+            const result = [];
+            for (const cc of costCenterList.value) {
                 costCenterNameList.value = [];
-                getHierachyName(dataArr[i].id);
+                getHierachyName(cc.id, new Set());
                 const name = [...new Set(costCenterNameList.value)].join().replace(/,/g, '/');
-                list.push({ name, parentId: dataArr[i].parentId, id: dataArr[i].id, rawName: dataArr[i].name, tenantId: dataArr[i].tenantId });
+                result.push({
+                    id: cc.id,
+                    name: name || cc.name,
+                    parentId: cc.parentId,
+                    rawName: cc.name,
+                    tenantId: cc.tenantId
+                });
             }
-            return list;
+            return result;
         }
 
-        function getHierachyName(id) {
+        function getHierachyName(id, visited = new Set()) {
+            if (!id || visited.has(id)) return;
+            visited.add(id);
             let parentId, returnName;
-            costCenterList.value.forEach(item => {
-                if (item.id === id) { parentId = item.parentId; returnName = item.name; }
-                costCenterList.value.forEach(cc => { if (cc.id === parentId) getHierachyName(parentId); });
-            });
-            costCenterNameList.value.push(returnName);
+            for (const item of costCenterList.value) {
+                if (item.id === id) {
+                    parentId = item.parentId;
+                    returnName = item.name;
+                    break;
+                }
+            }
+            if (parentId && parentId !== emptyGuid) getHierachyName(parentId, visited);
+            if (returnName) costCenterNameList.value.push(returnName);
         }
 
         // ── Tax helpers ───────────────────────────────────────────────
@@ -219,43 +244,208 @@ createApp({
             totalRetentionCredit.value   = roundNumber(totalRetentionCredit.value);
         }
 
+        function onLocalDebitChange(row) {
+            if (isMultiCurrency.value) {
+                const rate = parseFloat(currencyRate.value || 1);
+                const lAmt = parseFloat(row.localDebitAmount || 0);
+                if (rate > 0) {
+                    row.foreignDebitAmount = roundNumber(lAmt / rate);
+                }
+            }
+            reComputeVoucherSummary();
+        }
+
+        function onForeignDebitChange(row) {
+            if (isMultiCurrency.value) {
+                const rate = parseFloat(currencyRate.value || 1);
+                const fAmt = parseFloat(row.foreignDebitAmount || 0);
+                if (rate > 0) {
+                    row.localDebitAmount = roundNumber(fAmt * rate);
+                }
+            }
+            reComputeVoucherSummary();
+        }
+
         // ── API calls ─────────────────────────────────────────────────
-        async function initPaymentVoucher() {
+        async function getAccounts() {
             try {
-                const res = await axios.get('/LedgerDataEntry/InitSupplierPvEntry');
-                res.data.accounts.forEach(v => { v.accountIdentifier = `${v.accountNo} - ${v.accountName}`; });
-                accountsList.value = res.data.accounts;
-                costCenterHierachyList.value = parseCostCenterHierachy(res.data.costCenters);
-                voucherBatchSystemNumber.value = res.data.voucherBatchSystemNumber;
-                batchNo.value = `${res.data.voucherBatchSystemNumber.prefix}${res.data.voucherBatchSystemNumber.lastNo}${res.data.voucherBatchSystemNumber.suffix}`;
-                const defaultBankId = res.data.defaultGlNumbers.accountPayablesBankAccountId;
-                bankAccountId.value = defaultBankId;
-                const accountInfo = accountsList.value.find(a => a.id === defaultBankId);
-                if (accountInfo && accountInfo.currencyId) currencyId.value = accountInfo.currencyId;
+                const res = await axios.get('/GeneralLedger/GetAccountDetails?pageNo=1&pageSize=5000&isActive=true');
+                const raw = res.data?.result?.data 
+                    || res.data?.result 
+                    || res.data?.data 
+                    || (Array.isArray(res.data) ? res.data : []);
+                raw.forEach(v => {
+                    v.accountIdentifier = `${v.accountNo} - ${v.accountName}`;
+                });
+                accountsList.value = raw;
+            } catch (err) {
+                console.error('Failed to get account details:', err);
+                toastHandler('error', 'Unable to retrieve GL accounts.');
+            }
+        }
+
+        async function getBankAccounts() {
+            try {
+                const res = await axios.get('/GeneralLedger/GetBankAccounts?pageNo=1&pageSize=2000');
+                const raw = res.data?.result?.data 
+                    || res.data?.result 
+                    || res.data?.data 
+                    || (Array.isArray(res.data) ? res.data : []);
+                bankAccountList.value = raw.map(b => ({
+                    id: b.accountId || b.id,
+                    bankAccountId: b.id,
+                    accountNo: b.accountNo,
+                    accountName: b.accountName,
+                    bankName: b.bankName,
+                    accountIdentifier: `${b.accountNo ? b.accountNo + ' - ' : ''}${b.bankName ? b.bankName + ' ' : ''}(${b.accountName || ''})`.trim(),
+                    currencyId: b.currencyId
+                }));
+            } catch (err) {
+                console.warn('Bank accounts load error (optional):', err);
+            }
+        }
+
+        async function getCostCenters() {
+            try {
+                const res = await axios.get('/SharedResource/GetCostCenters?pageNo=1&pageSize=2000');
+                const raw = res.data?.result?.data 
+                    || res.data?.result 
+                    || res.data?.data 
+                    || (Array.isArray(res.data) ? res.data : []);
+                costCenterHierachyList.value = parseCostCenterHierachy(raw);
             } catch {
-                toastHandler('error', 'Voucher initialization failed.');
+                try {
+                    const jRes = await axios.get('/GeneralLedger/InitJournalEntry');
+                    const raw = jRes.data?.costCenters?.result || [];
+                    costCenterHierachyList.value = parseCostCenterHierachy(raw);
+                } catch {
+                    toastHandler('error', 'Unable to retrieve cost centers.');
+                }
+            }
+        }
+
+        async function getCurrencies() {
+            try {
+                const res = await axios.get('/SharedResource/GetCurrencies?pageNo=1&pageSize=100');
+                const raw = res.data?.result?.data 
+                    || res.data?.result 
+                    || res.data?.data 
+                    || (Array.isArray(res.data) ? res.data : []);
+                currencyList.value = raw;
+            } catch (err) {
+                console.error('Failed to get currencies:', err);
+                toastHandler('error', 'Unable to retrieve currencies.');
             }
         }
 
         async function getSuppliers() {
             try {
-                const res = await axios.get('/SharedResource/GetSuppliers');
-                supplierList.value = res.data;
-            } catch { toastHandler('error', 'Unable to retrieve suppliers.'); }
+                const res = await axios.get('/SharedResource/GetSuppliers?pageNo=1&pageSize=500');
+                const raw = res.data?.result?.items 
+                    || res.data?.result?.data 
+                    || res.data?.result 
+                    || res.data?.data 
+                    || (Array.isArray(res.data) ? res.data : []);
+                supplierList.value = raw;
+            } catch (err) {
+                console.error('Failed to get suppliers:', err);
+                toastHandler('error', 'Unable to retrieve suppliers.');
+            }
         }
 
         async function getBanks() {
             try {
-                const res = await axios.get('/SharedResource/GetBanks');
-                bankList.value = res.data;
-            } catch { toastHandler('error', 'Unable to retrieve banks.'); }
+                const res = await axios.get('/SharedResource/GetBanks?pageNo=1&pageSize=1000');
+                const raw = res.data?.result?.data 
+                    || res.data?.result 
+                    || res.data?.data 
+                    || (Array.isArray(res.data) ? res.data : []);
+                bankList.value = raw;
+            } catch (err) {
+                console.warn('Failed to retrieve commercial banks:', err);
+            }
         }
 
-        async function getCurrencies() {
+        async function getDefaultGlSetup() {
             try {
-                const res = await axios.get('/SharedResource/GetCurrencys');
-                currencyList.value = res.data;
-            } catch { toastHandler('error', 'Unable to retrieve currencies.'); }
+                const res = await axios.get('/GeneralLedger/GetDefaultGlNumbersSetup');
+                let d = res.data?.result || res.data?.Result || res.data;
+                if (Array.isArray(d)) d = d[0];
+                if (!d) return;
+
+                const defaultBankId = d.accountPayablesBankAccountId || d.purchasesBankAccountId;
+                if (defaultBankId && defaultBankId !== emptyGuid && !bankAccountId.value) {
+                    bankAccountId.value = defaultBankId;
+                    const accountInfo = accountsList.value.find(a => a.id === defaultBankId)
+                        || (bankAccountList.value && bankAccountList.value.find(b => b.id === defaultBankId));
+                    if (accountInfo && accountInfo.currencyId) {
+                        currencyId.value = accountInfo.currencyId;
+                    }
+                }
+
+                const defaultWhId = d.withholdingTaxAccountId;
+                if (defaultWhId && defaultWhId !== emptyGuid && !withHoldingAccountId.value) {
+                    withHoldingAccountId.value = defaultWhId;
+                }
+
+                const defaultVatId = d.vatPaidAccountId || d.vatReceivedAccountId;
+                if (defaultVatId && defaultVatId !== emptyGuid && !vatWithHoldingAccountId.value) {
+                    vatWithHoldingAccountId.value = defaultVatId;
+                }
+
+                if (d.vatRate && typeof d.vatRate === 'number') {
+                    const vatFlag = getTaxFlag('vat');
+                    if (vatFlag) vatFlag.defaultRate = d.vatRate;
+                }
+            } catch (err) {
+                console.warn('Default GL setup load error (optional):', err);
+            }
+        }
+
+        async function getSystemNumbers() {
+            try {
+                const res = await axios.get('/SharedResource/GetSystemNumbers');
+                const raw = res.data?.result || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+                const voucherSys = raw.find(s =>
+                    (s.key && s.key.toLowerCase().includes('voucher')) ||
+                    (s.itemName && s.itemName.toLowerCase().includes('voucher')) ||
+                    (s.key && s.key.toLowerCase().includes('pv'))
+                ) || raw[0];
+
+                if (voucherSys && !batchNo.value) {
+                    voucherBatchSystemNumber.value = voucherSys;
+                    batchNo.value = `${voucherSys.prefix || ''}${voucherSys.lastNo || ''}${voucherSys.suffix || ''}`;
+                }
+            } catch (err) {
+                console.warn('System numbers load error (optional):', err);
+            }
+        }
+
+        async function initPaymentVoucher() {
+            isShimmerLoading.value = true;
+            try {
+                await Promise.all([
+                    getAccounts(),
+                    getBankAccounts(),
+                    getCostCenters(),
+                    getCurrencies(),
+                    getSuppliers(),
+                    getBanks(),
+                    getSystemNumbers()
+                ]);
+
+                await getDefaultGlSetup();
+
+                if (!currencyId.value && currencyList.value.length) {
+                    const defCurr = currencyList.value.find(c => c.isDefault) || currencyList.value[0];
+                    if (defCurr) currencyId.value = defCurr.id;
+                }
+            } catch (err) {
+                console.error('Initialization error:', err);
+                toastHandler('error', 'Voucher initialization failed.');
+            } finally {
+                isShimmerLoading.value = false;
+            }
         }
 
         async function loadVoucherDetails() {
@@ -418,7 +608,7 @@ createApp({
                 journalDetails: journalEntryList.value,
             };
             try {
-                await axios.post('/LedgerDataEntry/CreateJournal', payload);
+                await axios.post('/GeneralLedger/SaveJournal', payload);
                 journalEntryList.value = [];
                 isLoading.value = false;
                 if (voucherId.value) {
@@ -543,7 +733,7 @@ createApp({
                 retensions: retentionsList.value,
             };
 
-            const endpoint = isEditMode.value ? '/LedgerDataEntry/UpdateVoucher' : '/LedgerDataEntry/CreateVoucher';
+            const endpoint = isEditMode.value ? '/GeneralLedger/UpdateVoucher' : '/GeneralLedger/CreateVoucher';
             try {
                 const res = await axios.post(endpoint, payload);
                 if (res.data && res.data.id) { voucherId.value = res.data.id; isRecordCreated.value = true; }
@@ -582,16 +772,25 @@ createApp({
 
         // ── Watchers ──────────────────────────────────────────────────
         watch(bankAccountId, val => {
-            const account = accountsList.value.find(a => a.id === val);
-            if (account && account.currencyId) currencyId.value = account.currencyId;
+            const account = accountsList.value.find(a => a.id === val)
+                || (bankAccountList.value && bankAccountList.value.find(b => b.id === val));
+            if (account && account.currencyId) {
+                currencyId.value = account.currencyId;
+            }
         });
 
         watch(currencyId, val => {
-            const currency = currencyList.value.find(c => c.id === val);
+            const currency = currencyList.value.find(c => c.id === val || String(c.id).toLowerCase() === String(val).toLowerCase());
             if (currency) {
-                currencyRate.value  = currency.buyRate ? parseFloat(currency.buyRate).toFixed(2) : null;
+                const buyRate = currency.buyRate !== undefined ? currency.buyRate 
+                    : (currency.BuyRate !== undefined ? currency.BuyRate 
+                    : (currency.rates?.[0]?.buyingRate || currency.rates?.[0]?.BuyingRate || (currency.isDefault ? 1 : null)));
+                currencyRate.value  = buyRate != null ? parseFloat(buyRate).toFixed(2) : null;
                 isMultiCurrency.value = currency.isDefault === false;
-            } else { currencyRate.value = null; isMultiCurrency.value = false; }
+            } else {
+                currencyRate.value = null;
+                isMultiCurrency.value = false;
+            }
         });
 
         watch(withHoldingRate, () => reComputeVoucherSummary());
@@ -609,19 +808,19 @@ createApp({
                 if (vatWhF) vatWhF.defaultRate = withHoldingVatPercentage.value;
             }
 
-            await Promise.all([getBanks(), getSuppliers(), getCurrencies(), initPaymentVoucher()]);
+            await initPaymentVoucher();
 
             if (isEditMode.value) await loadVoucherDetails();
-            else addVoucherRow();
+            else if (!voucherList.value.length) addVoucherRow();
         });
 
         return {
             // state
-            isLoading, supplierId, voucherEntryDate, paymentDate, bankAccountId,
+            isLoading, isShimmerLoading, supplierId, voucherEntryDate, paymentDate, bankAccountId,
             currencyId, currencyRate, isMultiCurrency, modePayment, batchNo, chequeNo,
             taxType, withHoldingRate, withHoldingAccountId, vatWithHoldingAccountId,
             hasWithHolding, voucherId, isEditMode, isRecordCreated,
-            supplierList, accountsList, currencyList, costCenterHierachyList,
+            supplierList, accountsList, bankAccountList, bankGlList, currencyList, costCenterHierachyList,
             voucherList, retentionsList, errors, taxFlags,
             totalVatAmount, totalWithHeldAmount, totalVatWithHeldAmount,
             totalRetentionCredit, totalCredit, totalDebit, totalNetAmount, amountWithoutTaxes,
@@ -630,6 +829,7 @@ createApp({
             // methods
             saveVoucher, previewVoucher, addVoucherRow, removeVoucherRow,
             onWithHoldChange, addRetentionRow, removeRetentionRow, onRetentionAmountChange,
+            onLocalDebitChange, onForeignDebitChange,
             onTaxFlagChange, reComputeVoucherSummary, fmtNum,
         };
     }

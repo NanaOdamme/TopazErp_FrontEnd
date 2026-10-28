@@ -133,7 +133,7 @@ const app = Vue.createApp({
 
         async getCoaDetails() {
             try {
-                const res = await axios.get('/GeneralLedger/GetCoaDetails?pageNo=1&pageSize=5000');
+                const res = await axios.get('/GeneralLedger/GetAccountDetails?pageNo=1&pageSize=5000&isActive=true');
                 const raw = res.data?.result?.data || res.data?.result || res.data?.data || (Array.isArray(res.data) ? res.data : []);
                 this.coaList = raw;
             } catch (err) {
@@ -144,29 +144,37 @@ const app = Vue.createApp({
 
         async getDefaultGlSetup() {
             try {
-                const res = await axios.get('/LedgerSetups/GetDefaultGlSetup');
-                const d = res.data;
+                const res = await axios.get('/GeneralLedger/GetDefaultGlNumbersSetup');
+                let d = res.data?.result || res.data?.Result || res.data;
+                if (Array.isArray(d)) d = d[0];
                 if (!d) return;
 
-                this.existingId       = d.id       || null;
-                this.existingTenantId = d.tenantId  || null;
+                this.existingId       = d.id || d.Id || null;
+                this.existingTenantId = d.tenantId || d.TenantId || null;
 
                 // Map every backend field directly into the form object
                 const guidKeys = Object.keys(this.form).filter(k => k.endsWith('Id') || k.endsWith('Gl'));
                 guidKeys.forEach(k => {
-                    const val = d[k];
+                    const pascalKey = k.charAt(0).toUpperCase() + k.slice(1);
+                    const val = d[k] !== undefined ? d[k] : d[pascalKey];
                     // Treat empty guid as unselected
                     this.form[k] = (val && val !== this.emptyGuid) ? val : '';
                 });
 
                 // Numeric fields
-                if (d.vatRate                       !== undefined) this.form.vatRate                       = d.vatRate;
-                if (d.socialSecurityFundEmployerRate !== undefined) this.form.socialSecurityFundEmployerRate = d.socialSecurityFundEmployerRate;
-                if (d.socialSecurityFundEmployeeRate !== undefined) this.form.socialSecurityFundEmployeeRate = d.socialSecurityFundEmployeeRate;
+                const vatRate = d.vatRate !== undefined ? d.vatRate : d.VatRate;
+                if (vatRate !== undefined && vatRate !== null) this.form.vatRate = vatRate;
+
+                const ssfEmployer = d.socialSecurityFundEmployerRate !== undefined ? d.socialSecurityFundEmployerRate : d.SocialSecurityFundEmployerRate;
+                if (ssfEmployer !== undefined && ssfEmployer !== null) this.form.socialSecurityFundEmployerRate = ssfEmployer;
+
+                const ssfEmployee = d.socialSecurityFundEmployeeRate !== undefined ? d.socialSecurityFundEmployeeRate : d.SocialSecurityFundEmployeeRate;
+                if (ssfEmployee !== undefined && ssfEmployee !== null) this.form.socialSecurityFundEmployeeRate = ssfEmployee;
 
                 // Backend uses covidTaxReceivedAccountId (no typo) — handle both spellings
-                if (d.covidTaxReceivedAccountId && d.covidTaxReceivedAccountId !== this.emptyGuid) {
-                    this.form.covidTaxRecievedAccountId = d.covidTaxReceivedAccountId;
+                const covidRec = d.covidTaxReceivedAccountId || d.CovidTaxReceivedAccountId || d.covidTaxRecievedAccountId || d.CovidTaxRecievedAccountId;
+                if (covidRec && covidRec !== this.emptyGuid) {
+                    this.form.covidTaxRecievedAccountId = covidRec;
                 }
 
             } catch (err) {
@@ -200,7 +208,7 @@ const app = Vue.createApp({
                     if (typeof v === 'number') {
                         payload[k] = v;
                     } else {
-                        payload[k] = (v && v.trim()) ? v : this.emptyGuid;
+                        payload[k] = (v && typeof v === 'string' && v.trim()) ? v : this.emptyGuid;
                     }
                 });
 
@@ -215,19 +223,26 @@ const app = Vue.createApp({
                 }
 
                 const endpoint = isUpdate
-                    ? '/LedgerSetups/UpdateDefaultGlNumbers'
-                    : '/LedgerSetups/SaveDefaultGlNumbers';
+                    ? '/GeneralLedger/UpdateDefaultGlNumbers'
+                    : '/GeneralLedger/CreateDefaultGlNumbers';
 
-                await axios.post(endpoint, payload);
+                const res = await axios.post(endpoint, payload);
+
+                if (res.data && res.data.success === false) {
+                    const errMsg = res.data.error?.message || res.data.error?.details || 'Unable to save Default GL numbers.';
+                    this.toastHandler('error', errMsg);
+                    return;
+                }
 
                 this.toastHandler('success', `Default GL Numbers ${isUpdate ? 'updated' : 'saved'} successfully.`);
 
-                // If newly created, re-fetch to capture the assigned id
-                if (!isUpdate) await this.getDefaultGlSetup();
+                // Re-fetch to capture the assigned id or latest values
+                await this.getDefaultGlSetup();
 
             } catch (err) {
                 console.error('Failed to save default GL numbers:', err);
-                this.toastHandler('error', 'Unable to save Default GL numbers.');
+                const errMsg = err.response?.data?.error?.message || err.response?.data?.message || 'Unable to save Default GL numbers.';
+                this.toastHandler('error', errMsg);
             } finally {
                 this.isLoading = false;
             }

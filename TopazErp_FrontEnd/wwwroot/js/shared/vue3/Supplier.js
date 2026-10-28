@@ -1,4 +1,4 @@
-﻿const app = Vue.createApp({
+const app = Vue.createApp({
     data() {
         return {
             theme: '#0645e7',
@@ -21,7 +21,15 @@
                     label: 'Account Number',
                     type: 'text',
                     width: 160,
-                    searchable: true
+                    searchable: true,
+                    render: (v, row) => {
+                        const val = v || '—';
+                        const id = row?.id;
+                        if (id) {
+                            return `<a href="/GeneralLedger/CreateSupplier?id=${encodeURIComponent(id)}" class="inline-flex items-center px-2 py-0.5 rounded font-mono text-xs font-semibold bg-slate-100 text-slate-800 hover:bg-blue-50 hover:text-blue-700 transition" title="Click to edit supplier">${val}</a>`;
+                        }
+                        return `<span class="inline-flex items-center px-2 py-0.5 rounded font-mono text-xs font-semibold bg-slate-100 text-slate-800">${val}</span>`;
+                    }
                 },
                 {
                     key: 'name',
@@ -565,6 +573,15 @@
                 );
             } finally {
                 this.isLoading = false;
+            }
+        },
+
+        // Data-grid open-form event: navigate to dedicated create or edit page.
+        onGridOpenForm(event) {
+            if (event?.mode === 'update' && event?.row?.id) {
+                window.location.href = `/GeneralLedger/CreateSupplier?id=${encodeURIComponent(event.row.id)}`;
+            } else {
+                window.location.href = '/GeneralLedger/CreateSupplier';
             }
         },
 

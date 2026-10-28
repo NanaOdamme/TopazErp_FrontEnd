@@ -3,7 +3,7 @@ const app = Vue.createApp({
     data() {
         return {
             theme: '#0645e7',
-            isShimmerLoading: false,
+            isShimmerLoading: true,
             emptyGuid: '00000000-0000-0000-0000-000000000000',
 
             coaControlList: [],          // raw flat list from server (with parentName resolved)
@@ -25,57 +25,30 @@ const app = Vue.createApp({
                     hidden: true
                 },
                 {
-                    key: 'accountHeaderName',
-                    label: 'Account Header Name',
-                    type: 'avatar',
-                    width: 260,
-                    minWidth: 200,
-                    required: true,
-                    searchable: true,
-                    subtitleKey: 'parentName'
-                },
-                {
                     key: 'accountGroupId',
                     label: 'Account Group',
                     type: 'select',
                     options: this.accountGroupOptions,
                     required: true,
                     searchable: true,
-                    width: 220
-                },
-                {
-                    key: 'parentAccountHeaderId',
-                    label: 'Parent Account Header',
-                    type: 'select',
-                    options: this.controlHierarchyList,
-                    required: false,
-                    searchable: true,
-                    width: 240
+                    width: 220,
+                    wrap: true   // span both columns in the modal form
                 },
                 {
                     key: 'minAccount',
                     label: 'Min Account No',
-                    type: 'number',
+                    type: 'text',
                     required: true,
                     searchable: true,
-                    width: 150
+                    width: 180
                 },
                 {
                     key: 'maxAccount',
                     label: 'Max Account No',
-                    type: 'number',
+                    type: 'text',
                     required: true,
                     searchable: true,
-                    width: 150
-                },
-                {
-                    key: 'parentName',
-                    label: 'Hierarchy Path',
-                    type: 'text',
-                    searchable: true,
-                    editable: false,
-                    width: 280,
-                    help: 'Full path generated from the account header hierarchy'
+                    width: 180
                 }
             ];
         }
@@ -91,13 +64,37 @@ const app = Vue.createApp({
                 const res = response.data;
                 const rawList = res?.result?.data || res?.result || (Array.isArray(res) ? res : []);
                 this.accountGroupList = rawList;
-                this.accountGroupOptions = rawList.map(a => ({
-                    label: a.name,
-                    value: a.id
-                }));
+                this.accountGroupOptions = this.buildGroupHierarchyOptions(rawList);
             } catch (error) {
                 console.error('Failed to load account groups:', error);
             }
+        },
+
+        /** Build hierarchical labels for the account group dropdown.
+         *  Each option label becomes e.g. "Assets / Current Assets / Cash". */
+        buildGroupHierarchyOptions(groups) {
+            const map = new Map(groups.map(g => [g.id, g]));
+
+            const getPath = (group, visited = new Set()) => {
+                if (!group || visited.has(group.id)) return group?.name || '';
+                visited.add(group.id);
+                const parentId = group.parentId || group.parentAccountHeadId;
+                if (!parentId || parentId === this.emptyGuid) return group.name;
+                const parent = map.get(parentId);
+                if (!parent) return group.name;
+                return `${getPath(parent, visited)} / ${group.name}`;
+            };
+
+            return groups.map(g => ({
+                label: getPath(g),
+                value: g.id
+            })).sort((a, b) => a.label.localeCompare(b.label));
+        },
+
+        /** Resolve the name of the selected account group by its id. */
+        resolveGroupName(groupId) {
+            const group = this.accountGroupList.find(g => g.id === groupId);
+            return group?.name || '';
         },
 
         async getAccountControls() {
@@ -123,22 +120,25 @@ const app = Vue.createApp({
 
         async onCreate(event) {
             const row = event?.row || event?.data;
+
+            // Auto-derive accountHeaderName from the selected account group
+            const accountGroupId = row?.accountGroupId || row?.accountHeadId;
+            row.accountHeaderName = this.resolveGroupName(accountGroupId);
+
             if (!row || !this.validateRecord(row)) return;
 
             const parentAccountHeaderId = row.parentAccountHeaderId || row.parentControlId || this.emptyGuid;
-            const accountGroupId = row.accountGroupId || row.accountHeadId;
-            const headerName = String(row.accountHeaderName || row.name || '').trim();
+            const headerName = String(row.accountHeaderName || '').trim();
             const parent = this.coaControlList.find(c => c.id === parentAccountHeaderId);
 
             const payload = {
-                accountHeaderName:     headerName,
-                name:                  headerName,
-                accountGroupId:        accountGroupId,
-                accountHeadId:         accountGroupId,
-                parentAccountHeaderId: parentAccountHeaderId,
-                parentControlId:       parentAccountHeaderId,
-                minAccount:            parseInt(row.minAccount, 10) || 0,
-                maxAccount:            parseInt(row.maxAccount, 10) || 0,
+                accountHeaderName: headerName,
+                name: headerName,
+                accountGroupId: accountGroupId,
+                parentAccountHeaderId: parentAccountHeaderId || this.emptyGuid,
+                parentControlId: parentAccountHeaderId || this.emptyGuid,
+                minAccount: parseInt(row.minAccount, 10) || 0,
+                maxAccount: parseInt(row.maxAccount, 10) || 0,
                 parentName: parent
                     ? `${parent.parentName}/${headerName}`
                     : headerName
@@ -159,6 +159,11 @@ const app = Vue.createApp({
 
         async onUpdate(event) {
             const row = event?.row || event?.data;
+
+            // Auto-derive accountHeaderName from the selected account group
+            const accountGroupId = row?.accountGroupId || row?.accountHeadId;
+            row.accountHeaderName = this.resolveGroupName(accountGroupId);
+
             if (!row || !this.validateRecord(row)) return;
 
             const existing = this.coaControlList.find(
@@ -171,22 +176,21 @@ const app = Vue.createApp({
             }
 
             const parentAccountHeaderId = row.parentAccountHeaderId || row.parentControlId || this.emptyGuid;
-            const accountGroupId = row.accountGroupId || row.accountHeadId;
-            const headerName = String(row.accountHeaderName || row.name || '').trim();
+            const headerName = String(row.accountHeaderName || '').trim();
             const parent = this.coaControlList.find(c => c.id === parentAccountHeaderId);
 
             const payload = {
                 ...existing,
                 ...row,
-                id:                    existing.id,
-                accountHeaderName:     headerName,
-                name:                  headerName,
-                accountGroupId:        accountGroupId,
-                accountHeadId:         accountGroupId,
+                id: existing.id,
+                accountHeaderName: headerName,
+                name: headerName,
+                accountGroupId: accountGroupId,
+                accountHeadId: accountGroupId,
                 parentAccountHeaderId: parentAccountHeaderId,
-                parentControlId:       parentAccountHeaderId,
-                minAccount:            parseInt(row.minAccount, 10) || 0,
-                maxAccount:            parseInt(row.maxAccount, 10) || 0,
+                parentControlId: parentAccountHeaderId,
+                minAccount: parseInt(row.minAccount, 10) || 0,
+                maxAccount: parseInt(row.maxAccount, 10) || 0,
                 parentName: parent
                     ? `${parent.parentName}/${headerName}`
                     : headerName
@@ -287,8 +291,8 @@ const app = Vue.createApp({
                     accountHeadId: groupId,
                     parentAccountHeaderId: parentId,
                     parentControlId: parentId,
-                    minAccount: Number(c.minAccount) || 0,
-                    maxAccount: Number(c.maxAccount) || 0
+                    minAccount: c.minAccount != null ? String(c.minAccount) : '',
+                    maxAccount: c.maxAccount != null ? String(c.maxAccount) : ''
                 };
 
                 return {
@@ -310,11 +314,8 @@ const app = Vue.createApp({
         /* ── Validation ─────────────────────────────────────────── */
 
         validateRecord(row) {
-            const headerName = row.accountHeaderName || row.name;
-            if (!headerName || !String(headerName).trim()) {
-                this.toastHandler('warning', 'Account header name is required.');
-                return false;
-            }
+            // accountHeaderName is auto-derived — no user input needed.
+            // We only validate the fields the user actually fills in.
 
             const groupId = row.accountGroupId || row.accountHeadId;
             if (!groupId || groupId === this.emptyGuid) {
@@ -322,15 +323,18 @@ const app = Vue.createApp({
                 return false;
             }
 
-            const min = parseInt(row.minAccount, 10);
-            const max = parseInt(row.maxAccount, 10);
+            const minStr = String(row.minAccount ?? '').trim();
+            const maxStr = String(row.maxAccount ?? '').trim();
 
-            if (isNaN(min) || isNaN(max)) {
+            if (!minStr || !maxStr) {
                 this.toastHandler('warning', 'Min and Max account numbers are required.');
                 return false;
             }
 
-            if (max < min) {
+            const min = parseInt(minStr, 10);
+            const max = parseInt(maxStr, 10);
+
+            if (!isNaN(min) && !isNaN(max) && max < min) {
                 this.toastHandler('warning', 'Max Account No cannot be less than Min Account No.');
                 return false;
             }

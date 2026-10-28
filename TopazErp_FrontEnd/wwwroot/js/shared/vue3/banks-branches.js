@@ -222,14 +222,16 @@ const app = Vue.createApp({
          * Builds a BranchInput-shaped payload that matches the C# BranchInput model:
          * { BankId, Id, Name, ContactPerson, ContactNo, Email }
          */
-        buildBranchInput(row, bankId) {
-            return {
+        buildBranchInput(row, bankId, id = null) {
+            const payload = {
                 bankId:        bankId,
                 name:          String(row.name          || '').trim(),
                 contactPerson: String(row.contactPerson || '').trim(),
                 contactNo:     String(row.contactNo     || '').trim(),
                 email:         String(row.email         || '').trim()
             };
+            if (id) payload.id = id;
+            return payload;
         },
 
         async createBranch(row, grid) {

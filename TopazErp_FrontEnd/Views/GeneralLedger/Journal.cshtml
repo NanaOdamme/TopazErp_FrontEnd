@@ -2,7 +2,10 @@
     ViewBag.Title = "Journal Transactions";
     Layout = "~/Views/Shared/_adminLedgerLayout.cshtml";
 }
-<div class="content">
+
+<div class="content" id="app">
+
+    <!-- ── Page Header ────────────────────────────────────────────── -->
     <div class="mb-6 content-header">
         <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
             <span>GL - Journal</span>
@@ -11,43 +14,498 @@
         </div>
 
         <div class="flex flex-wrap items-center justify-between gap-4">
-            <div class="page-title">
+            <div>
                 <h2 class="text-2xl font-semibold text-gray-800">
                     Journal Transactions
                 </h2>
+                <p class="text-sm text-gray-500 mt-0.5">
+                    View, search, and manage general ledger journal batches and line details.
+                </p>
             </div>
-            <a href="/GeneralLedger/CreateJournal"
-               class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition">
-                <i class="bi bi-plus-lg"></i>
-                Create Journal Entry
-            </a>
+            <div class="flex items-center gap-2.5">
+                <button type="button"
+                        @@click="toggleAllExpansion"
+                        :disabled="filteredJournalList.length === 0"
+                        class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition disabled:opacity-50">
+                    <i class="bi" :class="isAllExpanded ? 'bi-arrows-collapse' : 'bi-arrows-expand'"></i>
+                    <span>{{ isAllExpanded ? 'Collapse All' : 'Expand All' }}</span>
+                </button>
+                <a href="/GeneralLedger/CreateJournal"
+                   class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition">
+                    <i class="bi bi-plus-lg"></i>
+                    <span>Create Journal Entry</span>
+                </a>
+            </div>
         </div>
     </div>
 
-    <div class="card" data-card-title="Journal Transactions">
-        <div id="app">
-            <data-grid
-                title="Journal Transactions"
-                :columns="journalColumns"
-                :data="journalList"
-                :child="childDetailConfig"
-                :theme="theme"
-                row-id="id"
-                label-key="batchNumber"
-                item-label="Journal Transaction"
-                item-label-plural="Journal Transactions"
-                :page-size="10"
-                :selectable="true"
-                :actions="true"
-                :allow-add="false"
-                :allow-edit="false"
-                :aggregates="false"
-                :show-row-numbers="false"
-                :loading="isShimmerLoading"
-                @@delete="onDelete"
-            ></data-grid>
+    <!-- ── KPI Summary Cards ──────────────────────────────────────── -->
+    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <!-- Total Batches -->
+        <div class="card p-4 border border-gray-200/80 rounded-xl shadow-xs bg-white">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Batches</span>
+                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600">
+                    <i class="bi bi-collection"></i>
+                </span>
+            </div>
+            <p class="text-2xl font-bold text-gray-900 mt-2">{{ totalBatches }}</p>
+            <span class="text-xs text-gray-400 mt-0.5 block">Total recorded</span>
+        </div>
+
+        <!-- Total Debit -->
+        <div class="card p-4 border border-gray-200/80 rounded-xl shadow-xs bg-white">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Total Debit</span>
+                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600">
+                    <i class="bi bi-arrow-down-left"></i>
+                </span>
+            </div>
+            <p class="text-2xl font-bold text-gray-900 mt-2">GHS {{ fmtCurrency(totalDebits) }}</p>
+            <span class="text-xs text-emerald-600 font-medium mt-0.5 block">Debit sum</span>
+        </div>
+
+        <!-- Total Credit -->
+        <div class="card p-4 border border-gray-200/80 rounded-xl shadow-xs bg-white">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Total Credit</span>
+                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-purple-50 text-purple-600">
+                    <i class="bi bi-arrow-up-right"></i>
+                </span>
+            </div>
+            <p class="text-2xl font-bold text-gray-900 mt-2">GHS {{ fmtCurrency(totalCredits) }}</p>
+            <span class="text-xs text-purple-600 font-medium mt-0.5 block">Credit sum</span>
+        </div>
+
+        <!-- Posted -->
+        <div class="card p-4 border border-gray-200/80 rounded-xl shadow-xs bg-white">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Posted</span>
+                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-green-50 text-green-600">
+                    <i class="bi bi-check2-circle"></i>
+                </span>
+            </div>
+            <p class="text-2xl font-bold text-green-700 mt-2">{{ postedCount }}</p>
+            <span class="text-xs text-green-600 font-medium mt-0.5 block">General ledger active</span>
+        </div>
+
+        <!-- Draft / Unposted -->
+        <div class="card p-4 border border-gray-200/80 rounded-xl shadow-xs bg-white">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Draft / Unposted</span>
+                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-50 text-amber-600">
+                    <i class="bi bi-clock-history"></i>
+                </span>
+            </div>
+            <p class="text-2xl font-bold text-amber-600 mt-2">{{ unpostedCount }}</p>
+            <span class="text-xs text-amber-600 font-medium mt-0.5 block">Awaiting posting</span>
         </div>
     </div>
+
+    <!-- ── Filter & Search Toolbar ────────────────────────────────── -->
+    <div class="card p-4 mb-5 border border-gray-200 rounded-xl bg-white shadow-xs">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            
+            <!-- Left: Search input -->
+            <div class="relative flex-1 min-w-[260px] max-w-lg">
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                    <i class="bi bi-search text-sm"></i>
+                </div>
+                <input type="text"
+                       v-model="searchQuery"
+                       placeholder="Search batch #, account, OU, ref, cheque, description…"
+                       class="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-8 text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                <button v-if="searchQuery"
+                        @@click="searchQuery = ''"
+                        class="absolute inset-y-0 right-0 flex items-center pr-2.5 text-gray-400 hover:text-gray-600">
+                    <i class="bi bi-x-circle-fill text-xs"></i>
+                </button>
+            </div>
+
+            <!-- Middle: Quick Filters (Dates, Status, Currency) -->
+            <div class="flex flex-wrap items-center gap-3">
+                <!-- Date Presets -->
+                <div class="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5 text-xs font-medium text-gray-600">
+                    <button type="button" @@click="setQuickDate('month')" class="rounded-md px-2.5 py-1.5 hover:bg-white transition hover:shadow-xs">This Month</button>
+                    <button type="button" @@click="setQuickDate('3months')" class="rounded-md px-2.5 py-1.5 hover:bg-white transition hover:shadow-xs">3 Months</button>
+                    <button type="button" @@click="setQuickDate('year')" class="rounded-md px-2.5 py-1.5 hover:bg-white transition hover:shadow-xs">This Year</button>
+                    <button type="button" @@click="setQuickDate('all')" class="rounded-md px-2.5 py-1.5 hover:bg-white transition hover:shadow-xs">All Time</button>
+                </div>
+
+                <!-- Status Filter -->
+                <select v-model="postingStatus"
+                        @@change="getJournalTransactions"
+                        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-xs focus:border-blue-500 focus:outline-none">
+                    <option value="all">All Statuses</option>
+                    <option value="unposted">Draft / Unposted</option>
+                    <option value="posted">Posted</option>
+                </select>
+
+                <!-- Currency Filter -->
+                <select v-model="currencyFilter"
+                        @@change="getJournalTransactions"
+                        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-xs focus:border-blue-500 focus:outline-none">
+                    <option value="all">All Currencies</option>
+                    <option value="local">Local Only</option>
+                    <option value="multi">Multi-Currency</option>
+                </select>
+
+                <!-- Refresh / Reset -->
+                <button type="button"
+                        @@click="resetFilters"
+                        title="Reset all filters"
+                        class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white p-2 text-gray-600 hover:bg-gray-50 transition">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Batch Selection Toolbar (when rows selected) -->
+        <div v-if="selectedIds.length > 0"
+             class="mt-4 pt-3 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3 bg-blue-50/60 -mx-4 -mb-4 px-4 py-3 rounded-b-xl">
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-blue-600 text-white text-xs font-bold">
+                    {{ selectedIds.length }}
+                </span>
+                <span class="text-xs font-medium text-blue-900">batch(es) selected</span>
+                <button type="button" @@click="clearSelection" class="text-xs text-blue-700 underline hover:text-blue-900 ml-2">Deselect all</button>
+            </div>
+            <div class="flex items-center gap-2">
+                <button v-if="selectedUnpostedCount > 0"
+                        type="button"
+                        @@click="postSelectedBatches"
+                        class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 transition">
+                    <i class="bi bi-check2-all"></i>
+                    <span>Post Selected ({{ selectedUnpostedCount }})</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Loading Overlay ────────────────────────────────────────── -->
+    <div v-if="isShimmerLoading" class="card flex flex-col items-center justify-center py-24 text-gray-400 gap-3 bg-white rounded-xl border border-gray-200">
+        <span class="spinner-border text-blue-600" role="status" style="width:28px;height:28px"></span>
+        <span class="text-sm font-medium text-gray-600">Loading journal transactions…</span>
+    </div>
+
+    <!-- ── Empty State ────────────────────────────────────────────── -->
+    <div v-else-if="filteredJournalList.length === 0" class="card text-center py-20 px-6 bg-white rounded-xl border border-gray-200 shadow-xs">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gray-100 text-gray-400 mb-3">
+            <i class="bi bi-journal-text text-2xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-800">No Journal Transactions Found</h3>
+        <p class="text-sm text-gray-500 max-w-md mx-auto mt-1 mb-5">
+            No journal headers match your current search or date range filters.
+        </p>
+        <button type="button"
+                @@click="resetFilters"
+                class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition">
+            <i class="bi bi-arrow-counterclockwise"></i>
+            <span>Reset Filters</span>
+        </button>
+    </div>
+
+    <!-- ── Collapsible Master-Detail Journal List ──────────────────── -->
+    <div v-else class="space-y-3.5">
+        
+        <!-- Batch Item (Header + Collapsible Details) -->
+        <div v-for="journal in paginatedJournals"
+             :key="journal.id"
+             class="journal-card rounded-xl border bg-white shadow-xs transition duration-150 overflow-hidden"
+             :class="isExpanded(journal.id) ? 'border-blue-300 ring-1 ring-blue-200' : 'border-gray-200 hover:border-gray-300'">
+
+            <!-- ── Master Header Row ───────────────────────────────── -->
+            <div class="journal-header-row p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 cursor-pointer select-none transition bg-white hover:bg-slate-50/80"
+                 @@click="toggleExpand(journal.id)">
+                
+                <!-- Left: Expand chevron, Batch No, Date, Source, Description -->
+                <div class="flex items-start md:items-center gap-3 flex-1 min-w-0">
+                    
+                    <!-- Expand/Collapse Chevron Button -->
+                    <button type="button"
+                            @@click.stop="toggleExpand(journal.id)"
+                            class="expand-btn mt-0.5 md:mt-0 flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition"
+                            :class="{ 'expanded': isExpanded(journal.id) }">
+                        <i class="bi bi-chevron-right transition-transform duration-200"
+                           :class="{ 'rotate-90 text-blue-600': isExpanded(journal.id) }"></i>
+                    </button>
+
+                    <!-- Batch Number -->
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold font-mono tracking-wide bg-blue-50 text-blue-700 border border-blue-200">
+                            <i class="bi bi-hash"></i>{{ journal.batchNumber }}
+                        </span>
+                        
+                        <!-- Source Badge -->
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-gray-100 text-gray-600 uppercase">
+                            {{ journal.transactionSource }}
+                        </span>
+
+                        <!-- Multi-Currency badge -->
+                        <span v-if="journal.isMultiCurrency" class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            <i class="bi bi-globe"></i>Multi-Currency
+                        </span>
+                    </div>
+
+                    <!-- Date & Description -->
+                    <div class="min-w-0 flex-1 ml-1">
+                        <div class="flex items-center gap-2 text-xs text-gray-500">
+                            <i class="bi bi-calendar3 text-[11px]"></i>
+                            <span>{{ fmtDate(journal.batchDate) }}</span>
+                            <span v-if="journal.batchDescription" class="text-gray-300">•</span>
+                            <span v-if="journal.batchDescription" class="truncate font-medium text-gray-700" :title="journal.batchDescription">
+                                {{ journal.batchDescription }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Debits, Credits, Status, Lines count & Actions -->
+                <div class="flex items-center justify-between md:justify-end gap-4 flex-wrap pt-2 md:pt-0 border-t md:border-t-0 border-gray-100">
+                    
+                    <!-- Line Count Pill -->
+                    <span class="inline-flex items-center gap-1 text-xs text-gray-500 font-medium bg-gray-100 px-2.5 py-1 rounded-full">
+                        <i class="bi bi-list-nested text-[11px]"></i>
+                        {{ journal.detailsCount }} {{ journal.detailsCount === 1 ? 'line' : 'lines' }}
+                    </span>
+
+                    <!-- Total Debit & Credit -->
+                    <div class="flex items-center gap-3 text-right">
+                        <div>
+                            <span class="text-[10px] uppercase font-semibold text-gray-400 block tracking-wider">Debit</span>
+                            <span class="text-sm font-bold text-gray-900 font-mono">
+                                GHS {{ fmtCurrency(journal.totalDebit) }}
+                            </span>
+                        </div>
+                        <div class="text-gray-300 font-light">/</div>
+                        <div>
+                            <span class="text-[10px] uppercase font-semibold text-gray-400 block tracking-wider">Credit</span>
+                            <span class="text-sm font-bold text-gray-900 font-mono">
+                                GHS {{ fmtCurrency(journal.totalCredit) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Status Badge -->
+                    <div>
+                        <span v-if="journal.isPosted"
+                              class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
+                            <i class="bi bi-check-circle-fill text-[11px]"></i>
+                            Posted
+                        </span>
+                        <span v-else
+                              class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
+                            <i class="bi bi-clock-history text-[11px]"></i>
+                            Draft
+                        </span>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="flex items-center gap-1.5" @@click.stop>
+                        <!-- Post Button (if draft) -->
+                        <button v-if="!journal.isPosted"
+                                type="button"
+                                @@click="postSingleJournal(journal)"
+                                title="Post batch to general ledger"
+                                class="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white shadow-xs hover:bg-emerald-700 transition">
+                            <i class="bi bi-check2"></i>
+                            <span class="hidden sm:inline">Post</span>
+                        </button>
+
+                        <!-- Delete Button (if draft) -->
+                        <button v-if="!journal.isPosted"
+                                type="button"
+                                @@click="deleteSingleJournal(journal)"
+                                title="Delete journal batch"
+                                class="inline-flex items-center justify-center w-7 h-7 rounded-md text-red-500 hover:bg-red-50 hover:text-red-700 transition">
+                            <i class="bi bi-trash3 text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Collapsible Details Section (Individual Transactions) ── -->
+            <div v-if="isExpanded(journal.id)"
+                 class="journal-detail-container border-t border-blue-100 bg-slate-50/60 p-4 animate-fadeIn">
+                
+                <!-- Sub-bar: Metadata -->
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-3 text-xs text-gray-500 px-1">
+                    <div class="flex items-center gap-3">
+                        <span class="font-semibold text-gray-700">
+                            <i class="bi bi-list-check text-blue-600 me-1"></i>
+                            Journal Transaction Lines:
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center gap-1" :class="isBatchBalanced(journal) ? 'text-emerald-700' : 'text-red-600 font-bold'">
+                            <i class="bi" :class="isBatchBalanced(journal) ? 'bi-check-circle-fill text-emerald-600' : 'bi-exclamation-triangle-fill text-red-600'"></i>
+                            {{ isBatchBalanced(journal) ? 'Balanced Batch' : 'Unbalanced Batch!' }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Details Table -->
+                <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-xs">
+                    <table class="w-full text-left text-xs text-gray-700">
+                        <thead class="bg-gray-50 text-[11px] font-semibold uppercase tracking-wider text-gray-500 border-b border-gray-200">
+                            <tr>
+                                <th class="px-3.5 py-2.5 w-10 text-center">#</th>
+                                <th class="px-3.5 py-2.5">GL Account</th>
+                                <th class="px-3.5 py-2.5">Ref No.</th>
+                                <th class="px-3.5 py-2.5">Cheque No.</th>
+                                <th class="px-3.5 py-2.5">Cost Center (OU)</th>
+                                <th class="px-3.5 py-2.5">Description</th>
+                                <th class="px-3.5 py-2.5 text-center">Curr.</th>
+                                <th class="px-3.5 py-2.5 text-right">Rate</th>
+                                <th class="px-3.5 py-2.5 text-right font-mono text-gray-900">Debit (GHS)</th>
+                                <th class="px-3.5 py-2.5 text-right font-mono text-gray-900">Credit (GHS)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <tr v-for="(line, idx) in journal.details"
+                                :key="line.id || idx"
+                                class="hover:bg-blue-50/30 transition">
+                                
+                                <!-- # -->
+                                <td class="px-3.5 py-2.5 text-center text-gray-400 font-mono">{{ idx + 1 }}</td>
+
+                                <!-- GL Account -->
+                                <td class="px-3.5 py-2.5 font-medium text-gray-900">
+                                    <div class="flex items-center gap-1.5">
+                                        <i class="bi bi-book text-blue-500 text-[11px]"></i>
+                                        <span>{{ line.accountName }}</span>
+                                    </div>
+                                </td>
+
+                                <!-- Ref No -->
+                                <td class="px-3.5 py-2.5 text-gray-600 font-mono">
+                                    {{ line.referenceNumber || '—' }}
+                                </td>
+
+                                <!-- Cheque No -->
+                                <td class="px-3.5 py-2.5 text-gray-600 font-mono">
+                                    {{ line.chequeNo || '—' }}
+                                </td>
+
+                                <!-- OU -->
+                                <td class="px-3.5 py-2.5 text-gray-600">
+                                    <span v-if="line.ouName && line.ouName !== '—'" class="inline-flex items-center gap-1 text-[11px] bg-slate-100 px-2 py-0.5 rounded text-slate-700">
+                                        <i class="bi bi-diagram-3 text-[10px]"></i>
+                                        {{ line.ouName }}
+                                    </span>
+                                    <span v-else class="text-gray-400">—</span>
+                                </td>
+
+                                <!-- Description -->
+                                <td class="px-3.5 py-2.5 text-gray-600 max-w-xs truncate" :title="line.description">
+                                    {{ line.description || '—' }}
+                                </td>
+
+                                <!-- Currency -->
+                                <td class="px-3.5 py-2.5 text-center">
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold font-mono bg-gray-100 text-gray-700">
+                                        {{ line.currencyCode || 'GHS' }}
+                                    </span>
+                                </td>
+
+                                <!-- Rate -->
+                                <td class="px-3.5 py-2.5 text-right font-mono text-gray-500">
+                                    {{ line.buyRate ? line.buyRate.toFixed(2) : '1.00' }}
+                                </td>
+
+                                <!-- Debit -->
+                                <td class="px-3.5 py-2.5 text-right font-mono font-semibold"
+                                    :class="line.debitAmount > 0 ? 'text-emerald-700' : 'text-gray-400'">
+                                    {{ fmtCurrency(line.debitAmount) }}
+                                </td>
+
+                                <!-- Credit -->
+                                <td class="px-3.5 py-2.5 text-right font-mono font-semibold"
+                                    :class="line.creditAmount > 0 ? 'text-purple-700' : 'text-gray-400'">
+                                    {{ fmtCurrency(line.creditAmount) }}
+                                </td>
+                            </tr>
+                        </tbody>
+
+                        <!-- Detail Table Summary Footer -->
+                        <tfoot class="bg-gray-50/80 font-semibold text-xs border-t border-gray-200">
+                            <tr>
+                                <td colspan="8" class="px-3.5 py-2.5 text-right text-gray-600">
+                                    Total for Batch #{{ journal.batchNumber }}:
+                                </td>
+                                <td class="px-3.5 py-2.5 text-right font-mono text-emerald-800 font-bold">
+                                    GHS {{ fmtCurrency(journal.totalDebit) }}
+                                </td>
+                                <td class="px-3.5 py-2.5 text-right font-mono text-purple-800 font-bold">
+                                    GHS {{ fmtCurrency(journal.totalCredit) }}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Pagination Footer ──────────────────────────────────────── -->
+    <div v-if="filteredJournalList.length > 0"
+         class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
+        
+        <!-- Results count & Page size -->
+        <div class="flex items-center gap-3 text-xs text-gray-500">
+            <span>
+                Showing <strong class="text-gray-700">{{ startIndex }}</strong> to <strong class="text-gray-700">{{ endIndex }}</strong> of <strong class="text-gray-700">{{ filteredJournalList.length }}</strong> batches
+            </span>
+            <div class="flex items-center gap-1.5 ml-2">
+                <span>Per page:</span>
+                <select v-model.number="pageSize"
+                        class="rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 focus:outline-none">
+                    <option v-for="size in pageSizeOptions" :key="size" :value="size">{{ size }}</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Page Buttons -->
+        <div class="flex items-center gap-1 text-xs">
+            <button type="button"
+                    @@click="goToPage(currentPage - 1)"
+                    :disabled="currentPage === 1"
+                    class="rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <span class="px-3 py-1.5 font-medium text-gray-700">
+                Page {{ currentPage }} of {{ totalPages }}
+            </span>
+            <button type="button"
+                    @@click="goToPage(currentPage + 1)"
+                    :disabled="currentPage >= totalPages"
+                    class="rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
 </div>
+
+<style>
+    .animate-fadeIn {
+        animation: fadeIn .18s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-4px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .rotate-90 {
+        transform: rotate(90deg);
+    }
+</style>
 
 <script src="~/js/gl/journal.js" asp-append-version="true"></script>

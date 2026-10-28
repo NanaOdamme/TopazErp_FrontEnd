@@ -21,15 +21,7 @@
 
     <div id="app">
 
-        <!-- ── Shimmer ────────────────────────────────────────────── -->
-        <div v-if="isShimmerLoading" class="card flex items-center justify-center py-20 text-gray-400 gap-3">
-            <span class="spinner-border" role="status" style="width:22px;height:22px"></span>
-            <span class="text-sm">Initialising journal…</span>
-        </div>
-
-        <template v-else>
-
-            <!-- ── Header Card ─────────────────────────────────────── -->
+         <!-- ── Header Card ─────────────────────────────────────── -->
             <div class="card mb-4 p-5">
                 <div class="flex flex-col sm:flex-row flex-wrap lg:flex-nowrap items-end gap-4">
 
@@ -137,14 +129,14 @@
                         <colgroup>
                             <col style="width:130px">  <!-- Ref No -->
                             <col style="width:260px">  <!-- GL Account -->
-                            <col style="width:220px">  <!-- OU / Dept -->
+                            <col style="width:260px">  <!-- OU / Dept -->
                             <col v-if="isMultiCurrency" style="width:200px"> <!-- Currency -->
                             <col v-if="isMultiCurrency" style="width:110px"> <!-- Rate -->
-                            <col style="width:220px">  <!-- Description -->
-                            <col style="width:140px">  <!-- Local Debit -->
-                            <col style="width:140px">  <!-- Local Credit -->
-                            <col v-if="isMultiCurrency" style="width:130px"> <!-- Fgn Debit -->
-                            <col v-if="isMultiCurrency" style="width:130px"> <!-- Fgn Credit -->
+                            <col style="width:180px">  <!-- Description -->
+                            <col style="width:120px">  <!-- Local Debit -->
+                            <col style="width:120px">  <!-- Local Credit -->
+                            <col v-if="isMultiCurrency" style="width:120px"> <!-- Fgn Debit -->
+                            <col v-if="isMultiCurrency" style="width:120px"> <!-- Fgn Credit -->
                             <col style="width:160px">  <!-- Recipient -->
                             <col style="width:130px">  <!-- Cheque No -->
                             <col style="width:60px">   <!-- Action -->
@@ -183,7 +175,7 @@
                                             @@change="onAccountChange(line.accountId, index)">
                                         <option value="">Select Account</option>
                                         <option v-for="a in accountsList" :key="a.id" :value="a.id">
-                                            {{ a.accountNo }} – {{ a.accountName }}
+                                            {{ a.accountNo ? a.accountNo + ' – ' : '' }}{{ a.accountName || a.name }}
                                         </option>
                                     </select>
                                 </td>
@@ -278,8 +270,8 @@
                                 <td :colspan="isMultiCurrency ? 6 : 4">TOTAL</td>
                                 <td class="text-right font-semibold">{{ formatCurrency(totalDebit) }}</td>
                                 <td class="text-right font-semibold">{{ formatCurrency(totalCredit) }}</td>
-                                <td v-if="isMultiCurrency" class="text-right font-semibold">{{ formatCurrency(totalForeignDebit) }}</td>
-                                <td v-if="isMultiCurrency" class="text-right font-semibold">{{ formatCurrency(totalForeignCredit) }}</td>
+                                <td v-if="isMultiCurrency" class="text-right text-slate-400">—</td>
+                                <td v-if="isMultiCurrency" class="text-right text-slate-400">—</td>
                                 <td colspan="3"></td>
                             </tr>
                         </tfoot>
@@ -287,7 +279,7 @@
                 </div>
             </div>
 
-        </template>
+         
     </div>
 </div>
 

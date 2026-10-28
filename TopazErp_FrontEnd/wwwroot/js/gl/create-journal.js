@@ -148,34 +148,36 @@ const app = Vue.createApp({
         async getData() {
             this.isShimmerLoading = true;
             try {
-                // Fetch local-journal init data and currencies in parallel
-                const [journalRes, currRes] = await Promise.all([
-                    axios.get('/LedgerDataEntry/InitJournalEntry'),
-                    axios.get('/SharedResource/GetCurrencys')
+                // Fetch journal init data, currencies, and chart of accounts details in parallel
+                const [journalRes, currRes, accountsRes] = await Promise.all([
+                    axios.get('/GeneralLedger/InitJournalEntry'),
+                    axios.get('/SharedResource/GetCurrencies'),
+                    axios.get('/GeneralLedger/GetAccountDetails?pageNo=1&pageSize=5000&isActive=true')
                 ]);
 
                 const d = journalRes.data;
 
-                // Accounts
-                (d.accounts || []).forEach(v => {
+                // Chart of Account Details for GL accounts
+                const rawAccounts = accountsRes.data?.result?.data 
+                    || accountsRes.data?.result 
+                    || accountsRes.data?.data 
+                    || (Array.isArray(accountsRes.data) ? accountsRes.data : [])
+                    || d?.accounts?.result 
+                    || [];
+
+                rawAccounts.forEach(v => {
                     v.accountIdentifier = `${v.accountNo} - ${v.accountName}`;
                 });
-                this.accountsList = d.accounts || [];
+                this.accountsList = rawAccounts;
 
                 // Cost centers
-                this.costCenterHierarchyList = this.parseCostCenterHierarchy(d.costCenters || []);
-
-                // Batch sequence
-                if (d.journalBatchSequence) {
-                    const s = d.journalBatchSequence;
-                    this.batchNumber = `${s.prefix || ''}${s.nextBatchNumber || ''}${s.suffix || ''}`;
-                }
+                this.costCenterHierarchyList = this.parseCostCenterHierarchy(d?.costCenters?.result || d?.costCenters?.data || d?.costCenters || []);
 
                 // Enforce OU
-                this.enforceOu = !!d.enforceOu;
+                this.enforceOu = !!d?.enforceOu;
 
                 // Currencies
-                this.currencyRateList = currRes.data || [];
+                this.currencyRateList = currRes.data?.result?.data || currRes.data?.result || currRes.data?.data || (Array.isArray(currRes.data) ? currRes.data : []);
 
                 // Seed two default lines (cannot be deleted)
                 this.journalEntryList = [];
@@ -276,7 +278,7 @@ const app = Vue.createApp({
             // Watcher takes care of cascading — nothing extra needed here
         },
 
-        /** When a GL account is chosen, auto-populate the currency for that line (MC mode). */
+        /** When a GL account is chosen, auto-populate the currency for that line. */
         onAccountChange(accountId, rowIndex) {
             const line = this.journalEntryList[rowIndex];
             if (!line) return;
@@ -284,46 +286,61 @@ const app = Vue.createApp({
             if (!accountId) {
                 // Account cleared
                 Object.assign(this.journalEntryList[rowIndex], {
-                    currencyId: '', buyRate: null, sellRate: null,
+                    currencyId: '', currencyName: '', buyRate: null, sellRate: null,
                     localDebit: 0, localCredit: 0,
                     foreignDebit: 0, foreignCredit: 0
                 });
                 return;
             }
 
-            if (!this.isMultiCurrency) return; // local mode — no currency enrichment
+            const account = this.accountsList.find(a => a.id === accountId);
+            const currencyId = account?.currencyId || account?.CurrencyId || '';
+            this.journalEntryList[rowIndex].currencyId = currencyId;
 
-            const account  = this.accountsList.find(a => a.id === accountId);
-            if (!account?.currencyId) return;
+            if (!currencyId) return;
 
-            const currency = this.currencyRateList.find(c => c.id === account.currencyId);
-            if (!currency) return;
+            const currency = this.currencyRateList.find(c => 
+                c.id === currencyId || String(c.id).toLowerCase() === String(currencyId).toLowerCase()
+            );
 
-            const isDefault = !!currency.isDefault;
-            const cur = this.journalEntryList[rowIndex];
+            if (currency) {
+                const buyRate = currency.buyRate !== undefined ? currency.buyRate 
+                    : (currency.BuyRate !== undefined ? currency.BuyRate 
+                    : (currency.rates?.[0]?.buyingRate || currency.rates?.[0]?.BuyingRate || (currency.isDefault ? 1 : null)));
 
-            const hasLocal   = (parseFloat(cur.localDebit)   || 0) > 0 || (parseFloat(cur.localCredit)   || 0) > 0;
-            const hasForeign = (parseFloat(cur.foreignDebit)  || 0) > 0 || (parseFloat(cur.foreignCredit) || 0) > 0;
+                const sellRate = currency.sellRate !== undefined ? currency.sellRate 
+                    : (currency.SellRate !== undefined ? currency.SellRate 
+                    : (currency.rates?.[0]?.sellingRate || currency.rates?.[0]?.SellingRate || (currency.isDefault ? 1 : null)));
 
-            Object.assign(this.journalEntryList[rowIndex], {
-                currencyId:  account.currencyId,
-                currencyName: currency.currencyName,
-                buyRate:      currency.buyRate  ?? null,
-                sellRate:     currency.sellRate ?? null,
+                this.journalEntryList[rowIndex].currencyName = currency.currencyName || currency.CurrencyName || currency.name || '';
+                this.journalEntryList[rowIndex].currencyCode = currency.currencyCode || currency.CurrencyCode || '';
+                this.journalEntryList[rowIndex].buyRate      = buyRate !== null && buyRate !== undefined ? parseFloat(buyRate) : null;
+                this.journalEntryList[rowIndex].sellRate     = sellRate !== null && sellRate !== undefined ? parseFloat(sellRate) : null;
 
-                localDebit:   isDefault ? (hasLocal   ? cur.localDebit   : 0) : 0,
-                localCredit:  isDefault ? (hasLocal   ? cur.localCredit  : 0) : 0,
-                foreignDebit:  !isDefault ? (hasForeign ? cur.foreignDebit  : 0) : 0,
-                foreignCredit: !isDefault ? (hasForeign ? cur.foreignCredit : 0) : 0
-            });
+                if (this.isMultiCurrency) {
+                    const isDefault = !!currency.isDefault;
+                    const cur = this.journalEntryList[rowIndex];
+                    const hasLocal   = (parseFloat(cur.localDebit)   || 0) > 0 || (parseFloat(cur.localCredit)   || 0) > 0;
+                    const hasForeign = (parseFloat(cur.foreignDebit)  || 0) > 0 || (parseFloat(cur.foreignCredit) || 0) > 0;
+
+                    Object.assign(this.journalEntryList[rowIndex], {
+                        localDebit:   isDefault ? (hasLocal ? cur.localDebit : 0) : 0,
+                        localCredit:  isDefault ? (hasLocal ? cur.localCredit : 0) : 0,
+                        foreignDebit:  !isDefault ? (hasForeign ? cur.foreignDebit : 0) : 0,
+                        foreignCredit: !isDefault ? (hasForeign ? cur.foreignCredit : 0) : 0
+                    });
+                }
+            }
         },
 
         /* ── Currency field-enable helpers (MC mode) ── */
         isCurrencyDefault(index) {
             const line = this.journalEntryList[index];
-            if (!line?.currencyId) return false;
+            // No currency set → treat as local (default) so local fields stay open
+            if (!line?.currencyId) return true;
             const currency = this.currencyRateList.find(c => c.id === line.currencyId);
-            return currency ? !!currency.isDefault : false;
+            // Unknown currency → fall back to local
+            return currency ? !!currency.isDefault : true;
         },
         isLocalFieldEnabled(index)   { return this.isCurrencyDefault(index); },
         isForeignFieldEnabled(index) { return !this.isCurrencyDefault(index); },
@@ -381,23 +398,51 @@ const app = Vue.createApp({
                     return;
                 }
 
-                // Enrich names for the payload
+                // Enrich names, currency, and rates for the payload
                 const acct = this.accountsList.find(x => x.id === t.accountId);
                 const ou   = this.costCenterHierarchyList.find(x => x.id === t.ouId);
+                const currencyId = t.currencyId || acct?.currencyId || acct?.CurrencyId || '';
+                const currency = this.currencyRateList.find(c => 
+                    c.id === currencyId || (currencyId && String(c.id).toLowerCase() === String(currencyId).toLowerCase())
+                );
+
+                const buyRate = t.buyRate ?? currency?.buyRate ?? currency?.BuyRate 
+                    ?? (currency?.rates?.[0]?.buyingRate || currency?.rates?.[0]?.BuyingRate) ?? (currency?.isDefault ? 1 : 0);
+                const sellRate = t.sellRate ?? currency?.sellRate ?? currency?.SellRate 
+                    ?? (currency?.rates?.[0]?.sellingRate || currency?.rates?.[0]?.SellingRate) ?? (currency?.isDefault ? 1 : 0);
 
                 this.journalEntryList[i].accountName       = acct ? `${acct.accountNo} - ${acct.accountName}` : '';
                 this.journalEntryList[i].ouName            = ou   ? ou.name : '';
+                this.journalEntryList[i].currencyId        = currencyId;
+                this.journalEntryList[i].currencyName      = t.currencyName || currency?.currencyName || currency?.CurrencyName || currency?.name || '';
+                this.journalEntryList[i].currencyCode      = t.currencyCode || currency?.currencyCode || currency?.CurrencyCode || '';
+                this.journalEntryList[i].buyRate           = parseFloat(buyRate) || 0;
+                this.journalEntryList[i].sellRate          = parseFloat(sellRate) || 0;
                 this.journalEntryList[i].id                = this.uuid();
                 this.journalEntryList[i].transactionSource = 'GL';
                 this.journalEntryList[i].isLocal           = !this.isMultiCurrency;
 
-                // Normalise local amounts: in local mode, map debit/credit to the canonical fields
-                if (!this.isMultiCurrency) {
-                    this.journalEntryList[i].debitAmount  = parseFloat(t.localDebit)  || 0;
-                    this.journalEntryList[i].creditAmount = parseFloat(t.localCredit) || 0;
+                // Normalise amounts for the payload
+                const localDr  = parseFloat(t.localDebit)  || 0;
+                const localCr  = parseFloat(t.localCredit) || 0;
+                const fgnDr    = parseFloat(t.foreignDebit)  || 0;
+                const fgnCr    = parseFloat(t.foreignCredit) || 0;
+
+                this.journalEntryList[i].localDebit    = localDr;
+                this.journalEntryList[i].localCredit   = localCr;
+                this.journalEntryList[i].debitAmount    = localDr;
+                this.journalEntryList[i].creditAmount   = localCr;
+
+                if (this.isMultiCurrency) {
+                    this.journalEntryList[i].foreignDebit  = fgnDr;
+                    this.journalEntryList[i].foreignCredit = fgnCr;
+                    this.journalEntryList[i].currencyRate  = parseFloat(buyRate) || 0;
+                } else {
+                    this.journalEntryList[i].foreignDebit  = 0;
+                    this.journalEntryList[i].foreignCredit = 0;
+                    this.journalEntryList[i].currencyRate  = 1;
                 }
 
-                // Default empty OU to emptyGuid
                 if (!this.journalEntryList[i].ouId) {
                     this.journalEntryList[i].ouId = emptyGuid;
                 }
@@ -413,13 +458,15 @@ const app = Vue.createApp({
                 journalDetails:   this.journalEntryList
             };
 
+            
             this.isLoading = true;
-            axios.post('/LedgerDataEntry/CreateJournal', payload)
+            
+            axios.post('/GeneralLedger/SaveJournal', payload)
                 .then(() => {
                     this.toastHandler('success', 'Journal saved successfully.');
-                    this.journalEntryList = [];
-                    this.addLine();
-                    this.addLine();
+                    setTimeout(() => {
+                        window.location.href = '/GeneralLedger/Journal';
+                    }, 1500);
                 })
                 .catch(err => {
                     console.error('Failed to save journal:', err);

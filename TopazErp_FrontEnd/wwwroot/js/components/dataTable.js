@@ -70,6 +70,8 @@
             options.minimumFractionDigits = 0;
             options.maximumFractionDigits = 0;
         }
+        if (col.useGrouping !== undefined) options.useGrouping = Boolean(col.useGrouping);
+        else if (col.grouping !== undefined) options.useGrouping = Boolean(col.grouping);
         if (options.style === 'currency' && !options.currency) options.currency = col.currency || 'GHS';
         try { return new Intl.NumberFormat(col.locale || LOCALE, options).format(Number(v)); }
         catch (e) { return fmtNum(v, decimals === null ? 0 : decimals); }
@@ -443,8 +445,8 @@
                 class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"></textarea>
 
               <!-- select -->
-              <select v-else-if="t(c).input === 'select'" :id="idOf(c)" v-model="values[c.key]" @change="onFieldChange(c, $event)"
-                class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+              <select v-else-if="t(c).input === 'select'" :id="idOf(c)" v-model="values[c.key]" @change="onFieldChange(c, $event)" :disabled="c.disabled"
+                class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-50 dark:disabled:bg-slate-900/50">
                 <option value="">— Select —</option>
                 <option v-for="o in optionList(c)" :key="String(o.value)" :value="o.value">
                   {{ o.label ?? o.value }}
@@ -453,15 +455,15 @@
 
               <!-- number / currency -->
               <div v-else-if="t(c).input === 'number'" class="relative">
-                <input :id="idOf(c)" v-model="values[c.key]" @change="onFieldChange(c, $event)" type="number" :step="inputStep(c)" :min="c.min" :max="c.max"
-                  class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                <input :id="idOf(c)" v-model="values[c.key]" @change="onFieldChange(c, $event)" type="number" :step="inputStep(c)" :min="c.min" :max="c.max" :disabled="c.disabled" :placeholder="c.placeholder || ''"
+                  class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-50 dark:disabled:bg-slate-900/50"
                   :class="c.type === 'currency' ? 'pl-12' : ''">
                 <span v-if="c.type === 'currency'" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">{{ c.currencySymbol || 'GH₵' }}</span>
               </div>
 
               <!-- everything else (text, email, tel, url, date, datetime, time, color, tags) -->
-              <input v-else :id="idOf(c)" v-model="values[c.key]" @change="onFieldChange(c, $event)" :type="t(c).input"
-                class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              <input v-else :id="idOf(c)" v-model="values[c.key]" @change="onFieldChange(c, $event)" :type="t(c).input" :disabled="c.disabled"
+                class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-50 dark:disabled:bg-slate-900/50"
                 :placeholder="t(c).input === 'tags' ? 'Comma separated, e.g. Vue, Tailwind' : (c.placeholder || '')">
 
               <p v-if="c.help" class="mt-1 text-[11px] text-slate-400">{{ c.help }}</p>
@@ -539,7 +541,8 @@
             defaultSort: { type: Array, default: () => [] },
             stickyHeader: { type: Boolean, default: true },
             autoAdd: { type: Boolean, default: false },  // open the create form on mount (used by "add first child")
-            parentLabel: { type: String, default: '' }   // subtitle shown in the create form of a nested grid
+            parentLabel: { type: String, default: '' },  // subtitle shown in the create form of a nested grid
+            formColumns: { type: Array, default: null }  // optional separate column schema for create/update modal form
         },
         emits: ['create', 'update', 'delete', 'change', 'request', 'ui', 'toast', 'selection-change', 'update:selectedIds'],
         data() {
@@ -555,7 +558,7 @@
                 expanded: s.expanded || [],
                 widths: Object.assign({}, prefs.widths, s.widths || {}),
                 filters: s.filters || {},
-                hidden: prefs.hidden || this.columns.filter((c) => c.hidden).map((c) => c.key),
+                hidden: prefs.hidden || this.columns.filter((c) => c.hidden && !c.formOnly && !c.hideInTable).map((c) => c.key),
                 densityValue: prefs.density || this.density,
                 showFilters: this.filterRow,
                 openMenu: null,
@@ -577,15 +580,26 @@
             isLoading() { return this.loading || this.loadingLocal; },
             rows() { return this.serverSide ? this.rowsLocal : this.data; },
             columnsPlain() { return this.columns.filter((c) => c.type !== 'actions' && !c.internal); },
-            visibleCols() { return this.columnsPlain.filter((c) => !this.hidden.includes(c.key)); },
-            searchableKeys() { return this.columnsPlain.filter((c) => c.searchable !== false).map((c) => c.key); },
+            tableCols() { return this.columnsPlain.filter((c) => !c.formOnly && !c.hideInTable); },
+            visibleCols() { return this.tableCols.filter((c) => !this.hidden.includes(c.key)); },
+            searchableKeys() {
+                const all = (this.formColumns && this.formColumns.length)
+                    ? this.columnsPlain.concat(this.formColumns)
+                    : this.columnsPlain;
+                return Array.from(new Set(all.filter((c) => c.searchable !== false).map((c) => c.key)));
+            },
             hasChildSchema() { return !!(this.child && this.child.key); },
             showExpander() { return this.hasChildSchema; },
             canAdd() { return this.allowAdd && this.addButton; },
             canEdit() { return this.allowEdit && this.editButton; },
             canDelete() { return this.allowDelete && this.deleteButton; },
             showActionsColumn() { return this.actions && (this.canEdit || this.canDelete); },
-            editableCols() { return this.columnsPlain.filter((c) => !this.hidden.includes(c.key) && c.editable !== false && typeOf(c).input); },
+            editableCols() {
+                if (this.formColumns && Array.isArray(this.formColumns) && this.formColumns.length) {
+                    return this.formColumns.filter((c) => c.type !== 'actions' && !c.internal && c.editable !== false && typeOf(c).input && !c.hidden && !c.hideInForm);
+                }
+                return this.columnsPlain.filter((c) => !c.tableOnly && !c.hideInForm && (c.formOnly || c.hideInTable || !this.hidden.includes(c.key)) && c.editable !== false && typeOf(c).input);
+            },
             themeStyle() { return { '--dt-theme': this.theme || '#2563eb' }; },
             filtered() {
                 let out = this.rows.slice();
@@ -812,13 +826,13 @@
                 try { localStorage.setItem('dt:' + this.storageKey, JSON.stringify({
                     widths: this.widths, hidden: this.hidden, pageSize: this.size, density: this.densityValue })); } catch (e) {}
             },
-            resetPrefs() { this.widths = {}; this.hidden = this.columnsPlain.filter((c) => c.hidden).map((c) => c.key); this.densityValue = this.density; this.size = this.pageSize; },
+            resetPrefs() { this.widths = {}; this.hidden = this.tableCols.filter((c) => c.hidden).map((c) => c.key); this.densityValue = this.density; this.size = this.pageSize; },
             toggleColumn(key, ev) {
                 const checked = ev && ev.target ? ev.target.checked : !this.hidden.includes(key);
                 this.hidden = checked ? this.hidden.filter((k) => k !== key) : this.hidden.concat([key]);
             },
             showAllColumns() { this.hidden = []; },
-            hideAllColumns() { this.hidden = this.columnsPlain.slice(1).map((c) => c.key); },
+            hideAllColumns() { this.hidden = this.tableCols.slice(1).map((c) => c.key); },
             setDensity(d) { this.densityValue = d; this.openMenu = null; },
             toggleMenu(name) { this.openMenu = this.openMenu === name ? null : name; },
 
@@ -866,7 +880,10 @@
             },
             emptyRow() {
                 const r = {}; setIn(r, this.rowId, uid(this.rowId));
-                this.columnsPlain.forEach((c) => {
+                const allCols = (this.formColumns && this.formColumns.length)
+                    ? this.columnsPlain.concat(this.formColumns)
+                    : this.columnsPlain;
+                allCols.forEach((c) => {
                     if (!hasColumnDefault(c)) return;
                     let value = resolveColumnDefault(c, r);
                     if (typeOf(c).input === 'date') value = dateInputValue(value);
@@ -877,6 +894,7 @@
             openForm(mode, row) {
                 if (mode === 'update' && !row) return;
                 this.form = { open: true, mode, row: row || null, parentLabel: this.parentLabel || 'Fill in the details below.' };
+                this.emit('open-form', { mode, row: row || null });
             },
             closeForm() { this.form = { open: false, mode: 'create', row: null }; },
             submitForm(values) {
@@ -1118,14 +1136,14 @@
             </button>
 
             <!-- columns menu -->
-            <div v-if="columnToggle && columnsPlain.length > 2" class="relative" data-menu="cols">
+            <div v-if="columnToggle && tableCols.length > 2" class="relative" data-menu="cols">
               <button class="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-slate-300 bg-white px-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                 data-action="menu" @click="toggleMenu('cols')"><i class="bi bi-layout-three-columns"></i><span class="hidden xl:inline">Columns</span><i class="bi bi-chevron-down text-[10px] opacity-60"></i></button>
               <transition name="pop">
                 <div v-show="openMenu === 'cols'" data-menu-panel class="absolute right-0 z-40 mt-1 w-56 rounded-xl border border-slate-200 bg-white shadow-card dark:border-slate-700 dark:bg-slate-900">
                   <div class="border-b border-slate-100 px-3 py-2 dark:border-slate-800"><p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Visible columns</p></div>
                   <div class="max-h-72 overflow-auto py-1">
-                    <label v-for="c in columnsPlain" :key="c.key" class="flex cursor-pointer items-center gap-2.5 px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800">
+                    <label v-for="c in tableCols" :key="c.key" class="flex cursor-pointer items-center gap-2.5 px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800">
                       <input type="checkbox" class="dt-check h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500" data-action="toggle-col" :data-key="c.key"
                         :checked="!hidden.includes(c.key)" @change="toggleColumn(c.key, $event)">
                       <span class="text-slate-700 dark:text-slate-200">{{ c.label || c.key }}</span>

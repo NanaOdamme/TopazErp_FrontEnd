@@ -240,7 +240,6 @@
                 <a class="menu-link" asp-area="" asp-controller="Dashboard" asp-action="GeneralLedger">
                     <i class="bi bi-speedometer2 text-emerald-600 dark:text-emerald-400" aria-hidden="true"></i>
                     <span class="menu-title font-medium">Dashboard</span>
-                    <span class="badge menu-badge bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">Live</span>
                 </a>
             </li>
 
@@ -321,7 +320,7 @@
                     <li class="nav-item">
                         <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="AccountHeads">
                             <i class="bi bi-folder2-open" aria-hidden="true"></i>
-                            <span class="menu-title">Account Heads</span>
+                            <span class="menu-title">Chart of Accounts</span>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -354,95 +353,33 @@
                 </ul>
             </li>
 
-            <li class="nav-item has-sub">
-                <a href="#" class="menu-link">
+            <li class="nav-item">
+                <a class="menu-link" asp-controller="GeneralLedger" asp-action="Budgets">
                     <i class="bi bi-calculator" aria-hidden="true"></i>
-                    <span class="menu-title">Budgets &amp; Planning</span>
+                    <span class="menu-title">Budgets</span>
                 </a>
-                <ul class="menu-content">
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="Budget">
-                            <i class="bi bi-calendar2-range" aria-hidden="true"></i>
-                            <span class="menu-title">Budget Allocations</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="menu-link" href="#" onclick="return false;">
-                            <i class="bi bi-graph-up-arrow" aria-hidden="true"></i>
-                            <span class="menu-title">Budget Monitoring</span>
-                            <span class="badge menu-badge is-soon">Soon</span>
-                        </a>
-                    </li>
-                </ul>
             </li>
+                
 
             <!-- SECTION: TRANSACTIONS & VOUCHERS -->
             <li class="nav-section">
                 <span class="menu-title">Transactions</span>
             </li>
-
-            <li class="nav-item has-sub">
-                <a href="#" class="menu-link">
+            
+            <li class="nav-item">
+                <a class="menu-link" asp-controller="GeneralLedger" asp-action="Journal">
                     <i class="bi bi-journal-text" aria-hidden="true"></i>
-                    <span class="menu-title">Journal Transactions</span>
+                    <span class="menu-title font-medium">Journal Transactions</span>
                 </a>
-                <ul class="menu-content">
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="Journal">
-                            <i class="bi bi-journal-plus" aria-hidden="true"></i>
-                            <span class="menu-title">Journal Transactions</span>
-                        </a>
-                    </li>
-                    
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="JournalHistory">
-                            <i class="bi bi-clock-history" aria-hidden="true"></i>
-                            <span class="menu-title">Journal History</span>
-                        </a>
-                    </li>
-                     
-                </ul>
             </li>
 
-            <li class="nav-item has-sub">
-                <a href="#" class="menu-link">
+            <li class="nav-item">
+                <a class="menu-link" asp-controller="GeneralLedger" asp-action="Vouchers">
                     <i class="bi bi-receipt-cutoff" aria-hidden="true"></i>
                     <span class="menu-title">Payment Vouchers</span>
                 </a>
-                <ul class="menu-content">
-                    <li class="nav-item">
-                        <a class="menu-link" asp-controller="GeneralLedger" asp-action="Vouchers">
-                            <i class="bi bi-card-list" aria-hidden="true"></i>
-                            <span class="menu-title">All Vouchers</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="menu-link" asp-controller="GeneralLedger" asp-action="SupplierPaymentVoucher">
-                            <i class="bi bi-file-earmark-person" aria-hidden="true"></i>
-                            <span class="menu-title">Supplier Voucher</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="menu-link" asp-controller="GeneralLedger" asp-action="EmployeePaymentVoucher">
-                            <i class="bi bi-person-badge" aria-hidden="true"></i>
-                            <span class="menu-title">Employee Voucher</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="menu-link" asp-controller="GeneralLedger" asp-action="CustomerReceiptVoucher">
-                            <i class="bi bi-person-check" aria-hidden="true"></i>
-                            <span class="menu-title">Customer Voucher</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="menu-link" asp-controller="GeneralLedger" asp-action="VoucherHistory">
-                            <i class="bi bi-archive" aria-hidden="true"></i>
-                            <span class="menu-title">Voucher History</span>
-                        </a>
-                    </li>
-                </ul>
             </li>
-
+            
             <li class="nav-item has-sub">
                 <a href="#" class="menu-link">
                     <i class="bi bi-cash-coin" aria-hidden="true"></i>
@@ -487,16 +424,11 @@
 
                 </ul>
             </li>
-
-            <!-- SECTION: FINANCIAL STATEMENTS & AUDIT -->
-            <li class="nav-section">
-                <span class="menu-title">Statements &amp; Reports</span>
-            </li>
-
+            
             <li class="nav-item has-sub">
                 <a href="#" class="menu-link">
                     <i class="bi bi-bar-chart-line" aria-hidden="true"></i>
-                    <span class="menu-title">Financial Reports</span>
+                    <span class="menu-title"> Reports</span>
                 </a>
                 <ul class="menu-content">
                     <li class="nav-item">
@@ -524,7 +456,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="menu-link" href="#" onclick="return false;">
+                        <a class="menu-link" href="#" onclick="return false;">  
                             <i class="bi bi-activity" aria-hidden="true"></i>
                             <span class="menu-title">Cash Flow Statement</span>
                         </a>

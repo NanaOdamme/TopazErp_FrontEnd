@@ -48,7 +48,7 @@
                     <label>Bank G/L <span class="text-red-500">*</span></label>
                     <select v-model="bankAccountId" class="gl-select">
                         <option value="" disabled>Select Account...</option>
-                        <option v-for="a in accountsList" :value="a.id">{{ a.accountIdentifier }}</option>
+                        <option v-for="a in (bankGlList && bankGlList.length ? bankGlList : accountsList)" :key="a.id" :value="a.id">{{ a.accountIdentifier }}</option>
                     </select>
                     <span class="text-red-500 text-xs" v-if="errors.bankAccountId">Required</span>
                 </div>
@@ -57,7 +57,9 @@
                     <label>Currency <span class="text-red-500">*</span></label>
                     <select v-model="currencyId" class="gl-select">
                         <option value="" disabled>Select...</option>
-                        <option v-for="c in currencyList" :value="c.id">{{ c.currencyName }}</option>
+                        <option v-for="c in currencyList" :key="c.id" :value="c.id">
+                            {{ c.currencyName }}<template v-if="c.currencyCode"> ({{ c.currencyCode }})</template>
+                        </option>
                     </select>
                     <span class="text-red-500 text-xs" v-if="errors.currencyId">Required</span>
                 </div>
@@ -154,22 +156,22 @@
                             <td>
                                 <select class="tbl-select" v-model="v.accountId">
                                     <option value="" disabled>Select Account...</option>
-                                    <option v-for="a in accountsList" :value="a.id">{{ a.accountIdentifier }}</option>
+                                    <option v-for="a in accountsList" :key="a.id" :value="a.id">{{ a.accountIdentifier }}</option>
                                 </select>
                             </td>
                             <td><input type="text" class="tbl-input" v-model="v.description" placeholder="Description" /></td>
                             <td>
                                 <input type="number" class="tbl-input text-right" v-model.number="v.localDebitAmount"
-                                       placeholder="0.00" min="0" @@input="reComputeVoucherSummary()" />
+                                       placeholder="0.00" min="0" @@input="onLocalDebitChange(v)" />
                             </td>
                             <td>
                                 <input type="number" class="tbl-input text-right" v-model.number="v.foreignDebitAmount"
-                                       placeholder="0.00" min="0" :disabled="!isMultiCurrency" />
+                                       placeholder="0.00" min="0" :disabled="!isMultiCurrency" @@input="onForeignDebitChange(v)" />
                             </td>
                             <td>
                                 <select class="tbl-select" v-model="v.ouId">
                                     <option value="" disabled>Select OU...</option>
-                                    <option v-for="ou in costCenterHierachyList" :value="ou.id">{{ ou.name }}</option>
+                                    <option v-for="ou in costCenterHierachyList" :key="ou.id" :value="ou.id">{{ ou.name }}</option>
                                 </select>
                             </td>
                             <td class="text-center">
@@ -208,14 +210,14 @@
                         <label>Withholding Credit G/L</label>
                         <select v-model="withHoldingAccountId" class="gl-select">
                             <option value="" disabled>Select Account...</option>
-                            <option v-for="a in accountsList" :value="a.id">{{ a.accountIdentifier }}</option>
+                            <option v-for="a in accountsList" :key="a.id" :value="a.id">{{ a.accountIdentifier }}</option>
                         </select>
                     </div>
                     <div class="gl-field">
                         <label>VAT / Withhold Account</label>
                         <select v-model="vatWithHoldingAccountId" class="gl-select">
                             <option value="" disabled>Select Account...</option>
-                            <option v-for="a in accountsList" :value="a.id">{{ a.accountIdentifier }}</option>
+                            <option v-for="a in accountsList" :key="a.id" :value="a.id">{{ a.accountIdentifier }}</option>
                         </select>
                     </div>
                     <div class="gl-field">
@@ -301,7 +303,7 @@
                             <td>
                                 <select class="tbl-select" v-model="r.accountId">
                                     <option value="" disabled>Select Account...</option>
-                                    <option v-for="a in accountsList" :value="a.id">{{ a.accountIdentifier }}</option>
+                                    <option v-for="a in accountsList" :key="a.id" :value="a.id">{{ a.accountIdentifier }}</option>
                                 </select>
                             </td>
                             <td>

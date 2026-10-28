@@ -234,6 +234,8 @@ public interface ITopazErpApi
     //chart of account detail
     
     Task<CoaDetailResponse> GetAccountDetails(int pageNo, int pageSize, string query, bool isActive);
+    Task<CoaDetailResponse> CheckAccountNo(string accountNo);
+    Task<CoaDetailResponse> GetLocalAccounts();
     Task<BaseApiResponse> CreateAccountDetail(object dto);
     Task<BaseApiResponse> UpdateAccountDetail(object dto);
     Task<BaseApiResponse> DeleteAccountDetail(Guid id);
@@ -269,8 +271,13 @@ public interface ITopazErpApi
     Task<BaseApiResponse> UpdateImprest(object dto);
     Task<BaseApiResponse> DeleteImprest(Guid id);
     
+    //Default GL numbers
+    Task<DefaultGLNumbersResponse> GetDefaultGlNumbersSetup();
+    Task<BaseApiResponse> CreateDefaultGlNumbers(object dto);
+    Task<BaseApiResponse> UpdateDefaultGlNumbers(object dto);
+    
     // Journal
-    Task<JournalTransactionResponse> GetJournalTransactions(int pageNo, int pageSize,string batchNumber, DateTime? startDate = null, DateTime? endDate = null, bool? isPosted = null, bool? isMultiCurrency = null);
+    Task<JournalTransactionResponse> GetJournalTransactions(JournalListFilterDto dto);
     
     Task<BaseApiResponse> CreateJournal(object dto);
     
@@ -281,5 +288,15 @@ public interface ITopazErpApi
     Task<BaseApiResponse> DeleteJournalBatch(Guid id);
 
     Task<BaseApiResponse> PostJournal(Guid id);
+    
+    //vouchers
+    Task<VoucherResponse> GetVouchers(DateTime startDate, DateTime endDate, string voucherType);
+    
+    Task<BaseApiResponse> CreateVoucher(object dto);
+    
+    Task<BaseApiResponse> UpdateVoucher(object dto);
+    Task<BaseApiResponse> DeleteVoucher(Guid id);
+    Task<BaseApiResponse> PostVoucher(Guid id);
+    
 
 }

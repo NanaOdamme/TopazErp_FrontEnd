@@ -172,7 +172,7 @@ const app = Vue.createApp({
                 try {
                     response = await axios.get(`/GeneralLedger/GetVoucherData?${params}`);
                 } catch {
-                    response = await axios.get(`/LedgerDataEntry/GetVoucherData?${params}`);
+                    response = await axios.get(`/GeneralLedger/GetVoucherData?${params}`);
                 }
 
                 const raw = this._extractList(response);

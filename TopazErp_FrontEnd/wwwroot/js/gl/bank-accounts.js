@@ -3,7 +3,7 @@ const app = Vue.createApp({
     data() {
         return {
             theme: '#0645e7',
-            isShimmerLoading: false,
+            isShimmerLoading: true,
             emptyGuid: '00000000-0000-0000-0000-000000000000',
 
             bankAccountList: [],         // raw bank accounts from server
@@ -11,6 +11,7 @@ const app = Vue.createApp({
             bankOptions: [],             // [{ label, value, name, code }]
             branchList: [],              // raw flattened bank branches
             branchOptions: [],           // [{ label, value, name, bankId, bankName }]
+            filteredBranchOptions: [],   // branches filtered to the currently selected bank
             glAccountList: [],           // raw GL account details from server
             glAccountOptions: [],        // [{ label, value, name, accountNo, currencyId }]
             currencyList: [],            // raw currencies from server
@@ -40,20 +41,103 @@ const app = Vue.createApp({
                     key: 'accountName',
                     label: 'Account Name',
                     type: 'avatar',
-                    width: 250,
-                    minWidth: 200,
-                    required: true,
+                    width: 240,
                     searchable: true,
-                    subtitleKey: 'bankDisplayName'
+                    sortable: true
                 },
                 {
                     key: 'accountNo',
                     label: 'Account No',
                     type: 'text',
-                    required: true,
+                    width: 150,
                     searchable: true,
-                    width: 150
+                    sortable: true
                 },
+                {
+                    key: 'bankBranch',
+                    label: 'Bank / Branch',
+                    type: 'text',
+                    width: 220,
+                    searchable: true,
+                    sortable: true,
+                    render: (v, row) => {
+                        const bank = row.bankName || '';
+                        const branch = row.bankBranchName || '';
+                        if (!bank && !branch) return '—';
+                        if (bank && branch) {
+                            return `<div class="flex items-center gap-1.5"><span class="font-medium text-slate-800 dark:text-slate-100">${bank}</span><span class="text-slate-300 dark:text-slate-600 font-semibold">/</span><span class="text-xs text-slate-600 dark:text-slate-300">${branch}</span></div>`;
+                        }
+                        return `<span class="text-slate-800 dark:text-slate-100">${bank || branch}</span>`;
+                    }
+                },
+                {
+                    key: 'accountTypeCurrency',
+                    label: 'Account Type',
+                    type: 'text',
+                    width: 200,
+                    searchable: true,
+                    sortable: true,
+                    render: (v, row) => {
+                        const type = row.accountType || 'Current';
+                        const curr = row.currencyCode || row.currencyName || '';
+                        const colorMap = {
+                            'Current': 'blue',
+                            'Savings': 'emerald',
+                            'Call': 'violet',
+                            'Fixed Deposit': 'amber',
+                            'Escrow': 'teal',
+                            'Other': 'slate'
+                        };
+                        const color = colorMap[type] || 'blue';
+                        const colorClasses = {
+                            blue: 'bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-500/30',
+                            emerald: 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/30',
+                            violet: 'bg-violet-50 text-violet-700 ring-violet-200 dark:bg-violet-500/10 dark:text-violet-300 dark:ring-violet-500/30',
+                            amber: 'bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/30',
+                            teal: 'bg-teal-50 text-teal-700 ring-teal-200 dark:bg-teal-500/10 dark:text-teal-300 dark:ring-teal-500/30',
+                            slate: 'bg-slate-100 text-slate-700 ring-slate-200 dark:bg-slate-500/10 dark:text-slate-300 dark:ring-slate-500/30'
+                        };
+                        const cls = colorClasses[color] || colorClasses.blue;
+                        const badgeHtml = `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${cls}">${type}</span>`;
+                        const currHtml = curr ? `<span class="text-xs font-semibold text-slate-600 dark:text-slate-300">(${curr})</span>` : '';
+                        return `<div class="inline-flex items-center gap-1.5">${badgeHtml}${currHtml}</div>`;
+                    }
+                },
+                {
+                    key: 'contactDisplay',
+                    label: 'Contact Person',
+                    type: 'text',
+                    width: 220,
+                    searchable: true,
+                    sortable: true,
+                    render: (v, row) => {
+                        const person = row.contactPerson || '';
+                        const no = row.contactNo || '';
+                        if (!person && !no) return '—';
+                        if (person && no) {
+                            const clean = String(no).replace(/[^\d+]/g, '');
+                            return `<div class="flex flex-col leading-tight"><span class="font-medium text-slate-800 dark:text-slate-100">${person}</span><a class="text-xs text-primary-600 hover:underline tabular-nums mt-0.5" href="tel:${clean}">${no}</a></div>`;
+                        }
+                        if (no) {
+                            const clean = String(no).replace(/[^\d+]/g, '');
+                            return `<a class="text-xs text-primary-600 hover:underline tabular-nums" href="tel:${clean}">${no}</a>`;
+                        }
+                        return `<span class="text-slate-800 dark:text-slate-100">${person}</span>`;
+                    }
+                },
+                {
+                    key: 'dateOpened',
+                    label: 'Date Opened',
+                    type: 'date',
+                    width: 140,
+                    searchable: true,
+                    sortable: true
+                }
+            ];
+        },
+
+        bankAccountFormColumns() {
+            return [
                 {
                     key: 'bankId',
                     label: 'Bank',
@@ -61,23 +145,31 @@ const app = Vue.createApp({
                     options: this.bankOptions,
                     required: true,
                     searchable: true,
-                    width: 200,
                     onChange: (val, values) => {
                         const bank = this.bankList.find(b => String(b.id) === String(val));
+
+                        // Filter branch dropdown to only show branches of the selected bank
+                        this.filteredBranchOptions = this.branchList
+                            .filter(br => String(br.bankId) === String(val));
+
                         if (bank && values) {
                             values.bankName = bank.name || '';
                             if (bank.contactPerson && !values.contactPerson) values.contactPerson = bank.contactPerson;
                             if (bank.contactNo && !values.contactNo) values.contactNo = bank.contactNo;
 
-                            // If bank has branches, automatically link to the first branch if not already belonging to this bank
-                            const branches = bank.bankBranches || bank.BankBranches || [];
-                            if (branches.length > 0) {
-                                const currentBranchInBank = branches.some(br => String(br.id) === String(values.bankBranchId));
-                                if (!currentBranchInBank) {
-                                    values.bankBranchId = branches[0].id;
-                                    values.bankBranchName = branches[0].name;
-                                }
+                            // Reset branch selection if the current branch doesn't belong to the new bank
+                            const currentBranchInBank = this.filteredBranchOptions.some(
+                                br => String(br.value) === String(values.bankBranchId)
+                            );
+                            if (!currentBranchInBank) {
+                                values.bankBranchId = '';
+                                values.bankBranchName = '';
                             }
+                        } else if (values) {
+                            // Bank cleared — clear branch too
+                            this.filteredBranchOptions = [];
+                            values.bankBranchId = '';
+                            values.bankBranchName = '';
                         }
                     }
                 },
@@ -85,18 +177,14 @@ const app = Vue.createApp({
                     key: 'bankBranchId',
                     label: 'Branch',
                     type: 'select',
-                    options: this.branchOptions,
+                    options: this.filteredBranchOptions,
                     required: true,
                     searchable: true,
-                    width: 200,
+                    placeholder: 'Select a bank first',
                     onChange: (val, values) => {
-                        const branch = this.branchList.find(br => String(br.id) === String(val));
+                        const branch = this.branchList.find(br => String(br.value) === String(val));
                         if (branch && values) {
                             values.bankBranchName = branch.name || '';
-                            if (branch.bankId && String(values.bankId) !== String(branch.bankId)) {
-                                values.bankId = branch.bankId;
-                                values.bankName = branch.bankName || values.bankName || '';
-                            }
                             if (branch.contactPerson && !values.contactPerson) values.contactPerson = branch.contactPerson;
                             if (branch.contactNo && !values.contactNo) values.contactNo = branch.contactNo;
                         }
@@ -109,7 +197,6 @@ const app = Vue.createApp({
                     options: this.glAccountOptions,
                     required: true,
                     searchable: true,
-                    width: 230,
                     help: 'Chart of Accounts detail mapping',
                     onChange: (val, values) => {
                         const gl = this.glAccountList.find(a => String(a.id) === String(val));
@@ -123,75 +210,81 @@ const app = Vue.createApp({
                     }
                 },
                 {
-                    key: 'accountType',
-                    label: 'Account Type',
-                    type: 'badge',
-                    options: this.accountTypeOptions,
-                    required: true,
-                    defaultValue: 'Current',
-                    default: 'Current',
-                    searchable: true,
-                    width: 150
-                },
-                {
                     key: 'currencyId',
                     label: 'Currency',
                     type: 'select',
                     options: this.currencyOptions,
                     required: true,
-                    searchable: true,
-                    width: 140
+                    searchable: true
                 },
                 {
-                    key: 'contactPerson',
-                    label: 'Contact Person',
+                    key: 'accountName',
+                    label: 'Account Name',
                     type: 'text',
+                    required: true,
                     searchable: true,
-                    width: 160
+                    placeholder: 'e.g. Operations Operating Account'
                 },
                 {
-                    key: 'contactNo',
-                    label: 'Contact No',
-                    type: 'phone',
-                    searchable: true,
-                    width: 140
-                },
-                {
-                    key: 'location',
-                    label: 'Location',
+                    key: 'accountNo',
+                    label: 'Account No',
                     type: 'text',
+                    required: true,
                     searchable: true,
-                    width: 150
+                    placeholder: 'e.g. 101002938484'
                 },
                 {
-                    key: 'address',
-                    label: 'Address',
-                    type: 'text',
-                    searchable: true,
-                    width: 180
-                },
-                {
-                    key: 'chequeBookStart',
-                    label: 'Cheque Start',
-                    type: 'text',
-                    searchable: true,
-                    width: 130
-                },
-                {
-                    key: 'chequeBookEnd',
-                    label: 'Cheque End',
-                    type: 'text',
-                    searchable: true,
-                    width: 130
+                    key: 'accountType',
+                    label: 'Account Type',
+                    type: 'select',
+                    options: this.accountTypeOptions,
+                    required: true,
+                    defaultValue: 'Current',
+                    default: 'Current'
                 },
                 {
                     key: 'dateOpened',
                     label: 'Date Opened',
                     type: 'date',
-                    searchable: true,
-                    width: 130,
+                    required: true,
                     defaultValue: () => new Date().toISOString().slice(0, 10),
                     default: () => new Date().toISOString().slice(0, 10)
+                },
+                {
+                    key: 'contactPerson',
+                    label: 'Contact Person',
+                    type: 'text',
+                    placeholder: 'e.g. Relationship Manager'
+                },
+                {
+                    key: 'contactNo',
+                    label: 'Contact No',
+                    type: 'phone',
+                    placeholder: 'e.g. +233 24 123 4567'
+                },
+                {
+                    key: 'location',
+                    label: 'Location',
+                    type: 'text',
+                    placeholder: 'e.g. High Street'
+                },
+                {
+                    key: 'address',
+                    label: 'Address',
+                    type: 'text',
+                    placeholder: 'e.g. P.O. Box 123, Accra'
+                },
+                {
+                    key: 'chequeBookStart',
+                    label: 'Cheque Start',
+                    type: 'text',
+                    placeholder: 'e.g. 000101'
+                },
+                {
+                    key: 'chequeBookEnd',
+                    label: 'Cheque End',
+                    type: 'text',
+                    placeholder: 'e.g. 000200'
                 }
             ];
         }
@@ -224,7 +317,7 @@ const app = Vue.createApp({
                     const branches = bank.bankBranches || bank.BankBranches || [];
                     branches.forEach(branch => {
                         allBranches.push({
-                            label: `${branch.name} (${bank.name})`,
+                            label: branch.name,
                             value: branch.id,
                             name: branch.name,
                             bankId: bank.id,
@@ -237,6 +330,8 @@ const app = Vue.createApp({
                 });
                 this.branchList = allBranches;
                 this.branchOptions = allBranches;
+                // filteredBranchOptions starts empty — populated when a bank is chosen in the form
+                this.filteredBranchOptions = [];
             } catch (error) {
                 console.error('Failed to load banks:', error);
             }
@@ -296,10 +391,18 @@ const app = Vue.createApp({
 
                     const bankName = item.bankName || (bank ? bank.name : '');
                     const bankBranchName = item.bankBranchName || (branch ? branch.name : '');
+                    const bankBranch = [bankName, bankBranchName].filter(Boolean).join(' / ') || '—';
                     const bankDisplayName = [bankName, bankBranchName].filter(Boolean).join(' • ') || 'Bank Account';
                     const currencyCode = item.currencyCode || (curr ? curr.currencyCode : '');
                     const currencyName = item.currencyName || (curr ? curr.currencyName : '');
                     const accountName = item.accountName || (gl ? gl.accountName : '') || '';
+                    const accountType = item.accountType || 'Current';
+                    const accountTypeCurrency = currencyCode ? `${accountType} (${currencyCode})` : accountType;
+                    const contactPerson = item.contactPerson || '';
+                    const contactNo = item.contactNo || '';
+                    const contactDisplay = contactPerson && contactNo
+                        ? `${contactPerson} (${contactNo})`
+                        : (contactPerson || contactNo || '—');
 
                     let dateOpened = '';
                     if (item.dateOpened) {
@@ -314,11 +417,13 @@ const app = Vue.createApp({
                         accountName,
                         name: accountName,
                         accountNo: item.accountNo ? String(item.accountNo) : '',
-                        accountType: item.accountType || 'Current',
+                        accountType,
+                        accountTypeCurrency,
                         bankId: item.bankId || '',
                         bankName,
                         bankBranchId: item.bankBranchId || '',
                         bankBranchName,
+                        bankBranch,
                         bankDisplayName,
                         accountId: item.accountId || '',
                         currencyId: item.currencyId || '',
@@ -326,8 +431,9 @@ const app = Vue.createApp({
                         currencyName,
                         address: item.address || '',
                         location: item.location || '',
-                        contactPerson: item.contactPerson || '',
-                        contactNo: item.contactNo || '',
+                        contactPerson,
+                        contactNo,
+                        contactDisplay,
                         chequeBookStart: item.chequeBookStart ? String(item.chequeBookStart) : '',
                         chequeBookEnd: item.chequeBookEnd ? String(item.chequeBookEnd) : '',
                         dateOpened: dateOpened || new Date().toISOString().slice(0, 10)
@@ -469,10 +575,18 @@ const app = Vue.createApp({
                     d => String(d.id) === String(existing.id)
                 );
                 if (idx !== -1) {
+                    const bankBranch = [bankName, bankBranchName].filter(Boolean).join(' / ') || '—';
                     const bankDisplayName = [bankName, bankBranchName].filter(Boolean).join(' • ') || 'Bank Account';
+                    const accountTypeCurrency = currencyCode ? `${payload.accountType} (${currencyCode})` : payload.accountType;
+                    const contactDisplay = payload.contactPerson && payload.contactNo
+                        ? `${payload.contactPerson} (${payload.contactNo})`
+                        : (payload.contactPerson || payload.contactNo || '—');
                     this.bankAccountList.splice(idx, 1, {
                         ...payload,
+                        bankBranch,
                         bankDisplayName,
+                        accountTypeCurrency,
+                        contactDisplay,
                         dateOpened: row.dateOpened || existing.dateOpened
                     });
                 }
@@ -569,6 +683,21 @@ const app = Vue.createApp({
             }
 
             return true;
+        },
+
+        /* ── Form Open Hook ──────────────────────────────────────── */
+
+        onOpenForm(event) {
+            const row = event?.row;
+            const bankId = row?.bankId;
+            if (bankId) {
+                // Seed the branch dropdown with branches for this bank
+                this.filteredBranchOptions = this.branchList
+                    .filter(br => String(br.bankId) === String(bankId));
+            } else {
+                // New record — start with empty branch list
+                this.filteredBranchOptions = [];
+            }
         },
 
         /* ── DOM Event Delegation Fallback ────────────────────────── */

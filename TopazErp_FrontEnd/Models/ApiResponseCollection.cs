@@ -80,9 +80,17 @@ public class CurrencyResponse: BaseApiResponseModel
 public class JournalTransactionResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]    
-    public PagedRecords<JournalTransaction> Result { get; set; }
+    public JournalTransactionPagedResult Result { get; set; }
     
 }
+
+public class VoucherResponse: BaseApiResponseModel
+{
+    [JsonProperty("result")]  
+    public List<Voucher> Result { get; set; }
+    
+}
+
 public class AuditLogResponse : BaseApiResponseModel
 {
     [JsonProperty("result")]
@@ -120,6 +128,11 @@ public class ImprestResponse : BaseApiResponseModel
     public List<Imprest> Result { get; set; }
 }
 
+public class DefaultGLNumbersResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public DefaultGLNumbers Result { get; set; }
+}
 
 
 
@@ -260,7 +273,7 @@ public class CompanyProfileResponse : BaseApiResponseModel
 public class BankAccountResponse : BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public PagedRecords<BankAccount> Result { get; set; }
+    public List<BankAccount> Result { get; set; }
 }
 
 public class CoaControlResponse : BaseApiResponseModel

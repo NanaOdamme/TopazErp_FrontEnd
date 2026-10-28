@@ -3,7 +3,7 @@ const app = Vue.createApp({
     data() {
         return {
             theme: '#0645e7',
-            isShimmerLoading: false,
+            isShimmerLoading: true,
             emptyGuid: '00000000-0000-0000-0000-000000000000',
 
             accountHeadList: [],          // raw flat list from server (with parentName resolved)
