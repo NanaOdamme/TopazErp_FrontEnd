@@ -1,5 +1,6 @@
 using System.Dynamic;
 using Microsoft.AspNetCore.Mvc;
+using TopazErp_FrontEnd.Models;
 using TopazErp_FrontEnd.Services;
 
 namespace TopazErp_FrontEnd.Controllers;
@@ -59,6 +60,13 @@ public class GeneralLedgerController : Controller
         return View();
     }
 
+    [HttpGet]
+    public IActionResult CreateSupplier([FromQuery] Guid? id = null)
+    {
+        ViewBag.SupplierId = id;
+        return View();
+    }
+
     public IActionResult SystemNumbers()
     {
         return View();
@@ -91,7 +99,15 @@ public class GeneralLedgerController : Controller
     }
     
     
+    public IActionResult Journal()
+    {
+        return View();
+    }
     
+    public IActionResult CreateJournal()
+    {
+        return View();
+    }
     
      
     public IActionResult JournalHistory()
@@ -109,22 +125,90 @@ public class GeneralLedgerController : Controller
         return View();
     }
 
-    public IActionResult CreateSupplierVoucher()
+    public IActionResult SupplierPaymentVoucher()
     {
         return View();
     }
 
-    public IActionResult CreateEmployeeVoucher()
+    public IActionResult EmployeePaymentVoucher()
     {
         return View();
     }
 
-    public IActionResult CreateCustomerVoucher()
+    public IActionResult CustomerReceiptVoucher()
     {
         return View();
     }
     
+    public IActionResult ImprestCategories()
+    {
+        return View();
+    }
+    
+    public IActionResult Imprests()
+    {
+        return View();
+    }
+    
+    public IActionResult PettyCashRecipients()
+    {
+        return View();
+    }
+    
+    public IActionResult PettyCash()
+    {
+        return View();
+    }
+    
+    
+    
+    
+    
     //api
+    //save journal
+    public async Task<ActionResult> InitJournalEntry()
+    {
+        var accounts = await _topazErpApi.GetAccountDetails(1, 5000, null, true);
+        var costCenters = await _topazErpApi.GetCostCenters(1,1000,"");
+        var businessProfile = await _topazErpApi.GetBusinessProfile();
+            
+        return Json(new { accounts, costCenters, enforceOu = businessProfile.Result is { EnforceOu: true } });
+    }
+
+    public async Task<ActionResult> InitSupplierPvEntry()
+    {
+        var accounts = await _topazErpApi.GetAccountDetails(1, 5000, null, true);
+        var costCenters = await _topazErpApi.GetCostCenters(1, 1000, "");
+        var defaultGl = await _topazErpApi.GetDefaultGlNumbersSetup();
+        var systemNumbers = await _topazErpApi.GetSystemNumbers("");
+
+        var voucherBatchSystemNumber = systemNumbers?.Result?.FirstOrDefault(s =>
+            !string.IsNullOrEmpty(s.Key) &&
+            (s.Key.Contains("voucher", StringComparison.OrdinalIgnoreCase) ||
+             s.Key.Contains("pv", StringComparison.OrdinalIgnoreCase)))
+            ?? systemNumbers?.Result?.FirstOrDefault();
+
+        return Json(new
+        {
+            accounts = accounts?.Result,
+            costCenters = costCenters?.Result,
+            defaultGlNumbers = defaultGl?.Result,
+            voucherBatchSystemNumber
+        });
+    }
+    
+    
+    public async Task<IActionResult> SaveJournal([FromBody] object dto)
+    {
+        var results = await _topazErpApi.CreateJournal(dto);
+        return Json(results);
+    }
+    
+    public async Task<IActionResult> UpdateJournal([FromBody]object dto)
+    {
+        var results = await _topazErpApi.UpdateJournal(dto);
+        return Json(results);
+    }
     
     public async Task<IActionResult> GetAccountHeads([FromQuery]int pageNo, int pageSize, string query)
     {
@@ -211,4 +295,239 @@ public class GeneralLedgerController : Controller
         var results = await _topazErpApi.CheckAccountDetails(accountNumber, accountControlId);
         return Json(results);
     }
+
+    public async Task<IActionResult> CheckAccountNo([FromQuery] string accountNo)
+    {
+        if (string.IsNullOrWhiteSpace(accountNo))
+        {
+            return Json(new CoaDetailResponse { Result = new List<CoaDetail>(), Success = true });
+        }
+
+        var results = await _topazErpApi.CheckAccountNo(accountNo);
+        return Json(results);
+    }
+
+    // Bank Accounts
+    public async Task<IActionResult> GetBankAccounts([FromQuery] int pageNo = 1, [FromQuery] int pageSize = 2000, [FromQuery] string query = null)
+    {
+        var results = await _topazErpApi.GetBankAccounts(pageNo, pageSize, query);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> CreateBankAccount([FromBody] object dto)
+    {
+        var results = await _topazErpApi.CreateBankAccount(dto);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> UpdateBankAccount([FromBody] object dto)
+    {
+        var results = await _topazErpApi.UpdateBankAccount(dto);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> DeleteBankAccount([FromQuery] Guid id)
+    {
+        var results = await _topazErpApi.DeleteBankAccount(id);
+        return Json(results);
+    }
+    
+    
+    // imprest categories
+    
+    public async Task<IActionResult> GetImprestCategories()
+    {
+        var results = await _topazErpApi.GetImprestCategories(1,100, "");
+        return Json(results);
+    }
+
+    public async Task<IActionResult> CreateImprestCategory([FromBody] object dto)
+    {
+        var results = await _topazErpApi.CreateImprestCategory(dto);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> UpdateImprestCategory([FromBody] object dto)
+    {
+        var results = await _topazErpApi.UpdateImprestCategory(dto);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> DeleteImprestCategory([FromQuery] Guid id)
+    {
+        var results = await _topazErpApi.DeleteImprestCategory(id);
+        return Json(results);
+    }
+    
+    // suppliers
+    public async Task<IActionResult> GetSuppliers()
+    {
+        var results = await _topazErpApi.GetSuppliers(1,1000, "");
+        return Json(results);
+    }
+
+     
+
+    [HttpPost]
+    public async Task<IActionResult> CreateSupplier([FromBody] object dto)
+    {
+        var results = await _topazErpApi.CreateSupplier(dto);
+        return Json(results);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> UpdateSupplier([FromBody] object dto)
+    {
+        var results = await _topazErpApi.UpdateSupplier(dto);
+        return Json(results);
+    }
+
+    [HttpDelete, HttpPost]
+    public async Task<IActionResult> DeleteSupplier([FromQuery] Guid id)
+    {
+        var results = await _topazErpApi.DeleteSupplier(id);
+        return Json(results);
+    }
+    
+    
+    //customers
+    public async Task<IActionResult> GetCustomers()
+    {
+        var results = await _topazErpApi.GetCustomers(1,1000, "");
+        return Json(results);
+    }
+
+    public async Task<IActionResult> CreateCustomer([FromBody] object dto)
+    {
+        var results = await _topazErpApi.CreateCustomer(dto);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> UpdateCustomer([FromBody] object dto)
+    {
+        var results = await _topazErpApi.UpdateCustomer(dto);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> DeleteCustomer([FromQuery] Guid id)
+    {
+        var results = await _topazErpApi.DeleteCustomer(id);
+        return Json(results);
+    }
+    
+    
+    // petty cash recipients
+    public async Task<IActionResult> GetPettyCashRecipients([FromQuery] int pageNo = 1, [FromQuery] int pageSize = 1000, [FromQuery] string query = "")
+    {
+        var results = await _topazErpApi.GetPettyCashRecipients(pageNo, pageSize, query);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> CreatePettyCashRecipient([FromBody] object dto)
+    {
+        var results = await _topazErpApi.CreatePettyCashRecipient(dto);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> UpdatePettyCashRecipient([FromBody] object dto)
+    {
+        var results = await _topazErpApi.UpdatePettyCashRecipient(dto);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> DeletePettyCashRecipient([FromQuery] Guid id)
+    {
+        var results = await _topazErpApi.DeletePettyCashRecipient(id);
+        return Json(results);
+    }
+    
+    //Default GL Numbers
+    
+    public async Task<IActionResult> GetDefaultGlNumbersSetup()
+    {
+        var results = await _topazErpApi.GetDefaultGlNumbersSetup();
+        return Json(results);
+    }
+
+    public async Task<IActionResult> CreateDefaultGlNumbers([FromBody] object dto)
+    {
+        var results = await _topazErpApi.CreateDefaultGlNumbers(dto);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> UpdateDefaultGlNumbers([FromBody] object dto)
+    {
+        var results = await _topazErpApi.UpdateDefaultGlNumbers(dto);
+        return Json(results);
+    }
+    
+    
+    // Journal Transactions
+    public async Task<IActionResult> GetJournalTransactions([FromBody]JournalListFilterDto dto)
+    {
+        var results = await _topazErpApi.GetJournalTransactions(dto);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> GetJournalDetails([FromQuery] Guid id)
+    {
+        var results = await _topazErpApi.GetJournalDetails(id);
+        return Json(results);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteJournalBatch([FromQuery] Guid id)
+    {
+        var results = await _topazErpApi.DeleteJournalBatch(id);
+        return Json(results);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteJournalBatches([FromBody] List<Guid> ids)
+    {
+        if (ids == null || ids.Count == 0) return Json(new { success = false, message = "No IDs provided" });
+        foreach (var id in ids)
+        {
+            await _topazErpApi.DeleteJournalBatch(id);
+        }
+        return Json(new { success = true });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> PostJournalBatch([FromQuery] Guid id)
+    {
+        var results = await _topazErpApi.PostJournal(id);
+        return Json(results);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> PostJournalBatches([FromBody] List<Guid> ids)
+    {
+        if (ids == null || ids.Count == 0) return Json(new { success = false, message = "No IDs provided" });
+        foreach (var id in ids)
+        {
+            await _topazErpApi.PostJournal(id);
+        }
+        return Json(new { success = true });
+    }
+    
+    // vouchers
+    public async Task<IActionResult> GetVoucherData([FromQuery] DateTime startDate, DateTime endDate, string voucherType)
+    {
+        var results = await _topazErpApi.GetVouchers(startDate, endDate, voucherType);
+        return Json(results);
+    }
+    
+    public async Task<IActionResult> CreateVoucher([FromBody] object dto)
+    {
+        var results = await _topazErpApi.CreateVoucher(dto);
+        return Json(results);
+    }
+
+    public async Task<IActionResult> UpdateVoucher([FromBody] object dto)
+    {
+        var results = await _topazErpApi.UpdateVoucher(dto);
+        return Json(results);
+    }
+    
 }

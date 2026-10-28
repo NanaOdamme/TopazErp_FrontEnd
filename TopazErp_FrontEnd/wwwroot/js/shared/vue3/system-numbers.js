@@ -1,4 +1,4 @@
-﻿    const app = Vue.createApp({
+    const app = Vue.createApp({
     data() {
         return {
             theme: '#0645e7',
@@ -35,8 +35,8 @@
                     width: 180
                 },
                 {
-                    key: 'Key',
-                    label: 'System Number',
+                    key: 'key',
+                    label: 'Key',
                     type: 'text',
                     searchable: false,
                     editable: false,
@@ -175,7 +175,7 @@
         },
 
         // Handle edits from the reusable grid.
-        onUpdate(event) {
+        async onUpdate(event) {
             const record = event?.row || event?.data;
 
             if (!record) {
@@ -186,7 +186,49 @@
                 return;
             }
 
-            this.saveSystemNumber(record);
+            if (!this.validateSystemNumber(record)) return;
+
+            // Find the original row so we preserve server-owned fields
+            // (id, pk, tenantId, key, itemName, etc.)
+            const existing = this.systemNumberList.find(
+                s => String(s.id) === String(record.id)
+            );
+
+            if (!existing) {
+                this.toastHandler('error', 'System number record not found.');
+                return;
+            }
+
+            const payload = {
+                ...existing,
+                prefix:        record.prefix        != null ? String(record.prefix).trim()        : existing.prefix,
+                suffix:        record.suffix        != null ? String(record.suffix).trim()        : existing.suffix,
+                formatPattern: record.formatPattern != null ? String(record.formatPattern).trim() : existing.formatPattern,
+                padding:       record.padding       != null ? Number(record.padding)              : existing.padding,
+                lastNo:        Number(record.lastNo)
+            };
+
+            this.isShimmerLoading = true;
+            try {
+                await axios.post('/SharedResource/UpdateSystemNumber', payload);
+
+                // Optimistically patch the local list
+                const idx = this.systemNumberList.findIndex(
+                    s => String(s.id) === String(existing.id)
+                );
+                if (idx !== -1) {
+                    this.systemNumberList.splice(idx, 1, { ...payload });
+                }
+
+                this.toastHandler('success', `"${existing.itemName}" updated successfully.`);
+            } catch (err) {
+                console.error('UpdateSystemNumber failed:', err);
+                this.toastHandler('error', 'Failed to update system number. Please try again.');
+                // Re-sync from server on failure to avoid stale data
+                await this.getSystemNumbers();
+            } finally {
+                this.isShimmerLoading = false;
+            }
         },
 
         // Restore the original sample configurations.

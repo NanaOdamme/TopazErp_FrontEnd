@@ -1,0 +1,331 @@
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@{
+    ViewBag.Title = "Employee Payment Voucher";
+    Layout = "~/Views/Shared/_adminLedgerLayout.cshtml";
+    var withHoldingVatPct = Configuration["GeneralLedgerConfig:WithHoldingVatPercentage"] ?? "7";
+}
+
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <a href="/GeneralLedger/Vouchers" class="hover:text-blue-600 transition">GL - Vouchers</a>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Employee Payment Voucher</span>
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <h2 class="text-2xl font-semibold text-gray-800">Employee Payment Voucher</h2>
+            <a href="/GeneralLedger/Vouchers"
+               class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition">
+                <i class="bi bi-arrow-left"></i> Back to Vouchers
+            </a>
+        </div>
+    </div>
+
+    <div id="app">
+
+        <!-- ── Header Card ───────────────────────────────────── -->
+        <div class="card mb-4 p-5">
+            <div class="flex flex-wrap gap-4 items-end">
+
+                <div class="gl-field flex-1 min-w-[180px]">
+                    <label>Employee <span class="text-red-500">*</span></label>
+                    <select v-model="employeeId" class="gl-select">
+                        <option value="" disabled>Select Employee...</option>
+                        <option v-for="e in employeeList" :value="e.id">{{ e.employeeName }}</option>
+                    </select>
+                    <span class="text-red-500 text-xs" v-if="errors.employeeId">Required</span>
+                </div>
+
+                <div class="gl-field w-40">
+                    <label>Entry Date <span class="text-red-500">*</span></label>
+                    <input type="date" v-model="voucherEntryDate" class="gl-input" />
+                    <span class="text-red-500 text-xs" v-if="errors.voucherEntryDate">Required</span>
+                </div>
+
+                <div class="gl-field flex-1 min-w-[200px]">
+                    <label>Bank G/L <span class="text-red-500">*</span></label>
+                    <select v-model="bankAccountId" class="gl-select">
+                        <option value="" disabled>Select Account...</option>
+                        <option v-for="a in accountsList" :value="a.id">{{ a.accountIdentifier }}</option>
+                    </select>
+                    <span class="text-red-500 text-xs" v-if="errors.bankAccountId">Required</span>
+                </div>
+
+                <div class="gl-field w-40">
+                    <label>Currency <span class="text-red-500">*</span></label>
+                    <select v-model="currencyId" class="gl-select">
+                        <option value="" disabled>Select...</option>
+                        <option v-for="c in currencyList" :value="c.id">{{ c.currencyName }}</option>
+                    </select>
+                    <span class="text-red-500 text-xs" v-if="errors.currencyId">Required</span>
+                </div>
+
+                <div class="gl-field w-32">
+                    <label>Rate</label>
+                    <input type="text" :value="currencyRate ?? '—'" class="gl-input bg-gray-50" readonly />
+                </div>
+
+                <div class="gl-field flex items-center gap-2 pt-5">
+                    <input type="checkbox" id="isMultiCurrencyChk" v-model="isMultiCurrency" disabled class="w-4 h-4 rounded" />
+                    <label for="isMultiCurrencyChk" class="text-sm font-medium text-gray-600 cursor-default">Multi-Currency</label>
+                </div>
+
+            </div>
+
+            <hr class="my-4 border-gray-100" />
+
+            <div class="flex flex-wrap gap-4 items-end">
+
+                <div class="gl-field w-36">
+                    <label>Mode of Payment</label>
+                    <select v-model="modePayment" class="gl-select">
+                        <option value="Cash">Cash</option>
+                        <option value="Cheque">Cheque</option>
+                    </select>
+                </div>
+
+                <div class="gl-field w-40">
+                    <label>Payment Date <span class="text-red-500">*</span></label>
+                    <input type="date" v-model="paymentDate" class="gl-input" />
+                    <span class="text-red-500 text-xs" v-if="errors.paymentDate">Required</span>
+                </div>
+
+                <div class="gl-field w-36">
+                    <label>Batch No#</label>
+                    <input type="text" v-model="batchNo" class="gl-input" placeholder="Batch No." />
+                </div>
+
+                <div class="gl-field w-36" v-if="modePayment === 'Cheque'">
+                    <label>Cheque No#</label>
+                    <input type="text" v-model="chequeNo" class="gl-input" placeholder="Cheque No." />
+                </div>
+
+                <div class="ml-auto flex gap-2 items-end">
+                    <button type="button" @@click="saveVoucher()" :disabled="isLoading"
+                            class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition disabled:opacity-60">
+                        <i class="bi bi-floppy" v-if="!isLoading"></i>
+                        <i class="bi bi-arrow-repeat animate-spin" v-else></i>
+                        {{ saveButtonText }}
+                    </button>
+                    <button type="button" v-if="voucherId" @@click="previewVoucher()"
+                            class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition">
+                        <i class="bi bi-eye"></i> Preview
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ── Transaction Rows ──────────────────────────────── -->
+        <div class="card mb-4 p-5">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-semibold text-gray-700">Transaction Lines</h3>
+                <button type="button" @@click="addVoucherRow()"
+                        class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition">
+                    <i class="bi bi-plus-lg"></i> Add Row
+                </button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="voucher-table">
+                    <thead>
+                        <tr>
+                            <th style="width:40px">WH?</th>
+                            <th style="min-width:110px">Invoice No.</th>
+                            <th style="min-width:110px">Ref No.</th>
+                            <th style="min-width:240px">Debit G/L</th>
+                            <th style="min-width:200px">Description</th>
+                            <th style="min-width:130px">Local Amt</th>
+                            <th style="min-width:130px">Foreign Amt</th>
+                            <th style="min-width:220px">Cost Center (OU)</th>
+                            <th style="width:60px">Imprest?</th>
+                            <th style="width:50px"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(v, idx) in voucherList" :key="v.id">
+                            <td class="text-center">
+                                <input type="checkbox" v-model="v.withHold" @@change="onWithHoldChange()" class="w-4 h-4 rounded" />
+                            </td>
+                            <td><input type="text" class="tbl-input" v-model="v.invoiceNo" placeholder="Invoice No." /></td>
+                            <td><input type="text" class="tbl-input" v-model="v.referenceNo" placeholder="Ref No." /></td>
+                            <td>
+                                <select class="tbl-select" v-model="v.accountId">
+                                    <option value="" disabled>Select Account...</option>
+                                    <option v-for="a in accountsList" :value="a.id">{{ a.accountIdentifier }}</option>
+                                </select>
+                            </td>
+                            <td><input type="text" class="tbl-input" v-model="v.description" placeholder="Description" /></td>
+                            <td>
+                                <input type="number" class="tbl-input text-right" v-model.number="v.localDebitAmount"
+                                       placeholder="0.00" min="0" @@input="reComputeVoucherSummary()" />
+                            </td>
+                            <td>
+                                <input type="number" class="tbl-input text-right" v-model.number="v.foreignDebitAmount"
+                                       placeholder="0.00" min="0" :disabled="!isMultiCurrency" />
+                            </td>
+                            <td>
+                                <select class="tbl-select" v-model="v.ouId">
+                                    <option value="" disabled>Select OU...</option>
+                                    <option v-for="ou in costCenterHierachyList" :value="ou.id">{{ ou.name }}</option>
+                                </select>
+                            </td>
+                            <td class="text-center">
+                                <input type="checkbox" v-model="v.hasImprest" class="w-4 h-4 rounded" />
+                            </td>
+                            <td class="text-center">
+                                <button type="button" @@click="removeVoucherRow(idx)"
+                                        class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition">
+                                    <i class="bi bi-trash3 text-xs"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr v-if="!voucherList.length">
+                            <td colspan="10" class="py-6 text-center text-sm text-gray-400">No transaction lines yet.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ── Tax / Summary ─────────────────────────────────── -->
+        <div class="card p-5">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                <div class="space-y-3">
+                    <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Withholding Settings</h4>
+                    <div class="gl-field">
+                        <label>Withholding Rate (%)</label>
+                        <input type="number" v-model.number="withHoldingRate" class="gl-input" placeholder="0.00" min="0"
+                               @@input="reComputeVoucherSummary()" />
+                    </div>
+                    <div class="gl-field">
+                        <label>Tax Type</label>
+                        <input type="text" v-model="taxType" class="gl-input" placeholder="Tax Type" />
+                    </div>
+                    <div class="gl-field">
+                        <label>Withholding Credit G/L</label>
+                        <select v-model="withHoldingAccountId" class="gl-select">
+                            <option value="" disabled>Select Account...</option>
+                            <option v-for="a in accountsList" :value="a.id">{{ a.accountIdentifier }}</option>
+                        </select>
+                    </div>
+                    <div class="gl-field">
+                        <label>VAT / Withhold Account</label>
+                        <select v-model="vatWithHoldingAccountId" class="gl-select">
+                            <option value="" disabled>Select Account...</option>
+                            <option v-for="a in accountsList" :value="a.id">{{ a.accountIdentifier }}</option>
+                        </select>
+                    </div>
+                    <div class="gl-field">
+                        <label>VAT Amount</label>
+                        <input type="number" :value="totalVatAmount" class="gl-input bg-gray-50" readonly />
+                    </div>
+                    <div class="gl-field">
+                        <label>Base Amount</label>
+                        <input type="number" :value="amountWithoutTaxes" class="gl-input bg-gray-50" readonly />
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Tax Flags</h4>
+                    <div v-for="tax in taxFlags" :key="tax.label" class="flex items-center gap-3">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" v-model="tax.enabled" :disabled="!hasWithHolding"
+                                   @@change="onTaxFlagChange(tax)"
+                                   class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                            <span class="text-sm font-semibold text-gray-700">{{ tax.label }}</span>
+                        </label>
+                        <div v-if="tax.enabled" class="ml-auto">
+                            <input type="number" v-model.number="tax.rate" placeholder="0" min="0"
+                                   class="w-24 gl-input py-1" @@input="reComputeVoucherSummary()" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Summary</h4>
+                    <div class="summary-row"><span>Total (Gross)</span><span class="font-semibold">{{ fmtNum(totalDebit) }}</span></div>
+                    <div class="summary-row"><span>With Held</span><span class="font-semibold text-red-600">- {{ fmtNum(totalWithHeldAmount) }}</span></div>
+                    <div class="summary-row"><span>Retained</span><span class="font-semibold text-red-600">- {{ fmtNum(totalRetentionCredit) }}</span></div>
+                    <div class="summary-row"><span>VAT Withheld</span><span class="font-semibold text-red-600">- {{ fmtNum(totalVatWithHeldAmount) }}</span></div>
+                    <div class="summary-row border-t pt-2 font-bold text-blue-700"><span>Net Amount</span><span>{{ fmtNum(totalNetAmount) }}</span></div>
+                </div>
+
+            </div>
+
+            <hr class="my-5 border-gray-100" />
+            <div class="flex items-center justify-between mb-3">
+                <h4 class="text-sm font-semibold text-gray-700">Retentions</h4>
+                <button type="button" @@click="addRetentionRow()"
+                        class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition">
+                    <i class="bi bi-plus-lg"></i> Add Retention
+                </button>
+            </div>
+            <div class="overflow-x-auto" v-if="retentionsList.length">
+                <table class="voucher-table">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th style="min-width:220px">Credit G/L</th>
+                            <th style="min-width:110px">Amount</th>
+                            <th style="width:80px">Is %?</th>
+                            <th style="min-width:110px">Total Amt</th>
+                            <th style="width:50px"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(r, idx) in retentionsList" :key="r.id">
+                            <td><input type="text" class="tbl-input" v-model="r.description" placeholder="Description" /></td>
+                            <td>
+                                <select class="tbl-select" v-model="r.accountId">
+                                    <option value="" disabled>Select Account...</option>
+                                    <option v-for="a in accountsList" :value="a.id">{{ a.accountIdentifier }}</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="number" class="tbl-input text-right" v-model.number="r.amount"
+                                       placeholder="0.00" min="0" @@input="onRetentionAmountChange(r)" />
+                            </td>
+                            <td class="text-center">
+                                <input type="checkbox" v-model="r.IsPercentage" @@change="onRetentionAmountChange(r)" class="w-4 h-4 rounded" />
+                            </td>
+                            <td><input type="number" class="tbl-input text-right bg-gray-50" :value="r.totalAmount" readonly /></td>
+                            <td class="text-center">
+                                <button type="button" @@click="removeRetentionRow(idx)"
+                                        class="inline-flex items-center justify-center w-7 h-7 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition">
+                                    <i class="bi bi-trash3 text-xs"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p v-else class="text-sm text-gray-400 text-center py-3">No retentions added.</p>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    .gl-field { display:flex; flex-direction:column; }
+    .gl-field label { font-size:.72rem; font-weight:500; color:#6b7280; margin-bottom:.3rem; }
+    .gl-input,.gl-select { width:100%; border-radius:.5rem; border:1px solid #d1d5db; padding:.45rem .65rem; font-size:.8125rem; color:#111827; background:#fff; outline:none; transition:border-color .15s,box-shadow .15s; }
+    .gl-input:focus,.gl-select:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.12); }
+    .voucher-table { width:100%; border-collapse:collapse; font-size:.8125rem; }
+    .voucher-table thead tr { background:#f8fafc; }
+    .voucher-table th { padding:.5rem .6rem; text-align:left; font-weight:600; color:#374151; border-bottom:2px solid #e5e7eb; white-space:nowrap; }
+    .voucher-table td { padding:.35rem .5rem; border-bottom:1px solid #f1f5f9; vertical-align:middle; }
+    .tbl-input,.tbl-select { width:100%; border:1px solid #e5e7eb; border-radius:.375rem; padding:.3rem .5rem; font-size:.8rem; color:#111827; background:#fff; outline:none; transition:border-color .15s; }
+    .tbl-input:focus,.tbl-select:focus { border-color:#3b82f6; }
+    .summary-row { display:flex; justify-content:space-between; font-size:.8125rem; padding:.2rem 0; }
+    @@keyframes spin { to { transform:rotate(360deg); } }
+    .animate-spin { display:inline-block; animation:spin .7s linear infinite; }
+</style>
+
+<script>
+    let withHoldingVatPercentage = @withHoldingVatPct;
+    let voucherId = '';
+</script>
+<script src="~/js/gl/employee-payment-voucher.js" asp-append-version="true"></script>

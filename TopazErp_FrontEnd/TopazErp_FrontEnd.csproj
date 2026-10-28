@@ -3149,8 +3149,4 @@
       <_ContentIncludedByDefault Remove="wwwroot\wwwroot\PdfEngine\windows\v8_context_snapshot.bin" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Views\Profiles\" />
-    </ItemGroup>
-
 </Project>

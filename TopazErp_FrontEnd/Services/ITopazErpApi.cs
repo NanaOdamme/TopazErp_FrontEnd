@@ -234,6 +234,8 @@ public interface ITopazErpApi
     //chart of account detail
     
     Task<CoaDetailResponse> GetAccountDetails(int pageNo, int pageSize, string query, bool isActive);
+    Task<CoaDetailResponse> CheckAccountNo(string accountNo);
+    Task<CoaDetailResponse> GetLocalAccounts();
     Task<BaseApiResponse> CreateAccountDetail(object dto);
     Task<BaseApiResponse> UpdateAccountDetail(object dto);
     Task<BaseApiResponse> DeleteAccountDetail(Guid id);
@@ -245,8 +247,37 @@ public interface ITopazErpApi
     Task<BaseApiResponse> UpdateBudget(object dto);
     Task<BaseApiResponse> DeleteBudget(Guid id);
     
+    //petty cash recipients
+    Task<PettyCashRecipientResponse> GetPettyCashRecipients(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreatePettyCashRecipient(object dto);
+    Task<BaseApiResponse> UpdatePettyCashRecipient(object dto);
+    Task<BaseApiResponse> DeletePettyCashRecipient(Guid id);
+    
+    //petty cash
+    Task<PettyCashResponse> GetPettyTransactions(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreatePettyCash(object dto);
+    Task<BaseApiResponse> UpdatePettyCash(object dto);
+    Task<BaseApiResponse> DeletePettyCash(Guid id);
+    
+    //imprest category
+    Task<ImprestCategoryResponse> GetImprestCategories(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreateImprestCategory(object dto);
+    Task<BaseApiResponse> UpdateImprestCategory(object dto);
+    Task<BaseApiResponse> DeleteImprestCategory(Guid id);
+    
+    //imprest
+    Task<ImprestResponse> GetImprests(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreateImprest(object dto);
+    Task<BaseApiResponse> UpdateImprest(object dto);
+    Task<BaseApiResponse> DeleteImprest(Guid id);
+    
+    //Default GL numbers
+    Task<DefaultGLNumbersResponse> GetDefaultGlNumbersSetup();
+    Task<BaseApiResponse> CreateDefaultGlNumbers(object dto);
+    Task<BaseApiResponse> UpdateDefaultGlNumbers(object dto);
+    
     // Journal
-    Task<JournalTransactionResponse> GetJournalTransactions(int pageNo, int pageSize,string batchNumber, DateTime? startDate = null, DateTime? endDate = null, bool? isPosted = null, bool? isMultiCurrency = null);
+    Task<JournalTransactionResponse> GetJournalTransactions(JournalListFilterDto dto);
     
     Task<BaseApiResponse> CreateJournal(object dto);
     
@@ -255,5 +286,17 @@ public interface ITopazErpApi
     Task<BaseApiResponse> GetJournalDetails(Guid id);
 
     Task<BaseApiResponse> DeleteJournalBatch(Guid id);
+
+    Task<BaseApiResponse> PostJournal(Guid id);
+    
+    //vouchers
+    Task<VoucherResponse> GetVouchers(DateTime startDate, DateTime endDate, string voucherType);
+    
+    Task<BaseApiResponse> CreateVoucher(object dto);
+    
+    Task<BaseApiResponse> UpdateVoucher(object dto);
+    Task<BaseApiResponse> DeleteVoucher(Guid id);
+    Task<BaseApiResponse> PostVoucher(Guid id);
+    
 
 }

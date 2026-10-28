@@ -1,305 +1,211 @@
-﻿@{
+@{
     ViewBag.Title = "Default GL Numbers";
     Layout = "~/Views/Shared/_adminLedgerLayout.cshtml";
 }
-<div class="content">
+
+<div class="content" id="app">
     <div class="mb-6 content-header">
-        <div class="mb-2 flex items-center gap-2 text-sm text-gray-500">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
             <span>GL - Shared Config</span>
             <i class="bi bi-chevron-right text-xs"></i>
             <span class="font-medium text-blue-600">Default GL Numbers</span>
         </div>
-
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
-                <h2 class="text-2xl font-semibold text-gray-800">
-                    Default GL Numbers
-                </h2>
-              
+                <h2 class="text-2xl font-semibold text-gray-800">Default GL Numbers</h2>
+                <p class="text-sm text-gray-500 mt-0.5">Map each module to its default Chart of Accounts entry.</p>
             </div>
-
-          
+            <button type="button"
+                    :disabled="isLoading"
+                    @@click="saveDefaultGlNumbers()"
+                    class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition disabled:cursor-not-allowed disabled:opacity-60">
+                <i class="bi bi-floppy"></i>
+                Save Changes
+                <span v-if="isLoading" class="spinner-border" role="status" aria-hidden="true" style="width:16px;height:16px"></span>
+            </button>
         </div>
     </div>
 
-    <div id="app" class="card space-y-6" data-card-title="Default GL Numbers">
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-5 mb-2">
-      <div class="">
-                                <label> A/P Bank Account: </label>
-                                <input id="accountPayablesBankAccountId" v-model="accountPayablesBankAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                </div>
-
-      <div class="">
-                                            <label> Payroll Bank Account: </label>
-                                            <input id="payRollBankAccountId" v-model="payRollBankAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-      <div class="">
-                                            <label> A/R Bank Account: </label>
-                                            <input id="accountsReceivableBankAccountId" v-model="accountsReceivableBankAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-      <div class="">
-                                            <label> Sales Bank Account: </label>
-                                            <input id="salesBankAccountId" v-model="salesBankAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-      <div class="">
-                                            <label> Accounts Receivable: </label>
-                                            <input id="accountsReceivableAccountId" v-model="accountsReceivableAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-      <div class="">
-                                            <label> Accounts Payable: </label>
-                                            <input id="accountsPayableAccountId" v-model="accountsPayableAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-                                        <div class="">
-                                            <label> Withholding: </label>
-                                            <input id="withholdingTaxAccountId" v-model="withholdingTaxAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-                                        <div class="">
-                                            <label> Imprest Category: </label>
-                                            <input id="imprestCategoryId" v-model="imprestCategoryId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-                                        <div class="">
-                                            <label> Credit Purchases : </label>
-                                            <input id="creditPurchasesAccountId" v-model="creditPurchasesAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-                                        <div class="">
-                                            <label> Advance From Customer: </label>
-                                            <input id="advanceFromCustomerAccountId" v-model="advanceFromCustomerAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-                                        <div class="">
-                                            <label> COVID Tax Recieved: </label>
-                                            <input id="covidTaxRecievedAccountId" v-model="covidTaxRecievedAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-                                        <div class="">
-                                            <label> Communications Service Tax Received: </label>
-                                            <input id="communicationsServiceTaxReceivedAccountId" v-model="communicationsServiceTaxReceivedAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-                         
-
-                                        <div class="">
-                                            <label> Inventory: </label>
-                                            <input id="inventoryAccountId" v-model="inventoryAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-                                        <div class="">
-                                            <label> Sales(Revenue): </label>
-                                            <input id="salesRevenueAccountId" v-model="salesRevenueAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-                                        <div class="">
-                                            <label> Stock Purchases: </label>
-                                            <input id="stockPurchasesAccountId" v-model="stockPurchasesAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-                                        <div class="">
-                                            <label> Current Earnings: </label>
-                                            <input id="currentEarningsAccountId" v-model="currentEarningsAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-
-                                        <div class="">
-                                            <label> Retained Earnings: </label>
-                                            <input id="retainedEarningsAccountId" v-model="retainedEarningsAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-
-                                        <div class="">
-                                            <label> VAT Received: </label>
-                                            <input id="vatReceivedAccountId" v-model="vatReceivedAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-
-                                        <div class="">
-                                            <label> Imprest GL #: </label>
-                                            <input id="imprestGlAccountId" v-model="imprestGlAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-                                        <div class="">
-                                            <label> Purchases Bank: </label>
-                                            <input id="purchasesBankAccountId" v-model="purchasesBankAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-                                        <div class="">
-                                            <label> Advance to Supplier: </label>
-                                            <input id="advanceToSupplierAccountId" v-model="advanceToSupplierAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-                                        <div class="">
-                                            <label> COVID Tax Paid: </label>
-                                            <input id="covidTaxPaidAccountId" v-model="covidTaxPaidAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-                                        <div class="">
-                                            <label> Communications Service Tax Paid : </label>
-                                            <input id="communicationsServiceTaxPaidAccountId" v-model="communicationsServiceTaxPaidAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-                                        <div class="">
-
-                                            <label> VAT Rate: </label>
-                                            <input id="vatRate" v-model="vatRate" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-                                            <div class="">
-                                            <label> Goods in Transit: </label>
-                                            <input id="goodsInTransitAccountId" v-model="goodsInTransitAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-                                        <div class="">
-                                            <label> Unrealized FX Loss: </label>
-                                            <input id="unrealizedFxLossAccountId" v-model="unrealizedFxLossAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-                                        <div class="">
-                                            <label> Unrealized FX Gain: </label>
-                                            <input id="unrealizedFxGainAccountId" v-model="unrealizedFxGainAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-                                        <div class="">
-                                            <label> Realized FX Loss: </label>
-                                            <input id="realizedFxLossAccountId" v-model="realizedFxLossAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-                                        <div class="">
-                                            <label> Realized FX Gain: </label>
-                                            <input id="realizedFxGainAccountId" v-model="realizedFxGainAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-                                        <div class="">
-                                            <label> VAT Paid: </label>
-                                            <input id="vatPaidAccountId" v-model="vatPaidAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-                                        <div class="">
-                                            <label> GETFL Received: </label>
-                                            <input id="getflReceivedAccountId" v-model="getflReceivedAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-                                        <div class="">
-                                            <label> GETFL Paid: </label>
-                                            <input id="getflPaidAccountId" v-model="getflPaidAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-                                        <div class="">
-                                            <label> NHIL Received: </label>
-                                            <input id="nhilReceivedAccountId" v-model="nhilReceivedAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-
-                                        <div class="">
-                                            <label> NHIL Paid: </label>
-                                            <input id="nhilPaidAccountId" v-model="nhilPaidAccountId" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                        </div>
-
-</div>
-    <hr/>
-                                <fieldset class="">
-                                    <legend class="text-blue-500 mb-2"><span> Social Security Information </span></legend>
-
-                                    <div class="grid grid-cols-1 lg:grid-cols-4 mb-2 gap-5">
-
-                                        
-
-                                            <div class="">
-                                                <label> Employer's Portion of Social Security Rate: </label>
-                                                <input id="socialSecurityFundEmployerRate" v-model="socialSecurityFundEmployerRate" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                            </div>
-
-                                            <div class="">
-                                                <label> Employee's Portion of Social Security Rate: </label>
-                                                <input id="socialSecurityFundEmployeeRate" v-model="socialSecurityFundEmployeeRate" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                            </div>
-
-                            
-                                            <div class="">
-                                                <label> Employer SSF Default Expense GL: </label>
-                                                <input id="socialSecurityEmployerPortionDefaultExpenseGl" v-model="socialSecurityEmployerPortionDefaultExpenseGl" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                            </div>
-
-                                            <div class="">
-                                                <label> Employee SSF Default Expense GL: </label>
-                                                <input id="socialSecurityEmployeePortionDefaultExpenseGl" v-model="socialSecurityEmployeePortionDefaultExpenseGl" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                            </div>
-                                      
-                                       <div class="">
-                                                <label> Employer SSF Default Liability GL: </label>
-                                                <input id="socialSecurityEmployerPortionDefaultLiabilityGl" v-model="socialSecurityEmployerPortionDefaultLiabilityGl" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                            </div>
-
-                                            <div class="">
-                                                <label> Employee SSF Default Liability GL: </label>
-                                                <input id="socialSecurityEmployeePortionDefaultLiabilityGl" v-model="socialSecurityEmployeePortionDefaultLiabilityGl" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"/>
-
-                                            </div>
-
-                                    
-
-                                    </div>
-
-                                </fieldset>
-
-                                
-
-                                <div class="row float-right">
-                                
-
-                                        <button type="button" :disabled="isLoading" v-on:click="saveDefaultGlNumbers()"  class="inline-flex items-center justify-center gap-2 rounded-lg
-                                       px-6 py-2.5 text-sm font-semibold text-white shadow-sm
-                                       transition disabled:cursor-not-allowed disabled:opacity-60 bg-blue-500">
-
-                                            Save
-                                            <div class="spinner-border" v-if="isLoading" role="status" aria-hidden="true" style="width: 20px; height: 20px"></div>
-
-                                        </button>
-                                
-</div>
-</div>
-</div>
+        <!-- ── Loading overlay ───────────────────────────── -->
+        <div v-if="isShimmerLoading" class="card flex items-center justify-center py-20 text-gray-400 gap-3">
+            <span class="spinner-border" role="status" style="width:22px;height:22px"></span>
+            <span class="text-sm">Loading accounts…</span>
+        </div>
+
+        <template v-else>
+
+            <!-- ── Section: Banking ───────────────────────── -->
+            <div class="card mb-4">
+                <div class="card-section-header">
+                    <i class="bi bi-bank2 text-blue-500"></i>
+                    <span>Banking</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 p-5">
+                    <div v-for="f in bankingFields" :key="f.key" class="gl-field">
+                        <label :for="f.key">{{ f.label }}</label>
+                        <select :id="f.key" v-model="form[f.key]" class="gl-select">
+                            <option value="">— Select Account —</option>
+                            <option v-for="a in coaList" :key="a.id" :value="a.id">
+                                {{ a.accountNo }} – {{ a.accountName }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Section: Payables & Receivables ───────── -->
+            <div class="card mb-4">
+                <div class="card-section-header">
+                    <i class="bi bi-arrow-left-right text-blue-500"></i>
+                    <span>Payables &amp; Receivables</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 p-5">
+                    <div v-for="f in apArFields" :key="f.key" class="gl-field">
+                        <label :for="f.key">{{ f.label }}</label>
+                        <select :id="f.key" v-model="form[f.key]" class="gl-select">
+                            <option value="">— Select Account —</option>
+                            <option v-for="a in coaList" :key="a.id" :value="a.id">
+                                {{ a.accountNo }} – {{ a.accountName }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Section: Tax Accounts ──────────────────── -->
+            <div class="card mb-4">
+                <div class="card-section-header">
+                    <i class="bi bi-receipt text-blue-500"></i>
+                    <span>Tax Accounts</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 p-5">
+                    <div v-for="f in taxFields" :key="f.key" class="gl-field">
+                        <label :for="f.key">{{ f.label }}</label>
+                        <template v-if="f.type === 'number'">
+                            <input :id="f.key" v-model.number="form[f.key]" type="number" min="0" max="100" step="0.01"
+                                   class="gl-select" placeholder="0.00" />
+                        </template>
+                        <template v-else>
+                            <select :id="f.key" v-model="form[f.key]" class="gl-select">
+                                <option value="">— Select Account —</option>
+                                <option v-for="a in coaList" :key="a.id" :value="a.id">
+                                    {{ a.accountNo }} – {{ a.accountName }}
+                                </option>
+                            </select>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Section: Inventory & Revenue ──────────── -->
+            <div class="card mb-4">
+                <div class="card-section-header">
+                    <i class="bi bi-boxes text-blue-500"></i>
+                    <span>Inventory &amp; Revenue</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 p-5">
+                    <div v-for="f in inventoryFields" :key="f.key" class="gl-field">
+                        <label :for="f.key">{{ f.label }}</label>
+                        <select :id="f.key" v-model="form[f.key]" class="gl-select">
+                            <option value="">— Select Account —</option>
+                            <option v-for="a in coaList" :key="a.id" :value="a.id">
+                                {{ a.accountNo }} – {{ a.accountName }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Section: FX & Earnings ─────────────────── -->
+            <div class="card mb-4">
+                <div class="card-section-header">
+                    <i class="bi bi-currency-exchange text-blue-500"></i>
+                    <span>FX &amp; Earnings</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 p-5">
+                    <div v-for="f in fxFields" :key="f.key" class="gl-field">
+                        <label :for="f.key">{{ f.label }}</label>
+                        <select :id="f.key" v-model="form[f.key]" class="gl-select">
+                            <option value="">— Select Account —</option>
+                            <option v-for="a in coaList" :key="a.id" :value="a.id">
+                                {{ a.accountNo }} – {{ a.accountName }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Section: Social Security ───────────────── -->
+            <div class="card mb-4">
+                <div class="card-section-header">
+                    <i class="bi bi-shield-check text-blue-500"></i>
+                    <span>Social Security (SSF)</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 p-5">
+                    <div v-for="f in ssfFields" :key="f.key" class="gl-field">
+                        <label :for="f.key">{{ f.label }}</label>
+                        <template v-if="f.type === 'number'">
+                            <input :id="f.key" v-model.number="form[f.key]" type="number" min="0" max="100" step="0.01"
+                                   class="gl-select" placeholder="0.00" />
+                        </template>
+                        <template v-else>
+                            <select :id="f.key" v-model="form[f.key]" class="gl-select">
+                                <option value="">— Select Account —</option>
+                                <option v-for="a in coaList" :key="a.id" :value="a.id">
+                                    {{ a.accountNo }} – {{ a.accountName }}
+                                </option>
+                            </select>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+        </template>
+    </div>
+
+<style>
+    .card-section-header {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        padding: .75rem 1.25rem;
+        font-weight: 600;
+        font-size: .875rem;
+        color: #374151;
+        border-bottom: 1px solid #e5e7eb;
+        background: #f9fafb;
+        border-radius: var(--card-radius, .75rem) var(--card-radius, .75rem) 0 0;
+    }
+
+    .gl-field label {
+        display: block;
+        font-size: .75rem;
+        font-weight: 500;
+        color: #6b7280;
+        margin-bottom: .375rem;
+    }
+
+    .gl-select {
+        width: 100%;
+        border-radius: .5rem;
+        border: 1px solid #d1d5db;
+        padding: .5rem .75rem;
+        font-size: .8125rem;
+        color: #111827;
+        background: #fff;
+        outline: none;
+        transition: border-color .15s, box-shadow .15s;
+        appearance: auto;
+    }
+
+    .gl-select:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+    }
+
+    input[type="number"].gl-select {
+        appearance: textfield;
+    }
+</style>
 
 <script src="~/js/shared/vue3/default-gl-numbers.js" asp-append-version="true"></script>

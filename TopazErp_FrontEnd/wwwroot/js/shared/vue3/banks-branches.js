@@ -218,6 +218,22 @@ const app = Vue.createApp({
             return null;
         },
 
+        /**
+         * Builds a BranchInput-shaped payload that matches the C# BranchInput model:
+         * { BankId, Id, Name, ContactPerson, ContactNo, Email }
+         */
+        buildBranchInput(row, bankId, id = null) {
+            const payload = {
+                bankId:        bankId,
+                name:          String(row.name          || '').trim(),
+                contactPerson: String(row.contactPerson || '').trim(),
+                contactNo:     String(row.contactNo     || '').trim(),
+                email:         String(row.email         || '').trim()
+            };
+            if (id) payload.id = id;
+            return payload;
+        },
+
         async createBranch(row, grid) {
             if (!this.validateBranch(row)) return;
 
@@ -229,18 +245,10 @@ const app = Vue.createApp({
                 return;
             }
 
-            const branchId = row.id && !String(row.id).startsWith('row-') ? row.id : this.uuid();
-            row.id = branchId;
+            // Ensure a stable UUID for new branches
             row.bankId = bankId;
 
-            const payload = {
-                id: branchId,
-                bankId: bankId,
-                name: String(row.name || '').trim(),
-                contactPerson: String(row.contactPerson || '').trim(),
-                email: String(row.email || '').trim(),
-                contactNo: String(row.contactNo || '').trim()
-            };
+            const payload = this.buildBranchInput(row, bankId);
 
             this.isShimmerLoading = true;
             try {
@@ -261,14 +269,12 @@ const app = Vue.createApp({
             const parentBank = this.findParentBank(row, grid);
             const bankId = parentBank ? parentBank.id : row.bankId;
 
-            const payload = {
-                id: row.id,
-                bankId: bankId,
-                name: String(row.name || '').trim(),
-                contactPerson: String(row.contactPerson || '').trim(),
-                email: String(row.email || '').trim(),
-                contactNo: String(row.contactNo || '').trim()
-            };
+            if (!bankId) {
+                this.toastHandler('error', 'Parent bank could not be determined.');
+                return;
+            }
+
+            const payload = this.buildBranchInput(row, bankId, row.id);
 
             this.isShimmerLoading = true;
             try {
@@ -291,10 +297,9 @@ const app = Vue.createApp({
                     rows.map(r => {
                         const parent = this.findParentBank(r, grid);
                         const bankId = parent ? parent.id : r.bankId;
-                        return axios.post('/SharedResource/DelBankBranch', {
-                            id: r.id,
-                            bankId: bankId
-                        });
+                        // Send a full BranchInput so the backend can identify the record
+                        const payload = this.buildBranchInput(r, bankId, r.id);
+                        return axios.post('/SharedResource/DelBankBranch', payload);
                     })
                 );
 

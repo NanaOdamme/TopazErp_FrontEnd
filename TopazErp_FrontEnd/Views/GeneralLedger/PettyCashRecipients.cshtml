@@ -1,0 +1,48 @@
+@{
+    ViewBag.Title = "Petty Cash Recipients";
+    Layout = "~/Views/Shared/_adminLedgerLayout.cshtml";
+}
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>GL - Petty Cash</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Petty Cash Recipients</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="page-title">
+                <h2 class="text-2xl font-semibold text-gray-800">
+                    Petty Cash Recipients
+                </h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" data-card-title="Petty Cash Recipients">
+        <div id="app">
+            <data-grid
+                title="Petty Cash Recipients"
+                :columns="recipientColumns"
+                :data="recipientList"
+                :theme="theme"
+                row-id="id"
+                label-key="recipient"
+                item-label="Recipient"
+                item-label-plural="Recipients"
+                add-label="Add Recipient"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                :aggregates="false"
+                :show-row-numbers="false"
+                :loading="isShimmerLoading"
+                @@create="onCreate"
+                @@update="onUpdate"
+                @@delete="onDelete"
+            ></data-grid>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/gl/petty-cash-recipients.js" asp-append-version="true"></script>
