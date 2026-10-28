@@ -8,7 +8,7 @@
     <!-- Page Header & Breadcrumbs -->
     <div class="mb-6 content-header">
         <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
-            <span>GL - Master Data</span>
+            <span>GL - Shared Config</span>
             <i class="bi bi-chevron-right text-xs"></i>
             <a href="/GeneralLedger/Suppliers" class="hover:text-blue-600 transition">Suppliers</a>
             <i class="bi bi-chevron-right text-xs"></i>
@@ -21,13 +21,7 @@
                     <h2 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
                         {{ isEditing ? 'Edit Supplier' : 'Add New Supplier' }}
                     </h2>
-                    <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
-                          :class="isEditing
-                              ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-600/20 dark:bg-amber-950/40 dark:text-amber-300'
-                              : 'bg-blue-50 text-blue-700 ring-1 ring-blue-600/20 dark:bg-blue-950/40 dark:text-blue-300'">
-                        <i :class="isEditing ? 'bi bi-pencil-fill' : 'bi bi-plus-circle-fill'"></i>
-                        {{ isEditing ? (form.name ? form.name : 'Editing Mode') : 'New Registration' }}
-                    </span>
+                     
                 </div>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     {{ isEditing
@@ -78,32 +72,7 @@
         </div>
 
         <form @@submit.prevent="saveSupplier" class="p-6">
-            <!-- Search Box for Existing Supplier -->
-            <div class="mb-8 rounded-xl border border-blue-100 bg-blue-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/40">
-                <label for="supplierSearch" class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-blue-900 dark:text-blue-300">
-                    Quick Lookup Existing Supplier
-                </label>
-                <div class="flex flex-col gap-3 sm:flex-row">
-                    <div class="relative flex-1">
-                        <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                        <input id="supplierSearch"
-                               v-model="supplierSearch"
-                               type="text"
-                               @@keyup.enter="loadSupplierFromSearch"
-                               placeholder="Search by supplier name or account number (e.g. AP-1001)..."
-                               class="input-control w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-4 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800" />
-                    </div>
-                    <button type="button"
-                            @@click="loadSupplierFromSearch"
-                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-gray-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-gray-700 dark:bg-slate-700 dark:hover:bg-slate-600">
-                        <i class="bi bi-arrow-down-circle"></i>
-                        Load Record
-                    </button>
-                </div>
-                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    Type a supplier name or account number and click Load Record to edit an existing vendor.
-                </p>
-            </div>
+            
 
             <!-- SECTION 1: Basic Information -->
             <div class="mb-6 flex items-center gap-3">
@@ -124,6 +93,7 @@
                     </label>
                     <div class="flex gap-2">
                         <input id="accountNumber"
+                               readonly
                                v-model.trim="form.accountNumber"
                                type="text"
                                required
@@ -315,18 +285,7 @@
                            class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800" />
                 </div>
 
-                <!-- Residency Checkbox -->
-                <div class="sm:col-span-2 flex items-center pt-5">
-                    <label class="inline-flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 p-3 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-800/40">
-                        <input type="checkbox"
-                               v-model="form.isResident"
-                               class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                        <div>
-                            <span class="block text-xs font-bold text-gray-800 dark:text-white">Resident Supplier</span>
-                            <span class="block text-xs text-gray-500 dark:text-gray-400">Specifies whether supplier is domestic tax-resident for withholding tax rates</span>
-                        </div>
-                    </label>
-                </div>
+                 
             </div>
 
             <!-- SECTION 3: General Ledger Mapping -->

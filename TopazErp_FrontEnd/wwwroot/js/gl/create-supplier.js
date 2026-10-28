@@ -285,9 +285,9 @@ const app = Vue.createApp({
 
             try {
                 const response = await axios.get('/SharedResource/GetSystemNumbers');
-                const systemNumbers = response.data || [];
+                const systemNumbers = response.data.result || [];
                 if (Array.isArray(systemNumbers) && systemNumbers.length > 0) {
-                    const sn = systemNumbers.find(item => item.itemName === 'ApAccountNumbers');
+                    const sn = systemNumbers.find(item => item.key === 'supplier-account-id');
                     if (sn) {
                         this.currentSystemNumber = sn;
                         this.form.accountNumber = `${sn.prefix || ''}${sn.lastNo || ''}${sn.suffix || ''}`;
@@ -300,7 +300,7 @@ const app = Vue.createApp({
 
             // Fallback generated account number
             const rand = Math.floor(100000 + Math.random() * 900000);
-            this.form.accountNumber = `AP-${rand}`;
+            this.form.accountNumber = `SUP-${rand}`;
         },
 
         async getSuppliersList() {
@@ -371,31 +371,24 @@ const app = Vue.createApp({
             try {
                 let response = null;
                 try {
-                    response = await axios.get('/GeneralLedger/GetAccountDetails?pageNo=1&pageSize=5000&isActive=true');
+                    response = await axios.get('/GeneralLedger/GetAccountDetails?pageNo=1&pageSize=5555&isActive=true');
                 } catch (e) {
                     response = await axios.get('/GeneralLedger/InitJournalEntry');
                 }
 
-                const raw = response.data;
-                let list = [];
-                if (Array.isArray(raw)) {
-                    list = raw;
-                } else if (raw?.result?.data && Array.isArray(raw.result.data)) {
-                    list = raw.result.data;
-                } else if (raw?.result?.items && Array.isArray(raw.result.items)) {
-                    list = raw.result.items;
-                } else if (raw?.result && Array.isArray(raw.result)) {
-                    list = raw.result;
-                } else if (raw?.accounts && Array.isArray(raw.accounts)) {
-                    list = raw.accounts;
-                }
+                const list = response.data.result;
+                console.log('list->', list);
 
                 this.accountList = list.map(a => ({
                     id: a.id,
                     accountNo: a.accountNo || a.accountNumber || '',
                     accountName: a.accountName || a.name || '',
                     accountIdentifier: a.accountIdentifier || `${a.accountNo || ''} - ${a.accountName || a.name || ''}`
-                })).sort((a, b) => (a.accountNo || '').localeCompare(b.accountNo || ''));
+                })).sort((a, b) =>
+                    String(a.accountNo ?? '').localeCompare(String(b.accountNo ?? ''))
+                );
+                
+                
             } catch (err) {
                 console.warn('Error fetching GL accounts:', err);
             }

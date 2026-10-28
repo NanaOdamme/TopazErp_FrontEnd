@@ -40,7 +40,7 @@ public class CustomersResponse: BaseApiResponseModel
 public class SupplierResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public PagedRecords<Supplier> Result { get; set; }
+    public List<Supplier> Result { get; set; }
 }
 
 public class SuppliersResponse: BaseApiResponseModel
