@@ -196,6 +196,86 @@ public class GeneralLedgerController : Controller
             voucherBatchSystemNumber
         });
     }
+
+    // dashboard: one round trip that powers the General Ledger dashboard
+    [HttpGet]
+    public async Task<IActionResult> InitGlDashboard()
+    {
+        var today = DateTime.Today;
+        var journalStart = new DateTime(today.Year, today.Month, 1).AddMonths(-5); // 6 calendar months incl. current
+        var voucherStart = today.AddDays(-30);
+        var degraded = new List<string>();
+
+        async Task<T?> Fetch<T>(string name, Func<Task<T>> call) where T : class
+        {
+            try
+            {
+                return await call();
+            }
+            catch (Exception)
+            {
+                degraded.Add(name);
+                return null;
+            }
+        }
+
+        // fire all lookups in parallel; a failing source only degrades that slice
+        var journalsTask = Fetch("journals", () => _topazErpApi.GetJournalTransactions(new JournalListFilterDto
+        {
+            PageNo = 1,
+            PageSize = 500,
+            StartDate = journalStart,
+            EndDate = today
+        }));
+        var supplierVouchersTask = Fetch("supplierVouchers", () => _topazErpApi.GetVouchers(voucherStart, today, "supplier"));
+        var employeeVouchersTask = Fetch("employeeVouchers", () => _topazErpApi.GetVouchers(voucherStart, today, "employee"));
+        var customerVouchersTask = Fetch("customerVouchers", () => _topazErpApi.GetVouchers(voucherStart, today, "customer"));
+        var suppliersTask = Fetch("suppliers", () => _topazErpApi.GetSuppliers(1, 1000, ""));
+        var accountsTask = Fetch("accounts", () => _topazErpApi.GetAccountDetails(1, 5000, "", true));
+
+        await Task.WhenAll(journalsTask, supplierVouchersTask, employeeVouchersTask, customerVouchersTask, suppliersTask, accountsTask);
+
+        var journalHeaders = journalsTask.Result?.Result?.Items?
+            .Where(t => t?.JournalHeader != null)
+            .Select(t => t!.JournalHeader!)
+            .OrderByDescending(h => h.BatchDate)
+            .ToList() ?? new List<JournalHeader>();
+
+        var suppliers = suppliersTask.Result?.Result ?? new List<Supplier>();
+
+        object VoucherStat(VoucherResponse? r) => new
+        {
+            count = r?.Result?.Count ?? 0,
+            value = r?.Result?.Sum(v => v.BaseAmount) ?? 0m
+        };
+
+        return Json(new
+        {
+            generatedAt = DateTime.Now,
+            journalPeriodStart = journalStart,
+            voucherPeriodStart = voucherStart,
+            journalHeaders,
+            vouchers = new
+            {
+                supplier = VoucherStat(supplierVouchersTask.Result),
+                employee = VoucherStat(employeeVouchersTask.Result),
+                customer = VoucherStat(customerVouchersTask.Result)
+            },
+            payables = new
+            {
+                supplierCount = suppliers.Count,
+                activeSupplierCount = suppliers.Count(s => string.Equals(s.StatusName ?? s.StatusId, "Active", StringComparison.OrdinalIgnoreCase)),
+                totalBalance = suppliers.Sum(s => s.Balance),
+                topSuppliers = suppliers
+                    .OrderByDescending(s => s.Balance)
+                    .Take(5)
+                    .Select(s => new { s.Id, s.Name, s.AccountNumber, s.Balance })
+                    .ToList()
+            },
+            accounts = new { activeCount = accountsTask.Result?.Result?.Count ?? 0 },
+            degraded
+        });
+    }
     
     
     public async Task<IActionResult> SaveJournal([FromBody] object dto)
@@ -363,6 +443,18 @@ public class GeneralLedgerController : Controller
     public async Task<IActionResult> GetSuppliers()
     {
         var results = await _topazErpApi.GetSuppliers(1,1000, "");
+        return Json(results);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetSupplier([FromQuery] Guid id)
+    {
+        if (id == Guid.Empty)
+        {
+            return Json(new SupplierDetailResponse { Success = false, Error = "A supplier id is required." });
+        }
+
+        var results = await _topazErpApi.GetSupplier(id);
         return Json(results);
     }
 
