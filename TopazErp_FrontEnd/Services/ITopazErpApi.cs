@@ -42,6 +42,7 @@ public interface ITopazErpApi
     
     //Customers...
     Task<CustomerResponse> GetCustomers(int pageNo, int pageSize, string query);
+    Task<CustomerDetailResponse> GetCustomer(Guid id);
     Task<CustomersResponse> GetCustomersByGroup(Guid groupId);
     Task<BaseApiResponse> CreateCustomer(object dto);
     Task<BaseApiResponse> UpdateCustomer(object dto);

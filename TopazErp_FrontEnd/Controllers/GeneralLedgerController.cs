@@ -55,6 +55,13 @@ public class GeneralLedgerController : Controller
         return View();
     }
 
+    [HttpGet]
+    public IActionResult CreateCustomer([FromQuery] Guid? id = null)
+    {
+        ViewBag.CustomerId = id;
+        return View();
+    }
+
     public IActionResult Suppliers()
     {
         return View();
@@ -489,12 +496,26 @@ public class GeneralLedgerController : Controller
         return Json(results);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GetCustomer([FromQuery] Guid id)
+    {
+        if (id == Guid.Empty)
+        {
+            return Json(new CustomerDetailResponse { Success = false, Error = "A customer id is required." });
+        }
+
+        var results = await _topazErpApi.GetCustomer(id);
+        return Json(results);
+    }
+
+    [HttpPost]
     public async Task<IActionResult> CreateCustomer([FromBody] object dto)
     {
         var results = await _topazErpApi.CreateCustomer(dto);
         return Json(results);
     }
 
+    [HttpPost]
     public async Task<IActionResult> UpdateCustomer([FromBody] object dto)
     {
         var results = await _topazErpApi.UpdateCustomer(dto);
