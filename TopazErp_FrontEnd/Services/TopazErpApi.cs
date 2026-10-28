@@ -787,6 +787,65 @@ public class TopazErpApi: ITopazErpApi
         return new SupplierResponse { };
     }
 
+    public async Task<SupplierDetailResponse> GetSupplier(Guid id)
+    {
+        try
+        {
+            var authToken = _claimsHelper.GetAuthToken();
+
+            // Preferred: targeted single-record endpoint (same pattern as AllowanceType/GetDetails etc.)
+            try
+            {
+                string url = $"{_apiBaseUrl}Supplier/GetDetails?id={id}";
+
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+                var response = await _httpClient.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string json = await response.Content.ReadAsStringAsync();
+                    var detail = JsonConvert.DeserializeObject<SupplierDetailResponse>(json);
+
+                    if (detail?.Result != null)
+                    {
+                        detail.Success = true;
+                        return detail;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Supplier/GetDetails lookup failed for {SupplierId}, falling back to Supplier/ListAll.", id);
+            }
+
+            // Fallback: locate the record inside the paged list endpoint
+            var listResponse = await GetSuppliers(1, 10000, "");
+            var supplier = listResponse?.Result?.FirstOrDefault(s => s.Id == id);
+
+            if (supplier != null)
+            {
+                return new SupplierDetailResponse { Success = true, Result = supplier };
+            }
+
+            return new SupplierDetailResponse
+            {
+                Success = false,
+                Error = $"Supplier with id {id} was not found."
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unable to load supplier {SupplierId}.", id);
+            return new SupplierDetailResponse
+            {
+                Success = false,
+                Error = "Unable to load supplier details at this time."
+            };
+        }
+    }
+
     public async Task<BaseApiResponse> CreateSupplier(object dto)
     {
         var authToken = _claimsHelper.GetAuthToken();

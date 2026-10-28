@@ -56,6 +56,7 @@ public interface ITopazErpApi
     
     //Supplier
     Task<SupplierResponse> GetSuppliers(int pageNo, int pageSize, string query);
+    Task<SupplierDetailResponse> GetSupplier(Guid id);
     Task<BaseApiResponse> CreateSupplier(object dto);
     Task<BaseApiResponse> UpdateSupplier(object dto);
     Task<BaseApiResponse> DeleteSupplier(Guid id);

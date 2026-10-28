@@ -366,6 +366,18 @@ public class GeneralLedgerController : Controller
         return Json(results);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GetSupplier([FromQuery] Guid id)
+    {
+        if (id == Guid.Empty)
+        {
+            return Json(new SupplierDetailResponse { Success = false, Error = "A supplier id is required." });
+        }
+
+        var results = await _topazErpApi.GetSupplier(id);
+        return Json(results);
+    }
+
      
 
     [HttpPost]
