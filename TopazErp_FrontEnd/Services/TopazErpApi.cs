@@ -3835,7 +3835,7 @@ public class TopazErpApi: ITopazErpApi
     {
         var authToken = _claimsHelper.GetAuthToken();
         
-        string url = $"{_apiBaseUrl}Voucher/ListAll?startDate={startDate:dd-MM-YYYY}&endDate={endDate:dd-MM-YYYY}&voucherType={voucherType}";
+        string url = $"{_apiBaseUrl}Voucher/ListAll?startDate={startDate:dd-MM-yyyy}&endDate={endDate:dd-MM-yyyy}&voucherType={voucherType}";
 
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");
