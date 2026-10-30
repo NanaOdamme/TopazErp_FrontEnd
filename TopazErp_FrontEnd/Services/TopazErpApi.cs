@@ -456,7 +456,7 @@ public class TopazErpApi: ITopazErpApi
     {
         var authToken = _claimsHelper.GetAuthToken();
         
-        string url = $"{_apiBaseUrl}CustomerGroup/GetAll?pageNo={pageNo}&pageSize={pageSize}";
+        string url = $"{_apiBaseUrl}CustomerGroup/ListAll?pageNo={pageNo}&pageSize={pageSize}";
 
         if (!string.IsNullOrEmpty(query))
         {
@@ -527,7 +527,7 @@ public class TopazErpApi: ITopazErpApi
         var authToken = _claimsHelper.GetAuthToken();
         string url = $"{_apiBaseUrl}CustomerGroup/Update";
 
-        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        var request = new HttpRequestMessage(HttpMethod.Put, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");
         request.Content = JsonContent.Create(dto);  
 
@@ -583,23 +583,7 @@ public class TopazErpApi: ITopazErpApi
         {
             string json = await response.Content.ReadAsStringAsync();
 
-            try
-            {
-                return JsonConvert.DeserializeObject<CustomerResponse>(json);
-            }
-            catch (JsonException)
-            {
-                // Backend returned a plain list instead of the expected paged object
-                var list = JsonConvert.DeserializeObject<JToken>(json)?["result"] is JArray array
-                    ? array.ToObject<List<Customer>>() ?? new List<Customer>()
-                    : new List<Customer>();
-
-                return new CustomerResponse
-                {
-                    Success = true,
-                    Result = new PagedRecords<Customer> { Data = list, Items = list, TotalCount = list.Count }
-                };
-            }
+            return JsonConvert.DeserializeObject<CustomerResponse>(json);
         }
 
         return new CustomerResponse { };
@@ -607,62 +591,25 @@ public class TopazErpApi: ITopazErpApi
 
     public async Task<CustomerDetailResponse> GetCustomer(Guid id)
     {
-        try
+        var authToken = _claimsHelper.GetAuthToken();
+
+        string url = $"{_apiBaseUrl}Customer/GetDetails?id={id}";
+
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
         {
-            var authToken = _claimsHelper.GetAuthToken();
-
-            // Preferred: targeted single-record endpoint (same pattern as AllowanceType/GetDetails etc.)
-            try
-            {
-                string url = $"{_apiBaseUrl}Customer/GetDetails?id={id}";
-
-                var request = new HttpRequestMessage(HttpMethod.Get, url);
-                request.Headers.Add("Authorization", $"Bearer {authToken}");
-
-                var response = await _httpClient.SendAsync(request);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    string json = await response.Content.ReadAsStringAsync();
-                    var detail = JsonConvert.DeserializeObject<CustomerDetailResponse>(json);
-
-                    if (detail?.Result != null)
-                    {
-                        detail.Success = true;
-                        return detail;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Customer/GetDetails lookup failed for {CustomerId}, falling back to Customer/GetAll.", id);
-            }
-
-            // Fallback: locate the record inside the paged list endpoint
-            var listResponse = await GetCustomers(1, 10000, "");
-            var customer = (listResponse?.Result?.Data ?? listResponse?.Result?.Items)?
-                .FirstOrDefault(c => c.Id == id);
-
-            if (customer != null)
-            {
-                return new CustomerDetailResponse { Success = true, Result = customer };
-            }
-
-            return new CustomerDetailResponse
-            {
-                Success = false,
-                Error = $"Customer with id {id} was not found."
-            };
+            string json = await response.Content.ReadAsStringAsync();
+            
+            return JsonConvert.DeserializeObject<CustomerDetailResponse>(json);
+            
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unable to load customer {CustomerId}.", id);
-            return new CustomerDetailResponse
-            {
-                Success = false,
-                Error = "Unable to load customer details at this time."
-            };
-        }
+ 
+        return new CustomerDetailResponse { };
+       
     }
 
     public async Task<BaseApiResponse> CreateCustomer(object dto)

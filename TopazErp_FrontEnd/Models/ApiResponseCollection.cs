@@ -22,13 +22,13 @@ public class CostCenterResponse: BaseApiResponseModel
 public class CustomerGroupResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public PagedRecords<CustomerGroup> Result { get; set; }
+    public List<CustomerGroup> Result { get; set; }
 }
 
 public class CustomerResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public PagedRecords<Customer> Result { get; set; }
+    public List<Customer> Result { get; set; }
 }
 
 public class CustomersResponse: BaseApiResponseModel
