@@ -202,41 +202,156 @@ createApp({
         }
 
         // ── API ───────────────────────────────────────────────────────
-        async function initPaymentVoucher() {
+        // Loaders mirror supplier-payment-voucher.js (the working reference page)
+        async function getAccounts() {
             try {
-                const res = await axios.get('/LedgerDataEntry/InitSupplierPvEntry');
-                res.data.accounts.forEach(v => { v.accountIdentifier = `${v.accountNo} - ${v.accountName}`; });
-                accountsList.value = res.data.accounts;
-                costCenterHierachyList.value = parseCostCenterHierachy(res.data.costCenters);
-                voucherBatchSystemNumber.value = res.data.voucherBatchSystemNumber;
-                batchNo.value = `${res.data.voucherBatchSystemNumber.prefix}${res.data.voucherBatchSystemNumber.lastNo}${res.data.voucherBatchSystemNumber.suffix}`;
-                const defaultBankId = res.data.defaultGlNumbers.accountPayablesBankAccountId;
-                bankAccountId.value = defaultBankId;
-                const accountInfo = accountsList.value.find(a => a.id === defaultBankId);
-                if (accountInfo && accountInfo.currencyId) currencyId.value = accountInfo.currencyId;
-            } catch { toastHandler('error', 'Voucher initialization failed.'); }
+                const res = await axios.get('/GeneralLedger/GetAccountDetails?pageNo=1&pageSize=5000&isActive=true');
+                const raw = res.data?.result?.data
+                    || res.data?.result
+                    || res.data?.data
+                    || (Array.isArray(res.data) ? res.data : []);
+                raw.forEach(v => { v.accountIdentifier = `${v.accountNo} - ${v.accountName}`; });
+                accountsList.value = raw;
+            } catch (err) {
+                console.error('Failed to get account details:', err);
+                toastHandler('error', 'Unable to retrieve GL accounts.');
+            }
+        }
+
+        async function getCostCenters() {
+            try {
+                const res = await axios.get('/SharedResource/GetCostCenters?pageNo=1&pageSize=2000');
+                const raw = res.data?.result?.data
+                    || res.data?.result
+                    || res.data?.data
+                    || (Array.isArray(res.data) ? res.data : []);
+                costCenterHierachyList.value = parseCostCenterHierachy(raw);
+            } catch {
+                try {
+                    const jRes = await axios.get('/GeneralLedger/InitJournalEntry');
+                    const raw = jRes.data?.costCenters?.result || [];
+                    costCenterHierachyList.value = parseCostCenterHierachy(raw);
+                } catch {
+                    toastHandler('error', 'Unable to retrieve cost centers.');
+                }
+            }
+        }
+
+        async function getCurrencies() {
+            try {
+                const res = await axios.get('/SharedResource/GetCurrencies?pageNo=1&pageSize=100');
+                const raw = res.data?.result?.data
+                    || res.data?.result
+                    || res.data?.data
+                    || (Array.isArray(res.data) ? res.data : []);
+                currencyList.value = raw;
+            } catch (err) {
+                console.error('Failed to get currencies:', err);
+                toastHandler('error', 'Unable to retrieve currencies.');
+            }
         }
 
         async function getEmployees() {
             try {
-                const res = await axios.get('/PayrollDataEntry/GetEmployees');
-                res.data.forEach(v => {
+                const res = await axios.get('/SharedResource/GetEmployees?pageNo=1&pageSize=500');
+                const raw = res.data?.result?.data
+                    || res.data?.result?.items
+                    || res.data?.result
+                    || res.data?.data
+                    || (Array.isArray(res.data) ? res.data : []);
+                raw.forEach(v => {
                     v.employeeName = (v.otherName === '' || v.otherName == null)
                         ? `${v.lastName} ${v.firstName} - ${v.employeeIdentifier}`
                         : `${v.lastName} ${v.firstName} ${v.otherName} - ${v.employeeIdentifier}`;
                 });
-                employeeList.value = res.data;
+                employeeList.value = raw;
             } catch { toastHandler('error', 'Unable to retrieve employees.'); }
         }
 
         async function getBanks() {
-            try { const res = await axios.get('/SharedResource/GetBanks'); bankList.value = res.data; }
-            catch { toastHandler('error', 'Unable to retrieve banks.'); }
+            try {
+                const res = await axios.get('/SharedResource/GetBanks?pageNo=1&pageSize=1000');
+                const raw = res.data?.result?.data
+                    || res.data?.result
+                    || res.data?.data
+                    || (Array.isArray(res.data) ? res.data : []);
+                bankList.value = raw;
+            } catch { toastHandler('error', 'Unable to retrieve banks.'); }
         }
 
-        async function getCurrencies() {
-            try { const res = await axios.get('/SharedResource/GetCurrencys'); currencyList.value = res.data; }
-            catch { toastHandler('error', 'Unable to retrieve currencies.'); }
+        async function getSystemNumbers() {
+            try {
+                const res = await axios.get('/SharedResource/GetSystemNumbers');
+                const raw = res.data?.result || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+                const voucherSys = raw.find(s =>
+                    (s.key && s.key.toLowerCase().includes('voucher')) ||
+                    (s.itemName && s.itemName.toLowerCase().includes('voucher')) ||
+                    (s.key && s.key.toLowerCase().includes('pv'))
+                ) || raw[0];
+
+                if (voucherSys && !batchNo.value) {
+                    voucherBatchSystemNumber.value = voucherSys;
+                    batchNo.value = `${voucherSys.prefix || ''}${voucherSys.lastNo || ''}${voucherSys.suffix || ''}`;
+                }
+            } catch (err) {
+                console.warn('System numbers load error (optional):', err);
+            }
+        }
+
+        async function getDefaultGlSetup() {
+            try {
+                const res = await axios.get('/GeneralLedger/GetDefaultGlNumbersSetup');
+                let d = res.data?.result || res.data?.Result || res.data;
+                if (Array.isArray(d)) d = d[0];
+                if (!d) return;
+
+                const defaultBankId = d.payRollBankAccountId || d.accountPayablesBankAccountId || d.purchasesBankAccountId;
+                if (defaultBankId && defaultBankId !== emptyGuid && !bankAccountId.value) {
+                    bankAccountId.value = defaultBankId;
+                    const accountInfo = accountsList.value.find(a => a.id === defaultBankId);
+                    if (accountInfo && accountInfo.currencyId) currencyId.value = accountInfo.currencyId;
+                }
+
+                const defaultWhId = d.withholdingTaxAccountId;
+                if (defaultWhId && defaultWhId !== emptyGuid && !withHoldingAccountId.value) {
+                    withHoldingAccountId.value = defaultWhId;
+                }
+
+                const defaultVatId = d.vatPaidAccountId || d.vatReceivedAccountId;
+                if (defaultVatId && defaultVatId !== emptyGuid && !vatWithHoldingAccountId.value) {
+                    vatWithHoldingAccountId.value = defaultVatId;
+                }
+
+                if (d.vatRate && typeof d.vatRate === 'number') {
+                    const vatFlag = getTaxFlag('vat');
+                    if (vatFlag) vatFlag.defaultRate = d.vatRate;
+                }
+            } catch (err) {
+                console.warn('Default GL setup load error (optional):', err);
+            }
+        }
+
+        async function initPaymentVoucher() {
+            try {
+                await Promise.all([
+                    getAccounts(),
+                    getCostCenters(),
+                    getCurrencies(),
+                    getEmployees(),
+                    getBanks(),
+                    getSystemNumbers()
+                ]);
+
+                await getDefaultGlSetup();
+
+                if (!currencyId.value && currencyList.value.length) {
+                    const defCurr = currencyList.value.find(c => c.isDefault) || currencyList.value[0];
+                    if (defCurr) currencyId.value = defCurr.id;
+                }
+            } catch (err) {
+                console.error('Initialization error:', err);
+                toastHandler('error', 'Voucher initialization failed.');
+            }
         }
 
         async function loadVoucherDetails() {
@@ -362,7 +477,7 @@ createApp({
             const vatWhAmt = parseFloat(totalVatWithHeldAmount.value || 0);
             const whAmt    = parseFloat(totalWithHeldAmount.value    || 0);
             try {
-                await axios.post('/LedgerDataEntry/CreateJournal', { batchNumber: batchNo.value, batchDate: voucherEntryDate.value, isTemporary: true, totalCredit: totalNetAmount.value + vatWhAmt + whAmt, totalDebit: totalDebit.value, id: voucherId.value, journalDetails: journalEntryList.value });
+                await axios.post('/GeneralLedger/SaveJournal', { batchNumber: batchNo.value, batchDate: voucherEntryDate.value, isTemporary: true, totalCredit: totalNetAmount.value + vatWhAmt + whAmt, totalDebit: totalDebit.value, id: voucherId.value, journalDetails: journalEntryList.value });
                 journalEntryList.value = [];
                 isLoading.value = false;
                 if (voucherId.value) {
@@ -466,7 +581,7 @@ createApp({
                 id: voucherId.value, details: voucherList.value, retensions: retentionsList.value,
             };
 
-            const endpoint = isEditMode.value ? '/LedgerDataEntry/UpdateVoucher' : '/LedgerDataEntry/CreateVoucher';
+            const endpoint = isEditMode.value ? '/GeneralLedger/UpdateVoucher' : '/GeneralLedger/CreateVoucher';
             try {
                 const res = await axios.post(endpoint, payload);
                 if (res.data && res.data.id) { voucherId.value = res.data.id; isRecordCreated.value = true; }
@@ -526,7 +641,7 @@ createApp({
                 if (vatWhF) vatWhF.defaultRate = withHoldingVatPercentage.value;
             }
 
-            await Promise.all([getBanks(), getEmployees(), getCurrencies(), initPaymentVoucher()]);
+            await initPaymentVoucher();
 
             if (isEditMode.value) await loadVoucherDetails();
             else addVoucherRow();

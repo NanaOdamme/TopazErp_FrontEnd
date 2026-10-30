@@ -37,6 +37,12 @@ public class CustomersResponse: BaseApiResponseModel
     public List<Customer> Result { get; set; }
 }
 
+public class CustomerDetailResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public Customer? Result { get; set; }
+}
+
 public class SupplierResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]
