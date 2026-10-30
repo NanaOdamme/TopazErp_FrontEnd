@@ -110,20 +110,14 @@ public interface ITopazErpApi
     
     // deduction type
     Task<DeductionTypeResponse> GetDeductionTypes(int pageNo, int pageSize, string query);
-    
     Task<DeductionTypeDetailResponse> GetDeductionTypeDetails(Guid id);
-    
     Task<BaseApiResponse> CreateDeductionType(object dto);
-    
     Task<BaseApiResponse> UpdateDeductionType(object dto);
-    
     Task<BaseApiResponse> DeleteDeductionType(Guid id);
     
     // deduction rates
     Task<BaseApiResponse> CreateDeductionRate(object dto);
-    
     Task<BaseApiResponse> UpdateDeductionRate(object dto);
-    
     Task<BaseApiResponse> DeleteDeductionRate(Guid deductionTypeId, Guid id);
     
     //overtime types
@@ -168,11 +162,8 @@ public interface ITopazErpApi
     
     //tax tables
     Task<TaxTableResponse> GetTaxTables(int pageNo, int pageSize, string query);
-    
     Task<BaseApiResponse> CreateTaxTable(object dto);
-    
     Task<BaseApiResponse> UpdateTaxTable(object dto);
-    
     Task<BaseApiResponse> DeleteTaxTable(Guid id);
     
     
@@ -183,7 +174,6 @@ public interface ITopazErpApi
     Task<BaseApiResponse> DeleteGratuity(Guid id);
     
     // pay calendar
-    
     Task<PayCalendarResponse> GetPayCalendars(int pageNo, int pageSize, int? year);
     Task<BaseApiResponse> CreatePayCalendar(object dto);
     Task<BaseApiResponse> UpdatePayCalendar(object dto);
@@ -197,23 +187,22 @@ public interface ITopazErpApi
     
     // employee salary data
     Task<EmployeeSalaryInfoResponse> GetEmployeeSalaryData(int pageNo, int pageSize, string query);
+    Task<EmployeeSalaryDataResponse> GetEmployeeSalaryInfo(Guid id);
     Task<BaseApiResponse> CreateEmployeeSalaryData(object dto);
     Task<BaseApiResponse> UpdateEmployeeSalaryData(object dto);
     Task<BaseApiResponse> DeleteEmployeeSalaryData(Guid id);
     
     // employee ssnit
     Task<EmployeeSsnitDataResponse> GetEmployeeSsnitData(int pageNo, int pageSize, string query);
+    Task<EmployeeSsnitDetailsResponse> GetEmployeeSsnitDetails(Guid employeeId);
     Task<BaseApiResponse> CreateEmployeeSsnitData(object dto);
     Task<BaseApiResponse> UpdateEmployeeSsnitData(object dto);
     Task<BaseApiResponse> DeleteEmployeeSsnitData(Guid id);
-    
-    
     
     //General Ledger
     
     //bank accounts
     Task<BankAccountResponse> GetBankAccounts(int pageNo, int pageSize, string query);
-    
     Task<BaseApiResponse> CreateBankAccount(object dto);
     Task<BaseApiResponse> UpdateBankAccount(object dto);
     Task<BaseApiResponse> DeleteBankAccount(Guid id);
@@ -279,22 +268,15 @@ public interface ITopazErpApi
     
     // Journal
     Task<JournalTransactionResponse> GetJournalTransactions(JournalListFilterDto dto);
-    
     Task<BaseApiResponse> CreateJournal(object dto);
-    
     Task<BaseApiResponse> UpdateJournal(object dto);
-    
     Task<BaseApiResponse> GetJournalDetails(Guid id);
-
     Task<BaseApiResponse> DeleteJournalBatch(Guid id);
-
     Task<BaseApiResponse> PostJournal(Guid id);
     
     //vouchers
     Task<VoucherResponse> GetVouchers(DateTime startDate, DateTime endDate, string voucherType);
-    
     Task<BaseApiResponse> CreateVoucher(object dto);
-    
     Task<BaseApiResponse> UpdateVoucher(object dto);
     Task<BaseApiResponse> DeleteVoucher(Guid id);
     Task<BaseApiResponse> PostVoucher(Guid id);

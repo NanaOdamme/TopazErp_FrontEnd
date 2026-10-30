@@ -145,7 +145,7 @@ public class DefaultGLNumbersResponse : BaseApiResponseModel
 public class EmployeeBioDataResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public PagedRecords<EmployeeBioData> Result { get; set; }
+    public List<EmployeeBioData> Result { get; set; }
 }
 
 public class EmployeeSsnitDataResponse: BaseApiResponseModel
@@ -154,11 +154,24 @@ public class EmployeeSsnitDataResponse: BaseApiResponseModel
     public PagedRecords<EmployeeSnit> Result { get; set; }
 }
 
+public class EmployeeSsnitDetailsResponse: BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public EmployeeSnit Result { get; set; }
+}
+
 public class EmployeeSalaryInfoResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]
     public PagedRecords<EmployeeSalaryInfo> Result { get; set; }
 }
+
+public class EmployeeSalaryDataResponse: BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public EmployeeSalaryInfo Result { get; set; }
+}
+
 public class SubscriptionInfoResponse : BaseApiResponseModel
 {
     [JsonProperty("result")]

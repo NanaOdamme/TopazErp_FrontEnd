@@ -21,38 +21,6 @@
             });
         },
 
-        renderTable(responseData) {
-
-            $("#dataTable").ejGrid({
-
-                dataSource: responseData,
-                allowPaging: true,
-                allowSorting: true,
-                isResponsive: true,
-                editSettings: { allowEditing: true, allowAdding: true, allowDeleting: true, showDeleteConfirmDialog: true },
-                toolbarSettings: { showToolbar: true, toolbarItems: [ej.Grid.ToolBarItems.Add, ej.Grid.ToolBarItems.Edit, ej.Grid.ToolBarItems.Delete, ej.Grid.ToolBarItems.Update, ej.Grid.ToolBarItems.Cancel, ej.Grid.ToolBarItems.Search] },
-                columns: [
-
-                    { field: "id", headerText: "Id", width: 75, visible: false, isPrimaryKey: true, },
-                    { field: "name", headerText: "Customer Group", validationRules: { required: true, minlength: 1 }, width: 80 },
-                    { field: "tenantId", visible: false, headerText: "tenantId", width: 15, },
-
-                ],
-                endAdd: (args) => {
-
-                    this.saveCustomerGroup(args.data);
-                },
-                endEdit: (args) => {
-
-                    this.updateCustomerGroup(args.data);
-                },
-                endDelete: (args) => {
-
-                    this.delCustomerGroup(args.data.id);
-                },
-            });
-
-        },
 
         saveCustomerGroup(payload) {
 
@@ -125,6 +93,7 @@
     mounted() {
 
         this.getSetupData();
-    },
+    }
 });
+app.use(DataGridPlugin);
 app.mount('#app');

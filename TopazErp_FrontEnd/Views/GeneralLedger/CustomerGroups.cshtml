@@ -26,14 +26,14 @@
     <div class="card" data-card-title="Customer Groups">
         <div id="app">
             <data-grid
-                title="Supplier Groups"
-                :columns="supplierGroupColumns"
-                :data="supplierGroupList"
+                title="Customer Groups"
+                :columns="customerGroupColumns"
+                :data="customerGroupList"
                 :theme="theme"
                 row-id="id"
                 label-key="name"
-                item-label="supplier group"
-                item-label-plural="supplier groups"
+                item-label="customer group"
+                item-label-plural="customer groups"
                 add-label="Add"
                 :page-size="10"
                 :selectable="true"
@@ -46,5 +46,4 @@
     </div>
 </div>
 
-<script src="~/js/shared/vue3/supplier-groups.js"
-    asp-append-version="true"></script>
+<script src="~/js/shared/vue3/customer-groups.js" asp-append-version="true"></script>

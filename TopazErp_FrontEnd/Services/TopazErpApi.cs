@@ -873,7 +873,7 @@ public class TopazErpApi: ITopazErpApi
         var authToken = _claimsHelper.GetAuthToken();
         string url = $"{_apiBaseUrl}Supplier/Update";
 
-        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        var request = new HttpRequestMessage(HttpMethod.Put, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");
         request.Content = JsonContent.Create(dto);  
 
@@ -1789,13 +1789,13 @@ public class TopazErpApi: ITopazErpApi
     }
     
     
-    // employee bio data 
+    // employee bio data...
     
     public async Task<EmployeeBioDataResponse> GetEmployeeBioData(int pageNo, int pageSize, string query)
     {
         var authToken = _claimsHelper.GetAuthToken();
         
-        string url = $"{_apiBaseUrl}EmployeeBioData/GetAll?pageNo={pageNo}&pageSize={pageSize}";
+        string url = $"{_apiBaseUrl}EmployeeBioData/ListAll?pageNo={pageNo}&pageSize={pageSize}";
 
         //if query is not null
         if (!string.IsNullOrEmpty(query))
@@ -1908,6 +1908,27 @@ public class TopazErpApi: ITopazErpApi
 
         return new EmployeeSalaryInfoResponse { };
     }
+
+    public async Task<EmployeeSalaryDataResponse> GetEmployeeSalaryInfo(Guid id)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}EmployeeSalaryInfo/GetDetails?pageNo={id}";
+        
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<EmployeeSalaryDataResponse>(json);
+        }
+
+        return new EmployeeSalaryDataResponse { };
+    }
     
     public async Task<BaseApiResponse> CreateEmployeeSalaryData(object dto)
     {
@@ -1998,6 +2019,27 @@ public class TopazErpApi: ITopazErpApi
         }
 
         return new EmployeeSsnitDataResponse { };
+    }
+    
+    public async Task<EmployeeSsnitDetailsResponse> GetEmployeeSsnitDetails(Guid employeeId)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}EmployeeSnit/GetAll?pageNo={employeeId}";
+
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<EmployeeSsnitDetailsResponse>(json);
+        }
+
+        return new EmployeeSsnitDetailsResponse { };
     }
     
     public async Task<BaseApiResponse> CreateEmployeeSsnitData(object dto)

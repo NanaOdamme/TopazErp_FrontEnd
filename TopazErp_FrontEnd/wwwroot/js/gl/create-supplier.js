@@ -319,20 +319,8 @@ const app = Vue.createApp({
                     response = await axios.get('/SharedResource/GetSuppliers');
                 }
 
-                const raw = response.data;
-                let list = [];
-                if (Array.isArray(raw)) {
-                    list = raw;
-                } else if (raw?.result?.data && Array.isArray(raw.result.data)) {
-                    list = raw.result.data;
-                } else if (raw?.result?.items && Array.isArray(raw.result.items)) {
-                    list = raw.result.items;
-                } else if (raw?.result && Array.isArray(raw.result)) {
-                    list = raw.result;
-                } else if (raw?.data && Array.isArray(raw.data)) {
-                    list = raw.data;
-                }
-                this.supplierList = list;
+                this.supplierList = response.data.result;
+                 
             } catch (err) {
                 console.warn('Error fetching supplier lookup list:', err);
             }
