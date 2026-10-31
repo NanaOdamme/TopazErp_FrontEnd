@@ -155,7 +155,35 @@ public class SupplierGroup: AuditedEntity<Guid>
 
 public class Customer: AuditedEntity<Guid>
 {
+    public string AccountNumber { get; set; } = string.Empty;
+    public Guid CustomerGroupId { get; set; }
+    public string CustomerGroupName { get; set; } = string.Empty;
     public string Name { get; set; }
+    public string StatusId { get; set; } = string.Empty;
+    public string StatusName { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+    public string TinNumber { get; set; } = string.Empty;
+    public string VatNumber { get; set; } = string.Empty;
+    public string PhoneNo { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string TaxOffice { get; set; } = string.Empty;
+    public Guid CurrencyId { get; set; }
+    public string CurrencyName { get; set; } = string.Empty;
+    public string CurrencyCode { get; set; } = string.Empty;
+    public decimal buyingRate { get; set; }
+    public decimal sellingRate { get; set; }
+    public decimal Balance { get; set; }
+    public decimal CreditLimit { get; set; }
+    public Guid CreditAccountId { get; set; }
+    public string CreditAccountName { get; set; } = string.Empty;
+    public Guid VatAccountId { get; set; }
+    public string VatAccountName { get; set; } = string.Empty;
+    public Guid IrsAccountId { get; set; }
+    public string IrsAccountName { get; set; } = string.Empty;
+    public bool IsResident { get; set; }
+    public string ContactPerson { get; set; } = string.Empty;
+    public string ContactPersonPhone { get; set; } = string.Empty;
+    public string ContactPersonEmail { get; set; } = string.Empty;
 }
 
 

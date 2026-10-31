@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using TopazErp_FrontEnd.Models;
 using TopazErp_FrontEnd.Models.Authentication;
 using TopazErp_FrontEnd.Utils;
@@ -455,7 +456,7 @@ public class TopazErpApi: ITopazErpApi
     {
         var authToken = _claimsHelper.GetAuthToken();
         
-        string url = $"{_apiBaseUrl}CustomerGroup/GetAll?pageNo={pageNo}&pageSize={pageSize}";
+        string url = $"{_apiBaseUrl}CustomerGroup/ListAll?pageNo={pageNo}&pageSize={pageSize}";
 
         if (!string.IsNullOrEmpty(query))
         {
@@ -526,7 +527,7 @@ public class TopazErpApi: ITopazErpApi
         var authToken = _claimsHelper.GetAuthToken();
         string url = $"{_apiBaseUrl}CustomerGroup/Update";
 
-        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        var request = new HttpRequestMessage(HttpMethod.Put, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");
         request.Content = JsonContent.Create(dto);  
 
@@ -586,6 +587,29 @@ public class TopazErpApi: ITopazErpApi
         }
 
         return new CustomerResponse { };
+    }
+
+    public async Task<CustomerDetailResponse> GetCustomer(Guid id)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+
+        string url = $"{_apiBaseUrl}Customer/GetDetails?id={id}";
+
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            
+            return JsonConvert.DeserializeObject<CustomerDetailResponse>(json);
+            
+        }
+ 
+        return new CustomerDetailResponse { };
+       
     }
 
     public async Task<BaseApiResponse> CreateCustomer(object dto)
@@ -787,6 +811,65 @@ public class TopazErpApi: ITopazErpApi
         return new SupplierResponse { };
     }
 
+    public async Task<SupplierDetailResponse> GetSupplier(Guid id)
+    {
+        try
+        {
+            var authToken = _claimsHelper.GetAuthToken();
+
+            // Preferred: targeted single-record endpoint (same pattern as AllowanceType/GetDetails etc.)
+            try
+            {
+                string url = $"{_apiBaseUrl}Supplier/GetDetails?id={id}";
+
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+                var response = await _httpClient.SendAsync(request);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string json = await response.Content.ReadAsStringAsync();
+                    var detail = JsonConvert.DeserializeObject<SupplierDetailResponse>(json);
+
+                    if (detail?.Result != null)
+                    {
+                        detail.Success = true;
+                        return detail;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Supplier/GetDetails lookup failed for {SupplierId}, falling back to Supplier/ListAll.", id);
+            }
+
+            // Fallback: locate the record inside the paged list endpoint
+            var listResponse = await GetSuppliers(1, 10000, "");
+            var supplier = listResponse?.Result?.FirstOrDefault(s => s.Id == id);
+
+            if (supplier != null)
+            {
+                return new SupplierDetailResponse { Success = true, Result = supplier };
+            }
+
+            return new SupplierDetailResponse
+            {
+                Success = false,
+                Error = $"Supplier with id {id} was not found."
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unable to load supplier {SupplierId}.", id);
+            return new SupplierDetailResponse
+            {
+                Success = false,
+                Error = "Unable to load supplier details at this time."
+            };
+        }
+    }
+
     public async Task<BaseApiResponse> CreateSupplier(object dto)
     {
         var authToken = _claimsHelper.GetAuthToken();
@@ -814,7 +897,7 @@ public class TopazErpApi: ITopazErpApi
         var authToken = _claimsHelper.GetAuthToken();
         string url = $"{_apiBaseUrl}Supplier/Update";
 
-        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        var request = new HttpRequestMessage(HttpMethod.Put, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");
         request.Content = JsonContent.Create(dto);  
 
@@ -1730,13 +1813,13 @@ public class TopazErpApi: ITopazErpApi
     }
     
     
-    // employee bio data 
+    // employee bio data...
     
     public async Task<EmployeeBioDataResponse> GetEmployeeBioData(int pageNo, int pageSize, string query)
     {
         var authToken = _claimsHelper.GetAuthToken();
         
-        string url = $"{_apiBaseUrl}EmployeeBioData/GetAll?pageNo={pageNo}&pageSize={pageSize}";
+        string url = $"{_apiBaseUrl}EmployeeBioData/ListAll?pageNo={pageNo}&pageSize={pageSize}";
 
         //if query is not null
         if (!string.IsNullOrEmpty(query))
@@ -1849,6 +1932,27 @@ public class TopazErpApi: ITopazErpApi
 
         return new EmployeeSalaryInfoResponse { };
     }
+
+    public async Task<EmployeeSalaryDataResponse> GetEmployeeSalaryInfo(Guid id)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}EmployeeSalaryInfo/GetDetails?pageNo={id}";
+        
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<EmployeeSalaryDataResponse>(json);
+        }
+
+        return new EmployeeSalaryDataResponse { };
+    }
     
     public async Task<BaseApiResponse> CreateEmployeeSalaryData(object dto)
     {
@@ -1939,6 +2043,27 @@ public class TopazErpApi: ITopazErpApi
         }
 
         return new EmployeeSsnitDataResponse { };
+    }
+    
+    public async Task<EmployeeSsnitDetailsResponse> GetEmployeeSsnitDetails(Guid employeeId)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}EmployeeSnit/GetAll?pageNo={employeeId}";
+
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<EmployeeSsnitDetailsResponse>(json);
+        }
+
+        return new EmployeeSsnitDetailsResponse { };
     }
     
     public async Task<BaseApiResponse> CreateEmployeeSsnitData(object dto)
@@ -3776,7 +3901,7 @@ public class TopazErpApi: ITopazErpApi
     {
         var authToken = _claimsHelper.GetAuthToken();
         
-        string url = $"{_apiBaseUrl}Voucher/ListAll?startDate={startDate:dd-MM-YYYY}&endDate={endDate:dd-MM-YYYY}&voucherType={voucherType}";
+        string url = $"{_apiBaseUrl}Voucher/ListAll?startDate={startDate:dd-MM-yyyy}&endDate={endDate:dd-MM-yyyy}&voucherType={voucherType}";
 
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");

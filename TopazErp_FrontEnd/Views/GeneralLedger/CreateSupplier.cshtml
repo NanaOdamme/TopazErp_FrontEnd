@@ -64,6 +64,11 @@
                 </div>
 
                 <div class="flex items-center gap-3">
+                    <span v-if="isFetching"
+                          class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400">
+                        <i class="bi bi-arrow-repeat animate-spin"></i>
+                        <span>Loading supplier…</span>
+                    </span>
                     <span v-if="form.accountNumber" class="font-mono text-xs font-semibold px-2.5 py-1 rounded bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                         Acc: {{ form.accountNumber }}
                     </span>
@@ -422,9 +427,10 @@
 
                     <button type="button"
                             @@click="resetForm"
-                            class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300">
+                            :disabled="isLoading || isFetching"
+                            class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300">
                         <i class="bi bi-arrow-counterclockwise"></i>
-                        Clear Form
+                        {{ isEditing ? 'Revert Changes' : 'Clear Form' }}
                     </button>
                 </div>
 
@@ -432,18 +438,18 @@
                     <button v-if="isEditing"
                             type="button"
                             @@click="deleteSupplier(form.id, form.name)"
-                            :disabled="isLoading"
+                            :disabled="isLoading || isFetching"
                             class="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-5 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-900/40 dark:bg-slate-800 dark:text-red-400">
                         <i class="bi bi-trash"></i>
                         Delete Supplier
                     </button>
 
                     <button type="submit"
-                            :disabled="isLoading"
+                            :disabled="isLoading || isFetching"
                             class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition disabled:cursor-not-allowed disabled:opacity-60">
-                        <i v-if="isLoading" class="bi bi-arrow-repeat animate-spin"></i>
+                        <i v-if="isLoading || isFetching" class="bi bi-arrow-repeat animate-spin"></i>
                         <i v-else :class="isEditing ? 'bi bi-check2-circle' : 'bi bi-person-check-fill'"></i>
-                        {{ isLoading ? 'Saving...' : (isEditing ? 'Update Supplier' : 'Save Supplier') }}
+                        {{ isLoading ? 'Saving...' : (isFetching ? 'Loading...' : (isEditing ? 'Update Supplier' : 'Save Supplier')) }}
                     </button>
                 </div>
             </div>

@@ -22,19 +22,25 @@ public class CostCenterResponse: BaseApiResponseModel
 public class CustomerGroupResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public PagedRecords<CustomerGroup> Result { get; set; }
+    public List<CustomerGroup> Result { get; set; }
 }
 
 public class CustomerResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public PagedRecords<Customer> Result { get; set; }
+    public List<Customer> Result { get; set; }
 }
 
 public class CustomersResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]
     public List<Customer> Result { get; set; }
+}
+
+public class CustomerDetailResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public Customer? Result { get; set; }
 }
 
 public class SupplierResponse: BaseApiResponseModel
@@ -47,6 +53,12 @@ public class SuppliersResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]
     public List<Supplier> Result { get; set; }
+}
+
+public class SupplierDetailResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public Supplier? Result { get; set; }
 }
 
 public class SupplierGroupResponse: BaseApiResponseModel
@@ -139,7 +151,7 @@ public class DefaultGLNumbersResponse : BaseApiResponseModel
 public class EmployeeBioDataResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public PagedRecords<EmployeeBioData> Result { get; set; }
+    public List<EmployeeBioData> Result { get; set; }
 }
 
 public class EmployeeSsnitDataResponse: BaseApiResponseModel
@@ -148,11 +160,24 @@ public class EmployeeSsnitDataResponse: BaseApiResponseModel
     public PagedRecords<EmployeeSnit> Result { get; set; }
 }
 
+public class EmployeeSsnitDetailsResponse: BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public EmployeeSnit Result { get; set; }
+}
+
 public class EmployeeSalaryInfoResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]
     public PagedRecords<EmployeeSalaryInfo> Result { get; set; }
 }
+
+public class EmployeeSalaryDataResponse: BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public EmployeeSalaryInfo Result { get; set; }
+}
+
 public class SubscriptionInfoResponse : BaseApiResponseModel
 {
     [JsonProperty("result")]

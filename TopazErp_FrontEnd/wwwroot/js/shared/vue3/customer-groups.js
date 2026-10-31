@@ -1,130 +1,211 @@
-﻿const app = Vue.createApp({
+﻿
+const app = Vue.createApp({
     data() {
         return {
             isShimmerLoading: false,
-            payload: {},
-        }
+            theme: '#0645e7',
+
+            customerGroupList: [],
+
+            customerGroupColumns: [
+                {
+                    key: 'id',
+                    label: 'ID',
+                    type: 'text',
+                    hidden: true,
+                    width: 100
+                },
+                {
+                    key: 'name',
+                    label: 'Customer Group',
+                    type: 'avatar',
+                    width: 320,
+                    minWidth: 250,
+                    required: true,
+                    searchable: true
+                },
+                {
+                    key: 'tenantId',
+                    label: 'Tenant',
+                    type: 'number',
+                    hidden: true,
+                    width: 100
+                }
+            ]
+        };
     },
 
     methods: {
 
-        getSetupData() {
+        /* ── Fetch ──────────────────────────────────────────────── */
 
-            axios.get('/SharedResource/GetCustomerGroups').then(response => {
+        async getCustomerGroups() {
+            this.isShimmerLoading = true;
+            try {
+                const response = await axios.get('/SharedResource/GetCustomerGroups/?pageNo=1&pageSize=1000');
 
-                this.renderTable(response.data);
-
-            }).catch(err => {
-
-                this.toastHandler('error', 'Unable to get supplier groups.');
-
-            });
+                this.customerGroupList = response.data.result || [];
+            } catch (error) {
+                console.error('Failed to load supplier groups:', error);
+                this.toastHandler('error', 'Unable to load customer groups.');
+            } finally {
+                this.isShimmerLoading = false;
+            }
         },
 
-        renderTable(responseData) {
+        /* ── CRUD handlers wired to <data-grid> events ──────────── */
 
-            $("#dataTable").ejGrid({
+        // @create — fired after the grid's built-in form is submitted with mode='create'
+        // event shape: { grid, level, row, data }
+        async onCreate(event) {
+            const row = event?.row || event?.data;
+            if (!row) return;
 
-                dataSource: responseData,
-                allowPaging: true,
-                allowSorting: true,
-                isResponsive: true,
-                editSettings: { allowEditing: true, allowAdding: true, allowDeleting: true, showDeleteConfirmDialog: true },
-                toolbarSettings: { showToolbar: true, toolbarItems: [ej.Grid.ToolBarItems.Add, ej.Grid.ToolBarItems.Edit, ej.Grid.ToolBarItems.Delete, ej.Grid.ToolBarItems.Update, ej.Grid.ToolBarItems.Cancel, ej.Grid.ToolBarItems.Search] },
-                columns: [
+            if (!this.validateRecord(row)) return;
 
-                    { field: "id", headerText: "Id", width: 75, visible: false, isPrimaryKey: true, },
-                    { field: "name", headerText: "Customer Group", validationRules: { required: true, minlength: 1 }, width: 80 },
-                    { field: "tenantId", visible: false, headerText: "tenantId", width: 15, },
+            const payload = {
+                name: String(row.name || '').trim()
+            };
 
-                ],
-                endAdd: (args) => {
-
-                    this.saveCustomerGroup(args.data);
-                },
-                endEdit: (args) => {
-
-                    this.updateCustomerGroup(args.data);
-                },
-                endDelete: (args) => {
-
-                    this.delCustomerGroup(args.data.id);
-                },
-            });
-
+            this.isShimmerLoading = true;
+            
+            try {
+                await axios.post('/SharedResource/CreateCustomerGroup', payload);
+                await this.getCustomerGroups();
+                this.toastHandler('success', 'Customer group created successfully.');
+            } catch (err) {
+                console.error('Create failed:', err);
+                this.toastHandler('error', 'Failed to create customer group.');
+            } finally {
+                this.isShimmerLoading = false;
+            }
         },
 
-        saveCustomerGroup(payload) {
+        // @update — fired after the grid's built-in form is submitted with mode='update'
+        // event shape: { grid, level, row, data }
+        async onUpdate(event) {
+            const row = event?.row || event?.data;
+            if (!row) return;
 
-            delete payload.id;
-            delete payload.tenantId;
+            if (!this.validateRecord(row)) return;
 
-            axios.post('/SharedResource/CreateCustomerGroup', payload).then(response => {
+            const existing = this.customerGroupList.find(
+                item => String(item.id) === String(row.id)
+            );
 
-                this.getSetupData();
-                this.toastHandler('', 'Customer group saved.');
+            if (!existing) {
+                this.toastHandler('error', 'Customer group was not found.');
+                return;
+            }
 
-            }).catch(err => {
+            const payload = {
+                ...existing,
+                ...row,
+                id: existing.id,
+                tenantId: existing.tenantId,
+                name: String(row.name || '').trim()
+            };
 
-                this.toastHandler('error', 'Unable to save customer group.');
+            this.isShimmerLoading = true;
+            try {
+                await axios.post('/SharedResource/UpdateCustomerGroup', payload);
 
-            });
+                // Optimistically patch the local list so the grid reflects changes immediately
+                const idx = this.customerGroupList.findIndex(item => String(item.id) === String(payload.id));
+                if (idx !== -1) {
+                    this.customerGroupList.splice(idx, 1, { ...payload });
+                }
+                
+                this.toastHandler('success', 'Customer group updated successfully.');
+                
+            } catch (err) {
+                console.error('Update failed:', err);
+                this.toastHandler('error', 'Failed to update customer group.');
+                await this.getCustomerGroups(); // roll back optimistic patch
+            } finally {
+                this.isShimmerLoading = false;
+            }
         },
 
-        updateCustomerGroup(payload) {
+        // @delete — fired after the user confirms the built-in delete dialog
+        // event shape: { grid, level, rows }
+        async onDelete(event) {
+            const rows = event?.rows;
+            if (!Array.isArray(rows) || !rows.length) return;
 
-            axios.post('/SharedResource/UpdateCustomerGroup', payload).then(response => {
+            this.isShimmerLoading = true;
+            try {
+                const results = await Promise.allSettled(
+                    rows.map(r => axios.get('/SharedResource/DelCustomerGroup/?id=' + r.id))
+                );
 
-                this.getSetupData();
-
-                this.toastHandler('', 'Customer group updated.');
-
-
-            }).catch(err => {
-
-                this.toastHandler('error', 'Unable to update customer group.');
-
-            });
+                const failed = results.filter(r => r.status === 'rejected').length;
+                if (failed) {
+                    this.toastHandler(
+                        'warning',
+                        `${rows.length - failed} deleted; ${failed} failed.`
+                    );
+                    await this.getCustomerGroups(); // re-sync after partial failure
+                } else {
+                    this.toastHandler(
+                        'success',
+                        `${rows.length} supplier group${rows.length !== 1 ? 's' : ''} deleted.`
+                    );
+                    // The grid already removed the rows from its local data; no re-fetch needed
+                }
+            } catch (err) {
+                console.error('Delete failed:', err);
+                this.toastHandler('error', 'Failed to delete customer group.');
+                await this.getCustomerGroups();
+            } finally {
+                this.isShimmerLoading = false;
+            }
         },
 
-        delCustomerGroup(id) {
+        /* ── Helpers & Validation ───────────────────────────────── */
 
-            axios.get('/SharedResource/DelCustomerGroup?id=' + id).then(response => {
+        validateRecord(row, excludeId = null) {
+            if (!row.name || !String(row.name).trim()) {
+                this.toastHandler('error', 'Customer group name is required.');
+                return false;
+            }
 
-                this.getSetupData();
+            const normalizedName = String(row.name).trim().toLowerCase();
+            const duplicate = this.customerGroupList.some(
+                item =>
+                    String(item.name).trim().toLowerCase() === normalizedName &&
+                    String(item.id) !== String(excludeId ?? row.id)
+            );
 
-                this.toastHandler('', 'Customer group deleted.');
+            if (duplicate) {
+                this.toastHandler('warning', 'A customer group with this name already exists.');
+                return false;
+            }
 
-            }).catch(err => {
-
-                this.toastHandler('error', 'Unable to delete customer group.');
-
-            });
+            return true;
         },
 
         toastHandler(type, message = 'An unexpected error occurred.') {
-            if (typeof Swal === 'undefined') {
-                console.log(message);
-                return;
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'success',
+                    title: message,
+                    showConfirmButton: false,
+                    timer: 4000,
+                    timerProgressBar: true
+                });
+            } else {
+                console.log(`[${type.toUpperCase()}] ${message}`);
             }
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'success',
-                title: message,
-                showConfirmButton: false,
-                timer: 4000,
-                timerProgressBar: true
-            });
-
-        },,
-
-        
+        }
     },
 
     mounted() {
-
-        this.getSetupData();
-    },
+        this.getCustomerGroups();
+    }
 });
+
+app.use(DataGridPlugin);
 app.mount('#app');
