@@ -162,8 +162,13 @@ public class GeneralLedgerController : Controller
         return View();
     }
     
+    public IActionResult PettyCash()
+    {
+        return View();
+    }
+
     [HttpGet]
-    public IActionResult PettyCash([FromQuery] Guid? id = null)
+    public IActionResult CreatePettyCash([FromQuery] Guid? id = null)
     {
         ViewBag.PettyCashId = id;
         return View();

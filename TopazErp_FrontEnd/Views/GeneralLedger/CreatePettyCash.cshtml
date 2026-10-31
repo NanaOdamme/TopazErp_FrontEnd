@@ -1,0 +1,571 @@
+@{
+    ViewBag.Title = "Petty Cash Transactions";
+    Layout = "~/Views/Shared/_adminLedgerLayout.cshtml";
+    var pettyCashId = ViewBag.PettyCashId as Guid?;
+}
+
+<div class="content" id="app" data-petty-cash-id="@(pettyCashId?.ToString() ?? "")">
+    <!-- ── Page Header & Breadcrumbs ────────────────────────────────────── -->
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>GL - Petty Cash</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <a href="/GeneralLedger/PettyCash" class="hover:text-blue-600 transition">Petty Cash Transactions</a>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">{{ isEditing ? 'Edit Batch' : 'New Entry' }}</span>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="page-title">
+                <h2 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                    {{ isEditing ? 'Edit Petty Cash Transaction Batch' : 'New Petty Cash Transaction Entry' }}
+                </h2>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    <span v-if="isFetching">Fetching batch details…</span>
+                    <span v-else-if="isEditing">Editing {{ entryForm.batchNo || 'batch' }} &mdash; {{ entryForm.lines.length }} expense line{{ entryForm.lines.length === 1 ? '' : 's' }}</span>
+                    <span v-else>Disbursement batch header, currency rates and itemized expense line allocations.</span>
+                </p>
+            </div>
+
+            <div class="flex items-center gap-2.5">
+                <a href="/GeneralLedger/PettyCash"
+                   class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition dark:border-slate-700 dark:bg-slate-800 dark:text-gray-200">
+                    <i class="bi bi-arrow-left"></i>
+                    <span>Back to Listings</span>
+                </a>
+
+                <button v-if="isEditing"
+                        type="button"
+                        @@click="newBatch()"
+                        class="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 shadow-sm hover:bg-blue-100 transition dark:border-blue-900/40 dark:bg-slate-800 dark:text-blue-400">
+                    <i class="bi bi-plus-lg"></i>
+                    <span>New Batch</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- PETTY CASH ENTRY / EDIT                                             -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div>
+        <form @@submit.prevent="savePettyCashBatch">
+
+            <!-- ── Top Window Toolbar / Status Bar ──────────────────── -->
+            <div class="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50/50 px-5 py-3 dark:border-blue-900/40 dark:from-slate-800 dark:to-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
+                        <i class="bi bi-cash-stack text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-gray-900 dark:text-white">
+                            {{ isEditing ? 'Edit Petty Cash Transaction Batch' : 'New Petty Cash Transaction Entry' }}
+                        </h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                            Disbursement batch header, currency rates and itemized expense line allocations
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <span v-if="entryForm.batchNo" class="font-mono text-xs font-bold px-3 py-1.5 rounded-lg bg-white text-blue-700 shadow-sm border border-blue-200 dark:bg-slate-700 dark:text-blue-300 dark:border-slate-600">
+                        Batch #: {{ entryForm.batchNo }}
+                    </span>
+                    <button type="button"
+                            @@click="printVoucherModal()"
+                            :disabled="!entryForm.lines.length"
+                            class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-200">
+                        <i class="bi bi-printer"></i>
+                        <span>Voucher Preview</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ── 1. Batch Header Information Card ───────────────────── -->
+            <div class="card mb-6 p-6">
+                <div class="mb-5 flex items-center gap-3 border-b border-gray-100 pb-3.5 dark:border-slate-800">
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-slate-800 dark:text-blue-400">
+                        <i class="bi bi-file-earmark-text text-base"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-900 dark:text-white">Batch Header Information</h4>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Specifies batch timing, petty cash ledger account, originator and currency</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                    <!-- Batch Date -->
+                    <div class="gl-field">
+                        <label for="batchDate" class="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                            Batch Date <span class="text-red-500">*</span>
+                        </label>
+                        <input id="batchDate"
+                               type="date"
+                               v-model="entryForm.batchDate"
+                               required
+                               class="gl-input font-medium" />
+                    </div>
+
+                    <!-- Batch # -->
+                    <div class="gl-field">
+                        <label for="batchNo" class="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                            Batch # <span class="text-red-500">*</span>
+                        </label>
+                        <div class="flex gap-1.5">
+                            <input id="batchNo"
+                                   type="text"
+                                   v-model.trim="entryForm.batchNo"
+                                   required
+                                   placeholder="e.g. 1560"
+                                   class="gl-input font-mono font-semibold" />
+                            <button type="button"
+                                    @@click="generateBatchNumber"
+                                    :disabled="isEditing"
+                                    title="Auto-generate Batch #"
+                                    class="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-2.5 text-blue-700 hover:bg-blue-100 disabled:opacity-40 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-800 dark:text-blue-400">
+                                <i class="bi bi-magic text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Source Doc. No -->
+                    <div class="gl-field">
+                        <label for="sourceDocNo" class="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                            Source Doc. No
+                        </label>
+                        <input id="sourceDocNo"
+                               type="text"
+                               v-model.trim="entryForm.sourceDocNo"
+                               placeholder="e.g. PCV-2026-05"
+                               class="gl-input" />
+                    </div>
+
+                    <!-- Petty Cash G/L (Credit / Cash Account) -->
+                    <div class="gl-field sm:col-span-2 lg:col-span-2 xl:col-span-3">
+                        <label for="pettyCashAccountId" class="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                            Petty Cash G/L Account <span class="text-red-500">*</span>
+                        </label>
+                        <select id="pettyCashAccountId"
+                                v-model="entryForm.pettyCashAccountId"
+                                @@change="onPettyCashAccountChange"
+                                required
+                                class="gl-select font-medium">
+                            <option value="" disabled>Select Petty Cash G/L Account...</option>
+                            <option v-for="acc in (pettyCashAccounts.length ? pettyCashAccounts : accountsList)" :key="acc.id" :value="acc.id">
+                                {{ acc.accountIdentifier }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Batch Originator -->
+                    <div class="gl-field sm:col-span-2 lg:col-span-2 xl:col-span-3">
+                        <label for="batchOriginator" class="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                            Batch Originator <span class="text-red-500">*</span>
+                        </label>
+                        <input id="batchOriginator"
+                               type="text"
+                               v-model.trim="entryForm.batchOriginator"
+                               required
+                               placeholder="e.g. Leticia"
+                               class="gl-input font-medium" />
+                    </div>
+
+                    <!-- Currency -->
+                    <div class="gl-field sm:col-span-1 lg:col-span-1 xl:col-span-2">
+                        <label for="currencyId" class="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                            Currency <span class="text-red-500">*</span>
+                        </label>
+                        <select id="currencyId"
+                                v-model="entryForm.currencyId"
+                                @@change="onCurrencyChange"
+                                required
+                                class="gl-select">
+                            <option value="" disabled>Select Currency...</option>
+                            <option v-for="c in currencyList" :key="c.id" :value="c.id">
+                                {{ c.currencyName }} ({{ c.currencyCode }})
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Currency Rate -->
+                    <div class="gl-field sm:col-span-1 lg:col-span-1 xl:col-span-1">
+                        <label for="currencyRate" class="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                            Exchange Rate
+                        </label>
+                        <input id="currencyRate"
+                               type="number"
+                               step="0.0001"
+                               v-model.number="entryForm.currencyRate"
+                               class="gl-input font-mono text-right" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── 2. Itemized Transactions Grid (Expense Allocations) ────── -->
+            <div class="card mb-6 p-6">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3 dark:border-slate-800">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h4 class="font-bold text-gray-900 dark:text-white">Transaction Lines</h4>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
+                                Expense A/C Debits
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                            Individual petty cash expenses, reference vouchers, cost center and recipient tracking
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button type="button"
+                                @@click="addLineItem()"
+                                class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 transition">
+                            <i class="bi bi-plus-lg"></i>
+                            <span>Add Expense Line</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700">
+                    <table class="voucher-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px" class="text-center">#</th>
+                                <th style="min-width: 130px">Date <span class="text-red-500">*</span></th>
+                                <th style="min-width: 100px">Ref No.</th>
+                                <th style="min-width: 250px">G/L Account (Expense A/C) <span class="text-red-500">*</span></th>
+                                <th style="min-width: 240px">Description <span class="text-red-500">*</span></th>
+                                <th style="min-width: 130px" class="text-right">Amount ({{ entryForm.currencyCode || 'GHS' }}) <span class="text-red-500">*</span></th>
+                                <th style="min-width: 190px">Organizational Unit (Cost Center)</th>
+                                <th style="min-width: 170px">Recipient</th>
+                                <th style="width: 50px" class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="!entryForm.lines.length">
+                                <td colspan="9" class="text-center py-8 text-gray-400 dark:text-slate-500">
+                                    <i class="bi bi-inbox text-3xl block mb-2 opacity-50"></i>
+                                    <span>No expense line items added yet. Click <strong>Add Expense Line</strong> to start.</span>
+                                </td>
+                            </tr>
+                            <tr v-for="(line, idx) in entryForm.lines" :key="line.uid || idx">
+                                <!-- Row number -->
+                                <td class="text-center text-xs font-mono text-gray-400 dark:text-slate-500">
+                                    {{ idx + 1 }}
+                                </td>
+
+                                <!-- Transaction Date -->
+                                <td>
+                                    <input type="date"
+                                           v-model="line.transactionDate"
+                                           required
+                                           class="tbl-input text-xs" />
+                                </td>
+
+                                <!-- Ref No. -->
+                                <td>
+                                    <input type="text"
+                                           v-model.trim="line.refNo"
+                                           placeholder="e.g. 00001"
+                                           class="tbl-input font-mono text-xs" />
+                                </td>
+
+                                <!-- G/L Account (Expense A/C) -->
+                                <td>
+                                    <select v-model="line.expenseAccountId"
+                                            @@change="onLineAccountChange(line)"
+                                            required
+                                            class="tbl-select text-xs font-medium">
+                                        <option value="" disabled>Select Expense Account...</option>
+                                        <optgroup label="Expense Accounts" v-if="expenseAccountsList.length">
+                                            <option v-for="acc in expenseAccountsList" :key="acc.id" :value="acc.id">
+                                                {{ acc.accountIdentifier }}
+                                            </option>
+                                        </optgroup>
+                                        <optgroup label="All Accounts">
+                                            <option v-for="acc in accountsList" :key="acc.id" :value="acc.id">
+                                                {{ acc.accountIdentifier }}
+                                            </option>
+                                        </optgroup>
+                                    </select>
+                                </td>
+
+                                <!-- Description -->
+                                <td>
+                                    <input type="text"
+                                           v-model.trim="line.description"
+                                           required
+                                           placeholder="e.g. Cost of t&t for official errands"
+                                           class="tbl-input text-xs" />
+                                </td>
+
+                                <!-- Amount -->
+                                <td>
+                                    <input type="number"
+                                           v-model.number="line.amount"
+                                           min="0.01"
+                                           step="0.01"
+                                           required
+                                           placeholder="0.00"
+                                           class="tbl-input font-mono text-xs text-right font-semibold text-slate-800 dark:text-slate-200" />
+                                </td>
+
+                                <!-- Organizational Unit (Cost Center) -->
+                                <td>
+                                    <select v-model="line.ouId"
+                                            @@change="onLineOuChange(line)"
+                                            class="tbl-select text-xs">
+                                        <option value="">Select OU / Cost Center...</option>
+                                        <option v-for="cc in costCenterList" :key="cc.id" :value="cc.id">
+                                            {{ cc.name }}
+                                        </option>
+                                    </select>
+                                </td>
+
+                                <!-- Recipient -->
+                                <td>
+                                    <div class="flex gap-1">
+                                        <select v-model="line.recipientId"
+                                                @@change="onLineRecipientChange(line)"
+                                                class="tbl-select text-xs flex-1">
+                                            <option value="">Select Recipient...</option>
+                                            <option v-for="rec in recipientList" :key="rec.id" :value="rec.id">
+                                                {{ rec.recipient || rec.name }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                </td>
+
+                                <!-- Actions -->
+                                <td class="text-center">
+                                    <div class="flex items-center justify-center gap-1">
+                                        <button type="button"
+                                                @@click="duplicateLineItem(idx)"
+                                                title="Duplicate row"
+                                                class="inline-flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-100 hover:text-blue-600 transition dark:border-slate-700 dark:bg-slate-800 dark:text-gray-400">
+                                            <i class="bi bi-copy text-xs"></i>
+                                        </button>
+                                        <button type="button"
+                                                @@click="removeLineItem(idx)"
+                                                title="Remove row"
+                                                class="inline-flex h-7 w-7 items-center justify-center rounded-md border border-red-100 bg-red-50 text-red-600 hover:bg-red-100 transition dark:border-red-900/40 dark:bg-slate-800 dark:text-red-400">
+                                            <i class="bi bi-trash3 text-xs"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <!-- ── Total Row Footer ─────────────────────────── -->
+                        <tfoot>
+                            <tr class="bg-slate-50 font-bold border-t-2 border-slate-200 dark:bg-slate-800/80 dark:border-slate-700">
+                                <td colspan="5" class="py-3 px-4 text-right text-xs uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                                    TOTAL:
+                                </td>
+                                <td class="py-3 px-3 text-right font-mono text-sm font-bold text-blue-700 dark:text-blue-400">
+                                    {{ formatNumber(totalLineAmount) }}
+                                </td>
+                                <td colspan="3" class="py-3 px-4 text-xs text-gray-400">
+                                    <span>{{ entryForm.lines.length }} expense line item{{ entryForm.lines.length === 1 ? '' : 's' }}</span>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ── Bottom Action Toolbar ──────────────────────────────── -->
+            <div class="flex flex-col-reverse gap-3 border-t border-gray-200 bg-white p-4 rounded-xl shadow-sm sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:bg-slate-800">
+                <div class="flex items-center gap-2">
+                    <button type="button"
+                            @@click="goToListing()"
+                            class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-200">
+                        <i class="bi bi-x-circle"></i>
+                        <span>Cancel / Return</span>
+                    </button>
+
+                    <button type="button"
+                            @@click="revertEntryForm()"
+                            :disabled="isLoading || isFetching"
+                            class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                        <span>{{ isEditing ? 'Revert Changes' : 'Clear Form' }}</span>
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button v-if="isEditing"
+                            type="button"
+                            @@click="deletePettyCashBatch(entryForm.id, entryForm.batchNo)"
+                            :disabled="isLoading || isFetching"
+                            class="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-5 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-900/40 dark:bg-slate-800 dark:text-red-400">
+                        <i class="bi bi-trash"></i>
+                        <span>Delete Batch</span>
+                    </button>
+
+                    <button type="submit"
+                            :disabled="isLoading || isFetching || !entryForm.lines.length"
+                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition disabled:cursor-not-allowed disabled:opacity-60">
+                        <i v-if="isLoading || isFetching" class="bi bi-arrow-repeat animate-spin"></i>
+                        <i v-else :class="isEditing ? 'bi bi-check2-circle' : 'bi bi-floppy-fill'"></i>
+                        <span>{{ isLoading ? 'Saving Batch...' : (isEditing ? 'Update Petty Cash Batch' : 'Save Petty Cash Batch') }}</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- PRINTABLE PETTY CASH VOUCHER PREVIEW MODAL                          -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div v-if="showPrintModal"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+        <div class="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl dark:bg-slate-900">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4 dark:border-slate-800">
+                <div class="flex items-center gap-2">
+                    <i class="bi bi-printer text-blue-600 text-lg"></i>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">Petty Cash Voucher Summary</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button"
+                            @@click="printNow"
+                            class="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
+                        <i class="bi bi-printer-fill"></i>
+                        <span>Print Voucher</span>
+                    </button>
+                    <button type="button"
+                            @@click="showPrintModal = false"
+                            class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-slate-800">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Printable Content -->
+            <div id="printableVoucher" class="p-8 font-sans">
+                <!-- Org & Voucher Header -->
+                <div class="text-center border-b pb-5 mb-6">
+                    <h2 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">TOPAZ ERP - GENERAL LEDGER</h2>
+                    <h3 class="text-base font-semibold text-blue-600 mt-1 uppercase tracking-wider">PETTY CASH DISBURSEMENT VOUCHER</h3>
+                    <p class="text-xs text-gray-500 mt-1">Generated: {{ new Date().toLocaleString() }}</p>
+                </div>
+
+                <!-- Meta Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800 mb-6 text-xs">
+                    <div>
+                        <span class="text-gray-500 block">Batch #:</span>
+                        <strong class="font-mono text-sm text-gray-900 dark:text-white">{{ entryForm.batchNo || '—' }}</strong>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 block">Batch Date:</span>
+                        <strong class="text-gray-900 dark:text-white">{{ entryForm.batchDate || '—' }}</strong>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 block">Petty Cash G/L:</span>
+                        <strong class="text-gray-900 dark:text-white">{{ entryForm.pettyCashAccountName || '—' }}</strong>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 block">Originator:</span>
+                        <strong class="text-gray-900 dark:text-white">{{ entryForm.batchOriginator || '—' }}</strong>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 block">Source Doc No:</span>
+                        <strong class="text-gray-900 dark:text-white">{{ entryForm.sourceDocNo || '—' }}</strong>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 block">Currency / Rate:</span>
+                        <strong class="text-gray-900 dark:text-white">{{ entryForm.currencyCode }} (Rate: {{ entryForm.currencyRate }})</strong>
+                    </div>
+                    <div class="col-span-2">
+                        <span class="text-gray-500 block">Total Disbursed:</span>
+                        <strong class="text-blue-700 text-sm font-mono dark:text-blue-400">{{ entryForm.currencyCode }} {{ formatNumber(totalLineAmount) }}</strong>
+                    </div>
+                </div>
+
+                <!-- Itemized Breakdown -->
+                <table class="w-full text-xs border-collapse border border-gray-200 dark:border-slate-700 mb-8">
+                    <thead>
+                        <tr class="bg-gray-100 dark:bg-slate-800">
+                            <th class="border p-2 text-left">#</th>
+                            <th class="border p-2 text-left">Date</th>
+                            <th class="border p-2 text-left">Ref No</th>
+                            <th class="border p-2 text-left">Expense G/L Account</th>
+                            <th class="border p-2 text-left">Description</th>
+                            <th class="border p-2 text-left">Cost Center (OU)</th>
+                            <th class="border p-2 text-left">Recipient</th>
+                            <th class="border p-2 text-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(line, idx) in entryForm.lines" :key="idx">
+                            <td class="border p-2 text-center">{{ idx + 1 }}</td>
+                            <td class="border p-2">{{ line.transactionDate }}</td>
+                            <td class="border p-2 font-mono">{{ line.refNo || '—' }}</td>
+                            <td class="border p-2">{{ line.expenseAccountName || '—' }}</td>
+                            <td class="border p-2">{{ line.description }}</td>
+                            <td class="border p-2">{{ line.ouName || '—' }}</td>
+                            <td class="border p-2">{{ line.recipientName || '—' }}</td>
+                            <td class="border p-2 font-mono text-right font-semibold">{{ formatNumber(line.amount) }}</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr class="font-bold bg-slate-50 dark:bg-slate-800">
+                            <td colspan="7" class="border p-2 text-right uppercase">Total Disbursed:</td>
+                            <td class="border p-2 font-mono text-right text-blue-600 font-bold text-sm">
+                                {{ entryForm.currencyCode }} {{ formatNumber(totalLineAmount) }}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <!-- Signatures -->
+                <div class="grid grid-cols-4 gap-6 pt-10 text-xs text-center border-t border-gray-200 dark:border-slate-800">
+                    <div>
+                        <div class="border-b border-gray-400 mb-1.5 pb-8"></div>
+                        <span class="font-semibold text-gray-700 dark:text-gray-300">Prepared By</span>
+                        <p class="text-[10px] text-gray-400">{{ entryForm.batchOriginator }}</p>
+                    </div>
+                    <div>
+                        <div class="border-b border-gray-400 mb-1.5 pb-8"></div>
+                        <span class="font-semibold text-gray-700 dark:text-gray-300">Checked By</span>
+                        <p class="text-[10px] text-gray-400">Internal Audit</p>
+                    </div>
+                    <div>
+                        <div class="border-b border-gray-400 mb-1.5 pb-8"></div>
+                        <span class="font-semibold text-gray-700 dark:text-gray-300">Authorized By</span>
+                        <p class="text-[10px] text-gray-400">Finance Manager</p>
+                    </div>
+                    <div>
+                        <div class="border-b border-gray-400 mb-1.5 pb-8"></div>
+                        <span class="font-semibold text-gray-700 dark:text-gray-300">Received By</span>
+                        <p class="text-[10px] text-gray-400">Petty Cash Custodian</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .gl-field { display: flex; flex-direction: column; }
+    .gl-field label { font-size: .75rem; font-weight: 600; color: #4b5563; margin-bottom: .35rem; }
+    .gl-input, .gl-select {
+        width: 100%; border-radius: .5rem; border: 1px solid #d1d5db;
+        padding: .5rem .75rem; font-size: .8125rem; color: #111827;
+        background: #fff; outline: none; transition: border-color .15s, box-shadow .15s;
+    }
+    .gl-input:focus, .gl-select:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, .12); }
+    .voucher-table { width: 100%; border-collapse: collapse; font-size: .8125rem; }
+    .voucher-table thead tr { background: #f8fafc; }
+    .voucher-table th { padding: .65rem .75rem; text-align: left; font-weight: 600; color: #374151; border-bottom: 2px solid #e5e7eb; white-space: nowrap; font-size: .75rem; text-transform: uppercase; letter-spacing: .025em; }
+    .voucher-table td { padding: .45rem .65rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .voucher-table tbody tr:hover { background: #fafbfc; }
+    .tbl-input, .tbl-select {
+        width: 100%; border: 1px solid #e5e7eb; border-radius: .375rem;
+        padding: .4rem .55rem; font-size: .8125rem; color: #111827;
+        background: #fff; outline: none; transition: border-color .15s;
+    }
+    .tbl-input:focus, .tbl-select:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, .1); }
+</style>
+
+<script src="~/js/gl/create-petty-cash.js" asp-append-version="true"></script>
