@@ -162,8 +162,10 @@ public class GeneralLedgerController : Controller
         return View();
     }
     
-    public IActionResult PettyCash()
+    [HttpGet]
+    public IActionResult PettyCash([FromQuery] Guid? id = null)
     {
+        ViewBag.PettyCashId = id;
         return View();
     }
     
@@ -522,6 +524,7 @@ public class GeneralLedgerController : Controller
         return Json(results);
     }
 
+    [HttpDelete, HttpPost, HttpGet]
     public async Task<IActionResult> DeleteCustomer([FromQuery] Guid id)
     {
         var results = await _topazErpApi.DeleteCustomer(id);
@@ -551,6 +554,62 @@ public class GeneralLedgerController : Controller
     public async Task<IActionResult> DeletePettyCashRecipient([FromQuery] Guid id)
     {
         var results = await _topazErpApi.DeletePettyCashRecipient(id);
+        return Json(results);
+    }
+    
+    // Petty Cash Transactions
+    [HttpGet]
+    public async Task<IActionResult> GetPettyCashTransactions([FromQuery] int pageNo = 1, [FromQuery] int pageSize = 1000, [FromQuery] string query = "")
+    {
+        var results = await _topazErpApi.GetPettyTransactions(pageNo, pageSize, query);
+        return Json(results);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> InitPettyCashEntry()
+    {
+        var accounts = await _topazErpApi.GetAccountDetails(1, 5000, null, true);
+        var costCenters = await _topazErpApi.GetCostCenters(1, 1000, "");
+        var departments = await _topazErpApi.GetDepartments(1, 1000, "");
+        var recipients = await _topazErpApi.GetPettyCashRecipients(1, 1000, "");
+        var currencies = await _topazErpApi.GetCurrencies(1, 100, "");
+        var defaultGl = await _topazErpApi.GetDefaultGlNumbersSetup();
+        var systemNumbers = await _topazErpApi.GetSystemNumbers("");
+
+        var currentUser = User?.Identity?.Name ?? "Administrator";
+
+        return Json(new
+        {
+            success = true,
+            currentUser,
+            accounts = accounts?.Result,
+            costCenters = costCenters?.Result,
+            departments = departments?.Result,
+            recipients = recipients?.Result,
+            currencies = currencies?.Result,
+            defaultGlNumbers = defaultGl?.Result,
+            systemNumbers = systemNumbers?.Result
+        });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreatePettyCash([FromBody] object dto)
+    {
+        var results = await _topazErpApi.CreatePettyCash(dto);
+        return Json(results);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> UpdatePettyCash([FromBody] object dto)
+    {
+        var results = await _topazErpApi.UpdatePettyCash(dto);
+        return Json(results);
+    }
+
+    [HttpDelete, HttpPost, HttpGet]
+    public async Task<IActionResult> DeletePettyCash([FromQuery] Guid id)
+    {
+        var results = await _topazErpApi.DeletePettyCash(id);
         return Json(results);
     }
     

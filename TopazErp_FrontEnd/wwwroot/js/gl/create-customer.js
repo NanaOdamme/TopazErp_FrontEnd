@@ -1,336 +1,56 @@
-const { ref, reactive, computed, onMounted } = Vue;
+/**
+ * General Ledger - Create / Edit Customer (Vue 3)
+ * Modern implementation matching Topaz ERP Design System
+ */
+const app = Vue.createApp({
+    data() {
+        return {
+            theme: '#0645e7',
+            isLoading: false,
+            isFetching: false,
+            isEditing: false,
+            customerId: null,
 
-createApp({
-    setup() {
-        const isEditing = ref(false);
-        const targetId = ref(null);
-        const customerSearch = ref('');
-        const isFetching = ref(false);
-        const isSaving = ref(false);
-        const isDeleting = ref(false);
+            customerList: [],
+            customerGroupList: [],
+            currencyList: [],
+            accountList: [],
+            currentSystemNumber: null,
+            customerSearch: '',
 
-        const customerList = ref([]);
-        const filteredCustomers = computed(() => customerList.value);
-        const customerGroupList = ref([]);
-        const statusList = ref(['Active', 'Inactive', 'Dormant']);
-        const currencyList = ref([]);
-        const accountsList = ref([]);
+            statusList: [
+                { id: 'Active', name: 'Active' },
+                { id: 'Inactive', name: 'Inactive' },
+                { id: 'Pending', name: 'Pending' },
+                { id: 'Dormant', name: 'Dormant' }
+            ],
 
-        const submitted = ref(false);
-        const showDeleteModal = ref(false);
+            defaultGlSetup: {
+                creditAccountId: '',
+                vatAccountId: '',
+                irsAccountId: ''
+            },
 
-        const form = reactive({
-            id: null,
-            accountNumber: '',
-            name: '',
-            customerGroupId: '',
-            customerGroupName: '',
-            status: 'Active',
-            address: '',
-            tinNumber: '',
-            vatNumber: '',
-            phoneNo: '',
-            email: '',
-            currencyId: '',
-            currencyCode: '',
-            currencyName: '',
-            balance: 0,
-            creditLimit: 0,
-            taxOffice: '',
-            creditAccountId: '',
-            creditAccountName: '',
-            vatAccountId: '',
-            vatAccountName: '',
-            irsAccountId: '',
-            irsAccountName: '',
-            isResident: false,
-            contactPerson: '',
-            contactPersonPhone: '',
-            contactPersonEmail: ''
-        });
-
-        const isFormInvalid = computed(() =>
-            !form.accountNumber.trim() ||
-            !form.name.trim() ||
-            !form.currencyId
-        );
-
-        const customerSearchResults = computed(() => {
-            const query = customerSearch.value.toLowerCase().trim();
-            if (!query) return [];
-            return customerList.value.filter(customer =>
-                customer.name.toLowerCase().includes(query) ||
-                customer.accountNumber?.toLowerCase().includes(query)
-            );
-        });
-
-        const accountNumberInvalid = computed(() => submitted.value && !form.accountNumber?.trim());
-        const nameInvalid = computed(() => submitted.value && !form.name?.trim());
-        const currencyIdInvalid = computed(() => submitted.value && !form.currencyId);
-        const customerGroupIdInvalid = computed(() => submitted.value && !form.customerGroupId);
-        const emailInvalid = computed(() => submitted.value && form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email));
-
-        // ── Data loading ─────────────────────────────────────────────
-        async function getCustomerGroups() {
-            try {
-                const res = await axios.get('/SharedResource/GetCustomerGroups?pageNo=1&pageSize=1000');
-                const raw = res.data?.result?.data
-                    || res.data?.result
-                    || res.data?.data
-                    || (Array.isArray(res.data) ? res.data : []);
-                customerGroupList.value = raw;
-            } catch (err) {
-                console.error('Error fetching customer groups:', err);
-                toastHandler('error', 'Unable to retrieve customer groups.');
-            }
-        }
-
-        async function getCurrencies() {
-            try {
-                const res = await axios.get('/SharedResource/GetCurrencies?pageNo=1&pageSize=100');
-                const raw = res.data?.result?.data
-                    || res.data?.result
-                    || res.data?.data
-                    || (Array.isArray(res.data) ? res.data : []);
-                currencyList.value = raw;
-            } catch (err) {
-                console.error('Error fetching currencies:', err);
-                toastHandler('error', 'Unable to retrieve currencies.');
-            }
-        }
-
-        async function getAccounts() {
-            try {
-                const res = await axios.get('/GeneralLedger/GetAccountDetails?pageNo=1&pageSize=5000&isActive=true');
-                const raw = res.data?.result?.data
-                    || res.data?.result
-                    || res.data?.data
-                    || (Array.isArray(res.data) ? res.data : []);
-                raw.forEach(v => { v.accountIdentifier = `${v.accountNo} - ${v.accountName}`; });
-                accountsList.value = raw;
-            } catch (err) {
-                console.error('Failed to get account details:', err);
-                toastHandler('error', 'Unable to retrieve accounts.');
-            }
-        }
-
-        async function getDefaultGL() {
-            try {
-                const res = await axios.get('/GeneralLedger/GetDefaultGlNumbersSetup');
-                let raw = res.data?.result || res.data?.Result || res.data;
-                if (Array.isArray(raw)) raw = raw[0];
-                if (!raw) return;
-
-                if (!form.creditAccountId && raw.accountsReceivableAccountId) {
-                    form.creditAccountId = raw.accountsReceivableAccountId;
-                    onCreditAccountChange();
-                }
-                if (!form.vatAccountId && raw.vatReceivedAccountId) {
-                    form.vatAccountId = raw.vatReceivedAccountId;
-                    onVatAccountChange();
-                }
-                if (!form.irsAccountId && raw.withholdingTaxAccountId) {
-                    form.irsAccountId = raw.withholdingTaxAccountId;
-                    onIrsAccountChange();
-                }
-            } catch (err) {
-                console.warn('Default GL numbers setup not available:', err);
-            }
-        }
-
-        // ── Account number generation ────────────────────────────────
-        async function generateAccountNumber() {
-            if (isEditing.value) return; // keep locked when editing
-            try {
-                const response = await axios.get('/SharedResource/GetSystemNumbers');
-                const raw = response.data?.result || response.data?.data || (Array.isArray(response.data) ? response.data : []);
-                const defaultSystem = raw.find(systemNumber =>
-                    (systemNumber.itemName && systemNumber.itemName.toLowerCase().includes('araccount')) ||
-                    (systemNumber.key && (systemNumber.key.toLowerCase().includes('customer') || systemNumber.key.toLowerCase().includes('ar-')))
-                );
-                if (defaultSystem && defaultSystem.id !== '00000000-0000-0000-0000-000000000000') {
-                    form.accountNumber = defaultSystem.prefix + defaultSystem.lastNo + defaultSystem.suffix;
-                    defaultSystem.lastNo = (parseInt(defaultSystem.lastNo) || 0) + 1;
-                    await saveSystemNumber(defaultSystem);
-                } else {
-                    form.accountNumber = `AR-${1000 + Math.floor(Math.random() * 9000)}`;
-                }
-            } catch (error) {
-                console.error('Error generating account number:', error);
-                toastHandler('error', 'Unable to generate account number.');
-                form.accountNumber = '';
-            }
-        }
-
-        async function saveSystemNumber(systemNumber) {
-            try {
-                await axios.post('/SharedResource/UpdateSystemNumber', systemNumber);
-            } catch (error) {
-                console.error('Error updating system number:', error);
-            }
-        }
-
-        // ── Loaders for edit mode ────────────────────────────────────
-        async function getCustomersList() {
-            try {
-                const res = await axios.get('/GeneralLedger/GetCustomers');
-                const r = res.data?.result ?? res.data?.Result;
-                customerList.value = Array.isArray(r)
-                    ? r
-                    : (Array.isArray(r?.data) ? r.data : (Array.isArray(r?.items) ? r.items : (Array.isArray(res.data?.data) ? res.data.data : (Array.isArray(res.data) ? res.data : []))));
-            } catch (err) {
-                console.error('Error fetching customers:', err);
-                customerList.value = [];
-            }
-        }
-
-        function loadCustomer(customer) {
-            if (isFetching.value) return;
-            isFetching.value = true;
-            setTimeout(() => {
-                form.id = customer.id;
-                form.accountNumber = customer.accountNumber || '';
-                form.name = customer.name || '';
-                form.customerGroupId = customer.customerGroupId || '';
-                form.customerGroupName = customer.customerGroupName || '';
-                form.status = customer.status || customer.statusName || 'Active';
-                form.address = customer.address || '';
-                form.tinNumber = customer.tinNumber || '';
-                form.vatNumber = customer.vatNumber || '';
-                form.phoneNo = customer.phoneNo || '';
-                form.email = customer.email || '';
-                form.currencyId = customer.currencyId || '';
-                form.currencyCode = customer.currencyCode || '';
-                form.currencyName = customer.currencyName || '';
-                form.balance = customer.balance || 0;
-                form.creditLimit = customer.creditLimit || 0;
-                form.taxOffice = customer.taxOffice || '';
-                form.creditAccountId = customer.creditAccountId || '';
-                form.creditAccountName = customer.creditAccountName || '';
-                form.vatAccountId = customer.vatAccountId || '';
-                form.vatAccountName = customer.vatAccountName || '';
-                form.irsAccountId = customer.irsAccountId || '';
-                form.irsAccountName = customer.irsAccountName || '';
-                form.isResident = customer.isResident || false;
-                form.contactPerson = customer.contactPerson || '';
-                form.contactPersonPhone = customer.contactPersonPhone || '';
-                form.contactPersonEmail = customer.contactPersonEmail || '';
-
-                isEditing.value = true;
-                submitted.value = false;
-                customerSearch.value = '';
-                isFetching.value = false;
-            }, 300);
-        }
-
-        async function loadCustomerById(id) {
-            if (!id) return;
-            isFetching.value = true;
-            try {
-                const res = await axios.get(`/GeneralLedger/GetCustomer?id=${id}`);
-                const c = res.data?.result;
-                if (res.data?.success !== false && c && c.id) {
-                    loadCustomer(c);
-                } else {
-                    throw new Error(res.data?.error || 'not found via detail endpoint');
-                }
-            } catch (err) {
-                console.warn('Detail endpoint unavailable, falling back to list lookup:', err);
-                try {
-                    if (!customerList.value.length) await getCustomersList();
-                    const customer = customerList.value.find(c => c.id === id);
-                    if (customer) loadCustomer(customer);
-                    else toastHandler('error', 'Customer not found.');
-                } catch (e2) {
-                    console.error('Error loading customer:', e2);
-                    toastHandler('error', 'Unable to load customer.');
-                }
-            } finally {
-                isFetching.value = false;
-            }
-        }
-
-        function loadCustomerFromSearch(customer) {
-            if (isFetching.value || !customer) return;
-            isFetching.value = true;
-            form.id = customer.id;
-            form.accountNumber = customer.accountNumber || '';
-            form.name = customer.name || '';
-            form.customerGroupId = customer.customerGroupId || '';
-            form.customerGroupName = customer.customerGroupName || '';
-            form.status = customer.status || customer.statusName || 'Active';
-            form.address = customer.address || '';
-            form.tinNumber = customer.tinNumber || '';
-            form.vatNumber = customer.vatNumber || '';
-            form.phoneNo = customer.phoneNo || '';
-            form.email = customer.email || '';
-            form.currencyId = customer.currencyId || '';
-            form.currencyCode = customer.currencyCode || '';
-            form.currencyName = customer.currencyName || '';
-            form.balance = customer.balance || 0;
-            form.creditLimit = customer.creditLimit || 0;
-            form.taxOffice = customer.taxOffice || '';
-            form.creditAccountId = customer.creditAccountId || '';
-            form.creditAccountName = customer.creditAccountName || '';
-            form.vatAccountId = customer.vatAccountId || '';
-            form.vatAccountName = customer.vatAccountName || '';
-            form.irsAccountId = customer.irsAccountId || '';
-            form.irsAccountName = customer.irsAccountName || '';
-            form.isResident = customer.isResident || false;
-            form.contactPerson = customer.contactPerson || '';
-            form.contactPersonPhone = customer.contactPersonPhone || '';
-            form.contactPersonEmail = customer.contactPersonEmail || '';
-
-            isEditing.value = true;
-            submitted.value = false;
-            customerSearch.value = '';
-            isFetching.value = false;
-        }
-
-        // ── Dropdown handlers ────────────────────────────────────────
-        function onCurrencyChange() {
-            const selectedCurrency = currencyList.value.find(c => c.id === form.currencyId);
-            form.currencyCode = selectedCurrency?.code || '';
-            form.currencyName = selectedCurrency?.name || '';
-        }
-
-        function onCustomerGroupChange() {
-            const group = customerGroupList.value.find(g => g.id === form.customerGroupId);
-            form.customerGroupName = group?.name || '';
-        }
-
-        function onCreditAccountChange() {
-            const account = accountsList.value.find(a => a.id === form.creditAccountId);
-            form.creditAccountName = account?.accountName || '';
-        }
-
-        function onVatAccountChange() {
-            const account = accountsList.value.find(a => a.id === form.vatAccountId);
-            form.vatAccountName = account?.accountName || '';
-        }
-
-        function onIrsAccountChange() {
-            const account = accountsList.value.find(a => a.id === form.irsAccountId);
-            form.irsAccountName = account?.accountName || '';
-        }
-
-        // ── Form actions ─────────────────────────────────────────────
-        function resetForm() {
-            Object.assign(form, {
+            form: {
                 id: null,
+                tenantId: null,
                 accountNumber: '',
                 name: '',
                 customerGroupId: '',
                 customerGroupName: '',
                 status: 'Active',
+                statusName: 'Active',
+                statusId: '1',
                 address: '',
                 tinNumber: '',
                 vatNumber: '',
                 phoneNo: '',
                 email: '',
                 currencyId: '',
-                currencyCode: '',
-                currencyName: '',
+                currencyCode: 'GHS',
+                currencyName: 'Ghana Cedi',
+                buyingRate: 1,
+                sellingRate: 1,
                 balance: 0,
                 creditLimit: 0,
                 taxOffice: '',
@@ -340,215 +60,627 @@ createApp({
                 vatAccountName: '',
                 irsAccountId: '',
                 irsAccountName: '',
-                isResident: false,
+                isResident: true,
                 contactPerson: '',
                 contactPersonPhone: '',
                 contactPersonEmail: ''
-            });
-            submitted.value = false;
-            customerSearch.value = '';
-            if (isEditing.value) {
-                isEditing.value = false;
-                generateAccountNumber();
-                if (customerGroupList.value.length && !form.customerGroupId) {
-                    form.customerGroupId = customerGroupList.value[0].id;
-                    onCustomerGroupChange();
+            },
+
+            emptyForm: {
+                id: null,
+                tenantId: null,
+                accountNumber: '',
+                name: '',
+                customerGroupId: '',
+                customerGroupName: '',
+                status: 'Active',
+                statusName: 'Active',
+                statusId: '1',
+                address: '',
+                tinNumber: '',
+                vatNumber: '',
+                phoneNo: '',
+                email: '',
+                currencyId: '',
+                currencyCode: 'GHS',
+                currencyName: 'Ghana Cedi',
+                buyingRate: 1,
+                sellingRate: 1,
+                balance: 0,
+                creditLimit: 0,
+                taxOffice: '',
+                creditAccountId: '',
+                creditAccountName: '',
+                vatAccountId: '',
+                vatAccountName: '',
+                irsAccountId: '',
+                irsAccountName: '',
+                isResident: true,
+                contactPerson: '',
+                contactPersonPhone: '',
+                contactPersonEmail: ''
+            }
+        };
+    },
+
+    methods: {
+        resetForm() {
+            // In edit mode, revert the form back to the last saved record
+            if (this.isEditing && this.customerId) {
+                this.loadCustomerById(this.customerId);
+                return;
+            }
+
+            this.form = JSON.parse(JSON.stringify(this.emptyForm));
+
+            // Pre-fill default currency
+            if (this.currencyList.length > 0) {
+                const defaultCurr = this.currencyList.find(c =>
+                    c.isDefault ||
+                    (c.currencyName && c.currencyName.toLowerCase().includes('cedi')) ||
+                    (c.currencyCode && c.currencyCode.toUpperCase() === 'GHS')
+                ) || this.currencyList[0];
+
+                if (defaultCurr) {
+                    this.form.currencyId = defaultCurr.id;
+                    this.form.currencyCode = defaultCurr.currencyCode;
+                    this.form.currencyName = defaultCurr.currencyName;
                 }
             }
-        }
 
-        function revertForm() {
-            if (!isEditing.value || !form.id) { resetForm(); return; }
-            loadCustomerById(form.id);
-        }
-
-        function newCustomer() {
-            resetForm();
-        }
-
-        function apiErrorMessage(err, fallback) {
-            return err?.response?.data?.error
-                || err?.response?.data?.title
-                || err?.response?.data?.message
-                || err?.message
-                || fallback;
-        }
-
-        function assertApiSuccess(res, fallback) {
-            const d = res?.data;
-            if (d && (d.success === false || d.isSuccess === false || d.error || d.errors)) {
-                throw new Error(d.error || d.title || d.errors || fallback);
-            }
-            if (res.status >= 400) {
-                throw new Error(fallback);
-            }
-            return true;
-        }
-
-        async function saveCustomer() {
-            submitted.value = true;
-            if (isFormInvalid.value) {
-                toastHandler('error', 'Please fill all required fields.');
-                return;
+            // Pre-fill default group
+            if (this.customerGroupList.length > 0) {
+                this.form.customerGroupId = this.customerGroupList[0].id;
+                this.form.customerGroupName = this.customerGroupList[0].name;
             }
 
-            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (form.email && !emailPattern.test(form.email)) {
-                toastHandler('error', 'Please enter a valid email address.');
-                return;
+            // Apply default GL accounts
+            if (this.defaultGlSetup.creditAccountId) {
+                this.form.creditAccountId = this.defaultGlSetup.creditAccountId;
             }
-            if (form.contactPersonEmail && !emailPattern.test(form.contactPersonEmail)) {
-                toastHandler('error', 'Please enter a valid contact person email address.');
-                return;
+            if (this.defaultGlSetup.vatAccountId) {
+                this.form.vatAccountId = this.defaultGlSetup.vatAccountId;
             }
+            if (this.defaultGlSetup.irsAccountId) {
+                this.form.irsAccountId = this.defaultGlSetup.irsAccountId;
+            }
+        },
 
-            isSaving.value = true;
-            const payload = {
-                id: form.id || '00000000-0000-0000-0000-000000000000',
-                accountNumber: form.accountNumber,
-                name: form.name,
-                customerGroupId: form.customerGroupId,
-                customerGroupName: form.customerGroupName,
-                status: form.status,
-                statusId: form.status === 'Active' ? 1 : form.status === 'Inactive' ? 2 : 3,
-                statusName: form.status,
-                address: form.address,
-                tinNumber: form.tinNumber,
-                vatNumber: form.vatNumber,
-                phoneNo: form.phoneNo,
-                email: form.email,
-                currencyId: form.currencyId,
-                currencyCode: form.currencyCode,
-                currencyName: form.currencyName,
-                balance: parseFloat(form.balance) || 0,
-                creditLimit: parseFloat(form.creditLimit) || 0,
-                taxOffice: form.taxOffice,
-                creditAccountId: form.creditAccountId,
-                creditAccountName: form.creditAccountName,
-                vatAccountId: form.vatAccountId,
-                vatAccountName: form.vatAccountName,
-                irsAccountId: form.irsAccountId,
-                irsAccountName: form.irsAccountName,
-                isResident: form.isResident,
-                contactPerson: form.contactPerson,
-                contactPersonPhone: form.contactPersonPhone,
-                contactPersonEmail: form.contactPersonEmail
+        newCustomer() {
+            this.isEditing = false;
+            this.customerId = null;
+            this.customerSearch = '';
+            this.resetForm();
+            this.generateAccountNumber();
+
+            // Update URL without reloading
+            if (window.history.pushState) {
+                window.history.pushState({}, '', '/GeneralLedger/CreateCustomer');
+            }
+        },
+
+        enrichCustomer(customer) {
+            const group = this.customerGroupList.find(g => String(g.id) === String(customer.customerGroupId));
+            const curr = this.currencyList.find(c => String(c.id) === String(customer.currencyId));
+            const statusObj = this.statusList.find(s =>
+                String(s.id).toLowerCase() === String(customer.status || customer.statusName || '').toLowerCase() ||
+                String(s.name).toLowerCase() === String(customer.status || '').toLowerCase()
+            );
+
+            return {
+                ...customer,
+                customerGroupName: group?.name || customer.customerGroupName || 'General',
+                currencyCode: curr?.currencyCode || customer.currencyCode || 'GHS',
+                currencyName: curr?.currencyName || customer.currencyName || 'Ghana Cedi',
+                status: statusObj?.name || customer.status || customer.statusName || 'Active',
+                statusName: statusObj?.name || customer.status || customer.statusName || 'Active',
+                balance: Number(customer.balance) || 0,
+                creditLimit: Number(customer.creditLimit) || 0,
+                isResident: customer.isResident !== undefined ? Boolean(customer.isResident) : true
+            };
+        },
+
+        loadCustomer(customer) {
+            if (!customer) return;
+            this.isEditing = true;
+            this.customerId = customer.id;
+            this.customerSearch = customer.name || '';
+
+            const enriched = this.enrichCustomer(customer);
+            this.form = {
+                ...this.emptyForm,
+                ...enriched,
+                id: enriched.id,
+                tenantId: enriched.tenantId,
+                status: enriched.status || 'Active',
+                statusName: enriched.status || 'Active',
+                balance: enriched.balance || 0,
+                creditLimit: enriched.creditLimit || 0
             };
 
+            // Update URL query parameter
+            if (window.history.pushState && customer.id) {
+                window.history.pushState({}, '', `/GeneralLedger/CreateCustomer?id=${encodeURIComponent(customer.id)}`);
+            }
+
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        },
+
+        async loadCustomerById(id) {
+            if (!id) return;
+            this.isFetching = true;
             try {
-                let res;
-                if (isEditing.value && form.id) {
-                    res = await axios.post(`/GeneralLedger/UpdateCustomer`, payload);
-                    assertApiSuccess(res, 'Failed to update customer.');
-                } else {
-                    res = await axios.post('/GeneralLedger/CreateCustomer', payload);
-                    assertApiSuccess(res, 'Failed to create customer.');
-                    await generateAccountNumber();
+                // Try targeted endpoint first
+                try {
+                    const resp = await axios.get(`/GeneralLedger/GetCustomer?id=${encodeURIComponent(id)}`);
+                    if (resp.data?.success !== false && resp.data?.result) {
+                        this.loadCustomer(resp.data.result);
+                        return;
+                    }
+                } catch (e) {
+                    // Fall back to full list search
                 }
 
-                toastHandler('success', isEditing.value ? 'Customer updated successfully!' : 'Customer created successfully!');
-                setTimeout(() => { window.location.href = '/GeneralLedger/Customers'; }, 1000);
+                // If not found yet, search in full list
+                if (this.customerList.length === 0) {
+                    await this.getCustomersList();
+                }
+
+                const match = this.customerList.find(c => String(c.id).toLowerCase() === String(id).toLowerCase());
+                if (match) {
+                    this.loadCustomer(match);
+                } else {
+                    this.toast('warning', 'Customer record could not be found.');
+                }
             } catch (err) {
-                console.error('Error saving customer:', err);
-                toastHandler('error', apiErrorMessage(err, 'Unable to save customer.'));
+                console.error('Error loading customer by ID:', err);
+                this.toast('error', 'Unable to load customer details.');
             } finally {
-                isSaving.value = false;
+                this.isFetching = false;
             }
-        }
+        },
 
-        async function confirmDelete() {
-            showDeleteModal.value = true;
-        }
+        async loadCustomerFromSearch() {
+            const query = (this.customerSearch || '').trim().toLowerCase();
+            if (!query) {
+                this.toast('warning', 'Please enter a customer name or account number to search.');
+                return;
+            }
 
-        async function deleteCustomer() {
-            if (!isEditing.value || !form.id) return;
-            isDeleting.value = true;
+            if (this.customerList.length === 0) {
+                await this.getCustomersList();
+            }
+
+            const match = this.customerList.find(c =>
+                (c.name && c.name.toLowerCase().includes(query)) ||
+                (c.accountNumber && c.accountNumber.toLowerCase().includes(query))
+            );
+
+            if (!match) {
+                this.toast('warning', 'No matching customer found.');
+                return;
+            }
+
+            this.loadCustomer(match);
+            this.toast('success', `Loaded customer: ${match.name}`);
+        },
+
+        onCurrencyChange() {
+            const curr = this.currencyList.find(c => String(c.id) === String(this.form.currencyId));
+            if (curr) {
+                this.form.currencyCode = curr.currencyCode || curr.code || 'GHS';
+                this.form.currencyName = curr.currencyName || curr.name || 'Ghana Cedi';
+            }
+        },
+
+        onCustomerGroupChange() {
+            const group = this.customerGroupList.find(g => String(g.id) === String(this.form.customerGroupId));
+            if (group) {
+                this.form.customerGroupName = group.name;
+            }
+        },
+
+        async generateAccountNumber() {
+            if (this.isEditing) {
+                this.toast('info', 'Account number cannot be regenerated for an existing customer.');
+                return;
+            }
+
             try {
-                // Mirror create-supplier.js: DELETE → POST fallback → SharedResource GET fallback
-                try {
-                    await axios.delete(`/GeneralLedger/DeleteCustomer?id=${form.id}`);
-                } catch (e) {
-                    try {
-                        await axios.post(`/GeneralLedger/DeleteCustomer?id=${form.id}`);
-                    } catch (e2) {
-                        await axios.get(`/SharedResource/DelCustomer?id=${form.id}`);
+                const response = await axios.get('/SharedResource/GetSystemNumbers');
+                const systemNumbers = response.data.result || response.data || [];
+                if (Array.isArray(systemNumbers) && systemNumbers.length > 0) {
+                    const sn = systemNumbers.find(item =>
+                        item.key === 'customer-account-id' ||
+                        item.key === 'ar-account-id' ||
+                        item.itemName === 'ArAccountNumbers' ||
+                        (item.itemName && item.itemName.toLowerCase().includes('araccount')) ||
+                        (item.key && item.key.toLowerCase().includes('customer'))
+                    );
+                    if (sn) {
+                        this.currentSystemNumber = sn;
+                        this.form.accountNumber = `${sn.prefix || ''}${sn.lastNo || ''}${sn.suffix || ''}`;
+                        return;
                     }
                 }
-                toastHandler('success', 'Customer deleted successfully!');
-                showDeleteModal.value = false;
-                setTimeout(() => { window.location.href = '/GeneralLedger/Customers'; }, 1000);
+            } catch (err) {
+                console.warn('Unable to fetch system numbers, using fallback pattern:', err);
+            }
+
+            // Fallback generated account number
+            const rand = Math.floor(100000 + Math.random() * 900000);
+            this.form.accountNumber = `AR-${rand}`;
+        },
+
+        async getCustomersList() {
+            try {
+                let response = null;
+                try {
+                    response = await axios.get('/GeneralLedger/GetCustomers');
+                } catch (e) {
+                    response = await axios.get('/SharedResource/GetCustomers');
+                }
+
+                const raw = response.data;
+                let list = [];
+                if (Array.isArray(raw)) {
+                    list = raw;
+                } else if (raw?.result && Array.isArray(raw.result)) {
+                    list = raw.result;
+                } else if (raw?.result?.items && Array.isArray(raw.result.items)) {
+                    list = raw.result.items;
+                } else if (raw?.result?.data && Array.isArray(raw.result.data)) {
+                    list = raw.result.data;
+                } else if (raw?.data && Array.isArray(raw.data)) {
+                    list = raw.data;
+                }
+
+                this.customerList = list;
+            } catch (err) {
+                console.warn('Error fetching customer lookup list:', err);
+            }
+        },
+
+        async getCustomerGroups() {
+            try {
+                let response = null;
+                try {
+                    response = await axios.get('/SharedResource/GetCustomerGroups?pageNo=1&pageSize=1000');
+                } catch (e) {
+                    response = await axios.get('/GeneralLedger/GetCustomerGroups');
+                }
+                const raw = response.data;
+                let list = [];
+                if (Array.isArray(raw)) {
+                    list = raw;
+                } else if (raw?.result?.items && Array.isArray(raw.result.items)) {
+                    list = raw.result.items;
+                } else if (raw?.result?.data && Array.isArray(raw.result.data)) {
+                    list = raw.result.data;
+                } else if (raw?.result && Array.isArray(raw.result)) {
+                    list = raw.result;
+                } else if (raw?.data && Array.isArray(raw.data)) {
+                    list = raw.data;
+                }
+                this.customerGroupList = list;
+            } catch (err) {
+                console.warn('Error fetching customer groups:', err);
+            }
+        },
+
+        async getCurrencies() {
+            try {
+                const response = await axios.get('/SharedResource/GetCurrencies');
+                const raw = response.data;
+                let list = [];
+                if (Array.isArray(raw)) {
+                    list = raw;
+                } else if (raw?.result?.items && Array.isArray(raw.result.items)) {
+                    list = raw.result.items;
+                } else if (raw?.result && Array.isArray(raw.result)) {
+                    list = raw.result;
+                }
+                this.currencyList = list;
+            } catch (err) {
+                console.warn('Error fetching currencies:', err);
+            }
+        },
+
+        async getAccounts() {
+            try {
+                let response = null;
+                try {
+                    response = await axios.get('/GeneralLedger/GetAccountDetails?pageNo=1&pageSize=5555&isActive=true');
+                } catch (e) {
+                    response = await axios.get('/GeneralLedger/InitJournalEntry');
+                }
+
+                const raw = response.data;
+                let list = [];
+                if (Array.isArray(raw)) {
+                    list = raw;
+                } else if (raw?.result && Array.isArray(raw.result)) {
+                    list = raw.result;
+                } else if (raw?.result?.items && Array.isArray(raw.result.items)) {
+                    list = raw.result.items;
+                } else if (raw?.result?.data && Array.isArray(raw.result.data)) {
+                    list = raw.result.data;
+                } else if (raw?.data && Array.isArray(raw.data)) {
+                    list = raw.data;
+                }
+
+                this.accountList = list.map(a => ({
+                    id: a.id,
+                    accountNo: a.accountNo || a.accountNumber || '',
+                    accountName: a.accountName || a.name || '',
+                    accountIdentifier: a.accountIdentifier || `${a.accountNo || a.accountNumber || ''} - ${a.accountName || a.name || ''}`
+                })).sort((a, b) =>
+                    String(a.accountNo ?? '').localeCompare(String(b.accountNo ?? ''))
+                );
+            } catch (err) {
+                console.warn('Error fetching GL accounts:', err);
+            }
+        },
+
+        async getDefaultGlSetup() {
+            try {
+                const response = await axios.get('/GeneralLedger/GetDefaultGlNumbersSetup');
+                const raw = response.data?.result || response.data;
+                if (raw) {
+                    this.defaultGlSetup = {
+                        creditAccountId: raw.accountsReceivableAccountId || '',
+                        vatAccountId: raw.vatReceivedAccountId || raw.vatPaidAccountId || '',
+                        irsAccountId: raw.withholdingTaxAccountId || ''
+                    };
+                }
+            } catch (err) {
+                console.warn('Error loading default GL setup:', err);
+            }
+        },
+
+        validateForm() {
+            if (!this.form.name || !this.form.name.trim()) {
+                this.toast('warning', 'Customer Name is required.');
+                return false;
+            }
+            if (!this.form.accountNumber || !this.form.accountNumber.trim()) {
+                this.toast('warning', 'Account Number is required.');
+                return false;
+            }
+            if (!this.form.currencyId) {
+                this.toast('warning', 'Default Currency is required.');
+                return false;
+            }
+            if (this.form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.email)) {
+                this.toast('warning', 'Please enter a valid email address.');
+                return false;
+            }
+            if (this.form.contactPersonEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.contactPersonEmail)) {
+                this.toast('warning', 'Please enter a valid contact person email address.');
+                return false;
+            }
+            return true;
+        },
+
+        apiErrorMessage(resp, fallback) {
+            const data = resp?.data;
+            const err = data?.error;
+            if (typeof err === 'string' && err.trim()) return err;
+            if (err && typeof err === 'object' && err.message) return err.message;
+            return fallback;
+        },
+
+        assertApiSuccess(resp, fallback) {
+            if (resp?.data && resp.data.success === false) {
+                throw new Error(this.apiErrorMessage(resp, fallback));
+            }
+        },
+
+        async saveCustomer() {
+            if (!this.validateForm() || this.isLoading || this.isFetching) return;
+
+            if (this.isEditing && !this.form.id) {
+                this.toast('error', 'This customer record has no id. Please reopen it from the Customers list.');
+                return;
+            }
+
+            this.isLoading = true;
+            try {
+                const payload = {
+                    ...this.form,
+                    name: this.form.name.trim(),
+                    accountNumber: this.form.accountNumber.trim(),
+                    email: (this.form.email || '').trim(),
+                    phoneNo: (this.form.phoneNo || '').trim(),
+                    address: (this.form.address || '').trim(),
+                    tinNumber: (this.form.tinNumber || '').trim(),
+                    vatNumber: (this.form.vatNumber || '').trim(),
+                    taxOffice: (this.form.taxOffice || '').trim(),
+                    contactPerson: (this.form.contactPerson || '').trim(),
+                    contactPersonPhone: (this.form.contactPersonPhone || '').trim(),
+                    contactPersonEmail: (this.form.contactPersonEmail || '').trim(),
+                    balance: Number(this.form.balance) || 0,
+                    creditLimit: Number(this.form.creditLimit) || 0,
+                    status: this.form.status || 'Active',
+                    statusName: this.form.status || 'Active',
+                    statusId: this.form.status === 'Active' ? '1' : this.form.status === 'Inactive' ? '2' : '3',
+                    isResident: Boolean(this.form.isResident)
+                };
+
+                // Resolve Group Name
+                if (payload.customerGroupId) {
+                    const group = this.customerGroupList.find(g => String(g.id) === String(payload.customerGroupId));
+                    if (group) {
+                        payload.customerGroupName = group.name;
+                    }
+                }
+
+                // Resolve Currency Name & Rates
+                if (payload.currencyId) {
+                    const curr = this.currencyList.find(c => String(c.id) === String(payload.currencyId));
+                    if (curr) {
+                        payload.currencyName = curr.currencyName || curr.name;
+                        payload.currencyCode = curr.currencyCode || curr.code;
+                        payload.buyingRate = curr.buyRate || curr.buyingRate || 1;
+                        payload.sellingRate = curr.sellRate || curr.sellingRate || 1;
+                    }
+                }
+
+                // Resolve Account Names
+                if (payload.creditAccountId) {
+                    const acc = this.accountList.find(a => String(a.id) === String(payload.creditAccountId));
+                    payload.creditAccountName = acc ? acc.accountIdentifier : '';
+                }
+                if (payload.vatAccountId) {
+                    const acc = this.accountList.find(a => String(a.id) === String(payload.vatAccountId));
+                    payload.vatAccountName = acc ? acc.accountIdentifier : '';
+                }
+                if (payload.irsAccountId) {
+                    const acc = this.accountList.find(a => String(a.id) === String(payload.irsAccountId));
+                    payload.irsAccountName = acc ? acc.accountIdentifier : '';
+                }
+
+                if (this.isEditing && this.form.id) {
+                    // Update existing customer
+                    payload.id = this.form.id;
+                    let resp = null;
+                    try {
+                        resp = await axios.post('/GeneralLedger/UpdateCustomer', payload);
+                    } catch (e) {
+                        resp = await axios.post('/SharedResource/UpdateCustomer', payload);
+                    }
+                    this.assertApiSuccess(resp, 'The customer update was rejected.');
+                    this.toast('success', 'Customer updated successfully.');
+                } else {
+                    // Create new customer
+                    delete payload.id;
+                    let resp = null;
+                    try {
+                        resp = await axios.post('/GeneralLedger/CreateCustomer', payload);
+                    } catch (e) {
+                        resp = await axios.post('/SharedResource/CreateCustomer', payload);
+                    }
+                    this.assertApiSuccess(resp, 'The customer creation was rejected.');
+
+                    // Increment system number if used
+                    if (this.currentSystemNumber) {
+                        try {
+                            const updatedSn = {
+                                ...this.currentSystemNumber,
+                                lastNo: (parseInt(this.currentSystemNumber.lastNo) || 0) + 1
+                            };
+                            await axios.post('/SharedResource/UpdateSystemNumber', updatedSn);
+                        } catch (snErr) {
+                            console.warn('System number update warning:', snErr);
+                        }
+                    }
+
+                    this.toast('success', 'Customer created successfully.');
+                }
+
+                // Redirect back to Customers directory after a brief delay
+                setTimeout(() => {
+                    window.location.href = '/GeneralLedger/Customers';
+                }, 1000);
+            } catch (err) {
+                console.error('Error saving customer:', err);
+                const errMsg = err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Unable to save customer.';
+                this.toast('error', errMsg);
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        async deleteCustomer(id, name) {
+            if (!id) return;
+
+            const res = await Swal.fire({
+                title: 'Delete Customer?',
+                html: `Are you sure you want to delete <strong>${name || 'this customer'}</strong>?<br><span class="text-xs text-slate-500">This action cannot be undone.</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes, delete',
+                cancelButtonText: 'Cancel'
+            });
+
+            if (!res.isConfirmed) return;
+
+            this.isLoading = true;
+            try {
+                let resp = null;
+                try {
+                    resp = await axios.delete(`/GeneralLedger/DeleteCustomer?id=${id}`);
+                } catch (e) {
+                    try {
+                        resp = await axios.post(`/GeneralLedger/DeleteCustomer?id=${id}`);
+                    } catch (e2) {
+                        resp = await axios.get(`/SharedResource/DelCustomer?id=${id}`);
+                    }
+                }
+                this.assertApiSuccess(resp, 'The customer deletion was rejected.');
+
+                this.toast('success', 'Customer deleted successfully.');
+                setTimeout(() => {
+                    window.location.href = '/GeneralLedger/Customers';
+                }, 1000);
             } catch (err) {
                 console.error('Error deleting customer:', err);
-                toastHandler('error', apiErrorMessage(err, 'Unable to delete customer.'));
+                this.toast('error', 'Unable to delete customer.');
             } finally {
-                isDeleting.value = false;
+                this.isLoading = false;
+            }
+        },
+
+        toast(type, message) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: type === 'error' ? 'error' : (type === 'warning' ? 'warning' : 'success'),
+                    title: message,
+                    showConfirmButton: false,
+                    timer: 3500,
+                    timerProgressBar: true
+                });
+            } else if (typeof toastr !== 'undefined') {
+                toastr[type] ? toastr[type](message) : toastr.info(message);
+            } else {
+                alert(message);
             }
         }
+    },
 
-        function handleBack() {
-            window.location.href = '/GeneralLedger/Customers';
-        }
+    async mounted() {
+        // Read customer ID from query parameter or app dataset
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryId = urlParams.get('id');
+        const container = document.getElementById('app');
+        const datasetId = container?.dataset?.customerId;
+        const targetId = queryId || datasetId;
 
-        onMounted(async () => {
-            targetId.value = new URLSearchParams(window.location.search).get('id')
-                || document.querySelector('[data-customer-id]')?.getAttribute('data-customer-id');
-
+        try {
             await Promise.allSettled([
-                getCustomerGroups(),
-                getCurrencies(),
-                getAccounts(),
-                getDefaultGL()
+                this.getCustomerGroups(),
+                this.getCurrencies(),
+                this.getAccounts(),
+                this.getDefaultGlSetup()
             ]);
 
-            if (targetId.value && targetId.value !== '00000000-0000-0000-0000-000000000000') {
-                isEditing.value = true;
-                await loadCustomerById(targetId.value);
+            if (targetId && targetId !== '00000000-0000-0000-0000-000000000000') {
+                await this.loadCustomerById(targetId);
             } else {
-                resetForm();
-                generateAccountNumber();
-                if (customerGroupList.value.length && !form.customerGroupId) {
-                    form.customerGroupId = customerGroupList.value[0].id;
-                    onCustomerGroupChange();
-                }
+                this.resetForm();
+                await this.generateAccountNumber();
             }
-        });
-
-        return {
-            isEditing,
-            customerSearch,
-            filteredCustomers,
-            customerSearchResults,
-            isFetching,
-            isSaving,
-            isDeleting,
-            customerGroupList,
-            statusList,
-            currencyList,
-            accountsList,
-            form,
-            submitted,
-            isFormInvalid,
-            showDeleteModal,
-            accountNumberInvalid,
-            nameInvalid,
-            currencyIdInvalid,
-            customerGroupIdInvalid,
-            emailInvalid,
-            onCurrencyChange,
-            onCustomerGroupChange,
-            onCreditAccountChange,
-            onVatAccountChange,
-            onIrsAccountChange,
-            loadCustomer,
-            loadCustomerFromSearch,
-            generateAccountNumber,
-            resetForm,
-            revertForm,
-            newCustomer,
-            saveCustomer,
-            confirmDelete,
-            deleteCustomer,
-            handleBack
-        };
+        } catch (err) {
+            console.error('Initialization error:', err);
+        }
     }
-}).mount('#app');
+});
+
+app.mount('#app');

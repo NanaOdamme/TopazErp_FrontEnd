@@ -1,342 +1,449 @@
 @{
-    ViewBag.Title = "Customers";
+    ViewBag.Title = "Manage Customer";
     Layout = "~/Views/Shared/_adminLedgerLayout.cshtml";
     var customerId = ViewBag.CustomerId as Guid?;
 }
 
-<div class="create-customer-page" data-customer-id="@(customerId?.ToString() ?? "")">
+<div class="content" id="app" data-customer-id="@(customerId?.ToString() ?? "")">
+    <!-- Page Header & Breadcrumbs -->
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>GL - Shared Config</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <a href="/GeneralLedger/Customers" class="hover:text-blue-600 transition">Customers</a>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">{{ isEditing ? 'Edit Customer' : 'New Customer' }}</span>
+        </div>
 
-    <!-- Page Header -->
-    <div class="mb-6">
-        <!-- Breadcrumb -->
-        <nav class="mb-3 flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-            <a asp-controller="Dashboard" asp-action="GeneralLedger" class="transition-colors hover:text-blue-500">GL - Shared Config</a>
-            <span class="text-gray-400">/</span>
-            <a asp-controller="GeneralLedger" asp-action="Customers" class="transition-colors hover:text-blue-500">Customers</a>
-            <span class="text-gray-400">/</span>
-            <span class="font-medium text-gray-800 dark:text-gray-200">{{ isEditing ? 'Edit Customer' : 'New Customer' }}</span>
-        </nav>
-
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <!-- Left side: Title -->
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-                    {{ isEditing ? 'Edit Customer' : 'New Customer' }}
-                </h1>
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="page-title">
+                <div class="flex items-center gap-3">
+                    <h2 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                        {{ isEditing ? 'Edit Customer' : 'Add New Customer' }}
+                    </h2>
+                </div>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    <span v-if="isEditing && form.name">Editing {{ form.name }}</span>
-                    <span v-else>Create and configure customer master data</span>
+                    {{ isEditing
+                        ? 'Modify customer account profile, receivables control mapping and credit limits.'
+                        : 'Register a new customer, configure financial controls and assign general ledger accounts.' }}
                 </p>
             </div>
 
-            <!-- Right side: Header Action Buttons -->
-            <div class="flex items-center gap-3">
-                <a href="/GeneralLedger/Customers" class="btn-outline">
-                    <i class="bi bi-arrow-left mr-2"></i> Back to Customers
+            <div class="flex items-center gap-2.5">
+                <a href="/GeneralLedger/Customers"
+                   class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition dark:border-slate-700 dark:bg-slate-800 dark:text-gray-200">
+                    <i class="bi bi-arrow-left"></i>
+                    <span>Back to Customers</span>
                 </a>
-                <button v-if="isEditing" type="button" class="btn-success" @@click="newCustomer">
-                    <i class="bi bi-plus-circle mr-2"></i> New Customer
+                <button v-if="isEditing"
+                        type="button"
+                        @@click="newCustomer"
+                        class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition">
+                    <i class="bi bi-plus-lg"></i>
+                    <span>New Customer</span>
                 </button>
             </div>
         </div>
     </div>
 
-    <div class="customer-grid">
-
-        <!-- Left Column: Form -->
-        <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-
-            <!-- Header row with account chip / fetching state -->
-            <div class="mb-4 flex items-center justify-between rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 dark:border-blue-900/50 dark:bg-blue-900/20">
-                <div class="flex items-center gap-3">
-                    <i class="bi bi-person-vcard text-lg text-blue-600 dark:text-blue-400"></i>
-                    <div>
-                        <p class="text-sm font-bold text-blue-900 dark:text-blue-200">
-                            {{ isEditing ? 'Edit Customer' : 'New Customer' }}
-                        </p>
-                        <p class="text-xs text-blue-600 dark:text-blue-400" v-if="isFetching">
-                            Fetching customer details…
-                        </p>
-                        <p class="text-xs text-blue-600 dark:text-blue-400" v-else-if="form.accountNumber && form.name">
-                            {{ form.accountNumber }} &mdash; {{ form.name }}
-                        </p>
-                        <p class="text-xs text-blue-600 dark:text-blue-400" v-else-if="form.accountNumber">
-                            {{ form.accountNumber }}
-                        </p>
-                    </div>
+    <!-- Main Customer Form Card -->
+    <div class="card" data-card-title="Customer Information">
+        <!-- Form Header Bar -->
+        <div class="border-b border-gray-100 px-6 py-4 dark:border-slate-800">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+                        {{ isEditing ? 'Update Customer Record' : 'Create New Customer' }}
+                    </h3>
+                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                        {{ isEditing
+                            ? 'Modify customer profile, receivables control accounts and credit terms.'
+                            : 'Fill in customer details, billing contacts and general ledger control mapping.' }}
+                    </p>
                 </div>
-                <span v-if="isFetching" class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-200 dark:bg-slate-900 dark:text-blue-300 dark:ring-blue-800">
-                    <span class="h-2 w-2 animate-ping rounded-full bg-blue-500"></span>
-                    Loading
-                </span>
+
+                <div class="flex items-center gap-3">
+                    <span v-if="isFetching"
+                          class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400">
+                        <i class="bi bi-arrow-repeat animate-spin"></i>
+                        <span>Loading customer…</span>
+                    </span>
+                    <span v-if="form.accountNumber" class="font-mono text-xs font-semibold px-2.5 py-1 rounded bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                        Acc: {{ form.accountNumber }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <form @@submit.prevent="saveCustomer" class="p-6">
+
+            <!-- SECTION 1: Basic Information -->
+            <div class="mb-6 flex items-center gap-3">
+                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-slate-800 dark:text-blue-400">
+                    <i class="bi bi-person-badge text-lg"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-gray-900 dark:text-white">Basic Information</h4>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Customer identity, account code and categorization</p>
+                </div>
             </div>
 
-            <form @@submit.prevent="saveCustomer" novalidate>
-                <!-- SECTION 1: Basic Information -->
-                <div class="mb-5 flex items-center gap-3 border-b border-gray-100 pb-4 dark:border-slate-800">
-                    <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-slate-800 dark:text-blue-400">
-                        <i class="bi bi-person-vcard-fill text-lg"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-gray-900 dark:text-white">Basic Information</h4>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Key identity, classification and contact details</p>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
-                    <div>
-                        <label for="accountNumber" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
-                            Account Number <span class="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-amber-700">System</span>
-                        </label>
-                        <div class="flex">
-                            <input type="text" id="accountNumber" v-model.trim="form.accountNumber" :readonly="isEditing"
-                                   class="input-control w-full rounded-l-lg border border-gray-300 bg-gray-50 py-2 px-3 font-mono text-sm dark:border-slate-700 dark:bg-slate-900"
-                                   :class="{ 'border-red-500': accountNumberInvalid, 'opacity-75': isEditing }"
-                                   placeholder="e.g. AR-0001" />
-                            <button type="button" v-if="!isEditing" @@click="generateAccountNumber"
-                                    class="rounded-r-lg border border-l-0 border-gray-300 bg-white px-3 text-gray-500 transition-colors hover:bg-gray-50 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
-                                    title="Generate account number">
-                                <i class="bi bi-arrow-repeat"></i>
-                            </button>
-                            <span v-else class="inline-flex items-center rounded-r-lg border border-l-0 border-gray-300 bg-gray-100 px-3 text-gray-400 dark:border-slate-700 dark:bg-slate-900" title="Locked while editing">
-                                <i class="bi bi-lock"></i>
-                            </span>
-                        </div>
-                        <span class="mt-1 block text-xs font-medium text-amber-600">Auto-generated &mdash; locked once assigned</span>
-                        <span v-if="accountNumberInvalid" class="mt-1 block text-xs font-medium text-red-500">Account number is required</span>
-                    </div>
-
-                    <div class="sm:col-span-2">
-                        <label for="customerName" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
-                            Customer Name <span class="text-red-500">*</span>
-                        </label>
-                        <input type="text" id="customerName" v-model.trim="form.name"
-                               class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800"
-                               :class="{ 'border-red-500': nameInvalid }"
-                               placeholder="e.g. Kwame Traders Ltd" />
-                        <span v-if="nameInvalid" class="mt-1 block text-xs font-medium text-red-500">Customer name is required</span>
-                    </div>
-
-                    <div>
-                        <label for="customerGroup" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
-                            Customer Group <span class="text-red-500">*</span>
-                        </label>
-                        <select id="customerGroup"
-                                v-model="form.customerGroupId"
-                                @@change="onCustomerGroupChange"
-                                class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800"
-                                :class="{ 'border-red-500': customerGroupIdInvalid }">
-                            <option value="">Select Customer Group</option>
-                            <option v-for="group in customerGroupList" :key="group.id" :value="group.id">{{ group.name }}</option>
-                        </select>
-                        <span v-if="customerGroupIdInvalid" class="mt-1 block text-xs font-medium text-red-500">Customer group is required</span>
-                    </div>
-
-                    <div>
-                        <label for="customerStatus" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">Status</label>
-                        <select id="customerStatus" v-model="form.status"
-                                class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800">
-                            <option v-for="status in statusList" :key="status" :value="status">{{ status }}</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label for="phoneNo" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">Phone</label>
-                        <input type="tel" id="phoneNo" v-model.trim="form.phoneNo"
-                               class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800"
-                               placeholder="e.g. 0244 123 456" />
-                    </div>
-
-                    <div>
-                        <label for="email" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">Email</label>
-                        <input type="email" id="email" v-model.trim="form.email"
-                               class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800"
-                               :class="{ 'border-red-500': emailInvalid }"
-                               placeholder="e.g. info@kwametraders.com" />
-                        <span v-if="emailInvalid" class="mt-1 block text-xs font-medium text-red-500">Please enter a valid email address</span>
-                    </div>
-
-                    <div class="sm:col-span-2">
-                        <label for="address" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">Address</label>
-                        <input type="text" id="address" v-model.trim="form.address"
-                               class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800"
-                               placeholder="e.g. 12 Independence Ave, Accra" />
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <!-- Account Number -->
+                <div>
+                    <label for="accountNumber" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        Account Number <span class="text-red-500">*</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <input id="accountNumber"
+                               readonly
+                               v-model.trim="form.accountNumber"
+                               type="text"
+                               required
+                               placeholder="e.g. AR-00101"
+                               class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 font-mono text-sm uppercase dark:border-slate-700 dark:bg-slate-800" />
+                        <button type="button"
+                                @@click="generateAccountNumber"
+                                :disabled="isEditing"
+                                title="Auto-generate from system numbers"
+                                class="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-3 text-blue-700 hover:bg-blue-100 disabled:opacity-40 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-800 dark:text-blue-400">
+                            <i class="bi bi-magic"></i>
+                        </button>
                     </div>
                 </div>
 
-                <!-- SECTION 2: Financial & Tax Details -->
-                <div class="mb-5 mt-10 flex items-center gap-3 border-t border-gray-100 pt-6 dark:border-slate-800">
-                    <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-50 text-purple-600 dark:bg-slate-800 dark:text-purple-400">
-                        <i class="bi bi-wallet2 text-lg"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-gray-900 dark:text-white">Financial &amp; Tax Details</h4>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Currency, credit terms and tax registration data</p>
-                    </div>
+                <!-- Customer Name -->
+                <div class="sm:col-span-2">
+                    <label for="customerName" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        Customer Name <span class="text-red-500">*</span>
+                    </label>
+                    <input id="customerName"
+                           v-model.trim="form.name"
+                           type="text"
+                           required
+                           placeholder="Full customer / company name"
+                           class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800" />
                 </div>
 
-                <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
-                    <div>
-                        <label for="currencyId" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
-                            Currency <span class="text-red-500">*</span>
-                        </label>
-                        <select id="currencyId" v-model="form.currencyId" @@change="onCurrencyChange"
-                                class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800"
-                                :class="{ 'border-red-500': currencyIdInvalid }">
-                            <option value="">Select Currency</option>
-                            <option v-for="currency in currencyList" :key="currency.id" :value="currency.id">{{ currency.name }}</option>
-                        </select>
-                        <span v-if="currencyIdInvalid" class="mt-1 block text-xs font-medium text-red-500">Currency is required</span>
-                    </div>
+                <!-- Customer Group -->
+                <div>
+                    <label for="customerGroup" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        Customer Group
+                    </label>
+                    <select id="customerGroup"
+                            v-model="form.customerGroupId"
+                            @@change="onCustomerGroupChange"
+                            class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800">
+                        <option value="">Select Group</option>
+                        <option v-for="group in customerGroupList" :key="group.id" :value="group.id">
+                            {{ group.name }}
+                        </option>
+                    </select>
+                </div>
 
-                    <div>
-                        <label for="balance" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">Current Balance</label>
-                        <input type="number" id="balance" v-model.number="form.balance" step="0.01" min="0" :disabled="isEditing"
-                               class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm disabled:cursor-not-allowed disabled:bg-gray-100 dark:border-slate-700 dark:bg-slate-800 dark:disabled:bg-slate-900"
-                               placeholder="0.00" />
-                        <span v-if="isEditing" class="mt-1 block text-xs text-gray-400">Managed automatically from postings</span>
-                    </div>
+                <!-- Status -->
+                <div>
+                    <label for="customerStatus" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        Account Status <span class="text-red-500">*</span>
+                    </label>
+                    <select id="customerStatus"
+                            v-model="form.status"
+                            required
+                            class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800">
+                        <option v-for="s in statusList" :key="s.id" :value="s.name">
+                            {{ s.name }}
+                        </option>
+                    </select>
+                </div>
 
-                    <div>
-                        <label for="creditLimit" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">Credit Limit</label>
-                        <input type="number" id="creditLimit" v-model.number="form.creditLimit" step="0.01" min="0"
-                               class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800"
-                               placeholder="0.00" />
-                    </div>
+                <!-- Contact Phone -->
+                <div>
+                    <label for="phoneNo" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        Contact Phone
+                    </label>
+                    <input id="phoneNo"
+                           v-model.trim="form.phoneNo"
+                           type="tel"
+                           placeholder="e.g. +233 24 000 0000"
+                           class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 font-mono text-sm dark:border-slate-700 dark:bg-slate-800" />
+                </div>
 
-                    <div>
-                        <label for="tinNumber" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">TIN</label>
-                        <input type="text" id="tinNumber" v-model.trim="form.tinNumber"
-                               class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800"
-                               placeholder="e.g. C0001234567" />
-                    </div>
+                <!-- Email Address -->
+                <div>
+                    <label for="email" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        Email Address
+                    </label>
+                    <input id="email"
+                           v-model.trim="form.email"
+                           type="email"
+                           placeholder="customer@domain.com"
+                           class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800" />
+                </div>
 
-                    <div>
-                        <label for="vatNumber" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">VAT Number</label>
-                        <input type="text" id="vatNumber" v-model.trim="form.vatNumber"
-                               class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800"
-                               placeholder="e.g. VAT-12345" />
-                    </div>
+                <!-- Address -->
+                <div>
+                    <label for="address" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        Physical / Postal Address
+                    </label>
+                    <input id="address"
+                           v-model.trim="form.address"
+                           type="text"
+                           placeholder="Street, City, Country"
+                           class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800" />
+                </div>
+            </div>
 
-                    <div>
-                        <label for="taxOffice" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">Tax Office</label>
-                        <input type="text" id="taxOffice" v-model.trim="form.taxOffice"
-                               class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800"
-                               placeholder="e.g. Accra Central" />
-                    </div>
+            <!-- SECTION 2: Financial & Tax Details -->
+            <div class="mb-5 mt-10 flex items-center gap-3 border-t border-gray-100 pt-6 dark:border-slate-800">
+                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-slate-800 dark:text-emerald-400">
+                    <i class="bi bi-currency-exchange text-lg"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-gray-900 dark:text-white">Financial & Tax Details</h4>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Default currency, balances, credit limits and tax registration numbers</p>
+                </div>
+            </div>
 
-                    <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 sm:col-span-3">
-                        <input type="checkbox" v-model="form.isResident"
-                               class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                        Resident customer (registered for local tax purposes)
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <!-- Default Currency -->
+                <div>
+                    <label for="currencyId" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        Default Currency <span class="text-red-500">*</span>
+                    </label>
+                    <select id="currencyId"
+                            v-model="form.currencyId"
+                            @@change="onCurrencyChange"
+                            required
+                            class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800">
+                        <option value="">Select Currency</option>
+                        <option v-for="c in currencyList" :key="c.id" :value="c.id">
+                            {{ c.currencyName }} ({{ c.currencyCode }})
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Current Balance -->
+                <div>
+                    <label for="balance" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        Current Balance
+                    </label>
+                    <input id="balance"
+                           v-model.number="form.balance"
+                           type="number"
+                           step="0.01"
+                           :disabled="isEditing"
+                           class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 font-mono text-sm dark:border-slate-700 dark:bg-slate-800"
+                           :class="isEditing ? 'bg-gray-100 cursor-not-allowed opacity-75 dark:bg-slate-800' : ''" />
+                    <span class="mt-1 block text-xs text-gray-400">
+                        {{ isEditing ? 'Calculated automatically from accounts receivable ledger.' : 'Initial opening balance.' }}
+                    </span>
+                </div>
+
+                <!-- Credit Limit -->
+                <div>
+                    <label for="creditLimit" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        Credit Limit
+                    </label>
+                    <input id="creditLimit"
+                           v-model.number="form.creditLimit"
+                           type="number"
+                           step="0.01"
+                           placeholder="0.00"
+                           class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 font-mono text-sm dark:border-slate-700 dark:bg-slate-800" />
+                </div>
+
+                <!-- TIN Number -->
+                <div>
+                    <label for="tinNumber" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        Customer TIN No
+                    </label>
+                    <input id="tinNumber"
+                           v-model.trim="form.tinNumber"
+                           type="text"
+                           placeholder="Taxpayer Identification No."
+                           class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 font-mono text-sm uppercase dark:border-slate-700 dark:bg-slate-800" />
+                </div>
+
+                <!-- VAT Number -->
+                <div>
+                    <label for="vatNumber" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        VAT Number
+                    </label>
+                    <input id="vatNumber"
+                           v-model.trim="form.vatNumber"
+                           type="text"
+                           placeholder="VAT Registration No."
+                           class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 font-mono text-sm uppercase dark:border-slate-700 dark:bg-slate-800" />
+                </div>
+
+                <!-- Tax Office -->
+                <div>
+                    <label for="taxOffice" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        Tax Office
+                    </label>
+                    <input id="taxOffice"
+                           v-model.trim="form.taxOffice"
+                           type="text"
+                           placeholder="e.g. Accra Central / Tema"
+                           class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800" />
+                </div>
+
+                <!-- Resident Customer Checkbox -->
+                <div class="sm:col-span-2 lg:col-span-4 flex items-center pt-2">
+                    <label class="flex items-center gap-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                        <input type="checkbox"
+                               v-model="form.isResident"
+                               class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800" />
+                        <span>Resident Customer (registered for local tax purposes)</span>
                     </label>
                 </div>
+            </div>
 
-                <!-- SECTION 3: General Ledger Mapping -->
-                <div class="mb-5 mt-10 flex items-center gap-3 border-t border-gray-100 pt-6 dark:border-slate-800">
-                    <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-slate-800 dark:text-indigo-400">
-                        <i class="bi bi-journal-bookmark-fill text-lg"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-gray-900 dark:text-white">General Ledger Mapping</h4>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Default control accounts for automated accounts receivable entries</p>
-                    </div>
+            <!-- SECTION 3: General Ledger Mapping -->
+            <div class="mb-5 mt-10 flex items-center gap-3 border-t border-gray-100 pt-6 dark:border-slate-800">
+                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-slate-800 dark:text-indigo-400">
+                    <i class="bi bi-journal-bookmark-fill text-lg"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-gray-900 dark:text-white">General Ledger Mapping</h4>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Default accounting control accounts for automated accounts receivable and sales entries</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <!-- Credit G/L (Accounts Receivable Control GL) -->
+                <div>
+                    <label for="creditAccountId" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        Receivables G/L (Accounts Receivable)
+                    </label>
+                    <select id="creditAccountId"
+                            v-model="form.creditAccountId"
+                            class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800">
+                        <option value="">Select Accounts Receivable Account</option>
+                        <option v-for="acc in accountList" :key="acc.id" :value="acc.id">
+                            {{ acc.accountIdentifier }}
+                        </option>
+                    </select>
+                    <span class="mt-1 block text-xs text-gray-400">Control account debited on sales invoices and credited on customer receipts</span>
                 </div>
 
-                <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
-                    <div>
-                        <label for="creditAccountId" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
-                            Credit G/L (Receivable Account)
-                        </label>
-                        <select id="creditAccountId" v-model="form.creditAccountId" @@change="onCreditAccountChange"
-                                class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800">
-                            <option value="">Select Accounts Receivable Account</option>
-                            <option v-for="acc in accountsList" :key="acc.id" :value="acc.id">{{ acc.accountIdentifier }}</option>
-                        </select>
-                        <span class="mt-1 block text-xs text-gray-400">Account credited / debited on customer invoices and receipts</span>
-                    </div>
-
-                    <div>
-                        <label for="vatAccountId" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
-                            VAT G/L Number (VAT Output)
-                        </label>
-                        <select id="vatAccountId" v-model="form.vatAccountId" @@change="onVatAccountChange"
-                                class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800">
-                            <option value="">Select VAT Account</option>
-                            <option v-for="acc in accountsList" :key="acc.id" :value="acc.id">{{ acc.accountIdentifier }}</option>
-                        </select>
-                        <span class="mt-1 block text-xs text-gray-400">Output VAT collected on sales to this customer</span>
-                    </div>
-
-                    <div>
-                        <label for="irsAccountId" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
-                            IRS / Withholding G/L Number
-                        </label>
-                        <select id="irsAccountId" v-model="form.irsAccountId" @@change="onIrsAccountChange"
-                                class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800">
-                            <option value="">Select Withholding Tax Account</option>
-                            <option v-for="acc in accountsList" :key="acc.id" :value="acc.id">{{ acc.accountIdentifier }}</option>
-                        </select>
-                        <span class="mt-1 block text-xs text-gray-400">Withholding tax deductions suffered on customer receipts</span>
-                    </div>
+                <!-- VAT G/L Number -->
+                <div>
+                    <label for="vatAccountId" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        VAT G/L Number (VAT Output)
+                    </label>
+                    <select id="vatAccountId"
+                            v-model="form.vatAccountId"
+                            class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800">
+                        <option value="">Select VAT Output Account</option>
+                        <option v-for="acc in accountList" :key="acc.id" :value="acc.id">
+                            {{ acc.accountIdentifier }}
+                        </option>
+                    </select>
+                    <span class="mt-1 block text-xs text-gray-400">Output VAT collected on sales to this customer</span>
                 </div>
 
-                <!-- SECTION 4: Contact Person -->
-                <div class="mb-5 mt-10 flex items-center gap-3 border-t border-gray-100 pt-6 dark:border-slate-800">
-                    <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-teal-600 dark:bg-slate-800 dark:text-teal-400">
-                        <i class="bi bi-person-lines-fill text-lg"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-gray-900 dark:text-white">Primary Contact Person</h4>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Main point of contact for this customer</p>
-                    </div>
+                <!-- IRS G/L Number -->
+                <div>
+                    <label for="irsAccountId" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        IRS / Withholding G/L Number
+                    </label>
+                    <select id="irsAccountId"
+                            v-model="form.irsAccountId"
+                            class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800">
+                        <option value="">Select Withholding Tax Account</option>
+                        <option v-for="acc in accountList" :key="acc.id" :value="acc.id">
+                            {{ acc.accountIdentifier }}
+                        </option>
+                    </select>
+                    <span class="mt-1 block text-xs text-gray-400">Withholding tax deductions suffered on customer receipts</span>
+                </div>
+            </div>
+
+            <!-- SECTION 4: Contact Person -->
+            <div class="mb-5 mt-10 flex items-center gap-3 border-t border-gray-100 pt-6 dark:border-slate-800">
+                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-teal-600 dark:bg-slate-800 dark:text-teal-400">
+                    <i class="bi bi-person-lines-fill text-lg"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-gray-900 dark:text-white">Primary Contact Person</h4>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Direct account manager or liaison for this customer</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
+                <div>
+                    <label for="contactPerson" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        Contact Person Name
+                    </label>
+                    <input id="contactPerson"
+                           v-model.trim="form.contactPerson"
+                           type="text"
+                           placeholder="Full name of contact person"
+                           class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800" />
                 </div>
 
-                <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
-                    <div>
-                        <label for="contactPerson" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">Contact Person</label>
-                        <input type="text" id="contactPerson" v-model.trim="form.contactPerson"
-                               class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800"
-                               placeholder="e.g. Ama Owusu" />
-                    </div>
-                    <div>
-                        <label for="contactPersonPhone" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">Contact Phone</label>
-                        <input type="tel" id="contactPersonPhone" v-model.trim="form.contactPersonPhone"
-                               class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800"
-                               placeholder="e.g. 0244 123 456" />
-                    </div>
-                    <div>
-                        <label for="contactPersonEmail" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">Contact Email</label>
-                        <input type="email" id="contactPersonEmail" v-model.trim="form.contactPersonEmail"
-                               class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800"
-                               placeholder="e.g. ama@kwametraders.com" />
-                    </div>
+                <div>
+                    <label for="contactPersonPhone" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        Contact Person Phone
+                    </label>
+                    <input id="contactPersonPhone"
+                           v-model.trim="form.contactPersonPhone"
+                           type="tel"
+                           placeholder="Direct telephone / mobile"
+                           class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 font-mono text-sm dark:border-slate-700 dark:bg-slate-800" />
                 </div>
 
-                <!-- Action Buttons -->
-                <div class="mt-8 flex flex-col gap-3 border-t border-gray-100 pt-6 dark:border-slate-800 sm:flex-row sm:justify-end">
-                    <button type="button" class="btn-outline" @@click="handleBack">
-                        Cancel
+                <div>
+                    <label for="contactPersonEmail" class="label mb-1.5 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        Contact Person Email
+                    </label>
+                    <input id="contactPersonEmail"
+                           v-model.trim="form.contactPersonEmail"
+                           type="email"
+                           placeholder="direct.email@domain.com"
+                           class="input-control w-full rounded-lg border border-gray-300 py-2 px-3 text-sm dark:border-slate-700 dark:bg-slate-800" />
+                </div>
+            </div>
+
+            <!-- Form Action Buttons -->
+            <div class="mt-10 flex flex-col-reverse gap-3 border-t border-gray-100 pt-6 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
+                <div class="flex items-center gap-2">
+                    <a href="/GeneralLedger/Customers"
+                       class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-200">
+                        <i class="bi bi-x-circle"></i>
+                        Cancel / Back
+                    </a>
+
+                    <button type="button"
+                            @@click="resetForm"
+                            :disabled="isLoading || isFetching"
+                            class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                        {{ isEditing ? 'Revert Changes' : 'Clear Form' }}
                     </button>
-                    <button type="button" class="btn-outline" @@click="revertForm" :disabled="isSaving">
-                        <i class="bi bi-arrow-counterclockwise mr-2"></i> {{ isEditing ? 'Revert' : 'Clear' }}
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button v-if="isEditing"
+                            type="button"
+                            @@click="deleteCustomer(form.id, form.name)"
+                            :disabled="isLoading || isFetching"
+                            class="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-5 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-900/40 dark:bg-slate-800 dark:text-red-400">
+                        <i class="bi bi-trash"></i>
+                        Delete Customer
                     </button>
-                    <button v-if="isEditing" type="button" class="btn-danger" @@click="confirmDelete" :disabled="isDeleting || isSaving">
-                        <i class="bi bi-trash mr-2"></i> {{ isDeleting ? 'Deleting...' : 'Delete' }}
-                    </button>
-                    <button type="submit" class="btn-primary" :disabled="isFormInvalid || isSaving">
-                        <span v-if="isSaving" class="inline-flex items-center gap-2">
-                            <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-                            {{ isEditing ? 'Updating...' : 'Creating...' }}
-                        </span>
-                        <span v-else>
-                            <i :class="isEditing ? 'bi bi-check-lg' : 'bi bi-plus-circle'" class="mr-2"></i>
-                            {{ isEditing ? 'Update Customer' : 'Create Customer' }}
-                        </span>
+
+                    <button type="submit"
+                            :disabled="isLoading || isFetching"
+                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition disabled:cursor-not-allowed disabled:opacity-60">
+                        <i v-if="isLoading || isFetching" class="bi bi-arrow-repeat animate-spin"></i>
+                        <i v-else :class="isEditing ? 'bi bi-check2-circle' : 'bi bi-person-check-fill'"></i>
+                        {{ isLoading ? 'Saving...' : (isFetching ? 'Loading...' : (isEditing ? 'Update Customer' : 'Save Customer')) }}
                     </button>
                 </div>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 </div>
 

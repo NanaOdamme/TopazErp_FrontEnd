@@ -4,152 +4,100 @@
 }
 
 <div class="content" id="app">
+    <!-- Page Header & Breadcrumbs -->
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>GL - Shared Config</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Customers</span>
+        </div>
 
-    <!-- Page Header -->
-    <div class="mb-6">
-        <!-- Breadcrumb -->
-        <nav class="mb-3 flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-            <a asp-controller="Dashboard" asp-action="GeneralLedger" class="transition-colors hover:text-blue-500">GL - Shared Config</a>
-            <span class="text-gray-400">/</span>
-            <span class="font-medium text-gray-800 dark:text-gray-200">Customers</span>
-        </nav>
-
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <!-- Left side: Title -->
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Customers</h1>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage customer accounts, credit terms and receivables</p>
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="page-title">
+                <h2 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                    Customers
+                </h2>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Manage customer accounts, receivables ledger mapping, financial terms and contact details.
+                </p>
             </div>
 
-            <!-- Right side: Add Customer Button -->
-            <div class="flex items-center gap-3">
-                <a href="/GeneralLedger/CreateCustomer" class="btn-primary">
-                    <i class="bi bi-plus-circle mr-2"></i> Add Customer
+            <div class="flex items-center gap-2.5">
+                <a href="/GeneralLedger/CreateCustomer"
+                   class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition">
+                    <i class="bi bi-plus-lg"></i>
+                    <span>Add Customer</span>
                 </a>
             </div>
         </div>
     </div>
 
-    <!-- Dashboard KPIs -->
+    <!-- KPI Metric Summary Cards -->
     <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <!-- Total Customers -->
-        <div class="kpi-card rounded-xl bg-white p-5 shadow-sm dark:bg-slate-800">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Customers</p>
-                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ totalCustomers }}</h3>
-                </div>
-                <div class="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/30">
-                    <i class="bi bi-people text-xl text-blue-600 dark:text-blue-400"></i>
-                </div>
+        <div class="card flex items-center gap-4 p-5">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                <i class="bi bi-people text-2xl"></i>
+            </div>
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Total Customers</p>
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ totalCustomers }}</h3>
             </div>
         </div>
 
-        <!-- Active Customers -->
-        <div class="kpi-card rounded-xl bg-white p-5 shadow-sm dark:bg-slate-800">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Active Customers</p>
-                    <h3 class="text-2xl font-bold text-green-600">{{ activeCustomersCount }}</h3>
-                </div>
-                <div class="flex h-12 w-12 items-center justify-center rounded-full bg-green-50 dark:bg-green-900/30">
-                    <i class="bi bi-person-check text-xl text-green-600 dark:text-green-400"></i>
-                </div>
+        <div class="card flex items-center gap-4 p-5">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+                <i class="bi bi-check-circle-fill text-2xl"></i>
+            </div>
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Active Accounts</p>
+                <h3 class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{{ activeCustomersCount }}</h3>
             </div>
         </div>
 
-        <!-- Receivable Balance -->
-        <div class="kpi-card rounded-xl bg-white p-5 shadow-sm dark:bg-slate-800">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Receivable Balance</p>
-                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white">GH&#8373; {{ Number(totalReceivableBalance || 0).toLocaleString() }}</h3>
-                </div>
-                <div class="flex h-12 w-12 items-center justify-center rounded-full bg-purple-50 dark:bg-purple-900/30">
-                    <i class="bi bi-cash-coin text-xl text-purple-600 dark:text-purple-400"></i>
-                </div>
+        <div class="card flex items-center gap-4 p-5">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+                <i class="bi bi-cash-stack text-2xl"></i>
+            </div>
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Receivable Balance</p>
+                <h3 class="text-xl font-bold font-mono text-gray-900 dark:text-white">{{ totalReceivableBalance }}</h3>
             </div>
         </div>
 
-        <!-- Customer Groups -->
-        <div class="kpi-card rounded-xl bg-white p-5 shadow-sm dark:bg-slate-800">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Customer Groups</p>
-                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ customerGroupsCount }}</h3>
-                </div>
-                <div class="flex h-12 w-12 items-center justify-center rounded-full bg-orange-50 dark:bg-orange-900/30">
-                    <i class="bi bi-diagram-3 text-xl text-orange-600 dark:text-orange-400"></i>
-                </div>
+        <div class="card flex items-center gap-4 p-5">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
+                <i class="bi bi-diagram-3-fill text-2xl"></i>
+            </div>
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Customer Groups</p>
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ customerGroupsCount }}</h3>
             </div>
         </div>
     </div>
 
-    <!-- Data Grid -->
-    <data-grid :columns="customerColumns"
-               :data="paginatedCustomers"
-               :total-pages="totalPages"
-               :total-count="totalCount"
-               :page-size="pageSize"
-               :current-page="currentPage"
-               :status-color-fn="getStatusClasses"
-               :initials-fn="getInitials"
-               :row-id="'id'"
-               :label-key="'name'"
-               :item-label="'customer'"
-               :page-size-options="[10, 25, 50, 100]"
-               :allow-edit="true"
-               :allow-add="false"
-               :allow-search="true"
-               :allow-select="false"
-               :allow-delete="true"
-               :allow-sort="true"
-               :enable-pagination="true"
-               :enable-filter="true"
-               :enable-export="true"
-               :enable-stats="true"
-               row-id="id"
-               label-key="name"
-               item-label="customer"
-               page-size-options="[10, 25, 50, 100]"
-               :actions="['view', 'edit', 'delete']"
-               :loading="isShimmerLoading"
-               show-search
-               show-export
-               allow-edit
-               allow-delete
-               allow-sort
-               show-pagination
-               show-stats
-               allow-export
-               @@open-form="onGridOpenForm"
-               @@delete="onGridDelete">
-        <template #status="{ row }">
-            <span :class="`badge ${getStatusClasses(row.status)}`">{{ row.status || '—' }}</span>
-        </template>
-        <template #accountNumber="{ row }">
-            <a :href="`/GeneralLedger/CreateCustomer?id=${row.id}`" class="font-semibold text-blue-600 underline-offset-2 hover:underline dark:text-blue-400">
-                {{ row.accountNumber }}
-            </a>
-        </template>
-        <template #name="{ row }">
-            <div class="flex items-center gap-3">
-                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                    {{ getInitials(row.name) }}
-                </div>
-                <div>
-                    <p class="font-medium text-gray-900 dark:text-white">{{ row.name }}</p>
-                    <p class="text-xs text-gray-500">{{ row.email || '—' }}</p>
-                </div>
-            </div>
-        </template>
-        <template #customerGroupName="{ row }">
-            <span class="badge bg-blue-100 text-blue-800">{{ row.customerGroupName || '—' }}</span>
-        </template>
-        <template #balance="{ row }">
-            <span class="font-semibold text-gray-900 dark:text-white">GH&#8373; {{ Number(row.balance || 0).toLocaleString() }}</span>
-        </template>
-    </data-grid>
+    <!-- Customer Directory DataGrid -->
+    <div class="card" data-card-title="Customer Directory">
+        <data-grid
+            title="Customer Directory"
+            :columns="customerColumns"
+            :data="customerList"
+            :theme="theme"
+            row-id="id"
+            label-key="name"
+            item-label="customer"
+            item-label-plural="customers"
+            :allow-add="false"
+            :allow-edit="true"
+            :page-size="10"
+            :selectable="true"
+            :actions="true"
+            :aggregates="false"
+            :show-row-numbers="false"
+            :loading="isShimmerLoading"
+            @@open-form="onGridOpenForm"
+            @@delete="onGridDelete">
+        </data-grid>
+    </div>
 </div>
 
 <script src="~/js/gl/customers.js" asp-append-version="true"></script>
