@@ -40,19 +40,14 @@ const app = Vue.createApp({
         /* ── Fetch ──────────────────────────────────────────────── */
 
         async getSupplierGroups() {
+            
             this.isShimmerLoading = true;
+            
             try {
                 const response = await axios.get('/SharedResource/GetSupplierGroups?pageNo=1&pageSize=1000');
-                const res = response.data;
 
-                // Handle both paginated { result: { data: [] } } and flat { result: [] } shapes
-                const rawList =
-                    res?.result?.data ||
-                    res?.result ||
-                    res?.data ||
-                    (Array.isArray(res) ? res : []);
-
-                this.supplierGroupList = rawList;
+                this.supplierGroupList = response.data.result || [];
+                
             } catch (error) {
                 console.error('Failed to load supplier groups:', error);
                 this.toastHandler('error', 'Unable to load supplier groups.');

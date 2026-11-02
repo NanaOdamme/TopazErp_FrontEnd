@@ -22,13 +22,13 @@ public class CostCenterResponse: BaseApiResponseModel
 public class CustomerGroupResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public PagedRecords<CustomerGroup> Result { get; set; }
+    public List<CustomerGroup> Result { get; set; }
 }
 
 public class CustomerResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public PagedRecords<Customer> Result { get; set; }
+    public List<Customer> Result { get; set; }
 }
 
 public class CustomersResponse: BaseApiResponseModel
@@ -37,16 +37,28 @@ public class CustomersResponse: BaseApiResponseModel
     public List<Customer> Result { get; set; }
 }
 
+public class CustomerDetailResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public Customer? Result { get; set; }
+}
+
 public class SupplierResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public PagedRecords<Supplier> Result { get; set; }
+    public List<Supplier> Result { get; set; }
 }
 
 public class SuppliersResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]
     public List<Supplier> Result { get; set; }
+}
+
+public class SupplierDetailResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public Supplier? Result { get; set; }
 }
 
 public class SupplierGroupResponse: BaseApiResponseModel
@@ -80,9 +92,17 @@ public class CurrencyResponse: BaseApiResponseModel
 public class JournalTransactionResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]    
-    public PagedRecords<JournalTransaction> Result { get; set; }
+    public JournalTransactionPagedResult Result { get; set; }
     
 }
+
+public class VoucherResponse: BaseApiResponseModel
+{
+    [JsonProperty("result")]  
+    public List<Voucher> Result { get; set; }
+    
+}
+
 public class AuditLogResponse : BaseApiResponseModel
 {
     [JsonProperty("result")]
@@ -94,10 +114,44 @@ public class BudgetResponse : BaseApiResponseModel
     public PagedRecords<Budget> Result { get; set; }
 }
 
+
+public class PettyCashRecipientResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<PettyCashRecipient> Result { get; set; }
+}
+
+public class PettyCashResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<PettyCash> Result { get; set; }
+}
+
+
+public class ImprestCategoryResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ImprestCategory> Result { get; set; }
+}
+
+public class ImprestResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<Imprest> Result { get; set; }
+}
+
+public class DefaultGLNumbersResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public DefaultGLNumbers Result { get; set; }
+}
+
+
+
 public class EmployeeBioDataResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public PagedRecords<EmployeeBioData> Result { get; set; }
+    public List<EmployeeBioData> Result { get; set; }
 }
 
 public class EmployeeSsnitDataResponse: BaseApiResponseModel
@@ -106,11 +160,24 @@ public class EmployeeSsnitDataResponse: BaseApiResponseModel
     public PagedRecords<EmployeeSnit> Result { get; set; }
 }
 
+public class EmployeeSsnitDetailsResponse: BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public EmployeeSnit Result { get; set; }
+}
+
 public class EmployeeSalaryInfoResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]
     public PagedRecords<EmployeeSalaryInfo> Result { get; set; }
 }
+
+public class EmployeeSalaryDataResponse: BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public EmployeeSalaryInfo Result { get; set; }
+}
+
 public class SubscriptionInfoResponse : BaseApiResponseModel
 {
     [JsonProperty("result")]
@@ -231,7 +298,7 @@ public class CompanyProfileResponse : BaseApiResponseModel
 public class BankAccountResponse : BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public PagedRecords<BankAccount> Result { get; set; }
+    public List<BankAccount> Result { get; set; }
 }
 
 public class CoaControlResponse : BaseApiResponseModel

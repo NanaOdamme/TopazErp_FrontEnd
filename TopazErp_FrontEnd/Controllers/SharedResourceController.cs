@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using TopazErp_FrontEnd.Models;
 using TopazErp_FrontEnd.Services;
 
 namespace TopazErp_FrontEnd.Controllers;
@@ -185,10 +186,9 @@ public class SharedResourceController: Controller
         {
             await _topazErpApi.DeleteBank(id);
             return Json(200);
-
         }
 
-        public async Task<ActionResult> CreateBankBranch([FromBody] object input)
+        public async Task<ActionResult> CreateBankBranch([FromBody] BranchInput input)
         {
             var result = await _topazErpApi.CreateBranch(input);
             return Json(result);
@@ -264,6 +264,13 @@ public class SharedResourceController: Controller
         public async Task<ActionResult> GetCustomers(string query, int pageNo = 1, int pageSize = 500)
         {
             var result = await _topazErpApi.GetCustomers(pageNo, pageSize, query);
+            return Json(result);
+        }
+
+        // employees (payroll lookup used by GL employee payment vouchers)
+        public async Task<ActionResult> GetEmployees(string query, int pageNo = 1, int pageSize = 500)
+        {
+            var result = await _topazErpApi.GetEmployeeBioData(pageNo, pageSize, query);
             return Json(result);
         }
 

@@ -80,11 +80,21 @@ public class CompanyProfile: AuditedEntity<Guid>
 public class BankBranch
 {
     public Guid Id { get; set; }
+    public Guid BankId { get; set; }
     public string Name { get; set; }
     public string ContactPerson { get; set; }
     public string ContactNo { get; set; }
     public string Email { get; set; }
-    
+}
+
+public class BranchInput
+{
+    public Guid BankId { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Name { get; set; }
+    public string ContactPerson { get; set; }
+    public string ContactNo { get; set; }
+    public string Email { get; set; }
 }
 
 public class SubscriptionInfo
@@ -145,13 +155,72 @@ public class SupplierGroup: AuditedEntity<Guid>
 
 public class Customer: AuditedEntity<Guid>
 {
+    public string AccountNumber { get; set; } = string.Empty;
+    public Guid CustomerGroupId { get; set; }
+    public string CustomerGroupName { get; set; } = string.Empty;
     public string Name { get; set; }
+    public string StatusId { get; set; } = string.Empty;
+    public string StatusName { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+    public string TinNumber { get; set; } = string.Empty;
+    public string VatNumber { get; set; } = string.Empty;
+    public string PhoneNo { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string TaxOffice { get; set; } = string.Empty;
+    public Guid CurrencyId { get; set; }
+    public string CurrencyName { get; set; } = string.Empty;
+    public string CurrencyCode { get; set; } = string.Empty;
+    public decimal buyingRate { get; set; }
+    public decimal sellingRate { get; set; }
+    public decimal Balance { get; set; }
+    public decimal CreditLimit { get; set; }
+    public Guid CreditAccountId { get; set; }
+    public string CreditAccountName { get; set; } = string.Empty;
+    public Guid VatAccountId { get; set; }
+    public string VatAccountName { get; set; } = string.Empty;
+    public Guid IrsAccountId { get; set; }
+    public string IrsAccountName { get; set; } = string.Empty;
+    public bool IsResident { get; set; }
+    public string ContactPerson { get; set; } = string.Empty;
+    public string ContactPersonPhone { get; set; } = string.Empty;
+    public string ContactPersonEmail { get; set; } = string.Empty;
 }
 
 
 public class Supplier: AuditedEntity<Guid>
 {
+    public string AccountNumber { get; set; }
+    public Guid SupplierGroupId { get; set; }
+    public string SupplierGroupName { get; set; }
+    public string StatusId { get; set; }
+    public string StatusName { get; set; }
+    public decimal Balance { get; set; }
+    public Guid VatAccountId { get; set; }
+    public string VatAccountName { get; set; }
+    public Guid CreditAccountId { get; set; } 
+    public string CreditAccountName { get; set; }
+    public Guid DebitAccountId { get; set; }
+    public string DebitAccountName { get; set; }
+    public string TinNumber { get; set; }
     public string Name { get; set; }
+    public string Email { get; set; }
+    public string PhoneNo { get; set; }
+    public string Address { get; set; }
+    public string ContactPerson { get; set; }
+    public string ContactPersonPhone { get; set; }
+    public string ContactPersonEmail { get; set; }
+    public string VatNumber { get; set; }
+
+    public Guid CurrencyId { get; set; }
+    public string CurrencyName { get; set; }
+    public string CurrencyCode { get; set; }
+    public decimal buyingRate { get; set; }
+    public decimal sellingRate { get; set; }
+    public decimal CreditLimit { get; set; }
+    public Guid IrsAccountId { get; set; }
+    public string IrsAccountName { get; set; }
+    public bool IsResident { get; set; }
+    public string TaxOffice { get; set; }
 }
 
 public class Department: AuditedEntity<Guid>
