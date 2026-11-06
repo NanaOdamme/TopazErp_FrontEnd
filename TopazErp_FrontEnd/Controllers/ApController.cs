@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-
+﻿using System.Text;
+using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using TopazErp_FrontEnd.Services;
+using TopazErp_FrontEnd.Models;
 
 namespace TopazErp_FrontEnd.Controllers
 {
@@ -7,11 +10,12 @@ namespace TopazErp_FrontEnd.Controllers
     public class ApController : Controller
     {
         private readonly IWebHostEnvironment _env;
-      
+        private readonly ITopazErpApi _topazErpApi;
 
-        public ApController(IWebHostEnvironment env)
+        public ApController(IWebHostEnvironment env, ITopazErpApi topazErpApi)
         {
             _env = env;
+            _topazErpApi = topazErpApi;
         }
 
         //shared
@@ -163,6 +167,10 @@ namespace TopazErp_FrontEnd.Controllers
             {
                 return View();
             }
+            public ActionResult CanceledPayments()
+            {
+                return View();
+            }
             public ActionResult SupplierReports()
             {
                 return View();
@@ -174,6 +182,10 @@ namespace TopazErp_FrontEnd.Controllers
             }
 
             public ActionResult InvoiceReports()
+            {
+                return View();
+            }
+            public ActionResult InvoicePdfReports()
             {
                 return View();
             }
@@ -236,9 +248,645 @@ namespace TopazErp_FrontEnd.Controllers
 
             }
           
+            //API
+            //default gl setup
+            public async Task<ActionResult> GetDefaultGlSetup()
+            {
+                var result = await _topazErpApi.GetDefaultGlNumbersSetup();
+                return Json(result);
+            }
+            public async Task<ActionResult> InitJournalEntry()
+            {
+                var accounts = await _topazErpApi.GetAccountDetails(1, 5000, null, true);
+                return Json(accounts);
+            }
+            public async Task<ActionResult> GetOpeningBalances(string query, int pageNo = 1, int pageSize = 1000)
+            {
+                var result = await _topazErpApi.GetApOpeningBalances(pageNo, pageSize, query);
+                return Json(result);
+            }
+
+        
+            public async Task<IActionResult> CreateOpeningBalance([FromBody] object input)
+            {
+                var response = await _topazErpApi.CreateApOpeningBalance(input);
+
+                return Content(
+                    JsonConvert.SerializeObject(response),
+                    "application/json");
+            }
+            
+            public async Task<IActionResult> UpdateOpeningBalance([FromBody] object input)
+            {
+                var result = await _topazErpApi.UpdateApOpeningBalance(input);
+                return Json(result);
+            }
+        
+            public async Task<ActionResult> DeleteOpeningBalance([FromQuery] Guid id)
+            {
+                await _topazErpApi.DeleteApOpeningBalance(id);
+                return Json(200);
+            }
+            
+            public async Task<IActionResult> PostOpeningBalances([FromBody] List<Guid> balanceIds)
+            {
+                if (balanceIds == null || balanceIds.Count == 0)
+                {
+                    return Json(new { success = false, message = "No opening balances were received." });
+                }
+
+                var result = await _topazErpApi.PostApOpeningBalances(balanceIds);
+                return Json(result);
+            }
+            //Invoices
+            public async Task<ActionResult> GetInvoices(string query, int pageNo = 1, int pageSize = 1000)
+            {
+                var result = await _topazErpApi.GetApInvoices(pageNo, pageSize, query);
+                return Json(result);
+            }
+            public async Task<IActionResult> CreateInvoice([FromBody] object input)
+            {
+                var response = await _topazErpApi.CreateApInvoice(input);
+
+                return Content(
+                    JsonConvert.SerializeObject(response),
+                    "application/json");
+            } 
+            public async Task<IActionResult> UpdateInvoice([FromBody] object input)
+            {
+                var result = await _topazErpApi.UpdateApInvoice(input);
+                return Json(result);
+            }
+            public async Task<IActionResult> PostInvoices([FromBody] List<Guid> invoiceIds)
+            {
+                if (invoiceIds == null || invoiceIds.Count == 0)
+                {
+                    return Json(new { success = false, message = "No invoices were received." });
+                }
+
+                var result = await _topazErpApi.PostApInvoices(invoiceIds);
+                return Json(result);
+            }
+
+            public async Task<IActionResult> CancelInvoices([FromBody] List<Guid> invoiceIds)
+            {
+                if (invoiceIds == null || invoiceIds.Count == 0)
+                {
+                    return Json(new { success = false, message = "No invoices were received." });
+                }
+
+                var result = await _topazErpApi.CancelApInvoices(invoiceIds);
+                return Json(result);
+            }
+            public async Task<IActionResult> ApproveInvoices([FromBody] List<Guid> invoiceIds)
+            {
+                if (invoiceIds == null || invoiceIds.Count == 0)
+                {
+                    return Json(new { success = false, message = "No invoices were received." });
+                }
+
+                var result = await _topazErpApi.ApproveApInvoices(invoiceIds);
+                return Json(result);
+            }
+            //Payments
+            public async Task<ActionResult> GetPayments([FromQuery] string query, [FromQuery] int pageNo = 1, [FromQuery] int pageSize = 1000)
+            {
+                var result = await _topazErpApi.GetApPayments(pageNo, pageSize, query);
+                return Json(result);
+            }
        
+            public async Task<IActionResult> CreatePayment([FromBody] object input)
+            {
+                var result = await _topazErpApi.CreateApPayment(input);
+
+                return Content(
+                    JsonConvert.SerializeObject(result),
+                    "application/json");
+            }
+
+            
+            public async Task<IActionResult> UpdatePayment([FromBody] object input)
+            {
+                var result = await _topazErpApi.UpdateApPayment(input);
+
+                return Content(
+                    JsonConvert.SerializeObject(result),
+                    "application/json");
+            }
+
+          
+            public async Task<IActionResult> DeletePayment([FromQuery] Guid id)
+            {
+                var result = await _topazErpApi.DeleteApPayment(id);
+
+                return Content(
+                    JsonConvert.SerializeObject(result),
+                    "application/json");
+            }
+            
+            public async Task<IActionResult> PostPayments([FromBody] List<Guid> paymentIds)
+            {
+                if (paymentIds == null || paymentIds.Count == 0)
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "No payments were received."
+                    });
+                }
+
+                var result = await _topazErpApi.PostApPayments(paymentIds);
+
+                return Content(
+                    JsonConvert.SerializeObject(result),
+                    "application/json");
+            }
+
+        
+            public async Task<IActionResult> CancelPayments([FromBody] List<Guid> paymentIds)
+            {
+                if (paymentIds == null || paymentIds.Count == 0)
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "No payments were received."
+                    });
+                }
+
+                var result = await _topazErpApi.CancelApPayments(paymentIds);
+
+                return Content(
+                    JsonConvert.SerializeObject(result),
+                    "application/json");
+            }
+            //debitmemo
+            public async Task<ActionResult> GetDebitMemos([FromQuery] string query, [FromQuery] int pageNo = 1, [FromQuery] int pageSize = 1000)
+            {
+                var result = await _topazErpApi.GetDebitMemos(pageNo, pageSize, query);
+                return Json(result);
+            }
+            
+            public async Task<IActionResult> CreateDebitMemo([FromBody] object input)
+            {
+                var result = await _topazErpApi.CreateDebitMemo(input);
+
+                return Content(
+                    JsonConvert.SerializeObject(result),
+                    "application/json");
+            }
+            
+            public async Task<IActionResult> UpdateDebitMemo([FromBody] object input)
+            {
+                var result = await _topazErpApi.UpdateDebitMemo(input);
+
+                return Content(
+                    JsonConvert.SerializeObject(result),
+                    "application/json");
+            }
+
+            [HttpDelete]
+            public async Task<IActionResult> DeleteDebitMemo([FromQuery] Guid id)
+            {
+                var result = await _topazErpApi.DeleteDebitMemo(id);
+
+                return Content(
+                    JsonConvert.SerializeObject(result),
+                    "application/json");
+            }
+        
+            public async Task<IActionResult> ApplyDebitMemo([FromBody] object input)
+            {
+                var result = await _topazErpApi.ApplyDebitMemo(input);
+
+                return Content(
+                    JsonConvert.SerializeObject(result),
+                    "application/json");
+            }
+            //vouchers
+            public async Task<ActionResult> GetVouchers([FromQuery] int pageNo = 1, [FromQuery] int pageSize = 1000, [FromQuery] string query = "")
+            {
+                var result = await _topazErpApi.GetApVouchers(pageNo, pageSize, query);
+                return Json(result);
+            }
+            
+            public async Task<IActionResult> CreateVoucher([FromBody] object input)
+            {
+                var result = await _topazErpApi.CreateApVoucher(input);
+
+                return Content(
+                    JsonConvert.SerializeObject(result),
+                    "application/json");
+            }
+            
+            public async Task<IActionResult> UpdateVoucher([FromBody] object input)
+            {
+                var result = await _topazErpApi.UpdateApVoucher(input);
+
+                return Content(
+                    JsonConvert.SerializeObject(result),
+                    "application/json");
+            }
+            
+            public async Task<IActionResult> DeleteVoucher([FromQuery] Guid id)
+            {
+                var result = await _topazErpApi.DeleteApVoucher(id);
+
+                return Content(
+                    JsonConvert.SerializeObject(result),
+                    "application/json");
+            }
+            public async Task<IActionResult> PostVouchers([FromBody] List<Guid> voucherIds)
+            {
+                if (voucherIds == null || voucherIds.Count == 0)
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "No vouchers were received."
+                    });
+                }
+
+                var result = await _topazErpApi.PostApVouchers(voucherIds);
+
+                return Content(
+                    JsonConvert.SerializeObject(result),
+                    "application/json");
+            }
+            
+            public async Task<ActionResult> GetAgingByDate([FromQuery] DateTime startDate, [FromQuery] int agingInterval)
+            {
+                var result = await _topazErpApi.GetApAgingByDate(startDate, agingInterval);
+                return Json(result);
+            }
+            public async Task<IActionResult> SendEmail([FromBody] object input)
+            {
+                var result = await _topazErpApi.SendApEmail(input);
+
+                return Content(
+                    JsonConvert.SerializeObject(result),
+                    "application/json");
+            }
+            
+            
+            
+                public async Task<ActionResult> GetReportHeader([FromQuery] string title)
+                {
+                    var result = await _topazErpApi.GetReportHeader(title);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetSuppliers()
+                {
+                    var result = await _topazErpApi.GetSuppliers();
+                    return Json(result);
+                }
+                public async Task<ActionResult> GetSuppliersByGroup(Guid groupId)
+                {
+                    var result = await _topazErpApi.GetSuppliersByGroup(groupId);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApStatement([FromQuery] Guid supplierId)
+                {
+                    var result = await _topazErpApi.GetApStatement(supplierId);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApStatementType2([FromQuery] Guid supplierId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+                {
+                    var result = await _topazErpApi.GetApStatementType2(supplierId, startDate, endDate);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApStatementType3([FromQuery] Guid supplierId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+                {
+                    var result = await _topazErpApi.GetApStatementType3(supplierId, startDate, endDate);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApStatementByOu([FromQuery] Guid supplierId, [FromQuery] Guid ouid, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+                {
+                    var result = await _topazErpApi.GetApStatementByOu(supplierId, ouid, startDate, endDate);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApStatementByOuType2([FromQuery] Guid supplierId, [FromQuery] Guid ouid, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+                {
+                    var result = await _topazErpApi.GetApStatementByOuType2(supplierId, ouid, startDate, endDate);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApInvoiceReport([FromQuery] Guid supplierId)
+                {
+                    var result = await _topazErpApi.GetApInvoiceReport(supplierId);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetAllApInvoices()
+                {
+                    var result = await _topazErpApi.GetAllApInvoices();
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApCanceledInvoices()
+                {
+                    var result = await _topazErpApi.GetApCanceledInvoices();
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApInvoiceByBatch([FromQuery] string batchNumber)
+                {
+                    var result = await _topazErpApi.GetApInvoiceByBatch(batchNumber);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApInvoiceByInvoiceNumber([FromQuery] string invoiceNumber)
+                {
+                    var result = await _topazErpApi.GetApInvoiceByInvoiceNumber(invoiceNumber);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApInvoiceByDate([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+                {
+                    var result = await _topazErpApi.GetApInvoiceByDate(startDate, endDate);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApInvoiceByRange([FromQuery] int startNumber, [FromQuery] int endNumber)
+                {
+                    var result = await _topazErpApi.GetApInvoiceByRange(startNumber, endNumber);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApInvoiceReportById([FromQuery] Guid id)
+                {
+                    var result = await _topazErpApi.GetApInvoiceReportById(id);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApInvoiceDetails([FromQuery] Guid id)
+                {
+                    var result = await _topazErpApi.GetApInvoiceDetails(id);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApBalancesReport([FromQuery] string status)
+                {
+                    var result = await _topazErpApi.GetApBalancesReport(status);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApBalancesBySupplier([FromQuery] Guid supplierId, [FromQuery] string status)
+                {
+                    var result = await _topazErpApi.GetApBalancesBySupplier(supplierId, status);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetAllConvertedApBalances([FromQuery] string status)
+                {
+                    var result = await _topazErpApi.GetAllConvertedApBalances(status);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApPaymentsReport()
+                {
+                    var result = await _topazErpApi.GetApPaymentsReport();
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApPaymentsBySupplier([FromQuery] Guid supplierId)
+                {
+                    var result = await _topazErpApi.GetApPaymentsBySupplier(supplierId);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApPaymentsByDate([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+                {
+                    var result = await _topazErpApi.GetApPaymentsByDate(startDate, endDate);
+                    return Json(result);
+                }
+
+                // Supports either ?id={guid} or repeated ?ids={guid}&ids={guid} parameters.
+                public async Task<ActionResult> GetApPaymentReceipts([FromQuery] Guid? id, [FromQuery] List<Guid> ids)
+                {
+                    var result = id.HasValue ? await _topazErpApi.GetApPaymentReceipts(id.Value) : await _topazErpApi.GetApPaymentReceipts(ids ?? new List<Guid>());
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApVouchersReport()
+                {
+                    var result = await _topazErpApi.GetApVouchersReport();
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApVouchersBySupplier([FromQuery] Guid supplierId)
+                {
+                    var result = await _topazErpApi.GetApVouchersBySupplier(supplierId);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApVouchersByDate([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+                {
+                    var result = await _topazErpApi.GetApVouchersByDate(startDate, endDate);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApVoucherByInvoice([FromQuery] string invoiceId)
+                {
+                    var result = await _topazErpApi.GetApVoucherByInvoice(invoiceId);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApVoucherDetails([FromQuery] Guid voucherId)
+                {
+                    var result = await _topazErpApi.GetApVoucherDetails(voucherId);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApPaymentVoucher([FromQuery] Guid id)
+                {
+                    var result = await _topazErpApi.GetApPaymentVoucher(id);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApPaymentVouchers([FromQuery] List<Guid> ids)
+                {
+                    var result = await _topazErpApi.GetApPaymentVouchers(ids ?? new List<Guid>());
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApDebitMemo()
+                {
+                    var result = await _topazErpApi.GetApDebitMemo();
+                    return Json(result);
+                }
+
+                // Matches the ApReports/GetAgeingByDate URL from your API client.
+                public async Task<ActionResult> GetAgeingByDate([FromQuery] DateTime startDate, [FromQuery] int agingInterval)
+                {
+                    var result = await _topazErpApi.GetApAgingByDate(startDate, agingInterval);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApAgingSummary([FromQuery] DateTime startDate, [FromQuery] int agingInterval)
+                {
+                    var result = await _topazErpApi.GetApAgingSummary(startDate, agingInterval);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApAgingBySupplier([FromQuery] Guid supplierId, [FromQuery] DateTime startDate, [FromQuery] int agingInterval)
+                {
+                    var result = await _topazErpApi.GetApAgingBySupplier(supplierId, startDate, agingInterval);
+                    return Json(result);
+                }
+
+                public async Task<ActionResult> GetApGlTransaction([FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] bool isMultiCurrency)
+                {
+                    var result = await _topazErpApi.GetApGlTransaction(startDate, endDate, isMultiCurrency);
+                    return Json(result);
+                }
+                /*public async Task<IActionResult> GetInvoiceInPdf(Guid id)
+{
+    // 1️⃣ Fetch invoice data
+    dynamic invoiceData = await _topazErpApi.GetApInvoiceDetails(id);
+    if (invoiceData is IDictionary<string, object> errorMessage && errorMessage.ContainsKey("message"))
+    {
+        return BadRequest(errorMessage["message"]);
     }
-   
+    // Use ReportHeader from invoiceData instead of fetching it separately
+    var reportHeader = invoiceData.ReportHeader;
+    var supplierInfo = invoiceData.SupplierInfo;
+    var invoiceDetails = invoiceData.InvoiceDetails;
+   // var taxLevies = invoiceData.InvoiceTaxLevies;
+    var referenceNumber = invoiceData.ReferenceNumber;
+    // Load HTML template
+    var filePath = Path.Combine(_env.WebRootPath, "ReportTemplates", "invoice.html");
+    if (!System.IO.File.Exists(filePath)) return NotFound("Template not found.");
+    var htmlTemplate = await System.IO.File.ReadAllTextAsync(filePath);
+
+    // 3️⃣ Replace placeholders in HTML with invoice data
+    var finalHtml = htmlTemplate
+        .Replace("{{CompanyName}}", reportHeader.CompanyName)
+        .Replace("{{Address}}", reportHeader.Address)
+        .Replace("{{PrimaryPhoneNo}}", reportHeader.PrimaryPhoneNo)
+        .Replace("{{Email}}", reportHeader.Email)
+        .Replace("{{CompanyLogo}}", reportHeader.CompanyLogo)
+        .Replace("{{InvoiceNumber}}", invoiceData.InvoiceNumber)
+        .Replace("{{InvoiceDate}}", invoiceData.InvoiceDate)
+        .Replace("{{ProjectedPayDate}}", invoiceData.ProjectedPayDate)
+        .Replace("{{Balance}}", invoiceData.Balance.ToString("N2"))
+        .Replace("{{TotalInvoiceAmount}}", invoiceData.TotalInvoiceAmount.ToString("N2"))
+        .Replace("{{AmountInWords}}", invoiceData.AmountInWords)
+        .Replace("{{CurrencyName}}", invoiceData.CurrencyName)
+        .Replace("{{SupplierName}}", supplierInfo.SupplierName)
+        .Replace("{{SupplierAddress}}", supplierInfo.SupplierAddress)
+        .Replace("{{SupplierPhoneNo}}", supplierInfo.SupplierPhoneNo)
+        .Replace("{{AccountNumber}}", supplierInfo.AccountNumber)
+        .Replace("{{ContactPerson}}", supplierInfo.ContactPerson)
+        .Replace("{{VatNumber}}", supplierInfo.VatNumber)
+        .Replace("{{CreditLimit}}", supplierInfo.CreditLimit.ToString("N2"))
+        .Replace("{{PurchaseOrderNumber}}", invoiceData.PurchaseOrderNumber)
+        .Replace("{{VatAmount}}", invoiceData.VatAmount.ToString("N2"))
+        .Replace("{{ReportTitle}}", reportHeader.ReportTitle)
+        .Replace("{{ReferenceNumber}}", referenceNumber)
+        .Replace("{{CurrentDate}}", DateTime.Now.ToString("dddd, MMMM dd, yyyy"));
+    // calculate pageNumber
+    var pageNumber = 1;
+    var pageBreak = "<div style='page-break-after: always;'></div>";
+    var pageBreakCount = finalHtml.Split(pageBreak).Length;
+    finalHtml = finalHtml.Replace("{{PageNumber}}", pageNumber.ToString());
+    finalHtml = finalHtml.Replace("{{PageBreakCount}}", pageBreakCount.ToString());
+    // 4️⃣ Generate invoice details rows
+    
+    
+    var generatedRows = new StringBuilder();
+
+    foreach (var row in invoiceDetails)
+    {
+        generatedRows.Append("<tr>");
+        generatedRows.Append($"<td>{row.Index}</td>");
+        generatedRows.Append($"<td class='description'>{row.Description}</td>");
+        generatedRows.Append($"<td class='quantity'></td>");
+        generatedRows.Append($"<td class='amount'></td>");
+        generatedRows.Append($"<td class='amount'>{(row.SubTotal != null ? row.SubTotal.ToString("N2") : "0.00")}</td>");
+        generatedRows.Append("</tr>");
+    }
+      
+        finalHtml = finalHtml.Replace("{{InvoiceDetails}}", generatedRows.ToString())
+        .Replace("{{TaxLevies}}", "");
+    
+    // 5️⃣ Convert HTML to PDF
+    var blinkEnginePath = Path.Combine(_env.WebRootPath, "PdfEngine", "windows");
+    var htmlConverter = new HtmlToPdfConverter(HtmlRenderingEngine.Blink);
+    var blinkConverterSettings = new BlinkConverterSettings
+    {
+        BlinkPath = blinkEnginePath,
+        Orientation = PdfPageOrientation.Portrait,
+        EnableJavaScript = true,
+        AdditionalDelay = 2000
+    };
+    htmlConverter.ConverterSettings = blinkConverterSettings;
+
+    using (var document1 = htmlConverter.Convert(finalHtml, string.Empty))
+    using (var stream1 = new MemoryStream())
+    {
+        document1.Save(stream1);
+        document1.Close(true);
+
+        using (var finalDoc = new PdfDocument())
+        {
+            finalDoc.PageSettings.Size = PdfPageSize.A4;
+            Stream[] streams = { stream1 };
+            PdfDocumentBase.Merge(finalDoc, streams);
+
+            using (var reportStream = new MemoryStream())
+            {
+                finalDoc.Save(reportStream);
+                finalDoc.Close(true);
+
+                return File(reportStream.ToArray(), "application/pdf", "Invoice.pdf");
+            }
+        }
+    }
+}*/
+                public class CreateSupplierInput
+                {
+                    public string AccountNumber { get; set; }
+                    public Guid SupplierGroupId { get; set; }
+                    public string SupplierGroupName { get; set; }
+                    public string StatusName { get; set; }
+                    public decimal Balance { get; set; }
+                    public Guid VatAccountId { get; set; }
+                    public string VatAccountName { get; set; }
+                    public Guid CreditAccountId { get; set; }
+                    public string CreditAccountName { get; set; }
+                    public Guid DebitAccountId { get; set; }
+                    public string DebitAccountName { get; set; }
+                    public string TinNumber { get; set; }
+                    public string Name { get; set; }
+                    public string Email { get; set; }
+                    public string PhoneNo { get; set; }
+                    public Guid CurrencyId { get; set; }
+                    public string CurrencyName { get; set; }
+                    public string CurrencyCode { get; set; }
+                    public decimal buyingRate { get; set; }
+                    public decimal sellingRate { get; set; }
+                    public decimal CreditLimit { get; set; }
+                    public Guid IrsAccountId { get; set; }
+                    public string IrsAccountName { get; set; }
+                    public bool IsResident { get; set; }
+                    public string taxOffice { get; set; }
+                    public string Address { get; set; }
+                    public string ContactPerson { get; set; }
+                    public string ContactPersonPhone { get; set; }
+                    public string ContactPersonEmail { get; set; }
+                    public string VatNumber { get; set; }
+                }
+              
+                
+    }
+  
     
     
 }

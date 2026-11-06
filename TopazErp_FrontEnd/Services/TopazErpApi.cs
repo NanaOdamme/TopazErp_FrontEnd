@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using TopazErp_FrontEnd.Models;
@@ -3999,4 +4000,1464 @@ public class TopazErpApi: ITopazErpApi
         return new BaseApiResponse { };
     }
     
+
+    //AP
+    //Balance
+    public async Task<ApOpeningBalanceResponse> GetApOpeningBalances(int pageNo, int pageSize, string query)
+    {
+         var authToken = _claimsHelper.GetAuthToken();
+                
+                string url = $"{_apiBaseUrl}ApOpeningBalance/ListAll?pageNo={pageNo}&pageSize={pageSize}";
+        
+                if (!string.IsNullOrEmpty(query))
+                {
+                    url += $"&query={query}";
+                }
+                
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.Add("Authorization", $"Bearer {authToken}");
+        
+                var response = await _httpClient.SendAsync(request);
+        
+                if (response.IsSuccessStatusCode)
+                {
+                    string json = await response.Content.ReadAsStringAsync();
+        
+                    return JsonConvert.DeserializeObject<ApOpeningBalanceResponse>(json);
+                }
+        
+                return new ApOpeningBalanceResponse { };
+    }
+    public async Task<BaseApiResponse> CreateApOpeningBalance(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        var url = $"{_apiBaseUrl}ApOpeningBalance/Create";
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);
+
+        using var response = await _httpClient.SendAsync(request);
+        var responseData = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Create failed ({(int)response.StatusCode}): {responseData}");
+        }
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+               ?? throw new InvalidOperationException(
+                   "The Create API returned an empty or invalid response.");
+    }
+    public async Task<BaseApiResponse> UpdateApOpeningBalance(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        var url = $"{_apiBaseUrl}ApOpeningBalance/Update";
+
+        using var request = new HttpRequestMessage(HttpMethod.Put, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);
+
+        using var response = await _httpClient.SendAsync(request);
+        var body = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Upstream update failed ({(int)response.StatusCode}): {body}");
+        }
+        return JsonConvert.DeserializeObject<BaseApiResponse>(body);
+    }
+    public async Task<BaseApiResponse> DeleteApOpeningBalance(Guid id)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}ApOpeningBalance/Delete?id={id}";
+
+        var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<BaseApiResponse>(json);
+        }
+
+        return new BaseApiResponse { };
+    }
+    public async Task<BaseApiResponse> PostApOpeningBalances(List<Guid> balanceIds)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        var url = $"{_apiBaseUrl}ApOpeningBalance/PostOpeningBalances";
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(balanceIds);
+
+        using var response = await _httpClient.SendAsync(request);
+        var responseData = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Posting failed ({(int)response.StatusCode}): {responseData}");
+        }
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+               ?? throw new InvalidOperationException(
+                   "The Posting API returned an empty or invalid response.");
+    }
+    //ApInvoice
+    public async Task<ApInvoiceResponse> GetApInvoices(int pageNo, int pageSize, string query)
+    {
+         var authToken = _claimsHelper.GetAuthToken();
+                
+                string url = $"{_apiBaseUrl}ApInvoice/ListAll?pageNo={pageNo}&pageSize={pageSize}";
+        
+                if (!string.IsNullOrEmpty(query))
+                {
+                    url += $"&query={query}";
+                }
+                
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.Add("Authorization", $"Bearer {authToken}");
+        
+                var response = await _httpClient.SendAsync(request);
+        
+                if (response.IsSuccessStatusCode)
+                {
+                    string json = await response.Content.ReadAsStringAsync();
+        
+                    return JsonConvert.DeserializeObject<ApInvoiceResponse>(json);
+                }
+        
+                return new ApInvoiceResponse { };
+    }
+    public async Task<BaseApiResponse> CreateApInvoice(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        var url = $"{_apiBaseUrl}ApInvoice/Create";
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);
+
+        using var response = await _httpClient.SendAsync(request);
+        var responseData = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Create failed ({(int)response.StatusCode}): {responseData}");
+        }
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+               ?? throw new InvalidOperationException(
+                   "The Create API returned an empty or invalid response.");
+    }
+    public async Task<BaseApiResponse> UpdateApInvoice(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        var url = $"{_apiBaseUrl}ApInvoice/Update";
+
+        using var request = new HttpRequestMessage(HttpMethod.Put, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);
+
+        using var response = await _httpClient.SendAsync(request);
+        var body = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Upstream update failed ({(int)response.StatusCode}): {body}");
+        }
+        return JsonConvert.DeserializeObject<BaseApiResponse>(body);
+    }
+    [HttpPost]
+    public async Task<BaseApiResponse> PostApInvoices(List<Guid> invoiceIds)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        var url = $"{_apiBaseUrl}ApInvoice/PostInvoice";
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(invoiceIds);
+
+        using var response = await _httpClient.SendAsync(request);
+        var responseData = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Posting failed ({(int)response.StatusCode}): {responseData}");
+        }
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+               ?? throw new InvalidOperationException(
+                   "The Posting API returned an empty or invalid response.");
+    }
+    public async Task<BaseApiResponse> CancelApInvoices(List<Guid> invoiceIds)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        var url = $"{_apiBaseUrl}ApInvoice/CancelInvoice";
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(invoiceIds);
+
+        using var response = await _httpClient.SendAsync(request);
+        var responseData = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Cancel failed ({(int)response.StatusCode}): {responseData}");
+        }
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+               ?? throw new InvalidOperationException(
+                   "The Cancel API returned an empty or invalid response.");
+    }
+    public async Task<BaseApiResponse> ApproveApInvoices(List<Guid> invoiceIds)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        var url = $"{_apiBaseUrl}ApInvoice/ApproveInvoice";
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(invoiceIds);
+
+        using var response = await _httpClient.SendAsync(request);
+        var responseData = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Approve failed ({(int)response.StatusCode}): {responseData}");
+        }
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+               ?? throw new InvalidOperationException(
+                   "The Approve API returned an empty or invalid response.");
+    }
+    //ApPayments
+    public async Task<ApPaymentResponse> GetApPayments(
+    int pageNo,
+    int pageSize,
+    string query)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    var url =
+        $"{_apiBaseUrl}ApPayment/ListAll?pageNo={pageNo}&pageSize={pageSize}";
+
+    if (!string.IsNullOrWhiteSpace(query))
+    {
+        url += $"&query={Uri.EscapeDataString(query)}";
+    }
+
+    using var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    using var response = await _httpClient.SendAsync(request);
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"Failed to get AP payments ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<ApPaymentResponse>(responseData)
+        ?? throw new InvalidOperationException(
+            "The AP payment list API returned an empty or invalid response.");
+}
+
+public async Task<BaseApiResponse> CreateApPayment(object dto)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+    var url = $"{_apiBaseUrl}ApPayment/Create";
+
+    using var request = new HttpRequestMessage(HttpMethod.Post, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+    request.Content = JsonContent.Create(dto);
+
+    using var response = await _httpClient.SendAsync(request);
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"AP payment creation failed ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+        ?? throw new InvalidOperationException(
+            "The AP payment Create API returned an empty or invalid response.");
+}
+
+public async Task<BaseApiResponse> UpdateApPayment(object dto)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+    var url = $"{_apiBaseUrl}ApPayment/Update";
+
+    using var request = new HttpRequestMessage(HttpMethod.Put, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+    request.Content = JsonContent.Create(dto);
+
+    using var response = await _httpClient.SendAsync(request);
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"AP payment update failed ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+        ?? throw new InvalidOperationException(
+            "The AP payment Update API returned an empty or invalid response.");
+}
+
+public async Task<BaseApiResponse> DeleteApPayment(Guid id)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+    var url = $"{_apiBaseUrl}ApPayment/Delete?id={Uri.EscapeDataString(id.ToString())}";
+
+    using var request = new HttpRequestMessage(HttpMethod.Delete, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    using var response = await _httpClient.SendAsync(request);
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"AP payment deletion failed ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+        ?? throw new InvalidOperationException(
+            "The AP payment Delete API returned an empty or invalid response.");
+}
+
+public async Task<BaseApiResponse> PostApPayments(List<Guid> paymentIds)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+    var url = $"{_apiBaseUrl}ApPayment/PostPayment";
+
+    using var request = new HttpRequestMessage(HttpMethod.Post, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+    request.Content = JsonContent.Create(paymentIds);
+
+    using var response = await _httpClient.SendAsync(request);
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"AP payment posting failed ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+        ?? throw new InvalidOperationException(
+            "The AP payment posting API returned an empty or invalid response.");
+}
+
+public async Task<BaseApiResponse> CancelApPayments(List<Guid> paymentIds)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+    var url = $"{_apiBaseUrl}ApPayment/CancelPayment";
+
+    using var request = new HttpRequestMessage(HttpMethod.Post, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+    request.Content = JsonContent.Create(paymentIds);
+
+    using var response = await _httpClient.SendAsync(request);
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"AP payment cancellation failed ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+        ?? throw new InvalidOperationException(
+            "The AP payment cancellation API returned an empty or invalid response.");
+}
+//debit memo
+public async Task<DebitMemoResponse> GetDebitMemos(
+    int pageNo,
+    int pageSize,
+    string query)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    var url =
+        $"{_apiBaseUrl}DebitMemo/ListAll?pageNo={pageNo}&pageSize={pageSize}";
+
+    if (!string.IsNullOrWhiteSpace(query))
+    {
+        url += $"&query={Uri.EscapeDataString(query)}";
+    }
+
+    using var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    using var response = await _httpClient.SendAsync(request);
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"Failed to get debit memos ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<DebitMemoResponse>(responseData)
+        ?? throw new InvalidOperationException(
+            "The debit memo list API returned an empty or invalid response.");
+}
+
+public async Task<BaseApiResponse> CreateDebitMemo(object dto)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+    var url = $"{_apiBaseUrl}DebitMemo/Create";
+
+    using var request = new HttpRequestMessage(HttpMethod.Post, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+    request.Content = JsonContent.Create(dto);
+
+    using var response = await _httpClient.SendAsync(request);
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"Debit memo creation failed ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+        ?? throw new InvalidOperationException(
+            "The debit memo Create API returned an empty or invalid response.");
+}
+
+public async Task<BaseApiResponse> UpdateDebitMemo(object dto)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+    var url = $"{_apiBaseUrl}DebitMemo/Update";
+
+    using var request = new HttpRequestMessage(HttpMethod.Put, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+    request.Content = JsonContent.Create(dto);
+
+    using var response = await _httpClient.SendAsync(request);
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"Debit memo update failed ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+        ?? throw new InvalidOperationException(
+            "The debit memo Update API returned an empty or invalid response.");
+}
+
+public async Task<BaseApiResponse> DeleteDebitMemo(Guid id)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+    var url =
+        $"{_apiBaseUrl}DebitMemo/Delete?id={Uri.EscapeDataString(id.ToString())}";
+
+    using var request = new HttpRequestMessage(HttpMethod.Delete, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    using var response = await _httpClient.SendAsync(request);
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"Debit memo deletion failed ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+        ?? throw new InvalidOperationException(
+            "The debit memo Delete API returned an empty or invalid response.");
+}
+
+public async Task<BaseApiResponse> ApplyDebitMemo(object dto)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+    var url = $"{_apiBaseUrl}DebitMemo/Apply";
+
+    using var request = new HttpRequestMessage(HttpMethod.Put, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+    request.Content = JsonContent.Create(dto);
+
+    using var response = await _httpClient.SendAsync(request);
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"Applying debit memo failed ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+        ?? throw new InvalidOperationException(
+            "The debit memo Apply API returned an empty or invalid response.");
+}
+//ApVouchers
+    public async Task<ApVoucherResponse> GetApVouchers(int pageNo, int pageSize, string query)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}ApVoucher/ListAll?pageNo={pageNo}&pageSize={pageSize}";
+
+        //if query is not null
+        if (!string.IsNullOrEmpty(query))
+        {
+            url += $"&query={query}";
+        }
+        
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<ApVoucherResponse>(json);
+        }
+
+        return new ApVoucherResponse { };
+    }
+    
+    public async Task<BaseApiResponse> CreateApVoucher(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}ApVoucher/Create";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);  
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+    
+    public async Task<BaseApiResponse> UpdateApVoucher(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}ApVoucher/Update";
+
+        var request = new HttpRequestMessage(HttpMethod.Put, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);  
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+    
+    public async Task<BaseApiResponse> DeleteApVoucher(Guid id)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}ApVoucher/Delete?id={id}";
+        
+        using var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        using var response = await _httpClient.SendAsync(request);
+        var responseData = await response.Content.ReadAsStringAsync();
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"ApVoucher deletion failed ({(int)response.StatusCode}): {responseData}");
+        }
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+               ?? throw new InvalidOperationException(
+                   "The ApVoucher Delete API returned an empty or invalid response.");
+    }
+    public async Task<BaseApiResponse> PostApVouchers(List<Guid> voucherIds)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        var url = $"{_apiBaseUrl}ApVoucher/PostVouchers";
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(voucherIds);
+
+        using var response = await _httpClient.SendAsync(request);
+        var responseData = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"ApVoucher posting failed ({(int)response.StatusCode}): {responseData}");
+        }
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+               ?? throw new InvalidOperationException(
+                   "The ApVoucher posting API returned an empty or invalid response.");
+    }   
+    
+    //aging
+    public async Task<ApAgingResponse> GetApAgingByDate(DateTime startDate, int agingInterval)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}ApReports/GetAgeingByDate?startDate={startDate.ToString("yyyy-MM-dd")}&agingInterval={agingInterval}";   
+        
+        
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<ApAgingResponse>(json);
+        }
+
+        return new ApAgingResponse();
+        
+    }
+    public async Task<BaseApiResponse> SendApEmail(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}EmailApInvoices/DispatchInvoice";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);  
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+    public async Task<ReportHeaderResponse> GetReportHeader(string title)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+
+        string url = $"{_apiBaseUrl}ApReports/GetReportHeader?title={Uri.EscapeDataString(title)}";
+
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ReportHeaderResponse>(json)
+                   ?? new ReportHeaderResponse();
+        }
+
+        return new ReportHeaderResponse();
+    }
+
+    public async Task<SupplierResponse> GetSuppliers()
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+
+        string url = $"{_apiBaseUrl}ApReports/GetSuppliers";
+
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<SupplierResponse>(json)
+                   ?? new SupplierResponse();
+        }
+
+        return new SupplierResponse();
+    }
+
+    public async Task<ApStatementResponse> GetApStatement(Guid supplierId)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+
+        string url = $"{_apiBaseUrl}ApReports/GetStatement?supplierId={supplierId}";
+
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ApStatementResponse>(json)
+                   ?? new ApStatementResponse();
+        }
+
+        return new ApStatementResponse();
+    }
+    public async Task<ApStatementResponse> GetApStatementType2(
+        Guid supplierId, DateTime startDate, DateTime endDate)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+    
+        string url = $"{_apiBaseUrl}ApReports/GetStatementType2" +
+                     $"?supplierId={supplierId}" +
+                     $"&startDate={startDate.ToString("yyyy-MM-dd")}" +
+                     $"&endDate={endDate.ToString("yyyy-MM-dd")}";
+    
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+    
+        var response = await _httpClient.SendAsync(request);
+    
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ApStatementResponse>(json)
+                   ?? new ApStatementResponse();
+        }
+    
+        return new ApStatementResponse();
+    }
+    
+    public async Task<ApStatementResponse> GetApStatementType3(
+        Guid supplierId, DateTime startDate, DateTime endDate)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+    
+        string url = $"{_apiBaseUrl}ApReports/GetStatementType3" +
+                     $"?supplierId={supplierId}" +
+                     $"&startDate={startDate.ToString("yyyy-MM-dd")}" +
+                     $"&endDate={endDate.ToString("yyyy-MM-dd")}";
+    
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+    
+        var response = await _httpClient.SendAsync(request);
+    
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ApStatementResponse>(json)
+                   ?? new ApStatementResponse();
+        }
+    
+        return new ApStatementResponse();
+    }
+    
+    public async Task<ApStatementResponse> GetApStatementByOu(
+        Guid supplierId, Guid ouid, DateTime startDate, DateTime endDate)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+    
+        string url = $"{_apiBaseUrl}ApReports/GetStatementByOu" +
+                     $"?supplierId={supplierId}" +
+                     $"&ouid={ouid}" +
+                     $"&startDate={startDate.ToString("yyyy-MM-dd")}" +
+                     $"&endDate={endDate.ToString("yyyy-MM-dd")}";
+    
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+    
+        var response = await _httpClient.SendAsync(request);
+    
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ApStatementResponse>(json)
+                   ?? new ApStatementResponse();
+        }
+    
+        return new ApStatementResponse();
+    }
+    
+    public async Task<ApStatementResponse> GetApStatementByOuType2(
+        Guid supplierId, Guid ouid, DateTime startDate, DateTime endDate)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+    
+        string url = $"{_apiBaseUrl}ApReports/GetStatementByOuType2" +
+                     $"?supplierId={supplierId}" +
+                     $"&ouid={ouid}" +
+                     $"&startDate={startDate.ToString("yyyy-MM-dd")}" +
+                     $"&endDate={endDate.ToString("yyyy-MM-dd")}";
+    
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+    
+        var response = await _httpClient.SendAsync(request);
+    
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ApStatementResponse>(json)
+                   ?? new ApStatementResponse();
+        }
+    
+        return new ApStatementResponse();
+    }
+    public async Task<ApInvoiceReportResponse> GetApInvoiceReport(Guid supplierId)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+    
+        string url = $"{_apiBaseUrl}ApReports/GetInvoice?supplierId={supplierId}";
+    
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+    
+        var response = await _httpClient.SendAsync(request);
+    
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ApInvoiceReportResponse>(json)
+                   ?? new ApInvoiceReportResponse();
+        }
+    
+        return new ApInvoiceReportResponse();
+    }
+    
+    public async Task<ApInvoiceReportResponse> GetAllApInvoices()
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+    
+        string url = $"{_apiBaseUrl}ApReports/GetAllInvoices";
+    
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+    
+        var response = await _httpClient.SendAsync(request);
+    
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ApInvoiceReportResponse>(json)
+                   ?? new ApInvoiceReportResponse();
+        }
+    
+        return new ApInvoiceReportResponse();
+    }
+    
+    public async Task<ApInvoiceReportResponse> GetApCanceledInvoices()
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+    
+        string url = $"{_apiBaseUrl}ApReports/GetCanceledInvoices";
+    
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+    
+        var response = await _httpClient.SendAsync(request);
+    
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ApInvoiceReportResponse>(json)
+                   ?? new ApInvoiceReportResponse();
+        }
+    
+        return new ApInvoiceReportResponse();
+    }
+    
+    public async Task<ApInvoiceReportResponse> GetApInvoiceByBatch(string batchNumber)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+    
+        string url = $"{_apiBaseUrl}ApReports/GetInvoiceByBatch" +
+                     $"?batchNumber={Uri.EscapeDataString(batchNumber)}";
+    
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+    
+        var response = await _httpClient.SendAsync(request);
+    
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ApInvoiceReportResponse>(json)
+                   ?? new ApInvoiceReportResponse();
+        }
+    
+        return new ApInvoiceReportResponse();
+    }
+    public async Task<ApInvoiceReportResponse> GetApInvoiceByInvoiceNumber(string invoiceNumber)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetInvoiceByInvoiceNumber" +
+                 $"?invoiceNumber={Uri.EscapeDataString(invoiceNumber)}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApInvoiceReportResponse>(json)
+               ?? new ApInvoiceReportResponse();
+    }
+
+    return new ApInvoiceReportResponse();
+}
+
+public async Task<ApInvoiceReportResponse> GetApInvoiceByDate(
+    DateTime startDate, DateTime endDate)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetInvoiceByDate" +
+                 $"?startDate={startDate.ToString("yyyy-MM-dd")}" +
+                 $"&endDate={endDate.ToString("yyyy-MM-dd")}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApInvoiceReportResponse>(json)
+               ?? new ApInvoiceReportResponse();
+    }
+
+    return new ApInvoiceReportResponse();
+}
+
+public async Task<ApInvoiceReportResponse> GetApInvoiceByRange(
+    int startNumber, int endNumber)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetInvoiceByRange" +
+                 $"?startNumber={startNumber}" +
+                 $"&endNumber={endNumber}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApInvoiceReportResponse>(json)
+               ?? new ApInvoiceReportResponse();
+    }
+
+    return new ApInvoiceReportResponse();
+}
+
+public async Task<ApInvoiceReportResponse> GetApInvoiceReportById(Guid id)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetInvoiceReport?id={id}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApInvoiceReportResponse>(json)
+               ?? new ApInvoiceReportResponse();
+    }
+
+    return new ApInvoiceReportResponse();
+}
+public async Task<ApInvoicePdfResponse> GetApInvoiceDetails(Guid id)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetInvoiceDetails?id={id}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApInvoicePdfResponse>(json)
+               ?? new ApInvoicePdfResponse();
+    }
+
+    return new ApInvoicePdfResponse();
+}
+
+public async Task<ApOpeningBalanceResponse> GetApBalancesReport(string status)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetOpeningBalances" +
+                 $"?status={Uri.EscapeDataString(status)}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApOpeningBalanceResponse>(json)
+               ?? new ApOpeningBalanceResponse();
+    }
+
+    return new ApOpeningBalanceResponse();
+}
+
+public async Task<ApOpeningBalanceResponse> GetApBalancesBySupplier(
+    Guid supplierId, string status)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetOpeningBalancesBySupplier" +
+                 $"?supplierId={supplierId}" +
+                 $"&status={Uri.EscapeDataString(status)}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApOpeningBalanceResponse>(json)
+               ?? new ApOpeningBalanceResponse();
+    }
+
+    return new ApOpeningBalanceResponse();
+}
+
+public async Task<ApOpeningBalanceResponse> GetAllConvertedApBalances(string status)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetAllConvertedOpeningBalances" +
+                 $"?status={Uri.EscapeDataString(status)}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApOpeningBalanceResponse>(json)
+               ?? new ApOpeningBalanceResponse();
+    }
+
+    return new ApOpeningBalanceResponse();
+}
+public async Task<ApPaymentReportResponse> GetApPaymentsReport()
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetPayments";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApPaymentReportResponse>(json)
+               ?? new ApPaymentReportResponse();
+    }
+
+    return new ApPaymentReportResponse();
+}
+
+public async Task<ApPaymentReportResponse> GetApPaymentsBySupplier(Guid supplierId)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetPaymentsBySupplier?supplierId={supplierId}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApPaymentReportResponse>(json)
+               ?? new ApPaymentReportResponse();
+    }
+
+    return new ApPaymentReportResponse();
+}
+
+public async Task<ApPaymentReportResponse> GetApPaymentsByDate(
+    DateTime startDate, DateTime endDate)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetPaymentsByDate" +
+                 $"?startDate={startDate.ToString("yyyy-MM-dd")}" +
+                 $"&endDate={endDate.ToString("yyyy-MM-dd")}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApPaymentReportResponse>(json)
+               ?? new ApPaymentReportResponse();
+    }
+
+    return new ApPaymentReportResponse();
+}
+
+public async Task<ApPaymentReceiptResponse> GetApPaymentReceipts(Guid id)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetPaymentReceipts?id={id}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApPaymentReceiptResponse>(json)
+               ?? new ApPaymentReceiptResponse();
+    }
+
+    return new ApPaymentReceiptResponse();
+}
+
+public async Task<ApPaymentReceiptResponse> GetApPaymentReceipts(List<Guid> ids)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string idsQuery = string.Join("&", ids.Select(id => $"ids={id}"));
+    string url = $"{_apiBaseUrl}ApReports/GetPaymentReceipts";
+
+    if (!string.IsNullOrEmpty(idsQuery))
+    {
+        url += $"?{idsQuery}";
+    }
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApPaymentReceiptResponse>(json)
+               ?? new ApPaymentReceiptResponse();
+    }
+
+    return new ApPaymentReceiptResponse();
+}
+public async Task<ApVoucherResponse> GetApVouchersReport()
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetVouchers";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApVoucherResponse>(json)
+               ?? new ApVoucherResponse();
+    }
+
+    return new ApVoucherResponse();
+}
+
+public async Task<ApVoucherResponse> GetApVouchersBySupplier(Guid supplierId)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetVouchersBySupplier?supplierId={supplierId}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApVoucherResponse>(json)
+               ?? new ApVoucherResponse();
+    }
+
+    return new ApVoucherResponse();
+}
+
+public async Task<ApVoucherResponse> GetApVouchersByDate(
+    DateTime startDate, DateTime endDate)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetVouchersByDate" +
+                 $"?startDate={startDate.ToString("yyyy-MM-dd")}" +
+                 $"&endDate={endDate.ToString("yyyy-MM-dd")}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApVoucherResponse>(json)
+               ?? new ApVoucherResponse();
+    }
+
+    return new ApVoucherResponse();
+}
+
+public async Task<ApVoucherResponse> GetApVoucherByInvoice(string invoiceId)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetVoucherByInvoice" +
+                 $"?invoiceId={Uri.EscapeDataString(invoiceId)}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApVoucherResponse>(json)
+               ?? new ApVoucherResponse();
+    }
+
+    return new ApVoucherResponse();
+}
+public async Task<ApVoucherResponse> GetApVoucherDetails(Guid voucherId)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetVoucherDetails?voucherId={voucherId}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApVoucherResponse>(json)
+               ?? new ApVoucherResponse();
+    }
+
+    return new ApVoucherResponse();
+}
+
+public async Task<ApVoucherResponse> GetApPaymentVoucher(Guid id)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetPaymentVoucher?id={id}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApVoucherResponse>(json)
+               ?? new ApVoucherResponse();
+    }
+
+    return new ApVoucherResponse();
+}
+
+public async Task<ApVoucherResponse> GetApPaymentVouchers(List<Guid> ids)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string idsQuery = string.Join("&", ids.Select(id => $"ids={id}"));
+    string url = $"{_apiBaseUrl}ApReports/GetPaymentVouchers";
+
+    if (!string.IsNullOrEmpty(idsQuery))
+    {
+        url += $"?{idsQuery}";
+    }
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApVoucherResponse>(json)
+               ?? new ApVoucherResponse();
+    }
+
+    return new ApVoucherResponse();
+}
+
+public async Task<DebitMemoResponse> GetApDebitMemo()
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetDebitMemo";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<DebitMemoResponse>(json)
+               ?? new DebitMemoResponse();
+    }
+
+    return new DebitMemoResponse();
+}
+public async Task<ApAgingResponse> GetApAgingSummary(
+    DateTime startDate, int agingInterval)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetAgingSummary" +
+                 $"?startDate={startDate.ToString("yyyy-MM-dd")}" +
+                 $"&agingInterval={agingInterval}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApAgingResponse>(json)
+               ?? new ApAgingResponse();
+    }
+
+    return new ApAgingResponse();
+}
+
+public async Task<ApAgingResponse> GetApAgingBySupplier(
+    Guid supplierId, DateTime startDate, int agingInterval)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetAgeingBySupplier" +
+                 $"?supplierId={supplierId}" +
+                 $"&startDate={startDate.ToString("yyyy-MM-dd")}" +
+                 $"&agingInterval={agingInterval}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApAgingResponse>(json)
+               ?? new ApAgingResponse();
+    }
+
+    return new ApAgingResponse();
+}
+
+public async Task<ApGlTransactionResponse> GetApGlTransaction(
+    DateTime startDate, DateTime endDate, bool isMultiCurrency)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetGlTransaction" +
+                 $"?startDate={startDate.ToString("yyyy-MM-dd")}" +
+                 $"&endDate={endDate.ToString("yyyy-MM-dd")}" +
+                 $"&isMultiCurrency={isMultiCurrency.ToString().ToLowerInvariant()}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ApGlTransactionResponse>(json)
+               ?? new ApGlTransactionResponse();
+    }
+
+    return new ApGlTransactionResponse();
+}
+
 }

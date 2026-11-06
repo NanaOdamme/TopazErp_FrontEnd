@@ -20,5 +20,27 @@
             </div>
         </div>
     </div>
-    <div class="card" data-card-title="Paid Invoices"></div>
+    <div id="app" class="card" data-card-title="Paid Invoices">
+        <data-grid
+            ref="invoices"
+            title="Fully Paid Invoices"
+            :columns="invoiceColumns"
+            :data="invoiceList"
+            :child="detailColumns"
+            :theme="theme"
+            row-id="id"
+            label-key="invoiceNumber"
+            item-label="invoice"
+            item-label-plural="invoices"
+            :page-size="10"
+            :selectable="true"
+            :actions="false"
+            :allow-add="false"
+            :allow-edit="false"
+            :allow-delete="false">
+        </data-grid>
+    </div>
 </div>
+
+
+<script src="~/js/ap/Enquiries/paid-invoices.js" asp-append-version="true"></script>

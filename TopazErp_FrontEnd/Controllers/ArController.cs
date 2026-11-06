@@ -144,7 +144,7 @@ namespace TopazErp_FrontEnd.Controllers
 
             }
         
-            public async Task<IActionResult> DownloadOpeningBalanceUploadSample() 
+            public async Task<IActionResult> DownloadOpeningBalancesUploadSample() 
             {
                 var wwwRoot = _env.WebRootPath;
 
@@ -161,6 +161,10 @@ namespace TopazErp_FrontEnd.Controllers
                 return View();
             }
             public ActionResult Aging()
+            {
+                return View();
+            }
+            public ActionResult CanceledPayments()
             {
                 return View();
             }

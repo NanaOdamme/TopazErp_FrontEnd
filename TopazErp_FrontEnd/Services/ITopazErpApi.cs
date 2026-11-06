@@ -282,5 +282,81 @@ public interface ITopazErpApi
     Task<BaseApiResponse> DeleteVoucher(Guid id);
     Task<BaseApiResponse> PostVoucher(Guid id);
     
+    //AP
+    //opening Balance
+    Task<ApOpeningBalanceResponse> GetApOpeningBalances(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreateApOpeningBalance(object dto);
+    Task<BaseApiResponse> UpdateApOpeningBalance(object dto);
+    Task<BaseApiResponse> DeleteApOpeningBalance(Guid id);
+    Task<BaseApiResponse> PostApOpeningBalances(List<Guid> balanceIds);
+    //ApInvoice
+    Task<ApInvoiceResponse> GetApInvoices(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreateApInvoice(object dto);
+    Task<BaseApiResponse> UpdateApInvoice(object dto);
+    Task<BaseApiResponse> PostApInvoices(List<Guid> invoiceIds);
+    Task<BaseApiResponse> CancelApInvoices(List<Guid> invoiceIds);
+    Task<BaseApiResponse> ApproveApInvoices(List<Guid> invoiceIds);
+    //ApPayment
+    Task<ApPaymentResponse> GetApPayments(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreateApPayment(object dto);
+    Task<BaseApiResponse> UpdateApPayment(object dto);
+    Task<BaseApiResponse> DeleteApPayment(Guid id);
+    Task<BaseApiResponse> PostApPayments(List<Guid> paymentIds);
+    Task<BaseApiResponse> CancelApPayments(List<Guid> paymentIds);
 
+    //DebitMemo
+    Task<DebitMemoResponse> GetDebitMemos(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreateDebitMemo(object dto);
+    Task<BaseApiResponse> UpdateDebitMemo(object dto);
+    Task<BaseApiResponse> DeleteDebitMemo(Guid id);
+    Task<BaseApiResponse> ApplyDebitMemo(object dto);
+    
+    //ApVouchers
+    Task<ApVoucherResponse> GetApVouchers(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreateApVoucher(object dto);
+    Task<BaseApiResponse> UpdateApVoucher(object dto);
+    Task<BaseApiResponse> DeleteApVoucher(Guid id);
+    Task<BaseApiResponse> PostApVouchers(List<Guid> voucherIds);
+    
+    //reports
+    Task<ApAgingResponse> GetApAgingByDate(DateTime startDate, int agingInterval);
+    Task<BaseApiResponse> SendApEmail(object dto);
+    Task<ReportHeaderResponse> GetReportHeader(string title);
+    Task<SupplierResponse> GetSuppliers();
+    Task<ApStatementResponse> GetApStatement(Guid supplierId);
+/*Task<SupplierResponse> GetSuppliersByGroup(Guid supplierGroupId);*/
+    Task<ApStatementResponse> GetApStatementType2(Guid supplierId, DateTime startDate, DateTime endDate);
+    Task<ApStatementResponse> GetApStatementType3(Guid supplierId, DateTime startDate, DateTime endDate);
+    Task<ApStatementResponse> GetApStatementByOu(Guid supplierId, Guid ouid, DateTime startDate, DateTime endDate);
+    Task<ApStatementResponse> GetApStatementByOuType2(Guid supplierId, Guid ouid, DateTime startDate, DateTime endDate);
+    Task<ApInvoiceReportResponse> GetApInvoiceReport(Guid supplierId);
+    Task<ApInvoiceReportResponse> GetAllApInvoices();
+    Task<ApInvoiceReportResponse> GetApCanceledInvoices();
+    Task<ApInvoiceReportResponse> GetApInvoiceByBatch(string batchNumber);
+    Task<ApInvoiceReportResponse> GetApInvoiceByInvoiceNumber(string invoiceNumber);
+    Task<ApInvoiceReportResponse> GetApInvoiceByDate(DateTime startDate, DateTime endDate);
+    Task<ApInvoiceReportResponse> GetApInvoiceByRange(int startNumber, int endNumber);
+    Task<ApInvoiceReportResponse> GetApInvoiceReportById(Guid id);
+    Task<ApInvoicePdfResponse> GetApInvoiceDetails(Guid id);
+    Task<ApOpeningBalanceResponse> GetApBalancesReport(string status);
+    Task<ApOpeningBalanceResponse> GetApBalancesBySupplier(Guid supplierId, string status);
+    Task<ApOpeningBalanceResponse> GetAllConvertedApBalances(string status);
+
+    Task<ApPaymentReportResponse> GetApPaymentsReport();
+    Task<ApPaymentReportResponse> GetApPaymentsBySupplier(Guid supplierId);
+    Task<ApPaymentReportResponse> GetApPaymentsByDate(DateTime startDate, DateTime endDate);
+    Task<ApPaymentReceiptResponse> GetApPaymentReceipts(Guid id);
+    Task<ApPaymentReceiptResponse> GetApPaymentReceipts(List<Guid> ids);
+
+    Task<ApVoucherResponse> GetApVouchersReport();
+    Task<ApVoucherResponse> GetApVouchersBySupplier(Guid supplierId);
+    Task<ApVoucherResponse> GetApVouchersByDate(DateTime startDate, DateTime endDate);
+    Task<ApVoucherResponse> GetApVoucherByInvoice(string invoiceId);
+    Task<ApVoucherResponse> GetApVoucherDetails(Guid voucherId);
+    Task<ApVoucherResponse> GetApPaymentVoucher(Guid id);
+    Task<ApVoucherResponse> GetApPaymentVouchers(List<Guid> ids);
+    Task<DebitMemoResponse> GetApDebitMemo();
+    Task<ApAgingResponse> GetApAgingSummary(DateTime startDate, int agingInterval);
+    Task<ApAgingResponse> GetApAgingBySupplier(Guid supplierId, DateTime startDate, int agingInterval);
+    Task<ApGlTransactionResponse> GetApGlTransaction(DateTime startDate, DateTime endDate, bool isMultiCurrency);
 }

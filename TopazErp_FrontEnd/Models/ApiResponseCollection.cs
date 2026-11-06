@@ -79,7 +79,7 @@ public class DepartmentResponse: BaseApiResponseModel
 public class TaxLevyResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public PagedRecords<TaxLevy> Result { get; set; }
+    public List<TaxLevy> Result { get; set; }
 }
 
 
@@ -323,4 +323,77 @@ public class CheckCoaDetailResponse : BaseApiResponseModel
 {
     [JsonProperty("result")]
     public CoaDetail Result { get; set; }
+}
+
+//API Response for AP
+//opening balance
+public class ApOpeningBalanceResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+     public List<ApOpeningBalance> Result { get; set; }
+}
+//ApInvoice
+public class ApInvoiceResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ApInvoice> Result { get; set; }
+}
+//ApPayment
+public class ApPaymentResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ApPayment> Result { get; set; }
+}
+//debitmemo
+public class DebitMemoResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ApDebitMemo> Result { get; set; }
+}
+//apvoucher
+public class ApVoucherResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ApVoucher> Result { get; set; }
+}
+//reports
+public class ReportHeaderResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ReportHeader> Result { get; set; }
+}
+public class ApAgingResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ApAgingData> Result { get; set; }
+}
+public class ApStatementResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ApStatementRecord> Result { get; set; }
+}
+public class ApPaymentReceiptResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ApPaymentReceipt> Result { get; set; }
+}
+public class ApPaymentReportResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ApPaymentReport> Result { get; set; }
+}
+public class ApGlTransactionResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ApGlTransactions> Result { get; set; }
+}
+public class ApInvoiceReportResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ApInvoiceReport> Result { get; set; }
+}
+public class ApInvoicePdfResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<InvoicePdfData> Result { get; set; }
 }

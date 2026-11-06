@@ -20,5 +20,450 @@
             </div>
         </div>
     </div>
-    <div class="card" data-card-title="Audit Logs"></div>
+   <div id="app" class="card" data-card-title="Manage AP Audit Logs">
+    <div>
+
+        <!-- Filters -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+
+            <div>
+                <label class="label block text-sm mb-1">Start Date</label>
+                <input
+                    type="date"
+                    v-model="startDate"
+                    class="input-control w-full"
+                />
+            </div>
+
+            <div>
+                <label class="label block text-sm mb-1">End Date</label>
+                <input
+                    type="date"
+                    v-model="endDate"
+                    class="input-control w-full"
+                />
+            </div>
+
+            <div class="flex items-end">
+                <button
+                    type="button"
+                    @@click="getAuditLogs()"
+                    :disabled="isLoading"
+                    class="w-full md:w-auto px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                    <i class="bi bi-search"></i>
+                    <span>{{ isLoading ? 'Loading...' : 'Get Audit Logs' }}</span>
+                </button>
+            </div>
+
+        </div>
+
+        <hr class="my-5">
+
+        <!-- Table Header -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+            <div>
+                <h5 class="font-semibold text-gray-800">Audit Logs</h5>
+                <p class="text-sm text-gray-500">
+                    View and monitor system activities.
+                </p>
+            </div>
+
+            <button
+                type="button"
+                @@click="generateAuditLogReport()"
+                :disabled="isLoading || auditLogsList.length === 0"
+                class="px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+                <i class="bi bi-file-earmark-pdf"></i>
+                Generate Audit Report
+            </button>
+        </div>
+
+        <!-- Loading -->
+        <div v-if="isLoading" class="py-12 text-center">
+            <div class="inline-flex items-center gap-2 text-blue-600">
+                <span class="spinner-border spinner-border-sm"></span>
+                <span class="text-sm">Loading audit logs...</span>
+            </div>
+        </div>
+
+        <!-- Audit Logs Table -->
+        <div v-else class="overflow-x-auto border border-gray-200 rounded-lg">
+
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">
+                            Date & Time
+                        </th>
+
+                        <th class="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">
+                            User
+                        </th>
+
+                        <th class="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">
+                            Application
+                        </th>
+
+                        <th class="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">
+                            Service / Action
+                        </th>
+
+                        <th class="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">
+                            Status
+                        </th>
+
+                        <th class="px-4 py-3 text-center font-semibold text-gray-600 whitespace-nowrap">
+                            Action
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody class="bg-white divide-y divide-gray-100">
+
+                    <tr
+                        v-for="(log, index) in paginatedAuditLogs"
+                        :key="log.id || index"
+                        class="hover:bg-gray-50 transition-colors"
+                    >
+                        <td class="px-4 py-3 whitespace-nowrap text-gray-600">
+                            {{ formatDateTime(log.executionTime || log.creationTime) }}
+                        </td>
+
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="font-medium text-gray-700">
+                                {{ log.userFullName || 'Unknown User' }}
+                            </span>
+                        </td>
+
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span
+                                class="px-2.5 py-1 rounded-full text-xs font-medium"
+                                :class="applicationClass(log.application)"
+                            >
+                                {{ log.application || 'Other' }}
+                            </span>
+                        </td>
+
+                        <td class="px-4 py-3 text-gray-600">
+                            <div class="font-medium text-gray-700">
+                                {{ log.urlPath || log.serviceName || 'N/A' }}
+                            </div>
+                            <div class="text-xs text-gray-400 mt-1">
+                                {{ log.methodName || '' }}
+                            </div>
+                        </td>
+
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span
+                                v-if="log.exception || log.exceptionMessage"
+                                class="px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700"
+                            >
+                                Failed
+                            </span>
+
+                            <span
+                                v-else
+                                class="px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700"
+                            >
+                                Success
+                            </span>
+                        </td>
+
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                            <button
+                                type="button"
+                                @@click="viewDetail(log)"
+                                class="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-blue-200 text-blue-600 hover:bg-blue-50 text-xs font-medium"
+                            >
+                                <i class="bi bi-eye"></i>
+                                View Details
+                            </button>
+                        </td>
+                    </tr>
+
+                    <tr v-if="paginatedAuditLogs.length === 0">
+                        <td colspan="6" class="px-4 py-12 text-center">
+                            <div class="flex flex-col items-center gap-2 text-gray-400">
+                                <i class="bi bi-journal-text text-3xl"></i>
+                                <span class="font-medium">No audit logs found</span>
+                                <span class="text-xs">
+                                    Try changing the selected date range.
+                                </span>
+                            </div>
+                        </td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div
+            v-if="!isLoading && auditLogsList.length > 0"
+            class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mt-4"
+        >
+
+            <div class="text-sm text-gray-500">
+                Showing
+                <span class="font-semibold text-gray-700">{{ paginationStart }}</span>
+                to
+                <span class="font-semibold text-gray-700">{{ paginationEnd }}</span>
+                of
+                <span class="font-semibold text-gray-700">{{ auditLogsList.length }}</span>
+                records
+            </div>
+
+            <div class="flex items-center flex-wrap gap-1">
+
+                <button
+                    type="button"
+                    @@click="changePage(currentPage - 1)"
+                    :disabled="currentPage === 1"
+                    class="px-3 py-2 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+
+                <template v-for="(page, index) in paginationPages" :key="index">
+
+                    <span
+                        v-if="page === '...'"
+                        class="px-2 py-2 text-gray-400"
+                    >
+                        ...
+                    </span>
+
+                    <button
+                        v-else
+                        type="button"
+                        @@click="changePage(page)"
+                        class="min-w-9 px-3 py-2 rounded-md border text-sm"
+                        :class="currentPage === page
+                            ? 'bg-blue-600 border-blue-600 text-white'
+                            : 'border-gray-200 text-gray-600 hover:bg-gray-50'"
+                    >
+                        {{ page }}
+                    </button>
+
+                </template>
+
+                <button
+                    type="button"
+                    @@click="changePage(currentPage + 1)"
+                    :disabled="currentPage === totalPages || totalPages === 0"
+                    class="px-3 py-2 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+
+            </div>
+        </div>
+
+    </div>
+    <!-- Audit Log Details Modal -->
+    <div
+    v-if="showAuditLogModal"
+    class="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5"
+>
+    <!-- Backdrop -->
+    <div
+        class="absolute inset-0 bg-gray-950/60 backdrop-blur-sm"
+        @@click="showAuditLogModal = false"
+    ></div>
+
+    <!-- Modal Content -->
+    <div class="relative bg-white w-full max-w-5xl max-h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between px-5 py-4 bg-blue-600 text-white">
+            <div>
+                <h5 class="text-lg font-semibold flex items-center gap-2">
+                    <i class="bi bi-journal-text"></i>
+                    Audit Log Details
+                </h5>
+                <p class="text-xs text-blue-100 mt-1">
+                    Detailed information about this system activity.
+                </p>
+            </div>
+
+            <button
+                type="button"
+                @@click="showAuditLogModal = false"
+                class="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-white/20 transition"
+            >
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-5 overflow-y-auto space-y-6">
+
+            <!-- General Information -->
+            <section>
+                <h6 class="font-semibold text-gray-800 mb-3">
+                    General Information
+                </h6>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+
+                    <div class="bg-gray-50 border border-gray-100 rounded-lg p-3">
+                        <label class="block text-xs text-gray-500 mb-1">User</label>
+                        <p class="text-sm font-medium text-gray-800 break-words">
+                            {{ auditLogInfo.userFullName || 'N/A' }}
+                        </p>
+                    </div>
+
+                    <div class="bg-gray-50 border border-gray-100 rounded-lg p-3">
+                        <label class="block text-xs text-gray-500 mb-1">Application</label>
+                        <p class="text-sm font-medium text-gray-800">
+                            {{ auditLogInfo.application || 'N/A' }}
+                        </p>
+                    </div>
+
+                    <div class="bg-gray-50 border border-gray-100 rounded-lg p-3">
+                        <label class="block text-xs text-gray-500 mb-1">Date & Time</label>
+                        <p class="text-sm font-medium text-gray-800">
+                            {{ formatDateTime(auditLogInfo.executionTime || auditLogInfo.creationTime) }}
+                        </p>
+                    </div>
+
+                    <div class="bg-gray-50 border border-gray-100 rounded-lg p-3">
+                        <label class="block text-xs text-gray-500 mb-1">Service</label>
+                        <p class="text-sm font-medium text-gray-800 break-words">
+                            {{ auditLogInfo.serviceName || 'N/A' }}
+                        </p>
+                    </div>
+
+                    <div class="bg-gray-50 border border-gray-100 rounded-lg p-3">
+                        <label class="block text-xs text-gray-500 mb-1">Method</label>
+                        <p class="text-sm font-medium text-gray-800 break-words">
+                            {{ auditLogInfo.methodName || 'N/A' }}
+                        </p>
+                    </div>
+
+                    <div class="bg-gray-50 border border-gray-100 rounded-lg p-3">
+                        <label class="block text-xs text-gray-500 mb-1">Execution Duration</label>
+                        <p class="text-sm font-medium text-gray-800">
+                            {{ auditLogInfo.executionDuration || 0 }} ms
+                        </p>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- Exception Information -->
+            <section
+                v-if="auditLogInfo.exception || auditLogInfo.exceptionMessage"
+            >
+                <h6 class="font-semibold text-red-700 mb-3 flex items-center gap-2">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Exception Information
+                </h6>
+
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <pre class="text-sm text-red-700 whitespace-pre-wrap break-words">{{ auditLogInfo.exception || auditLogInfo.exceptionMessage }}</pre>
+                </div>
+            </section>
+
+            <!-- Parameters -->
+            <section>
+                <h6 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <i class="bi bi-braces"></i>
+                    Parameters
+                </h6>
+
+                <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                    <pre class="text-sm text-green-300 whitespace-pre-wrap break-words">{{ JSON.stringify(parameters, null, 4) }}</pre>
+                </div>
+            </section>
+
+            <!-- Custom Data -->
+            <section>
+                <h6 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <i class="bi bi-code-square"></i>
+                    Custom Data
+                </h6>
+
+                <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                    <pre class="text-sm text-green-300 whitespace-pre-wrap break-words">{{ JSON.stringify(customData, null, 4) }}</pre>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="flex justify-end px-5 py-4 border-t border-gray-100 bg-gray-50">
+            <button
+                type="button"
+                @@click="showAuditLogModal = false"
+                class="px-5 py-2.5 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium transition"
+            >
+                Close
+            </button>
+        </div>
+
+    </div>
 </div>
+    <!-- Audit Report Modal -->
+    <div
+        v-if="showAuditReportModal"
+        class="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5">
+        <!-- Backdrop -->
+        <div
+            class="absolute inset-0 bg-gray-950/60 backdrop-blur-sm"
+            @@click="showAuditReportModal = false"
+        ></div>
+
+        <!-- Modal Content -->
+        <div class="relative bg-white w-full max-w-7xl h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden">
+
+            <!-- Header -->
+            <div class="flex items-center justify-between px-5 py-4 bg-blue-600 text-white shrink-0">
+                <div>
+                    <h5 class="text-lg font-semibold flex items-center gap-2">
+                        <i class="bi bi-file-earmark-text"></i>
+                        Audit Logs Report
+                    </h5>
+                    <p class="text-xs text-blue-100 mt-1">
+                        Generated audit logs report.
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    @@click="showAuditReportModal = false"
+                    class="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-white/20 transition"
+                >
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <!-- Report Viewer -->
+            <div class="flex-1 overflow-auto bg-gray-50">
+                <div
+                    id="reportView"
+                    class="w-full"
+                    style="min-height: 650px;"
+                ></div>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex justify-end px-5 py-4 border-t border-gray-100 bg-white shrink-0">
+                <button
+                    type="button"
+                    @@click="showAuditReportModal = false"
+                    class="px-5 py-2.5 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium transition"
+                >
+                    Close
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+    
+</div>
+<script src="~/js/ap/Reports/audit-logs.js" asp-append-version="true"></script>

@@ -1,24 +1,17 @@
 (() => {
     'use strict';
     const EMPTY_GUID = '00000000-0000-0000-0000-000000000000';
-    const API_BASE_URL = 'http://localhost:5300';
-
-    // Single axios instance: baseURL + cookies for every call (GET and POST).
-    // Using the global `axios` with a relative url sends the request to the web app
-    // host instead of the API, which is why save/delete were failing.
-    const api = axios.create({ baseURL: API_BASE_URL, withCredentials: true });
-
     const ENDPOINTS = {
-        invoices: `${API_BASE_URL}/ApDataEntry/GetInvoices`,
-        suppliers: `${API_BASE_URL}/SharedResource/GetSuppliers`,
-        currencies: `${API_BASE_URL}/SharedResource/GetCurrencys`,
-        organizationalUnits: `${API_BASE_URL}/SharedResource/GetCostCenters/`,
-        accounts: `${API_BASE_URL}/LedgerDataEntry/InitJournalEntry`,
-        payments: `${API_BASE_URL}/ApDataEntry/GetPayments`,
-        banks: `${API_BASE_URL}/SharedResource/GetBanks`,
-        createPayment: `${API_BASE_URL}/ApDataEntry/CreatePayment`,
-        updatePayment: `${API_BASE_URL}/ApDataEntry/UpdatePayment`,
-        deletePayment: `${API_BASE_URL}/ApDataEntry/DeletePayment`
+        invoices: '/Ap/GetInvoices',
+        suppliers: '/SharedResource/GetSuppliers',
+        currencies: '/SharedResource/GetCurrencies',
+        organizationalUnits: '/SharedResource/GetCostCenters/',
+        accounts: '/Ap/InitJournalEntry',
+        payments: '/Ap/GetPayments',
+        banks: '/SharedResource/GetBanks',
+        createPayment: '/Ap/CreatePayment',
+        updatePayment: '/Ap/UpdatePayment',
+        deletePayment: '/Ap/DeletePayment'
     };
 
     const pad = (n) => String(n).padStart(2, '0');
@@ -90,6 +83,30 @@
         const iso = loadedDate(value);
         return iso ? iso.slice(0, 4) : '';
     };
+
+    // ---------------------------------------------------------------------------
+    // FIX: string / number coercion.
+    // .NET binds these DTO members as System.String. A JSON number in their place
+    // makes the whole request fail with
+    //   "The JSON value could not be converted to System.String.
+    //    Path: $.bankAccountNumber"
+    // The chart of accounts returns accountNo as a NUMBER, which is exactly how a
+    // number ended up in bankAccountNumber.
+    // ---------------------------------------------------------------------------
+    const asText = (value) => (value === null || value === undefined ? '' : String(value));
+    const asNumber = (value, fallback = 0) => {
+        const n = Number(value);
+        return Number.isFinite(n) ? n : fallback;
+    };
+    const PAYMENT_TEXT_FIELDS = [
+        'batchNumber', 'supplierName', 'accountNumber', 'currencyName', 'currencyCode',
+        'minorName', 'invoiceTypeName', 'ouName', 'bankAccountName', 'bankAccountNumber',
+        'bankName', 'bankBranch', 'referenceNumber', 'description', 'chequeNumber',
+        'modeOfPayment', 'voucherNumber', 'address', 'purchaseOrderNumber'
+    ];
+    // Allocation rows echoed back to the API: drop grid-only columns, keep the money ones.
+    const PAYMENT_ALLOCATION_DROP = ['isSelected', 'newBalance', 'remainingBalance', '__rowKey'];
+
     const app = Vue.createApp({
         data() {
             return {
@@ -182,7 +199,7 @@
 
                 selectedInvoiceList: [],
                 invoiceDetailsMap: {},
-               
+
                 loadedPaymentId: ''
             };
         },
@@ -190,7 +207,6 @@
             invoiceColumns() {
                 return [
                     { key: 'id', label: 'ID', type: 'text', hidden: true, width: 80, help: 'Unique invoice identifier.' },
-                    { key: 'tenantId', label: 'Tenant ID', type: 'text', hidden: true, width: 80 },
                     { key: 'isSelected', label: 'Applied', type: 'boolean', width: 80, help: 'Indicates whether this invoice is selected for payment.' },
                     { key: 'invoiceNumber', label: 'Invoice No.', type: 'text', width: 150, searchable: true },
                     { key: 'liabilityAccountName', label: 'Liability G/L', type: 'text', width: 190, searchable: true },
@@ -267,7 +283,7 @@
                 });
             },
             getBusinessProfile() {
-                api.get(`${API_BASE_URL}/SharedResource/GetBusinessProfile`).then(response => {
+                axios.get('/SharedResource/GetBusinessProfile').then(response => {
                     if (response.data) {
                         this.approveInvoiceBeforePayment = response.data.approveInvoiceBeforePayment;
                         this.isOu = response.data.enforceOu;
@@ -279,7 +295,7 @@
 
             async fetchList(url, label, preferredKey = null) {
                 try {
-                    const response = await api.get(url);
+                    const response = await axios.get(url);
                     // Handle: raw array, {result: [...]}, {accounts:[...]}, {items:[...]}
                     const list = unwrapList(response.data, preferredKey);
                     // PascalCase safety
@@ -290,8 +306,11 @@
                 }
             },
             async getPayments() {
+                this.isShimmerLoading = true;
                 this.paymentList = await this.fetchList(ENDPOINTS.payments, 'Payments');
+                this.isShimmerLoading = false;
                 return this.paymentList;
+
             },
             async getApInvoices() {
                 const list = await this.fetchList(ENDPOINTS.invoices, 'AP invoices');
@@ -928,6 +947,7 @@
                 // Suppress the watchers while hydrating, otherwise they re-run
                 // getGridData()/updateFilteredInvoices() mid-load and wipe the allocations.
                 this.isSettingPayment = true;
+                this.isShimmerLoading = true;
                 this.skipInvoiceReload = true;
 
                 try {
@@ -1011,6 +1031,7 @@
                     /* ---------- 3. invoice table ---------- */
                     // Refresh headers so balances are current, but keep the cached list if the call fails.
                     const freshInvoices = await this.fetchList(ENDPOINTS.invoices, 'AP invoices');
+
                     if (freshInvoices.length) this.invoices = freshInvoices;
 
                     const allocated = paymentInfo.invoiceList || paymentInfo.invoices || paymentInfo.paymentInvoices || [];
@@ -1038,6 +1059,7 @@
                     this.isSettingPayment = false;
                     this.skipInvoiceReload = false;
                     this.loadedPaymentId = this.paymentId;
+                    this.isShimmerLoading = false;
                 }
             },
 
@@ -1100,8 +1122,46 @@
                 if (!data) return error && error.message ? `${fallback} (${error.message})` : fallback;
                 if (typeof data === 'string') return `${fallback} ${data}`.trim();
 
-                const abpError = data.error && (data.error.message || data.error.details);
+                // `details` first: it names the offending path ($.bankAccountNumber),
+                // whereas `message` is always the generic "Your request is not valid!".
+                const abpError = data.error && (data.error.details || data.error.message);
                 return abpError || data.message || data.detail || data.title || fallback;
+            },
+
+            /* ------------------------------------------------------------------
+             * FIX: coerce every DTO member to the type the API expects.
+             * bankAccountNumber / accountNumber and friends are System.String - a
+             * JSON number there fails the whole request.
+             * ------------------------------------------------------------------ */
+            sanitizePaymentPayload(payload) {
+                PAYMENT_TEXT_FIELDS.forEach((key) => {
+                    if (key in payload) payload[key] = asText(payload[key]);
+                });
+
+                ['buyRate', 'sellRate', 'invoiceRate', 'amountToPay'].forEach((key) => {
+                    if (key in payload) payload[key] = asNumber(payload[key]);
+                });
+
+                ['paymentDate', 'date'].forEach((key) => {
+                    if (key in payload) payload[key] = loadedDate(payload[key]) || isoDate(new Date());
+                });
+
+                // Allocation rows: keep the money columns, drop grid-only ones.
+                if (Array.isArray(payload.invoiceList)) {
+                    payload.invoiceList = payload.invoiceList.map((row) => {
+                        const clean = {};
+                        Object.entries(row || {}).forEach(([key, value]) => {
+                            if (!PAYMENT_ALLOCATION_DROP.includes(key)) clean[key] = value;
+                        });
+                        // these are System.String on the payment-invoice DTO too
+                        ['supplierName', 'invoiceNumber', 'currencyName', 'batchNumber'].forEach((key) => {
+                            if (key in clean) clean[key] = asText(clean[key]);
+                        });
+                        return clean;
+                    });
+                }
+
+                return payload;
             },
 
             async savePayment() {
@@ -1136,12 +1196,13 @@
                     if (supplierInfo) {
                         payload.supplierId = supplierInfo.id;
                         payload.supplierName = supplierInfo.name;
-                        payload.accountNumber = supplierInfo.accountNumber;
+                        // accountNumber is a String on the DTO; the supplier list can hand back a number
+                        payload.accountNumber = asText(supplierInfo.accountNumber);
                         payload.tenantId = supplierInfo.tenantId || this.tenantId;
                     } else {
                         payload.supplierId = this.supplierId;
                         payload.supplierName = this.supplierName;
-                        payload.accountNumber = this.accountNumber;
+                        payload.accountNumber = asText(this.accountNumber);
                         payload.tenantId = this.tenantId;
                     }
 
@@ -1178,10 +1239,13 @@
                     const bankAccountInfo = (this.accounts || []).find(a => sameId(a.id, this.bankAccountId));
                     if (bankAccountInfo) {
                         payload.bankAccountId = bankAccountInfo.id;
-                        payload.bankAccountName = `${bankAccountInfo.accountNo} - ${bankAccountInfo.accountName}`;
-                        payload.bankAccountNumber = bankAccountInfo.accountNo;
+                        // accountNo is a NUMBER in the chart of accounts -> stringify it,
+                        // otherwise: "The JSON value could not be converted to System.String.
+                        //              Path: $.bankAccountNumber"
+                        payload.bankAccountName = `${asText(bankAccountInfo.accountNo)} - ${asText(bankAccountInfo.accountName)}`;
+                        payload.bankAccountNumber = asText(bankAccountInfo.accountNo ?? bankAccountInfo.accountNumber);
                     } else {
-                        payload.bankAccountId = this.emptyGuid;
+                        payload.bankAccountId = this.emptyGuid || EMPTY_GUID;
                         payload.bankAccountName = 'Not Set';
                         payload.bankAccountNumber = 'Not Set';
                     }
@@ -1210,11 +1274,14 @@
                     payload.bankBranchId = bankBranchInfo ? bankBranchInfo.id : this.emptyGuid;
                     if (bankBranchInfo) payload.bankBranch = bankBranchInfo.name;
 
+                    // ---------- single place where every value is coerced ----------
+                    this.sanitizePaymentPayload(payload);
+
                     // ---------- UPDATE ----------
                     if (this.paymentId) {
                         payload.id = this.paymentId;
 
-                        const response = await api.post(ENDPOINTS.updatePayment, payload);
+                        const response = await axios.post(ENDPOINTS.updatePayment, payload);
                         const body = response.data || {};
                         const updatedId = body.id || body.paymentId || this.paymentId;
 
@@ -1230,8 +1297,8 @@
                     }
 
                     // ---------- CREATE ----------
-                    const response = await api.post(ENDPOINTS.createPayment, payload);
-                    const body = response.data || {};
+                    const response = await axios.post(ENDPOINTS.createPayment, payload);
+                    const body = response.data.result || {};
                     const createdId = body.id || body.paymentId || (body.payment && body.payment.id);
 
                     await this.getPayments();
@@ -1288,9 +1355,7 @@
                 try {
                     const paymentIds = selected.map(payment => payment.id);
 
-                    const res = await axios.post('http://localhost:5300/ApDataEntry/CancelPayments', {
-                        paymentIds
-                    });
+                    const res = await axios.post('/Ap/CancelPayments', paymentIds);
 
                     if (res.data && res.data.success === false) {
                         this.toastHandler(
@@ -1323,7 +1388,7 @@
                     : [];
 
                 if (!selected.length) {
-                    this.toastHandler('warning', 'Select one or more invoices to post.');
+                    this.toastHandler('warning', 'Select one or more payments to post.');
                     return;
                 }
 
@@ -1358,8 +1423,8 @@
                     const paymentIds = paymentsToPost.map(payment => payment.id);
 
                     const res = await axios.post(
-                        'http://localhost:5300/ApDataEntry/InitPostPayment',
-                        { paymentIds }
+                        '/Ap/PostPayments',
+                        paymentIds
                     );
 
                     if (res.data && res.data.success === false) {
@@ -1397,7 +1462,7 @@
                 }
 
                 const paymentId = this.paymentId;
-                const reportUrl = `/ApReports/PrintPaymentReceipt?id=${paymentId}`;
+                const reportUrl = `/Ap/PrintPaymentReceipt?id=${paymentId}`;
 
                 const printWindow = window.open("", "_blank");
                 printWindow.document.write(`

@@ -56,7 +56,8 @@
                         :page-size="5"
                         :selectable="true"
                         :allow-add="false" :allow-edit="false" :allow-delete="false"
-                        group-header="currencyName">
+                        group-header="currencyName"
+                        :loading="isShimmerLoading">
                     </data-grid>
                     
                     <div id="add" class="my-5">
@@ -405,7 +406,8 @@
                                 :selectable="true"
                                 :allow-add="false"
                                 :allow-edit="false"
-                                :allow-delete="false">
+                                :allow-delete="false"
+                                :loading="isShimmerLoading">
                             </data-grid>
                         </div>
                     </div>

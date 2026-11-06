@@ -20,69 +20,129 @@
             </div>
         </div>
     </div>
-    <div class="card" data-card-title="Reports - Opening Balances">
-     <div class="space-y-3">
+   
+<div id="app" class="card" data-card-title="Reports - Opening Balances">
+
+    <div class="space-y-5">
+
+        <!-- Report Status -->
+        <div>
             <label class="label block text-sm">
-                Select Report Type:
+                Select Report Status:
             </label>
-            <div  class="flex flex-wrap cursor-pointer items-center gap-3 rounded-lg py-3 transition-colors">
-           
-                <!-- Type 1 -->
-                <label for="type1"
+
+            <div class="flex flex-wrap items-center gap-3 rounded-lg py-3">
+
+                <label for="statusAll"
                        class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-blue-300 hover:bg-blue-50/50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-500 dark:hover:bg-slate-800">
-                    <input
-                        id="type1"
-                        type="radio"
-                        value="all" v-model="reportStatus"
-                        class="input-control" />
+
+                    <input id="statusAll"
+                           type="radio"
+                           value="all"
+                           v-model="reportStatus"
+                           class="input-control" />
+
                     <span>All</span>
                 </label>
 
-                <!-- Type 2 -->
-                <label for="type2"
+                <label for="statusPosted"
                        class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-blue-300 hover:bg-blue-50/50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-500 dark:hover:bg-slate-800">
-                    <input
-                        id="type2"
-                        type="radio"
-                        value="posted" v-model="reportStatus"
-                        class="input-control" />
+
+                    <input id="statusPosted"
+                           type="radio"
+                           value="posted"
+                           v-model="reportStatus"
+                           class="input-control" />
+
                     <span>Posted</span>
                 </label>
 
-                <!-- Type 3 -->
-                <label for="type3"
+                <label for="statusUnposted"
                        class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-blue-300 hover:bg-blue-50/50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-500 dark:hover:bg-slate-800">
-                    <input
-                        id="type3"
-                        type="radio"
-                        value="unposted" v-model="reportStatus"
-                        class="input-control" />
+
+                    <input id="statusUnposted"
+                           type="radio"
+                           value="unposted"
+                           v-model="reportStatus"
+                           class="input-control" />
+
                     <span>Unposted</span>
                 </label>
+
             </div>
         </div>
-        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4 mb-5">
-            <label  class="label block text-sm">
-                Select Report Type: <select class="select" v-model="reportType" ref="reportType">
-                    <option value="summary"> Summary </option>
-                    <option value="bySupplier"> By Supplier </option>
-                    <option value="type2"> Type 2</option>
-                </select></label>
-            <w-select 
-                      v-model="supplierId"
-                      :options="supplierList"
-                      display-key="name"
-                      value-key="id"
-                      label="Supplier:"
-            ></w-select>
-    
+
+        <!-- Report Filters -->
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+
+            <!-- Report Type -->
+            <label class="label block text-sm">
+                Select Report Type:
+
+                <select class="input-control"
+                        v-model="reportType">
+
+                    <option value="summary">Summary</option>
+                    <option value="bySupplier">By Supplier</option>
+                    <option value="type2">Type 2</option>
+
+                </select>
+            </label>
+
+            <!-- Supplier: Only for By Supplier -->
+            <div v-if="reportType === 'bySupplier'">
+
+                <w-select
+                    v-model="supplierId"
+                    :options="supplierList"
+                    display-key="name"
+                    value-key="id"
+                    placeholder="Select Supplier"
+                    label="Supplier:"
+                    required>
+                </w-select>
+
+            </div>
+
         </div>
-        <hr>
-        <div class="bg-gray-50 p-4 my-4 rounded-xl dark:bg-slate-800">
-            <div style="height:auto;width:auto;min-height:500px;" id="reportView">  </div>
+
+        <!-- Generate Report -->
+        <div class="flex justify-end mb-5">
+
+            <button type="button"
+                    @@click="getReportData"
+                    :disabled="isLoading"
+                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+
+                <span v-if="isLoading">
+                    <i class="las la-spinner la-spin mr-1"></i>
+                    Generating...
+                </span>
+
+                <span v-else>
+                    <i class="las la-file-alt mr-1"></i>
+                    Generate Report
+                </span>
+
+            </button>
+
         </div>
-    
+
+        <hr />
+
+        <!-- Report Viewer -->
+        <div class="p-4 my-4 rounded-xl dark:bg-slate-800">
+
+            <div id="reportView"
+                 style="height:auto;width:auto;min-height:500px;">
+            </div>
+
+        </div>
+
     </div>
+
 </div>
 
-<script src="~/js/ap/Reports/balances.cshtml.js" asp-append-version="true"></script>
+</div>
+
+<script src="~/js/ap/Reports/balances.js" asp-append-version="true"></script>

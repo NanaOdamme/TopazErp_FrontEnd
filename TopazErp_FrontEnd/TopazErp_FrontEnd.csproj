@@ -3259,6 +3259,37 @@
       <_ContentIncludedByDefault Remove="wwwroot\ejassets\ejthemes\bootstrap-theme\images\rotator-icon.png" />
       <_ContentIncludedByDefault Remove="wwwroot\ejassets\ejthemes\bootstrap-theme\images\slider-tick.png" />
       <_ContentIncludedByDefault Remove="wwwroot\ejassets\ejthemes\bootstrap-theme\images\waitingpopup.gif" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\data-entry\creditMemo.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\data-entry\customer-groups.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\data-entry\customers.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\data-entry\invoices.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\data-entry\openingbalances.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\data-entry\paymentPage.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\enquiries\ageing.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\enquiries\canceled-invoices.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\Dashboard\ar.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\DataEntry\debitMemo.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\DataEntry\invoices.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\DataEntry\openingbalances.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\DataEntry\paymentPage.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\DataEntry\vouchers.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\Email\invoices.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\Enquiries\canceled-payments.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\Enquiries\paid-invoices.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\Imports\balances.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\Imports\suppliers.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\Reports\aging-reports.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\Reports\audit-logs.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\Reports\balances.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\Reports\canceled-invoices-report.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\Reports\gl-transactions-reports.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\Reports\invoice-pdf-report.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\Reports\invoices.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\Reports\memo-reports.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\Reports\payment-reports.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\Reports\payment-vouchers.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\Reports\statements.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\Reports\suppliers.js" />
     </ItemGroup>
 
 </Project>

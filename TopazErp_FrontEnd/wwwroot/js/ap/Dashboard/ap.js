@@ -1,330 +1,340 @@
-const app = Vue.createApp({
-    data() {
-        return {
-            isShimmerLoading: false,
-            payload: {},
-            transactionDate: '',
-            invoiceChartInstance: null,
-            supplierChartInstance: null,
-            invoiceAnalysisChartData: {
-                labels: [],
-                data: [],
-                colors: []
-            },
-            supplierPaymentsChartData: {
-                labels: [],
-                balance: [],
-                paid: []
-            },
-            supplierBalances: [],
-            supplierInvoices: [],
-            supplierPayments: [],
-            currentPage: 1,
-            currentBPage: 1,
-            bItemsPerPage: 3,
-            itemsPerPage: 3,
-            sortKey: '',
-            sortOrder: 'asc',
-            bSortKey: '',
-            supplierCount: 0,
-            invoiceCount: 0,
-            paymentCount: 0,
-            postedInvoiceCount: 0,
-            years:[2022, 2023, 2024, 2025],
-        }
-    },
-    computed: {
-        sortedBalances() {
-            if (!this.bSortKey) return this.supplierBalances;
-            return [...this.supplierBalances].sort((a, b) => {
-                const valueA = a[this.bSortKey];
-                const valueB = b[this.bSortKey];
-                if (valueA < valueB) return this.sortOrder === 'asc' ? -1 : 1;
-                if (valueA > valueB) return this.sortOrder === 'asc' ? 1 : -1;
-                return 0;
-            });
-        },
-        paginatedBalances() {
-            const start = (this.currentBPage - 1) * this.bItemsPerPage;
-            const end = this.currentBPage * this.bItemsPerPage;
-            return this.sortedBalances.slice(start, end);
-        },
+(function () {
+    'use strict';
 
-        sortedInvoices() {
-            if (!this.sortKey) return this.supplierInvoices;
-            return [...this.supplierInvoices].sort((a, b) => {
-                const valueA = a[this.sortKey];
-                const valueB = b[this.sortKey];
-                if (valueA < valueB) return this.sortOrder === 'asc' ? -1 : 1;
-                if (valueA > valueB) return this.sortOrder === 'asc' ? 1 : -1;
-                return 0;
-            });
-        },
-        paginatedInvoices() {
-            const start = (this.currentPage - 1) * this.itemsPerPage;
-            const end = this.currentPage * this.itemsPerPage;
-            return this.sortedInvoices.slice(start, end);
-        },
-        totalPages() {
-            return Math.ceil(this.supplierInvoices.length / this.itemsPerPage);
-        },
+    const API_URLS = {
+        aging: '/Ap/GetApAgingSummary',
+        invoices: '/Ap/GetInvoices',
+        payments: '/Ap/GetApPaymentsReport',
+        openingBalances: '/Ap/GetApBalancesReport?status=all',
+        suppliers: '/SharedResource/GetSuppliers',
+        vouchers: '/Ap/GetVouchers',
+        canceledInvoices: '/Ap/GetApCanceledInvoices',
+        debitMemos: '/Ap/GetApDebitMemo',
+        glTransactions: '/Ap/GetApGlTransaction'
+    };
 
-        totalBPages() {
-            return Math.ceil(this.supplierBalances.length / this.itemsPerPage);
-        }
-
-    },
-    methods: {
-        printReport(id) {
-            this.isLoading = true;
-            const printWindow = window.open("", "_blank");
-            printWindow.document.write(`
-        <html>
-        <head>
-            <title>Loading Report...</title>
-            <style>
-                body {
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    height: 100vh;
-                    margin: 0;
-                    font-family: Arial, sans-serif;
-                }
-                .loader {
-                    border: 10px solid #f3f3f3;
-                    border-top: 10px solid #3498db;
-                    border-radius: 50%;
-                    width: 60px;
-                    height: 60px;
-                    animation: spin 1s linear infinite;
-                }
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="loader"></div>
-        </body>
-        </html>
-    `);
-            printWindow.document.close(); // finish writing
-
-            let url = `/ApReports/GetInvoiceInPdf?id=${id}`;
-            axios.get(url, { responseType: 'blob' })
-                .then(response => {
-                    if (!response.data) {
-                        this.toastHandler("warning", "No Data is selected for printing.");
-                        printWindow.close();
-                        this.isLoading = false;
-                        return;
-                    }
-
-                    const blob = new Blob([response.data], { type: "application/pdf" });
-                    const blobUrl = URL.createObjectURL(blob);
-
-                    // Replace content with the PDF once it's loaded
-                    printWindow.location.href = blobUrl;
-                    this.isLoading = false;
-                })
-                .catch(err => {
-                    this.toastHandler("error", "Unable to load the invoice. Please try again.");
-                    printWindow.close();
-                    this.isLoading = false;
-                });
-        },
-
-        getDashboardData() {
-            axios.get('/Dashboard/GetApDashboardData')
-                .then(response => {
-
-                    // -----------------------------
-                    // 1. INVOICE ANALYSIS DATA
-                    // -----------------------------
-                    const invoiceData =
-                        response.data.invoiceAnalysis?.InvoiceAnalysis?.[0] || {};
-
-                    // Build Chart.js-friendly structure
-                    this.invoiceAnalysisChartData.labels = [
-                        'Unpaid',
-                        'Part Paid',
-                        'Fully Paid',
-                        'Approved',
-                        'Pending Approval'
-                    ];
-
-                    this.invoiceAnalysisChartData.data = [
-                        invoiceData.unpaidCount || 0,
-                        invoiceData.partialCount || 0,
-                        invoiceData.fullyPaidCount || 0,
-                        invoiceData.approvedCount || 0,
-                        invoiceData.unapprovedCount || 0
-                    ];
-
-                    this.invoiceAnalysisChartData.colors = [
-                        '#FF4E42',
-                        '#FFB547',
-                        '#00E396',
-                        '#1f9aff',
-                        '#8884d8'
-                    ];
-
-                    // -----------------------------
-                    // 2. SUPPLIER DATA
-                    // -----------------------------
-                    this.supplierBalances =
-                        response.data.supplierOpeningBalance?.supplierOpeningBalances || [];
-
-                    this.supplierInvoices =
-                        response.data.supplierInvoices?.supplierInvoices || [];
-
-                    this.supplierPayments =
-                        response.data.supplierPayments?.SupplierPayments || [];
-
-                    // dashboard counts
-                    this.supplierCount = response.data.calculations?.SuppliersWithBalance || 0;
-                    this.invoiceCount = response.data.calculations?.TotalInvoices || 0;
-                    this.postedInvoiceCount = response.data.calculations?.PostedInvoices || 0;
-                    this.paymentCount = response.data.calculations?.PostedPayments || 0;
-
-                    // -----------------------------
-                    // 3. SUPPLIER PAYMENTS CHART DATA
-                    // -----------------------------
-                    const suppliers = [];
-                    const totalPaid = [];
-                    const invoiceBalance = [];
-
-                    (this.supplierPayments || []).forEach(v => {
-                        suppliers.push(v.supplierName);
-                        totalPaid.push(v.totalPaid || 0);
-                        invoiceBalance.push(v.invoiceBalance || 0);
-                    });
-
-                    this.supplierPaymentsChartData.labels = suppliers;
-                    this.supplierPaymentsChartData.paid = totalPaid;
-                    this.supplierPaymentsChartData.balance = invoiceBalance;
-
-                    // -----------------------------
-                    // 4. RENDER CHARTS SAFELY
-                    // (wait until DOM is ready)
-                    // -----------------------------
-                    this.$nextTick(() => {
-                        this.renderInvoiceChart();
-                        this.renderSupplierChart();
-                    });
-
-                })
-                .catch(err => {
-                    console.error(err);
-                    this.toastHandler('error', 'Unable to retrieve dashboard data.');
-                });
-        },
-
-        renderInvoiceChart() {
-            const ctx = document.getElementById('invoiceChart');
-
-            if (this.invoiceChartInstance) {
-                this.invoiceChartInstance.destroy();
-            }
-
-            this.invoiceChartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: this.invoiceAnalysisChartData.labels,
-                    datasets: [{
-                        data: this.invoiceAnalysisChartData.data,
-                        backgroundColor: this.invoiceAnalysisChartData.colors
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'right'
-                        }
-                    }
-                }
-            });
-        },
-        renderSupplierChart() {
-            const ctx = document.getElementById('supplierChart');
-
-            if (this.supplierChartInstance) {
-                this.supplierChartInstance.destroy();
-            }
-
-            this.supplierChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: this.supplierPaymentsChartData.labels,
-                    datasets: [
-                        {
-                            label: 'Balance Due',
-                            data: this.supplierPaymentsChartData.balance
-                        },
-                        {
-                            label: 'Amount Paid',
-                            data: this.supplierPaymentsChartData.paid
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true
-                }
-            });
-        },
-
-        toastHandler(type, message = 'An unexpected error occurred.') {
-            if (typeof Swal === 'undefined') {
-                console.log(message);
-                return;
-            }
-            Swal.fire({
-                toast: true,
-                position: 'top-end',
-                icon: type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'success',
-                title: message,
-                showConfirmButton: false,
-                timer: 4000,
-                timerProgressBar: true
-            });
-
-        },
-        sortBTable(key) {
-            if (this.bSortKey === key) {
-                this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
-            } else {
-                this.bSortKey = key;
-                this.sortOrder = 'asc';
-            }
-        },
-        nextBPage() {
-            if (this.currentBPage < this.totalBPages) this.currentBPage++;
-        },
-        prevBPage() {
-            if (this.currentBPage > 1) this.currentBPage--;
-        },
-        sortTable(key) {
-            if (this.sortKey === key) {
-                this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
-            } else {
-                this.sortKey = key;
-                this.sortOrder = 'asc';
-            }
-        },
-        nextPage() {
-            if (this.currentPage < this.totalPages) this.currentPage++;
-        },
-        prevPage() {
-            if (this.currentPage > 1) this.currentPage--;
-        },
-
-    },
-    mounted() {
-        this.getDashboardData();
+    function localToday() {
+        const date = new Date();
+        const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+        return local.toISOString().slice(0, 10);
     }
-});
-app.mount('#app');
 
+    Vue.createApp({
+        data() {
+            return {
+                apiUrls: API_URLS,
+                asOfDate: localToday(),
+                agingInterval: 30,
+                isLoading: false,
+                loadIssues: [],
+                agingRows: [],
+                invoices: [],
+                payments: [],
+                openingBalances: [],
+                suppliers: []
+            };
+        },
+
+        computed: {
+            openInvoices() {
+                return this.invoices.filter(row => {
+                    const balance = this.value(row, ['balance', 'invoiceBalance']);
+                    return balance === '' || this.numberValue(balance) > 0;
+                });
+            },
+
+            cards() {
+                return [
+                    {
+                        label: 'Open invoices',
+                        value: this.formatNumber(this.openInvoices.length),
+                        note: 'Invoice records with an outstanding balance',
+                        icon: '▤',
+                        iconClass: 'bg-indigo-50 text-indigo-600'
+                    },
+                    {
+                        label: 'Suppliers',
+                        value: this.formatNumber(this.suppliers.length),
+                        note: 'Supplier records returned by the shared resource API',
+                        icon: '♙',
+                        iconClass: 'bg-emerald-50 text-emerald-600'
+                    },
+                    {
+                        label: 'Payments',
+                        value: this.formatNumber(this.payments.length),
+                        note: 'Payment records returned by the AP reports API',
+                        icon: '↗',
+                        iconClass: 'bg-sky-50 text-sky-600'
+                    },
+                    {
+                        label: 'Opening balances',
+                        value: this.formatNumber(this.openingBalances.length),
+                        note: 'Opening balance records across all statuses',
+                        icon: '◷',
+                        iconClass: 'bg-amber-50 text-amber-600'
+                    }
+                ];
+            },
+
+            agingBuckets() {
+                const definitions = [
+                    { label: 'Current', key: 'currentDay' },
+                    { label: '1–30 days', key: 'agingFirst' },
+                    { label: '31–60 days', key: 'agingSecond' },
+                    { label: '61+ days', key: 'agingThird' }
+                ];
+
+                const buckets = definitions.map(item => ({
+                    label: item.label,
+                    count: this.agingRows.filter(row =>
+                        this.numberValue(this.value(row, [item.key])) > 0
+                    ).length
+                }));
+
+                const max = Math.max(1, ...buckets.map(item => item.count));
+                return buckets.map(item => ({
+                    ...item,
+                    width: item.count ? Math.max(3, item.count / max * 100) : 0
+                }));
+            },
+
+            currencyRows() {
+                const counts = new Map();
+
+                this.invoices.forEach(row => {
+                    const name = String(
+                        this.value(row, ['currencyCode', 'currencyName']) || 'Unspecified'
+                    );
+                    counts.set(name, (counts.get(name) || 0) + 1);
+                });
+
+                const rows = Array.from(counts.entries())
+                    .map(([name, count]) => ({ name, count }))
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, 6);
+
+                const max = Math.max(1, ...rows.map(item => item.count));
+                return rows.map(item => ({
+                    ...item,
+                    width: Math.max(3, item.count / max * 100)
+                }));
+            },
+
+            recentInvoices() {
+                return this.sortRecent(
+                    this.invoices,
+                    ['invoiceDate', 'transactionDate', 'creationTime']
+                ).slice(0, 7);
+            },
+
+            recentPayments() {
+                return this.sortRecent(
+                    this.payments,
+                    ['transactionDate', 'paymentDate', 'creationTime']
+                ).slice(0, 6);
+            },
+
+            quickActions() {
+                const startDate = encodeURIComponent(this.asOfDate || localToday());
+                const endDate = encodeURIComponent(this.asOfDate || localToday());
+                const interval = encodeURIComponent(this.agingInterval);
+
+                return [
+                    {
+                        label: 'Aging summary',
+                        href: this.apiUrls.aging +
+                            '?startDate=' + startDate +
+                            '&agingInterval=' + interval
+                    },
+                    {
+                        label: 'G/L transactions',
+                        href: this.apiUrls.glTransactions +
+                            '?startDate=' + startDate +
+                            '&endDate=' + endDate +
+                            '&isMultiCurrency=false'
+                    },
+                    { label: 'Payment vouchers', href: this.apiUrls.vouchers },
+                    {
+                        label: 'Opening balance report',
+                        href: this.apiUrls.openingBalances
+                    },
+                    {
+                        label: 'Canceled invoices',
+                        href: this.apiUrls.canceledInvoices
+                    },
+                    { label: 'Debit memos', href: this.apiUrls.debitMemos }
+                ];
+            }
+        },
+
+        methods: {
+            property(row, name) {
+                if (!row) return undefined;
+                const pascalName = name.charAt(0).toUpperCase() + name.slice(1);
+                return row[name] ?? row[pascalName];
+            },
+
+            value(row, names) {
+                for (const name of names) {
+                    const result = this.property(row, name);
+                    if (result !== undefined && result !== null && result !== '') {
+                        return result;
+                    }
+                }
+                return '';
+            },
+
+            rowsFrom(raw) {
+                if (!raw) return [];
+                if (Array.isArray(raw)) return raw;
+                if (typeof raw !== 'object') return [];
+
+                const keys = [
+                    'result',
+                    'items',
+                    'data',
+                    'invoices',
+                    'payments',
+                    'balances',
+                    'openingBalances',
+                    'apOpeningBalances',
+                    'suppliers',
+                    'records'
+                ];
+
+                for (const key of keys) {
+                    const value = this.property(raw, key);
+                    if (Array.isArray(value)) return value;
+                }
+
+                for (const key of ['result', 'data']) {
+                    const nested = this.property(raw, key);
+                    if (nested && typeof nested === 'object') {
+                        const rows = this.rowsFrom(nested);
+                        if (rows.length) return rows;
+                    }
+                }
+
+                return [];
+            },
+
+            async fetchRows(url) {
+                const response = await fetch(url, {
+                    headers: { Accept: 'application/json' },
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Request failed (' + response.status + ') for ' + url);
+                }
+
+                return this.rowsFrom(await response.json());
+            },
+
+            async fetchSafely(url, label, issues) {
+                try {
+                    return await this.fetchRows(url);
+                } catch (error) {
+                    console.error(label + ' loading error:', error);
+                    issues.push(label);
+                    return [];
+                }
+            },
+
+            numberValue(value) {
+                const parsed = Number(String(value ?? 0).replace(/,/g, ''));
+                return Number.isFinite(parsed) ? parsed : 0;
+            },
+
+            formatNumber(value) {
+                return new Intl.NumberFormat(undefined, {
+                    maximumFractionDigits: 2
+                }).format(this.numberValue(value));
+            },
+
+            formatDate(value) {
+                if (!value) return '—';
+
+                const text = String(value);
+                const dotNetDate = text.match(/\/Date\((-?\d+)\)\//);
+                let date;
+
+                if (dotNetDate) {
+                    date = new Date(Number(dotNetDate[1]));
+                } else if (/^\d{4}-\d{2}-\d{2}/.test(text)) {
+                    const parts = text.slice(0, 10).split('-').map(Number);
+                    date = new Date(parts[0], parts[1] - 1, parts[2]);
+                } else {
+                    date = new Date(text);
+                }
+
+                if (Number.isNaN(date.getTime())) return text;
+
+                return new Intl.DateTimeFormat(undefined, {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                }).format(date);
+            },
+
+            sortRecent(rows, dateKeys) {
+                return rows.slice().sort((a, b) => {
+                    const dateA = String(this.value(a, dateKeys));
+                    const dateB = String(this.value(b, dateKeys));
+                    return dateB.localeCompare(dateA);
+                });
+            },
+
+            statusLabel(status) {
+                if (status === true) return 'Posted';
+                if (status === false) return 'Unposted';
+                return String(status || '—');
+            },
+
+            statusClass(status) {
+                const label = this.statusLabel(status).toLowerCase();
+
+                if (label.includes('cancel')) {
+                    return 'rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700';
+                }
+                if (label.includes('post')) {
+                    return 'rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700';
+                }
+                return 'rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700';
+            },
+
+            async loadDashboard() {
+                if (this.isLoading) return;
+
+                this.isLoading = true;
+                this.loadIssues = [];
+
+                const startDate = encodeURIComponent(this.asOfDate || localToday());
+                const interval = encodeURIComponent(this.agingInterval);
+                const agingUrl = this.apiUrls.aging +
+                    '?startDate=' + startDate +
+                    '&agingInterval=' + interval;
+
+                const [agingRows, invoices, payments, openingBalances, suppliers] =
+                    await Promise.all([
+                        this.fetchSafely(agingUrl, 'Aging summary', this.loadIssues),
+                        this.fetchSafely(this.apiUrls.invoices, 'Invoices', this.loadIssues),
+                        this.fetchSafely(this.apiUrls.payments, 'Payments', this.loadIssues),
+                        this.fetchSafely(this.apiUrls.openingBalances, 'Opening balances', this.loadIssues),
+                        this.fetchSafely(this.apiUrls.suppliers, 'Suppliers', this.loadIssues)
+                    ]);
+
+                this.agingRows = agingRows;
+                this.invoices = invoices;
+                this.payments = payments;
+                this.openingBalances = openingBalances;
+                this.suppliers = suppliers;
+                this.isLoading = false;
+            }
+        },
+
+        mounted() {
+            this.loadDashboard();
+        }
+    }).mount('#apDashboard');
+})();

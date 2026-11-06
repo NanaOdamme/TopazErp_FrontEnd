@@ -1,0 +1,227 @@
+@{
+    ViewBag.Title = "Invoice PDF Report";
+    Layout = "~/Views/Shared/_adminApLayout.cshtml";
+}
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>AP - Reports</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Invoice PDF Report</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+
+            <div class="page-title">
+                <h2 class="text-2xl font-semibold text-gray-800">
+                    Invoice PDF Report
+                </h2>
+                
+            </div>
+        </div>
+    </div>
+   <div id="app" class="card" data-card-title="Invoice PDF Report">
+
+    <div>
+        <!-- Filters -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+
+            <div>
+                <w-select
+                        
+                          v-model="invoiceId"
+                          :options="invoiceList"
+                          display-key="displayText"
+                          value-key="id"
+                          label="Invoice Number:"
+                ></w-select>
+            </div>
+    
+
+        </div>
+
+        <!-- Actions -->
+        <div class="flex flex-wrap justify-end gap-3 mt-5">
+
+            <button type="button"
+                    @@click="getPdf()"
+                    :disabled="isLoading || !invoiceId"
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+
+                <i class="bi bi-file-pdf"></i>
+
+                <span>Print Invoice PDF</span>
+            </button>
+
+        </div>
+
+        <hr class="my-5">
+
+        <!-- Loading -->
+        <div v-if="isLoading"
+             class="flex items-center justify-center py-6">
+
+            <div class="flex items-center gap-2 text-gray-500">
+                <i class="bi bi-arrow-repeat animate-spin text-xl"></i>
+                <span>Processing...</span>
+            </div>
+
+        </div>
+
+        <!-- Invoice Details Table -->
+        <div 
+             class="overflow-x-auto mb-5">
+
+            <h3 class="text-base font-semibold mb-3">
+                Invoice Details
+            </h3>
+
+          <div class="w-full overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+
+            <table class="w-full min-w-[850px] text-sm text-left">
+
+                        <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 uppercase text-xs">
+                            <tr>
+                                <!-- SELECT ALL -->
+                                <th class="px-4 py-3 w-12">
+                                    <input type="checkbox"
+                                           v-model="selectAll"
+                                           @@change="toggleSelectAll"
+                                           class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                                </th>
+
+                                <th class="px-4 py-3 font-semibold">Invoice Number</th>
+                                <th class="px-4 py-3 font-semibold">Supplier Name</th>
+                                <th class="px-4 py-3 font-semibold">Batch Number</th>
+                                <th class="px-4 py-3 font-semibold text-right">Total Amount</th>
+                                <th class="px-4 py-3 font-semibold text-right">Balance</th>
+                            </tr>
+                        </thead>
+
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
+
+                            <tr v-for="inv in paginatedInvoices"
+                                :key="inv.id"
+                                class="hover:bg-gray-50 dark:hover:bg-gray-800/70 transition-colors">
+
+                                <!-- CHECKBOX -->
+                                <td class="px-4 py-3">
+                                    <input type="checkbox"
+                                           :value="inv.id"
+                                           :checked="selectedInvoices.includes(inv.id)"
+                                           @@change="toggleInvoice(inv.id)"
+                                           class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                                </td>
+
+                                <td class="px-4 py-3 font-medium text-gray-800 dark:text-gray-100 whitespace-nowrap">
+                                    {{ inv.invoiceNumber }}
+                                </td>
+
+                                <td class="px-4 py-3 text-gray-600 dark:text-gray-300">
+                                    {{ inv.supplierName }}
+                                </td>
+
+                                <td class="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                                    {{ inv.batchNumber }}
+                                </td>
+
+                                <td class="px-4 py-3 text-right font-medium text-gray-800 dark:text-gray-100 whitespace-nowrap">
+                                    {{ formatNumber(inv.totalInvoiceAmount) }}
+                                </td>
+
+                                <td class="px-4 py-3 text-right font-medium text-gray-800 dark:text-gray-100 whitespace-nowrap">
+                                    {{ formatNumber(inv.balance) }}
+                                </td>
+
+                            </tr>
+
+                            <!-- EMPTY STATE -->
+                            <tr v-if="paginatedInvoices.length === 0">
+                                <td colspan="6" class="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
+                                    <div class="flex flex-col items-center gap-2">
+                                        <i class="bi bi-inbox text-3xl"></i>
+                                        <span>No invoices found.</span>
+                                    </div>
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+</div>
+<div class="flex flex-col sm:flex-row justify-end items-center gap-3 p-3">
+
+    <!-- Items Per Page -->
+    <div class="flex items-center gap-2">
+        <i class="bi bi-list-ul text-blue-500 text-lg"></i>
+
+        <select v-model.number="perPage"
+                @@change="currentPage = 1"
+                class="input-control w-auto min-w-[130px] text-sm cursor-pointer">
+
+            <option :value="2">2 per page</option>
+            <option :value="5">5 per page</option>
+            <option :value="10">10 per page</option>
+            <option :value="20">20 per page</option>
+            <option :value="50">50 per page</option>
+
+        </select>
+    </div>
+
+    <!-- Pagination -->
+    <nav class="flex items-center gap-1">
+
+        <!-- Previous -->
+        <button type="button"
+                @@click="currentPage = Math.max(1, currentPage - 1)"
+                :disabled="currentPage === 1"
+                class="px-3 py-2 text-sm rounded-md border border-gray-200 dark:border-gray-700
+                       text-gray-600 dark:text-gray-300
+                       hover:bg-gray-100 dark:hover:bg-gray-800
+                       disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            Prev
+        </button>
+
+        <!-- Page Numbers -->
+        <template v-for="(page, index) in paginationPages" :key="index">
+
+            <span v-if="page === '...'"
+                  class="px-2 py-2 text-sm text-gray-400">
+                ...
+            </span>
+
+            <button v-else
+                    type="button"
+                    @@click="currentPage = page"
+                    :class="currentPage === page
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'"
+                    class="min-w-[36px] px-3 py-2 text-sm rounded-md border transition-colors">
+                {{ page }}
+            </button>
+
+        </template>
+
+        <!-- Next -->
+        <button type="button"
+                @@click="currentPage = Math.min(totalPages, currentPage + 1)"
+                :disabled="currentPage === totalPages"
+                class="px-3 py-2 text-sm rounded-md border border-gray-200 dark:border-gray-700
+                       text-gray-600 dark:text-gray-300
+                       hover:bg-gray-100 dark:hover:bg-gray-800
+                       disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            Next
+        </button>
+
+    </nav>
+
+</div>
+
+        </div>
+
+    </div>
+
+</div>
+</div>
+<script src="~/js/ap/Reports/invoice-pdf-report.js" asp-append-version="true"></script>

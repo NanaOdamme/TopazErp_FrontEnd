@@ -8,13 +8,23 @@
         <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
             <span>AP - Data Entry</span>
             <i class="bi bi-chevron-right text-xs"></i>
-            <span class="text-blue-600 font-medium">Invoices</span>
+            <span class="text-blue-600 font-medium">Opening Balances</span>
         </div>
     </div>
 
     <div id="app" class="space-y-6">
-        <div class="card" data-card-title="Invoices">
+        <div class="card" data-card-title="Opening Balances">
+            <div class="flex justify-end gap-1.5 mb-2 flex-wrap">
+        
+                <button type="button" @@click="postBalances" class="border border-indigo-600 text-indigo-600 px-2.5 py-1.5 text-xs rounded-lg hover:bg-indigo-600 hover:text-white">
+                    <i class="bi bi-send-check mr-1"></i>Post
+                </button>
+                <button type="button" class="border border-sky-600 text-sky-600 px-2.5 py-1.5 text-xs rounded-lg hover:bg-sky-600 hover:text-white">
+                    <i class="bi bi-printer mr-1"></i>Print
+                </button>
+            </div>
             <data-grid
+                ref="balances"
                 title="Opening Balances"
                 :columns="columns"
                 :data="openingBalanceList"
@@ -32,6 +42,7 @@
                 @@create="onCreate"
                 @@update="onUpdate"
                 @@delete="onDelete"
+                :loading="isShimmerLoading"
                 :row-disabled="isPosted">
             </data-grid>
                

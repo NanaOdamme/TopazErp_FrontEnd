@@ -2,29 +2,24 @@
     'use strict';
 
     const EMPTY_GUID = '00000000-0000-0000-0000-000000000000';
-    const API_BASE_URL = 'http://localhost:5300';
-
-    // Single axios instance: baseURL + cookies for every call (GET and POST).
-    const api = axios.create({ baseURL: API_BASE_URL, withCredentials: true });
-
     const ENDPOINTS = {
-        vouchers: `${API_BASE_URL}/ApDataEntry/GetVouchers`,
-        createVoucher: `${API_BASE_URL}/ApDataEntry/CreateVoucher`,
-        updateVoucher: `${API_BASE_URL}/ApDataEntry/UpdateVoucher`,
-        deleteVoucher: `${API_BASE_URL}/ApDataEntry/DeleteVoucher/`,
-        invoices: `${API_BASE_URL}/ApDataEntry/GetInvoices`,
-        suppliers: `${API_BASE_URL}/SharedResource/GetSuppliers`,
-        currencies: `${API_BASE_URL}/SharedResource/GetCurrencys`,
-        banks: `${API_BASE_URL}/SharedResource/GetBanks`,
-        accounts: `${API_BASE_URL}/LedgerDataEntry/InitJournalEntry`,
-        bankAccounts: `${API_BASE_URL}/LedgerSetups/GetBankAccounts`,
-        taxLevies: `${API_BASE_URL}/SharedResource/GetTaxLevies`,
-        defaultGlSetup: `${API_BASE_URL}/LedgerSetups/GetDefaultGlSetup`,
-        businessProfile: `${API_BASE_URL}/SharedResource/GetBusinessProfile`
+        vouchers: '/Ap/GetVouchers',
+        createVoucher: '/Ap/CreateVoucher',
+        updateVoucher: '/Ap/UpdateVoucher',
+        deleteVoucher: '/Ap/DeleteVoucher/',
+        invoices: '/Ap/GetInvoices',
+        suppliers: '/SharedResource/GetSuppliers',
+        currencies: '/SharedResource/GetCurrencies',
+        banks: '/SharedResource/GetBanks',
+        accounts: '/Ap/InitJournalEntry',
+        bankAccounts: '/GeneralLedger/GetBankAccounts',
+        taxLevies: '/SharedResource/GetTaxLevies',
+        defaultGlSetup: '/Ap/GetDefaultGlSetup',
+        businessProfile: '/SharedResource/GetBusinessProfile'
     };
 
     // MVC report page - lives on the web app, not on the API host
-    const REPORT_URL = '/ApReports/PrintPaymentVoucher';
+    const REPORT_URL = '/Ap/PrintPaymentVoucher';
 
     const TAX_DESCRIPTIONS = ['VAT', 'NHIL', 'GETFL', 'COVID', 'CST'];
     const TAX_DESCRIPTIONS_NO_VAT = ['VAT', 'CST'];
@@ -223,14 +218,13 @@
                 vatWithheld: '0.00',
                 total: '0.00',
                 netAmount: '0.00',
-                paymentAmount: '0.00'
+                paymentAmount: '0.00',
             };
         },
         computed: {
             voucherColumns() {
                 return [
                     { key: 'id', label: 'ID', type: 'text', hidden: true, width: 74 },
-                    { key: 'tenantId', label: 'Tenant ID', type: 'text', hidden: true, width: 74 },
                     { key: 'batchNumber', label: 'Batch #', type: 'text', width: 140, searchable: true },
                     { key: 'voucherNumber', label: 'Voucher No.', type: 'text', width: 160, searchable: true },
                     // Grouping key for the grid: group-header="voucherYear"
@@ -345,7 +339,7 @@
              * ================================================================== */
             async fetchList(url, label, preferredKey = null) {
                 try {
-                    const response = await api.get(url);
+                    const response = await axios.get(url);
                     const list = unwrapList(response.data, preferredKey);
                     return list.map(item => (item && item.Id && !item.id && typeof normalizeKeys === 'function') ? normalizeKeys(item) : item);
                 } catch (error) {
@@ -445,7 +439,7 @@
 
             async getBusinessProfile() {
                 try {
-                    const response = await api.get(ENDPOINTS.businessProfile);
+                    const response = await axios.get(ENDPOINTS.businessProfile);
                     if (response.data) {
                         this.isVatInclusive = response.data.isTaxLeviesInclusive === true;
                     }
@@ -456,7 +450,7 @@
 
             async getDefaultGlSetup() {
                 try {
-                    const response = await api.get(ENDPOINTS.defaultGlSetup);
+                    const response = await axios.get(ENDPOINTS.defaultGlSetup);
                     const setup = response.data || {};
 
                     if (!this.voucherId) {
@@ -506,6 +500,7 @@
             },
 
             async getVouchers() {
+                this.isShimmerLoading = true;
                 const list = await this.fetchList(ENDPOINTS.vouchers, 'vouchers');
 
                 this.voucherList = list.map(voucher => {
@@ -537,6 +532,7 @@
                     this.voucherDetailsMap[voucher.id] = voucher.voucherDetails;
                 });
 
+                this.isShimmerLoading = false;
                 return this.voucherList;
             },
 
@@ -612,8 +608,14 @@
             getInvoiceDetails(id) {
                 return (this.invoiceList || []).find(a => sameId(a.id, id));
             },
-            getVoucherDetails(id) {
+          /*  getVoucherDetails(id) {
                 return (this.voucherList || []).find(a => sameId(a.id, id));
+            },*/
+            getVoucherDetails() {
+                const grid = this.$refs.vouchers;
+                if (!grid) return null;
+
+                return grid.selectedRows()[0] ?? null;
             },
             getSelectedVoucherRow() {
                 const grid = this.$refs.vouchers;
@@ -902,6 +904,7 @@
                     voucher.isDeleted !== true &&
                     !sameId(voucher.id, this.voucherId)
                 );
+                
 
                 if (openVoucher) {
                     this.toastHandler('warning', 'Please post the outstanding payment for this invoice before proceeding.');
@@ -909,7 +912,6 @@
                     this.filteredInvoices = [];
                     return;
                 }
-
                 this.setCurrentInvoice(value);
             },
 
@@ -1011,25 +1013,31 @@
             /* ==================================================================
              * EDIT: load an existing voucher into the form
              * ================================================================== */
-            async setCurrentVoucher(voucher = null) {
+            async setCurrentVoucher(voucher) {
                 if (this.isSettingVoucher) return;
 
                 this.scrollToAdd();
-
                 let info = null;
                 if (voucher && typeof voucher === 'object') {
                     info = voucher;
-                } else if (typeof voucher === 'string') {
-                    info = this.getVoucherDetails(voucher);
                 } else {
-                    info = this.getVoucherDetails(this.voucherId) || this.getSelectedVoucherRow();
+                    const grid = this.$refs.vouchers;
+                    if (!grid) return;
+
+                    const selectedIds = grid.selectedRows();
+                    if (selectedIds.length > 1) {
+                        this.toastHandler('warning', 'You can only edit one record at a time');
+                        return;
+                    }
+
+                    info = this.getVoucherDetails(voucher);
                 }
 
                 if (!info) {
                     this.toastHandler('warning', 'Please select a voucher first.');
                     return;
                 }
-
+                
                 // Suppress watchers while hydrating
                 this.isSettingVoucher = true;
 
@@ -1112,24 +1120,36 @@
                         this.bankBranchName = info.bankBranchName || (branch && branch.name) || '';
                     }
 
-                    // Tax levy flags/rates of the voucher
-                    this.Vat = info.vat === true;
-                    this.NHIL = info.nhil === true;
-                    this.GETFL = info.getfl === true;
-                    this.covid = info.covid === true;
-                    this.cst = info.cst === true;
+                    const voucherTaxFlags = {
+                        vat: info.vat === true,
+                        nhil: info.nhil === true,
+                        getfl: info.getfl === true,
+                        covid: info.covid === true,
+                        cst: info.cst === true
+                    };
+
+                    this.Vat = voucherTaxFlags.vat;
+                    this.NHIL = voucherTaxFlags.nhil;
+                    this.GETFL = voucherTaxFlags.getfl;
+                    this.covid = voucherTaxFlags.covid;
+                    this.cst = voucherTaxFlags.cst;
 
                     this.taxLevyList = (this.taxLevyList || []).map(tax => {
-                        switch (String(tax.name).toLowerCase()) {
-                            case 'vat': return { ...tax, isApplied: this.Vat, isDisabled: false };
-                            case 'nhil': return { ...tax, isApplied: this.NHIL, isDisabled: false };
-                            case 'getfl': return { ...tax, isApplied: this.GETFL, isDisabled: false };
-                            case 'covid': return { ...tax, isApplied: this.covid, isDisabled: false };
-                            case 'cst': return { ...tax, isApplied: this.cst, isDisabled: false };
-                            default: return tax;
+                        const key = String(tax.name || '').trim().toLowerCase();
+
+                        if (!Object.prototype.hasOwnProperty.call(voucherTaxFlags, key)) {
+                            return tax;
                         }
+
+                        return {
+                            ...tax,
+                            isApplied: voucherTaxFlags[key],
+                            isDisabled: false
+                        };
                     });
 
+                    console.log('Voucher flags:', voucherTaxFlags);
+                    console.table(this.taxLevyList.map(({ name, isApplied }) => ({ name, isApplied })));
                     const rateKeys = [
                         ['vat', 'VatRate'],
                         ['nhil', 'NHILRate'],
@@ -1459,9 +1479,7 @@
                     // ---------- UPDATE ----------
                     if (this.voucherId) {
                         payload.id = this.voucherId;
-                        payload.tenantId = this.tenantId;
-
-                        const response = await api.post(ENDPOINTS.updateVoucher, payload);
+                        const response = await axios.put(ENDPOINTS.updateVoucher, payload);
                         const body = response.data || {};
                         const updatedId = body.id || body.voucherId || this.voucherId;
 
@@ -1474,7 +1492,7 @@
                     }
 
                     // ---------- CREATE ----------
-                    const response = await api.post(ENDPOINTS.createVoucher, payload);
+                    const response = await axios.post(ENDPOINTS.createVoucher, payload);
                     const body = response.data || {};
                     const createdId = body.id || body.voucherId;
 
@@ -1504,55 +1522,220 @@
             /* ==================================================================
              * DELETE
              * ================================================================== */
-            async deleteVoucher(id) {
-                const row = this.getSelectedVoucherRow();
-                const voucherId = (id && typeof id === 'object')
-                    ? (id.id || id.voucherId)
-                    : (id || (row && row.id) || this.voucherId);
+            getSelectedVoucherRows() {
+                const grid = this.$refs.vouchers;
+                const rows = grid && typeof grid.selectedRows === 'function'
+                    ? grid.selectedRows()
+                    : [];
 
-                if (!voucherId) {
-                    this.toastHandler('warning', 'Please select a voucher first.');
+                return Array.isArray(rows) ? rows : [];
+            },
+            async deleteVoucher(id) {
+                if (this.isLoading) return;
+                this.isShimmerLoading = true;
+                // Accept an explicit ID/row/array, or use all selected rows.
+                // A click event passed by Vue isn't treated as a voucher row.
+                const isVoucherRow = value =>
+                    value && typeof value === 'object' && (value.id || value.voucherId);
+
+                let candidates;
+
+                if (Array.isArray(id)) {
+                    candidates = id;
+                } else if (typeof id === 'string' && id.trim()) {
+                    candidates = [id];
+                } else if (isVoucherRow(id)) {
+                    candidates = [id];
+                } else {
+                    candidates = this.getSelectedVoucherRows();
+                }
+
+                // Extract and de-duplicate IDs.
+                const voucherIds = [];
+                const seen = new Set();
+
+                for (const item of candidates) {
+                    const candidateId = typeof item === 'string'
+                        ? item
+                        : item && (item.id || item.voucherId);
+
+                    if (!candidateId || sameId(candidateId, this.emptyGuid)) continue;
+
+                    const key = String(candidateId).toLowerCase();
+                    if (seen.has(key)) continue;
+
+                    seen.add(key);
+                    voucherIds.push(String(candidateId));
+                }
+
+                if (!voucherIds.length) {
+                    this.toastHandler('warning', 'Select one or more vouchers to delete.');
                     return;
                 }
-                if (this.isLoading) return;
+
+                const noun = voucherIds.length === 1 ? 'voucher' : 'vouchers';
 
                 if (typeof Swal !== 'undefined') {
-                    const confirmed = await Swal.fire({
-                        title: 'Delete voucher?',
-                        text: 'This will delete the payment voucher.',
+                    const result = await Swal.fire({
+                        title: `Delete ${noun}?`,
+                        text: `Delete ${voucherIds.length} selected ${noun}? This cannot be undone.`,
                         icon: 'warning',
                         showCancelButton: true,
                         confirmButtonText: 'Delete',
                         confirmButtonColor: '#d33',
                         cancelButtonText: 'Cancel'
                     });
-                    if (!confirmed.isConfirmed) return;
+
+                    if (!result.isConfirmed) return;
                 }
 
                 this.isLoading = true;
 
                 try {
-                    // Existing API contract: GET /ApDataEntry/DeleteVoucher/?id=...
-                    await api.get(ENDPOINTS.deleteVoucher, { params: { id: voucherId } });
+                    // The endpoint deletes one voucher at a time, so issue one request per ID.
+                    const results = await Promise.allSettled(
+                        voucherIds.map(voucherId =>
+                            axios.delete(ENDPOINTS.deleteVoucher, {
+                                params: { id: voucherId }
+                            })
+                        )
+                    );
 
-                    const wasCurrent = sameId(voucherId, this.voucherId);
+                    const deletedIds = [];
+                    const failed = [];
 
-                    await this.getVouchers();
+                    results.forEach((result, index) => {
+                        if (result.status === 'fulfilled') {
+                            deletedIds.push(voucherIds[index]);
+                        } else {
+                            failed.push({ id: voucherIds[index], error: result.reason });
+                            console.error(
+                                `Failed to delete voucher ${voucherIds[index]}:`,
+                                result.reason?.response?.data || result.reason
+                            );
+                        }
+                    });
 
-                    if (wasCurrent) {
-                        this.resetVoucherFields();
-                        await this.getInvoices();
+                    if (deletedIds.length) {
+                        const deletedCurrentVoucher = deletedIds.some(voucherId =>
+                            sameId(voucherId, this.voucherId)
+                        );
+
+                        await this.getVouchers();
+
+                        if (deletedCurrentVoucher) {
+                            this.resetVoucherFields();
+                            await this.getInvoices();
+                        }
 
                         const grid = this.$refs.vouchers;
-                        if (grid && typeof grid.clearSelection === 'function') grid.clearSelection();
+                        if (grid && typeof grid.clearSelection === 'function') {
+                            grid.clearSelection();
+                        }
                     }
 
-                    this.toastHandler('', 'Voucher deleted.');
+                    if (!failed.length) {
+                        this.toastHandler('success', `Deleted ${deletedIds.length} ${noun}.`);
+                    } else if (!deletedIds.length) {
+                        this.toastHandler('error', `Unable to delete the selected ${noun}.`);
+                    } else {
+                        this.toastHandler(
+                            'warning',
+                            `Deleted ${deletedIds.length}; ${failed.length} failed.`
+                        );
+                    }
                 } catch (error) {
-                    console.error('deleteVoucher failed:', error && error.response ? error.response.data : error);
-                    this.toastHandler('error', this.apiErrorMessage(error, 'Unable to delete the voucher.'));
+                    console.error(
+                        'deleteVoucher failed:',
+                        error?.response?.data || error
+                    );
+                    this.toastHandler(
+                        'error',
+                        this.apiErrorMessage(error, 'Unable to delete the selected vouchers.')
+                    );
                 } finally {
                     this.isLoading = false;
+                    this.isShimmerLoading = false;
+                }
+            },
+            /* ==================================================================  
+             * POST
+             * ================================================================== */
+            async postSelectedVouchers() {
+                this.isShimmerLoading = true;
+                const grid = this.$refs.vouchers;
+                const selected = grid && typeof grid.selectedRows === 'function'
+                    ? grid.selectedRows()
+                    : [];
+
+                if (!selected.length) {
+                    this.toastHandler('warning', 'Select one or more vouchers to post.');
+                    return;
+                }
+
+                // Skip vouchers that have already been posted.
+                const vouchersToPost = selected.filter(voucher =>
+                    voucher.isPosted !== true
+                );
+
+                const skippedCount = selected.length - vouchersToPost.length;
+
+                if (!vouchersToPost.length) {
+                    this.toastHandler('info', 'All selected vouchers have already been posted.');
+                    return;
+                }
+
+                // Confirm before posting.
+                const result = await Swal.fire({
+                    icon: 'warning',
+                    title: 'Confirm Posting',
+                    text: `Are you sure you want to post ${vouchersToPost.length} vouchers${vouchersToPost.length === 1 ? '' : 's'}?${skippedCount > 0 ? ` ${skippedCount} already-posted voucher(s) will be skipped.` : ''}`,
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, post',
+                    cancelButtonText: 'No, go back',
+                    confirmButtonColor: '#392eef',
+                    cancelButtonColor: '#64748b',
+                    reverseButtons: true
+                });
+
+                if (!result.isConfirmed) return;
+
+                try {
+                    const voucherIds = vouchersToPost.map(voucher => voucher.id);
+
+                    const res = await axios.post(
+                        '/Ap/PostVouchers',
+                        voucherIds
+                    );
+
+                    if (res.data && res.data.result.code !== 200) {
+                        this.toastHandler(
+                            'error',
+                            res.data.result.message || 'unable to post vouchers.'
+                        );
+                        return
+                    }
+
+                    if (grid.clearSelection) {
+                        grid.clearSelection();
+                    }
+
+                    this.toastHandler(
+                        'success',
+                        skippedCount > 0
+                            ? `Posted ${vouchersToPost.length} voucher(s). Skipped ${skippedCount} already-posted voucher(s).`
+                            : 'Posted successfully.'
+                    );
+
+                    await this.getVouchers();
+                    this.isShimmerLoading = false;
+                } catch (error) {
+                    this.toastHandler(
+                        'error',
+                        error.response?.data?.message || 'Failed to post voucher(s).'
+                    );
+                    this.getVouchers();
+                    this.isShimmerLoading = false;
                 }
             },
 

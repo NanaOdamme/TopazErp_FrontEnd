@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@title - TopazErp_FrontEnd</title>
-
+    <link rel="icon" type="image/png" href="/app-assets/images/topazLogo.png" />
     <script>
         /* options for wwwroot/js/shell.js — no menu data here, the menu is markup */
         window.__SHELL__ = {
@@ -64,6 +64,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="~/css/shell.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/card.css" asp-append-version="true" />
+    @*PDF*@
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
     
     @await RenderSectionAsync("Styles", required: false)
 
@@ -296,6 +298,11 @@
                             <i class="bi bi-x-circle"></i>
                             <span class="menu-title">Canceled Invoices</span>
                         </a>
+                    </li> <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="CanceledPayments">
+                            <i class="bi bi-x-circle"></i>
+                            <span class="menu-title">Canceled Payments</span>
+                        </a>
                     </li>
                 </ul>
                
@@ -381,6 +388,12 @@
                         <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="InvoiceReports">
                             <i class="bi bi-receipt"></i>
                             <span class="menu-title">Invoices</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="InvoicePdfReports">
+                            <i class="bi bi-receipt"></i>
+                            <span class="menu-title">Invoices PDF</span>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -471,18 +484,26 @@
 <div class="sidebar-backdrop" data-action="backdrop" hidden></div>
 
 @* ══════════════════════════════ HEADER ══════════════════════════════ *@
-<header class="app-topbar bg-zinc-900 dark:bg-sky-950" id="appTopbar">
+<header class="app-topbar dark:bg-sky-950" id="appTopbar" style="background-color: #0f172a">
     <button type="button" class="topbar-btn" data-action="toggle-sidebar" aria-label="Toggle navigation" aria-haspopup="true">
         <i class="bi bi-list" aria-hidden="true"></i>
     </button>
 
-  
+    <div class="hidden sm:flex items-center gap-2 pl-1">
+        <span class="inline-flex items-center gap-2 rounded-full border border-blue-600/20 bg-blue-500/10 px-3 py-1.5 text-xs font-medium text-blue-600">
+            <span class="relative flex h-2 w-2">
+                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-600/60"></span>
+                <span class="relative inline-flex h-2 w-2 rounded-full bg-blue-600"></span>
+            </span>
+            Accounts Payables
+        </span>
+    </div>
 
 
     <div class="topbar-search" data-search-wrap >
-
+    
         <input type="search" id="topbarSearch" data-search-input autocomplete="off" placeholder="Search anything…" aria-label="Search" style="width: 300px"/>
-
+       
         <div class="dropdown-panel search-results" id="searchResults" hidden></div>
     </div>
 
@@ -490,6 +511,78 @@
         <button type="button" class="topbar-btn md:hidden" data-action="mobile-search" aria-label="Search">
             <i class="bi bi-search" aria-hidden="true"></i>
         </button>
+
+ <!-- ERP Module Hub Switcher -->
+    <div class="dropdown" data-dropdown="moduleswitcher">
+    <button type="button"
+            class="topbar-btn hover:bg-slate-800 text-slate-300"
+            data-toggle
+            title="Topaz ERP Modules"
+            aria-label="Switch modules"
+            aria-haspopup="menu">
+        <i class="bi bi-grid-3x3-gap-fill text-lg" aria-hidden="true"></i>
+    </button>
+
+    <div class="dropdown-panel w-72 rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900" role="menu">
+        <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+            <div>
+                <p class="text-sm font-semibold text-slate-900 dark:text-white">ERP Applications</p>
+                <p class="text-[11px] text-slate-400">Switch workspace</p>
+            </div>
+
+            <a asp-area="" asp-controller="Manage" asp-action="Modules" class="text-xs font-medium text-emerald-600 hover:underline">
+                All Modules
+            </a>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 p-3">
+            <a href="/Dashboard/GeneralLedger"
+               class="flex items-center gap-2 rounded-xl p-3 transition hover:bg-slate-100 dark:hover:bg-slate-800">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+                    <i class="bi bi-journal-text text-lg"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xs font-semibold text-slate-900 dark:text-white">General Ledger</p>
+                    <p class="text-[10px] text-slate-400">Accounts &amp; Transactions</p>
+                </div>
+            </a>
+
+            <a href="/Dashboard/Payroll"
+               class="flex items-center gap-2 rounded-xl p-3 transition hover:bg-slate-100 dark:hover:bg-slate-800">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+                    <i class="bi bi-people text-lg"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xs font-semibold text-slate-900 dark:text-white">Payroll</p>
+                    <p class="text-[10px] text-slate-400">HR &amp; Salaries</p>
+                </div>
+            </a>
+
+            <a href="/Dashboard/Ap"
+               class="flex items-center gap-2 rounded-xl bg-emerald-500/10 p-3 ring-1 ring-emerald-500/50 transition hover:bg-emerald-500/15">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300">
+                    <i class="bi bi-receipt text-lg"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xs font-semibold text-slate-900 dark:text-white">Payables</p>
+                    <p class="text-[10px] text-emerald-600 dark:text-emerald-400">Active</p>
+                </div>
+            </a>
+
+            <a href="/Dashboard/Ar"
+               class="flex items-center gap-2 rounded-xl p-3 transition hover:bg-slate-100 dark:hover:bg-slate-800">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300">
+                    <i class="bi bi-cash-stack text-lg"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xs font-semibold text-slate-900 dark:text-white">Receivables</p>
+                    <p class="text-[10px] text-slate-400">Invoicing &amp; Receipts</p>
+                </div>
+            </a>
+
+        </div>
+    </div>
+</div>
 
         <button type="button" class="topbar-btn" data-action="theme" title="Dark mode" aria-label="Toggle dark mode">
             <i class="bi bi-moon-stars" data-theme-icon aria-hidden="true"></i>
@@ -524,7 +617,7 @@
                         <li><a asp-area="" asp-controller="Manage" asp-action="Profile"><i class="bi bi-person-circle"></i>My Profile</a></li>
                         <li><a asp-area="" asp-controller="Manage" asp-action="Users"><i class="bi bi-sliders"></i>Manage Users</a></li>
                         <li><a asp-area="" asp-controller="Manage" asp-action="UpdatePassword"><i class="bi bi-key"></i>Update Password</a></li>
-                        <li><a asp-area="" asp-controller="Manage" asp-action="Modules"><i class="bi bi-gear"></i>Modules</a></li>
+                        @*<li><a asp-area="" asp-controller="Manage" asp-action="Modules"><i class="bi bi-gear"></i>Modules</a></li>*@
                         <li><a href="#"><i class="bi bi-question-circle"></i>Help &amp; Support</a></li>
                     </ul>
                     <div class="dropdown-foot signout">

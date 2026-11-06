@@ -1,0 +1,140 @@
+@{
+    ViewBag.Title = "Payment Reports";
+    Layout = "~/Views/Shared/_adminApLayout.cshtml";
+}
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>AP - Reports</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Payment Reports</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+
+            <div class="page-title">
+                <h2 class="text-2xl font-semibold text-gray-800">
+                    Reports
+                </h2>
+                
+            </div>
+        </div>
+    </div>
+   
+<div id="app" class="card" data-card-title="Reports - AP Payments">
+
+
+
+        <!-- Report Selection -->
+        <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-4">
+
+            @*
+            <div>
+                <label class="label block text-sm">Report Type</label>
+                <select v-model="reportType" class="input-control w-full">
+                    <option value="Invoice">Invoice Payments</option>
+                </select>
+            </div>
+            *@
+
+            <div>
+                <label class="label block text-sm">Report Category</label>
+                <select v-model="subReportType" class="input-control w-full">
+                    <option value="summary-report">Payment Summary</option>
+                    <option value="supplier-report">Payments by Supplier</option>
+                    <option value="date-report">Payments by Date</option>
+                    <option value="batchNumber">Payment Receipt</option>
+                </select>
+            </div>
+
+        </div>
+
+        <!-- Supplier Filter -->
+        <div v-if="subReportType === 'supplier-report'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+
+            <div>
+                <w-select
+                    v-model="supplierId"
+                    :options="supplierList"
+                    display-key="name"
+                    value-key="id"
+                    placeholder="Select Supplier"
+                    label="Supplier">
+                </w-select>
+            </div>
+
+        </div>
+
+        <!-- Date Filters -->
+        <div v-if="subReportType === 'date-report'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+
+            <div>
+                <label class="label block text-sm">Start Date</label>
+                <input
+                    type="date"
+                    v-model="startDate"
+                    class="input-control w-full">
+            </div>
+
+            <div>
+                <label class="label block text-sm">End Date</label>
+                <input
+                    type="date"
+                    v-model="endDate"
+                    class="input-control w-full">
+            </div>
+
+        </div>
+
+        <!-- Payment Batch Filter -->
+        <div v-if="subReportType === 'batchNumber'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+
+            <div>
+                <w-select
+                    v-model="paymentId"
+                    :options="paymentList"
+                    display-key="displayText"
+                    value-key="id"
+                    placeholder="Select Batch Number"
+                    label="Payment Batch">
+                </w-select>
+            </div>
+
+        </div>
+
+        <!-- Generate Report -->
+        <div class="flex justify-end mb-4 mt-5">
+            <button
+                type="button"
+                @@click="getReportData()"
+                :disabled="isLoading"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+            
+
+                <i v-if="isLoading" class="bi bi-arrow-repeat animate-spin"></i>
+                <i v-else class="bi bi-file-earmark-bar-graph"></i>
+
+                {{ isLoading ? 'Generating...' : 'Generate Report' }}
+
+            </button>
+        </div>
+
+        <hr class="my-4">
+        <!-- Report Viewer -->
+        <div class="w-full mt-6">
+
+            <div
+                id="reportView"
+                class="w-full"
+                style="min-height: 650px;">
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+</div>
+
+<script src="~/js/ap/Reports/payment-reports.js" asp-append-version="true"></script>

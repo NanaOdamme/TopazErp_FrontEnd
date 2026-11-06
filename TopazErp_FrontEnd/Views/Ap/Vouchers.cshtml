@@ -31,6 +31,9 @@
                 <button type="button" @@click="deleteVoucher()" class="border border-rose-600 text-rose-600 px-2.5 py-1.5 text-xs rounded-lg hover:bg-rose-600 hover:text-white">
                     <i class="bi bi-trash mr-1"></i>Delete
                 </button>
+                <button type="button" @@click="postSelectedVouchers" class="border border-indigo-600 text-indigo-600 px-2.5 py-1.5 text-xs rounded-lg hover:bg-indigo-600 hover:text-white">
+                    <i class="bi bi-send-check mr-1"></i>Post
+                </button>
                 <button type="button" @@click="printReport" class="border border-sky-600 text-sky-600 px-2.5 py-1.5 text-xs rounded-lg hover:bg-sky-600 hover:text-white">
                     <i class="bi bi-printer mr-1"></i>Print
                 </button>
@@ -59,7 +62,8 @@
                     :allow-add="false"
                     :allow-edit="false"
                     :allow-delete="false"
-                    group-header="voucherYear">
+                    group-header="voucherYear"
+                    :loading="isShimmerLoading">
                 </data-grid>
 
                 <div id="add" class="my-5">
@@ -584,7 +588,7 @@
 
                         <hr />
 
-                        <button type="button" @@click="calculateWithHeldDetails" class="mt-2 bg-zinc-500 px-2 py-1 rounded text-white">
+                        <button type="button" @@click="calculateWithHeldDetails" class="mt-2 bg-zinc-500 px-2 py-1 rounded text-white hover:bg-zinc-600 transition">
                             Recalculate
                         </button>
 
@@ -606,7 +610,7 @@
                                 :selectable="true"
                                 :allow-add="false"
                                 :allow-edit="false"
-                                :allow-delete="false">
+                                :allow-delete="false" :loading="isShimmerLoading">
                             </data-grid>
                         </div>
 

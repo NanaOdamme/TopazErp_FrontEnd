@@ -2,1578 +2,650 @@
 ViewBag.Title = "Dashboard | Ap";
 Layout = "~/Views/Shared/_adminApLayout.cshtml";
 }
-
 <style>
-    /* =================================================================
-       AP Dashboard — view styles
-       • The theme's `.card` class (and its data-card-title header) is kept
-       • Every colour is driven by the tokens below — retheme in one place
-       ================================================================= */
-    :root {
-        --ap-primary: #4f46e5;
-        --ap-primary-hover: #4338ca;
-        --ap-primary-soft: #eef2ff;
-        --ap-primary-200: #dbe2fd;
-        --ap-primary-300: #a5b4fc;
-        --ap-ink: #0f172a;
-        --ap-ink-2: #475569;
-        --ap-muted: #8b96a9;
-        --ap-line: #e8ecf4;
-        --ap-surface: #ffffff;
-        --ap-surface-2: #f7f8fc;
-        --ap-th: #f8fafc;
-        --ap-radius: 18px;
-        --ap-font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-        --ap-shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 14px 30px -20px rgba(16, 24, 40, .18);
-        --ap-shadow-hover: 0 2px 6px rgba(16, 24, 40, .05), 0 24px 46px -24px rgba(79, 70, 229, .38);
-    }
-
-    .dark {
-        --ap-ink: #e2e8f0;
-        --ap-ink-2: #cbd5e1;
-        --ap-muted: #94a3b8;
-        --ap-line: #1e293b;
-        --ap-surface: #0b1220;
-        --ap-surface-2: #0f172a;
-        --ap-th: #0f172a;
-        --ap-primary-soft: rgba(99, 102, 241, .12);
-        --ap-primary-200: rgba(99, 102, 241, .38);
-        --ap-primary-300: #818cf8;
-        --ap-shadow: 0 1px 2px rgba(0, 0, 0, .45), 0 18px 34px -22px rgba(0, 0, 0, .8);
-        --ap-shadow-hover: 0 2px 8px rgba(0, 0, 0, .5), 0 26px 50px -26px rgba(79, 70, 229, .55);
-    }
-
-    [v-cloak] { display: none !important; }
-
-    .number-cards { font-family: var(--ap-font); }
-
-    /* ---------------- page header ---------------- */
-    .dash-hero {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        flex-wrap: wrap;
-        margin-bottom: 1.35rem;
-    }
-    .dash-hero__title {
-        margin: 0;
-        font-size: 1.42rem;
-        font-weight: 800;
-        letter-spacing: -.025em;
-        color: var(--ap-ink);
-    }
-    .dash-hero__sub {
-        margin: .25rem 0 0;
-        font-size: .8rem;
-        font-weight: 500;
-        color: var(--ap-muted);
-    }
-    .dash-hero__actions { display: flex; align-items: center; gap: .5rem; }
-    .dash-date {
-        display: inline-flex;
-        align-items: center;
-        gap: .45rem;
-        height: 36px;
-        padding: 0 .85rem;
-        border-radius: 10px;
-        background: var(--ap-surface);
-        border: 1px solid var(--ap-line);
-        font-size: .72rem;
-        font-weight: 600;
-        color: var(--ap-ink-2);
-        box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
-    }
-    .dash-date i { font-size: .78rem; color: var(--ap-muted); }
-    .dash-refresh {
-        display: grid;
-        place-items: center;
-        width: 36px;
-        height: 36px;
-        border: 0;
-        border-radius: 10px;
-        background: var(--ap-primary);
-        color: #fff;
-        font-size: .85rem;
-        box-shadow: 0 10px 18px -10px rgba(79, 70, 229, .8);
-        transition: background .2s ease, transform .2s ease, box-shadow .2s ease;
-    }
-    .dash-refresh:hover {
-        background: var(--ap-primary-hover);
-        transform: translateY(-1px);
-        box-shadow: 0 14px 22px -10px rgba(79, 70, 229, .85);
-    }
-    .dash-refresh.is-loading i { animation: ap-spin .7s linear infinite; }
-    @@keyframes ap-spin { to { transform: rotate(360deg); } }
-
-    /* ---------------- merged KPI card ---------------- */
-    .kpi-card {
-        position: relative;
-        isolation: isolate;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        min-height: 100%;
-        border: 1px solid rgba(255, 255, 255, .1) !important;
-        border-radius: var(--ap-radius) !important;
-        background: radial-gradient(125% 125% at 100% 0%, #4f46e5 0%, #312e81 44%, #171a3a 100%) !important;
-        box-shadow: 0 26px 48px -26px rgba(49, 46, 129, .85) !important;
-        color: #fff;
-    }
-    .kpi-card::before {
-        content: "";
-        position: absolute;
-        z-index: -1;
-        top: -120px;
-        right: -100px;
-        width: 260px;
-        height: 260px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(129, 140, 248, .55), rgba(129, 140, 248, 0) 70%);
-    }
-    .kpi-card__texture {
-        position: absolute;
-        z-index: -1;
-        inset: 0;
-        background-image: radial-gradient(rgba(255, 255, 255, .16) 1px, transparent 1px);
-        background-size: 18px 18px;
-        opacity: .5;
-        -webkit-mask-image: linear-gradient(150deg, #000 10%, transparent 62%);
-        mask-image: linear-gradient(150deg, #000 10%, transparent 62%);
-        pointer-events: none;
-    }
-    .dark .kpi-card {
-        background: radial-gradient(125% 125% at 100% 0%, #4338ca 0%, #241f5c 46%, #0b1020 100%) !important;
-        border-color: rgba(255, 255, 255, .08) !important;
-        box-shadow: 0 30px 54px -28px rgba(0, 0, 0, .9) !important;
-    }
-
-    .kpi-card__head {
-        position: relative;
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: .75rem;
-        padding: 1.1rem 1.15rem .85rem;
-    }
-    .kpi-card__eyebrow {
-        display: block;
-        font-size: .58rem;
-        font-weight: 800;
-        letter-spacing: .15em;
-        text-transform: uppercase;
-        color: rgba(199, 210, 254, .78);
-    }
-    .kpi-card__title {
-        margin: .18rem 0 0;
-        font-size: .98rem;
-        font-weight: 800;
-        letter-spacing: -.015em;
-        color: #fff;
-    }
-    .kpi-card__live {
-        display: inline-flex;
-        align-items: center;
-        gap: .38rem;
-        flex: 0 0 auto;
-        padding: .32rem .58rem;
-        border: 1px solid rgba(255, 255, 255, .18);
-        border-radius: 999px;
-        background: rgba(255, 255, 255, .1);
-        font-size: .58rem;
-        font-weight: 700;
-        letter-spacing: .04em;
-        text-transform: uppercase;
-        color: #e0e7ff;
-    }
-    .kpi-card__live::before {
-        content: "";
-        width: 5px;
-        height: 5px;
-        border-radius: 50%;
-        background: #34d399;
-        box-shadow: 0 0 0 3px rgba(52, 211, 153, .2);
-    }
-
-    .kpi-grid {
-        position: relative;
-        flex: 1 1 auto;
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .kpi {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        gap: .6rem;
-        min-width: 0;
-        padding: .95rem 1.15rem;
-    }
-    .kpi:nth-child(odd) { border-right: 1px solid rgba(255, 255, 255, .1); }
-    .kpi:nth-child(-n + 2) { border-bottom: 1px solid rgba(255, 255, 255, .1); }
-    .kpi__icon {
-        display: grid;
-        place-items: center;
-        width: 34px;
-        height: 34px;
-        border: 1px solid rgba(255, 255, 255, .18);
-        border-radius: 10px;
-        background: rgba(255, 255, 255, .1);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16);
-        font-size: .95rem;
-        color: #e0e7ff;
-    }
-    .kpi__body { min-width: 0; }
-    .kpi__label {
-        display: block;
-        font-size: .69rem;
-        font-weight: 600;
-        letter-spacing: .01em;
-        color: rgba(224, 231, 255, .74);
-    }
-    .kpi__value {
-        display: block;
-        margin-top: .14rem;
-        font-size: 2.05rem;
-        font-weight: 800;
-        line-height: 1;
-        letter-spacing: -.035em;
-        font-variant-numeric: tabular-nums;
-        color: #fff;
-    }
-    .kpi__foot {
-        display: flex;
-        align-items: center;
-        gap: .4rem;
-        min-height: 12px;
-        margin-top: .55rem;
-        font-size: .58rem;
-        font-weight: 600;
-        color: rgba(199, 210, 254, .72);
-    }
-    .kpi__bar {
-        flex: 0 0 56px;
-        height: 3px;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, .18);
+    /* GL-style surface for the classes the AP scripts already write into.
+       Scoped to this page; mirrors the GL dashboard card/table look. */
+    #apDashboard .card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: .75rem;
+        box-shadow: 0 1px 2px rgb(0 0 0 / .05);
         overflow: hidden;
     }
-    .kpi__bar > span {
-        display: block;
-        height: 100%;
-        border-radius: inherit;
-        background: linear-gradient(90deg, #67e8f9, #a5b4fc);
-        transition: width .6s ease;
-    }
-    .kpi-card__strip {
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: .6rem;
-        padding: .62rem 1.15rem;
-        border-top: 1px solid rgba(255, 255, 255, .1);
-        background: rgba(255, 255, 255, .045);
-        font-size: .6rem;
-        font-weight: 600;
-        letter-spacing: .01em;
-        color: rgba(199, 210, 254, .8);
-    }
-    .kpi-card__strip span { display: inline-flex; align-items: center; gap: .35rem; }
-    .kpi-card__strip i { font-size: .68rem; opacity: .9; }
+    #apDashboard .table-scroll { max-height: 340px; overflow: auto; }
 
-    /* ---------------- panels — theme .card preserved ---------------- */
-    .dash-card {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        container-type: inline-size;
-        overflow: hidden;
-        border: 1px solid var(--ap-line) !important;
-        border-radius: var(--ap-radius) !important;
-        background: var(--ap-surface) !important;
-        box-shadow: var(--ap-shadow) !important;
-        transition: box-shadow .25s ease, border-color .25s ease;
+    #apDashboard .data-table { width: 100%; min-width: 640px; border-collapse: collapse; text-align: left; font-size: .75rem; }
+    #apDashboard .data-table thead {
+        position: sticky; top: 0; z-index: 10;
+        background: #f1f5f9; color: #64748b;
+        font-size: 11px; letter-spacing: .04em; text-transform: uppercase;
     }
-    .dash-card:hover {
-        border-color: var(--ap-primary-200) !important;
-        box-shadow: var(--ap-shadow-hover) !important;
-    }
-    .dash-body {
-        flex: 1 1 auto;
-        min-height: 0;
-        display: flex;
-        flex-direction: column;
-        padding: 1rem 1.1rem 1.05rem;
-    }
-    .dash-body--flush { padding: .3rem .45rem 0; }
+    #apDashboard .data-table thead th { padding: .75rem 1.25rem; font-weight: 600; white-space: nowrap; }
+    #apDashboard .data-table thead th.text-right { text-align: right; }
+    #apDashboard .data-table tbody tr { border-top: 1px solid #f3f4f6; transition: background-color .15s; }
+    #apDashboard .data-table tbody tr:hover { background: #f8fafc; }
+    #apDashboard .data-table tbody td { padding: .75rem 1.25rem; color: #334155; vertical-align: middle; }
+    #apDashboard .data-table tbody td.text-right { text-align: right; }
+    #apDashboard .data-table tbody tr td[colspan] { padding: 2.5rem 1.25rem; text-align: center; color: #9ca3af; }
 
-    /* ---------------- invoice list ---------------- */
-    .inv-scroll {
-        flex: 1 1 auto;
-        min-height: 0;
-        overflow-y: auto;
-        padding: .25rem .35rem;
-        scrollbar-width: thin;
-        scrollbar-color: var(--ap-line) transparent;
-    }
-    .inv-scroll::-webkit-scrollbar { width: 6px; }
-    .inv-scroll::-webkit-scrollbar-thumb { background: var(--ap-line); border-radius: 999px; }
-
-    .inv-item {
-        display: flex;
-        align-items: center;
-        gap: .65rem;
-        padding: .52rem .6rem;
-        border: 1px solid transparent;
-        border-radius: 12px;
-        cursor: pointer;
-        transition: background .18s ease, border-color .18s ease, transform .18s ease;
-    }
-    .inv-item + .inv-item { margin-top: 2px; }
-    .inv-item:hover {
-        background: var(--ap-primary-soft);
-        border-color: var(--ap-primary-200);
-        transform: translateX(2px);
-    }
-
-    .inv-avatar {
-        display: grid;
-        place-items: center;
-        flex: 0 0 auto;
-        width: 38px;
-        height: 38px;
-        border-radius: 11px;
-        color: #fff;
-        font-size: .7rem;
-        font-weight: 800;
-        letter-spacing: .03em;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25), 0 4px 8px -4px rgba(15, 23, 42, .35);
-    }
-    .inv-avatar--sm {
-        width: 30px;
-        height: 30px;
-        border-radius: 9px;
-        font-size: .6rem;
-    }
-    .tone-0 { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
-    .tone-1 { background: linear-gradient(135deg, #0ea5e9, #06b6d4); }
-    .tone-2 { background: linear-gradient(135deg, #10b981, #14b8a6); }
-    .tone-3 { background: linear-gradient(135deg, #f59e0b, #f97316); }
-    .tone-4 { background: linear-gradient(135deg, #f43f5e, #fb7185); }
-    .tone-5 { background: linear-gradient(135deg, #8b5cf6, #d946ef); }
-
-    .inv-main { flex: 1 1 auto; min-width: 0; }
-    .inv-head { display: flex; align-items: center; gap: .4rem; min-width: 0; }
-    .inv-name {
-        flex: 0 1 auto;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        font-size: .79rem;
-        font-weight: 700;
-        color: var(--ap-ink);
-    }
-    .inv-sub {
-        display: flex;
-        align-items: center;
-        gap: .32rem;
-        margin-top: .16rem;
-        min-width: 0;
-        white-space: nowrap;
-        font-size: .66rem;
-        font-weight: 500;
-        color: var(--ap-muted);
-    }
-    .inv-sub__no {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        font-weight: 600;
-        color: var(--ap-ink-2);
-    }
-    .inv-sub .status-pill { margin-left: auto; }
-    .inv-sub .dot { flex: 0 0 auto; width: 3px; height: 3px; border-radius: 50%; background: #cbd5e1; }
-    .dark .inv-sub .dot { background: #475569; }
-
-    .inv-side { flex: 0 0 auto; min-width: 82px; text-align: right; }
-    .inv-amount {
-        font-size: .82rem;
-        font-weight: 800;
-        line-height: 1.15;
-        color: var(--ap-ink);
-        font-variant-numeric: tabular-nums;
-    }
-    .inv-currency {
-        font-size: .58rem;
-        font-weight: 700;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-        color: var(--ap-muted);
-    }
-    .inv-chevron {
-        flex: 0 0 auto;
-        font-size: .68rem;
-        color: var(--ap-primary);
-        opacity: 0;
-        transform: translateX(-4px);
-        transition: opacity .18s ease, transform .18s ease;
-    }
-    .inv-item:hover .inv-chevron,
-    .inv-item:focus-visible .inv-chevron { opacity: 1; transform: none; }
-    .inv-item:focus-visible { outline: 2px solid var(--ap-primary-300); outline-offset: 1px; }
-
-    .status-pill {
-        display: inline-flex;
-        flex: 0 0 auto;
-        align-items: center;
-        gap: .22rem;
-        padding: .14rem .4rem;
-        border-radius: 999px;
-        font-size: .52rem;
-        font-weight: 800;
-        line-height: 1;
-        letter-spacing: .06em;
-        text-transform: uppercase;
-    }
-    .status-pill::before {
-        content: "";
-        width: 4px;
-        height: 4px;
-        border-radius: 50%;
-        background: currentColor;
-    }
-    .status-pill--posted { background: #dcfce7; color: #15803d; }
-    .status-pill--draft  { background: #fef3c7; color: #b45309; }
-    .dark .status-pill--posted { background: rgba(16, 185, 129, .16); color: #34d399; }
-    .dark .status-pill--draft  { background: rgba(245, 158, 11, .16); color: #fbbf24; }
-
-    /* adapt the invoice row to the card's own width, not the viewport */
-    @@container (max-width: 400px) {
-        .inv-sub__no, .inv-sub .dot { display: none; }
-        .inv-chevron { display: none; }
-        .inv-side { min-width: 62px; }
-    }
-
-    /* ---------------- pagination ---------------- */
-    .pager {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: .75rem;
-        margin-top: auto;
-        padding: .7rem 1rem;
-        border-top: 1px solid var(--ap-line);
-    }
-    .pager__info {
-        font-size: .67rem;
-        font-weight: 500;
-        color: var(--ap-muted);
-        font-variant-numeric: tabular-nums;
-    }
-    .pager__buttons { display: flex; align-items: center; gap: .35rem; }
-    .pager-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        height: 30px;
-        min-width: 30px;
-        padding: 0 .55rem;
-        border: 1px solid var(--ap-line);
-        border-radius: 9px;
-        background: var(--ap-surface);
-        color: var(--ap-ink-2);
-        font-size: .68rem;
-        font-weight: 700;
-        transition: background .18s ease, border-color .18s ease, color .18s ease;
-    }
-    .pager-btn i { font-size: .62rem; }
-    .pager-btn:hover:not(:disabled) {
-        background: var(--ap-primary-soft);
-        border-color: var(--ap-primary-300);
-        color: var(--ap-primary);
-    }
-    .pager-btn:disabled { opacity: .4; cursor: not-allowed; }
-    .pager-page {
-        min-width: 62px;
-        text-align: center;
-        font-size: .68rem;
-        font-weight: 700;
-        color: var(--ap-ink-2);
-        font-variant-numeric: tabular-nums;
-    }
-
-    /* ---------------- balances table ---------------- */
-    .table-toolbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: .75rem;
-        flex-wrap: wrap;
-        padding: .9rem 1.1rem .65rem;
-    }
-    .search-box {
-        position: relative;
-        display: flex;
-        align-items: center;
-        width: 250px;
-        max-width: 100%;
-        height: 34px;
-        border: 1px solid var(--ap-line);
-        border-radius: 10px;
-        background: var(--ap-surface-2);
-        transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
-    }
-    .search-box:focus-within {
-        border-color: var(--ap-primary-300);
-        background: var(--ap-surface);
-        box-shadow: 0 0 0 3px rgba(99, 102, 241, .14);
-    }
-    .search-box > i {
-        position: absolute;
-        left: .7rem;
-        font-size: .72rem;
-        color: var(--ap-muted);
-        pointer-events: none;
-    }
-    .search-box input {
-        width: 100%;
-        height: 100%;
-        padding: 0 .75rem 0 2rem;
-        border: 0;
-        background: transparent;
-        font-size: .73rem;
-        font-weight: 500;
-        color: var(--ap-ink);
-        outline: none;
-    }
-    .search-box input::placeholder { color: #a3aec2; }
-    .dark .search-box input::placeholder { color: #64748b; }
-    .search-count {
-        font-size: .67rem;
-        font-weight: 600;
-        color: var(--ap-muted);
-    }
-
-    .table-scroll {
-        max-height: 318px;
-        overflow: auto;
-        scrollbar-width: thin;
-        scrollbar-color: var(--ap-line) transparent;
-    }
-    .table-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-    .table-scroll::-webkit-scrollbar-thumb { background: var(--ap-line); border-radius: 999px; }
-
-    .bal-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        font-size: .77rem;
-    }
-    .bal-table th {
-        position: sticky;
-        top: 0;
-        z-index: 2;
-        padding: .62rem 1.1rem;
-        background: var(--ap-th);
-        border-bottom: 1px solid var(--ap-line);
-        color: var(--ap-muted);
-        font-size: .62rem;
-        font-weight: 800;
-        letter-spacing: .09em;
-        text-transform: uppercase;
-        white-space: nowrap;
-        user-select: none;
-    }
-    .bal-table th.th-sort { cursor: pointer; transition: color .18s ease; }
-    .bal-table th.th-sort:hover,
-    .bal-table th.th-sort.is-active { color: var(--ap-primary); }
-    .th-label { display: inline-flex; align-items: center; gap: .32rem; }
-    .th-label .bi { font-size: .6rem; opacity: .45; }
-    .th-sort.is-active .th-label .bi { opacity: 1; }
-    .bal-table .th-num .th-label { justify-content: flex-end; }
-    .bal-table th.th-num { text-align: right; }
-    .bal-table td {
-        padding: .58rem 1.1rem;
-        border-bottom: 1px solid var(--ap-line);
-        color: var(--ap-ink-2);
-        vertical-align: middle;
-    }
-    .bal-table tbody tr { transition: background .15s ease; }
-    .bal-table tbody tr:hover { background: #f6f7ff; }
-    .dark .bal-table tbody tr:hover { background: rgba(99, 102, 241, .08); }
-    .bal-table tbody tr:last-child td { border-bottom: 0; }
-
-    .bal-supplier { display: flex; align-items: center; gap: .55rem; min-width: 0; }
-    .bal-supplier__name {
-        max-width: 250px;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        font-weight: 600;
-        color: var(--ap-ink);
-    }
-    .bal-amount {
-        font-weight: 700;
-        color: var(--ap-ink);
-        font-variant-numeric: tabular-nums;
-        white-space: nowrap;
-    }
-    .bal-date { color: var(--ap-muted); font-size: .72rem; white-space: nowrap; }
-    .td-num { text-align: right; }
-    .cur.cur--inline { display: none; margin-left: .4rem; vertical-align: 1px; }
-
-    .cur {
-        display: inline-flex;
-        padding: .2rem .48rem;
-        border-radius: 7px;
-        font-size: .56rem;
-        font-weight: 800;
-        letter-spacing: .07em;
-        line-height: 1.2;
-    }
-    .cur--ghs { background: #ecfdf5; color: #047857; }
-    .cur--usd { background: #eef2ff; color: #4338ca; }
-    .cur--eur { background: #fff1f2; color: #be123c; }
-    .cur--gbp { background: #eff6ff; color: #1d4ed8; }
-    .cur--plain { background: #f1f5f9; color: #475569; }
-    .dark .cur--ghs { background: rgba(16, 185, 129, .14); color: #34d399; }
-    .dark .cur--usd { background: rgba(99, 102, 241, .16); color: #a5b4fc; }
-    .dark .cur--eur { background: rgba(244, 63, 94, .14); color: #fb7185; }
-    .dark .cur--gbp { background: rgba(59, 130, 246, .16); color: #93c5fd; }
-    .dark .cur--plain { background: rgba(148, 163, 184, .14); color: #cbd5e1; }
-
-    /* ---------------- charts ---------------- */
-    .chart-top {
-        display: flex;
-        align-items: flex-end;
-        justify-content: space-between;
-        gap: .75rem;
-        flex-wrap: wrap;
-        margin-bottom: .9rem;
-    }
-    .chart-total { display: flex; flex-direction: column; gap: .12rem; }
-    .chart-total__label {
-        font-size: .62rem;
-        font-weight: 800;
-        letter-spacing: .09em;
-        text-transform: uppercase;
-        color: var(--ap-muted);
-    }
-    .chart-total__value {
-        font-size: 1.06rem;
-        font-weight: 800;
-        letter-spacing: -.02em;
-        color: var(--ap-ink);
-        font-variant-numeric: tabular-nums;
-    }
-    .chart-range {
-        display: inline-flex;
-        align-items: center;
-        gap: .35rem;
-        padding: .32rem .6rem;
-        border: 1px solid var(--ap-line);
-        border-radius: 999px;
-        background: var(--ap-surface-2);
-        font-size: .64rem;
-        font-weight: 700;
-        color: var(--ap-ink-2);
-        white-space: nowrap;
-    }
-    .chart-range i { font-size: .66rem; color: var(--ap-muted); }
-    .chart-wrap {
-        position: relative;
-        flex: 1 1 auto;
-        width: 100%;
-        height: 300px;
-        min-height: 250px;
-    }
-    .chart-wrap > canvas {
-        position: absolute;
-        inset: 0;
-        width: 100% !important;
-        height: 100% !important;
-    }
-
-    /* ---------------- empty state ---------------- */
-    .empty-state {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: .45rem;
-        padding: 2.2rem 1rem;
-        text-align: center;
-        font-size: .73rem;
-        font-weight: 500;
-        color: var(--ap-muted);
-    }
-    .empty-state i { font-size: 1.5rem; opacity: .45; }
-
-    /* ---------------- responsive ---------------- */
-    @@media (max-width: 767.98px) {
-        .kpi { padding: .85rem 1rem; }
-        .kpi__value { font-size: 1.7rem; }
-        .kpi-card__strip { padding: .55rem 1rem; font-size: .56rem; }
-        .search-box { width: 100%; }
-        .table-toolbar { gap: .5rem; }
-        .chart-wrap { height: 240px; min-height: 220px; }
-    }
-    @@media (max-width: 575.98px) {
-        .dash-body { padding: .85rem .9rem; }
-        .inv-item { gap: .5rem; padding: .5rem .45rem; }
-        .inv-avatar { width: 34px; height: 34px; border-radius: 10px; font-size: .64rem; }
-        .inv-name { font-size: .76rem; }
-        .inv-sub { font-size: .62rem; }
-        .inv-side { min-width: 62px; }
-        .inv-chevron { display: none; }
-        .inv-sub__no, .inv-sub .dot { display: none; }
-
-        .table-toolbar { padding: .8rem .9rem .55rem; }
-        .table-scroll { max-height: 300px; }
-        .bal-table { font-size: .72rem; }
-        .bal-table th, .bal-table td { padding: .5rem .65rem; }
-        .bal-table .col-date, .bal-table .col-cur { display: none; }
-        .bal-supplier__name { max-width: 150px; }
-        .cur.cur--inline { display: inline-flex; }
-        .pager { padding: .6rem .8rem; }
-    }
-    @@media (prefers-reduced-motion: reduce) {
-        .inv-item, .dash-card, .pager-btn, .dash-refresh, .kpi__bar > span { transition: none !important; }
-    }
+  
+    .dark #apDashboard .card { background: #1e293b; border-color: #334155; }
+    .dark #apDashboard .data-table thead { background: #1e293b; color: #94a3b8; }
+    .dark #apDashboard .data-table tbody tr { border-top-color: #334155; }
+    .dark #apDashboard .data-table tbody tr:hover { background: rgb(30 41 59 / .6); }
+    .dark #apDashboard .data-table tbody td { color: #e2e8f0; }
 </style>
 
-<div class="content" id="app" v-cloak>
+<div class="content" id="apDashboard">
 
-    <!-- ======================= Page header ======================= -->
-    <div class="dash-hero">
-        <div>
-            <h1 class="dash-hero__title">Accounts Payable</h1>
-            <p class="dash-hero__sub">Invoices, payments and supplier balances at a glance.</p>
+    <!-- Page Header & Breadcrumbs -->
+    <div class="mb-6 content-header">
+        <div class="mb-2 flex items-center gap-2 text-sm text-gray-500">
+            <span>AP</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="font-medium text-blue-600">Dashboard</span>
         </div>
-        <div class="dash-hero__actions">
-            <span class="dash-date"><i class="bi bi-calendar3"></i> {{ todayLabel }}</span>
-            <button type="button"
-                    class="dash-refresh"
-                    :class="{ 'is-loading': refreshing }"
-                    @@click="refresh"
-                    aria-label="Refresh dashboard"
-                    title="Refresh">
-                <i class="bi bi-arrow-clockwise"></i>
-            </button>
+
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="page-title">
+                <h2 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                    Accounts Payable Dashboard
+                </h2>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Payables control center — invoices, payments, supplier balances and aging at a glance.
+                </p>
+            </div>
+
+            <div class="flex flex-wrap items-end gap-2.5">
+                <label class="block">
+                    <span class="mb-1 block text-xs font-semibold text-gray-500 dark:text-gray-400">Aging as of</span>
+                    <input id="asOfDate" type="date"
+                           class="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-200" />
+                </label>
+                <label class="block">
+                    <span class="mb-1 block text-xs font-semibold text-gray-500 dark:text-gray-400">Interval</span>
+                    <select id="agingInterval"
+                            class="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-200">
+                        <option value="30">30 days</option>
+                        <option value="60">60 days</option>
+                        <option value="90">90 days</option>
+                    </select>
+                </label>
+                <button id="refreshButton" type="button"
+                        class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
+                    <i class="bi bi-arrow-clockwise"></i>
+                    <span>Refresh</span>
+                </button>
+            </div>
         </div>
     </div>
 
-    <!-- ======================= Panels ======================= -->
-    <section id="c3-pie-bar-charts">
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-
-            <!-- Merged KPI overview -->
-            <div class="card kpi-card md:col-span-2 xl:col-span-1">
-                <span class="kpi-card__texture" aria-hidden="true"></span>
-                <div class="kpi-card__head">
-                    <div>
-                        <span class="kpi-card__eyebrow">Overview</span>
-                        <h2 class="kpi-card__title">Payables at a glance</h2>
-                    </div>
-                    <span class="kpi-card__live">Live</span>
-                </div>
-                <div class="kpi-grid">
-                    <div v-for="kpi in kpis" :key="kpi.key" class="kpi">
-                        <span class="kpi__icon"><i class="bi" :class="kpi.icon"></i></span>
-                        <div class="kpi__body">
-                            <span class="kpi__label">{{ kpi.label }}</span>
-                            <span class="kpi__value">{{ kpi.value }}</span>
-                        </div>
-                        <span class="kpi__foot">
-                            <span v-if="kpi.pct !== null" class="kpi__bar">
-                                <span :style="{ width: kpi.pct + '%' }"></span>
-                            </span>
-                            <span>{{ kpi.foot }}</span>
-                        </span>
-                    </div>
-                </div>
-                <div class="kpi-card__strip">
-                    <span><i class="bi bi-clock-history"></i> Updated {{ updatedLabel }}</span>
-                    <span><i class="bi bi-receipt-cutoff"></i> {{ formatNumber(stats.totalInvoices) }} tracked</span>
-                </div>
-            </div>
-
-            <!-- Invoice analysis -->
-            <div class="card dash-card" data-card-title="Invoice Analysis">
-                <div class="dash-body">
-                    <div class="chart-top">
-                        <div class="chart-total">
-                            <span class="chart-total__label">Total invoiced</span>
-                            <span class="chart-total__value">{{ formatMoney(invoiceTotals.total) }}</span>
-                        </div>
-                        <span class="chart-range">
-                            <i class="bi bi-receipt-cutoff"></i>
-                            {{ invoices.length }} invoices
-                        </span>
-                    </div>
-                    <div class="chart-wrap">
-                        <canvas id="invoiceChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Invoices list — narrow -->
-            <div class="card dash-card" data-card-title="Invoices">
-                <div class="dash-body dash-body--flush">
-                    <div class="inv-scroll">
-                        <div v-for="invoice in paginatedInvoices"
-                             :key="invoice.id"
-                             class="inv-item"
-                             tabindex="0"
-                             role="button"
-                             @@click="printReport(invoice.id)"
-                             @@keydown.enter="printReport(invoice.id)">
-                            <div class="inv-avatar" :class="'tone-' + toneFor(invoice.supplierName)">
-                                {{ initials(invoice.supplierName) }}
-                            </div>
-                            <div class="inv-main">
-                                <div class="inv-head">
-                                    <span class="inv-name">{{ invoice.supplierName }}</span>
-                                </div>
-                                <div class="inv-sub">
-                                    <span class="inv-sub__no">{{ invoice.invoiceNumber }}</span>
-                                    <span class="dot"></span>
-                                    <span>{{ formatDate(invoice.invoiceDate) }}</span>
-                                    <span class="status-pill"
-                                          :class="invoice.isPosted ? 'status-pill--posted' : 'status-pill--draft'">
-                                        {{ invoice.isPosted ? 'Posted' : 'Draft' }}
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="inv-side">
-                                <div class="inv-amount">{{ formatAmount(invoice.totalInvoiceAmount) }}</div>
-                                <div class="inv-currency">{{ invoice.currencyCode }}</div>
-                            </div>
-                            <i class="bi bi-chevron-right inv-chevron"></i>
-                        </div>
-
-                        <div v-if="invoices.length === 0" class="empty-state">
-                            <i class="bi bi-inbox"></i>
-                            <span>No invoices yet.</span>
-                        </div>
-                    </div>
-
-                    <div class="pager">
-                        <span class="pager__info">
-                            {{ invoiceRange.from }}–{{ invoiceRange.to }} of {{ invoiceRange.total }}
-                        </span>
-                        <div class="pager__buttons">
-                            <button type="button" class="pager-btn" @@click="prevPage"
-                                    :disabled="currentPage === 1" aria-label="Previous page">
-                                <i class="bi bi-chevron-left"></i>
-                            </button>
-                            <span class="pager-page">{{ currentPage }} / {{ totalPages }}</span>
-                            <button type="button" class="pager-btn" @@click="nextPage"
-                                    :disabled="currentPage === totalPages" aria-label="Next page">
-                                <i class="bi bi-chevron-right"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Opening balances — wide -->
-            <div class="card dash-card md:col-span-2 xl:col-span-2" data-card-title="Opening Balances">
-                <div class="dash-body" style="padding: 0;">
-
-                    <div class="table-toolbar">
-                        <div class="search-box">
-                            <i class="bi bi-search"></i>
-                            <input type="search"
-                                   v-model="balanceSearch"
-                                   placeholder="Search supplier, currency or date…"
-                                   aria-label="Search opening balances" />
-                        </div>
-                        <span class="search-count">
-                            {{ filteredBalances.length }} supplier{{ filteredBalances.length === 1 ? '' : 's' }}
-                        </span>
-                    </div>
-
-                    <div class="table-scroll">
-                        <table class="bal-table">
-                            <thead>
-                            <tr>
-                                <th scope="col" class="th-sort"
-                                    @@click="sortBTable('supplierName')"
-                                    :class="{ 'is-active': bSortKey === 'supplierName' }"
-                                    :aria-sort="bSortKey === 'supplierName' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'">
-                                    <span class="th-label">Supplier <i class="bi" :class="sortIcon('supplierName')"></i></span>
-                                </th>
-                                <th scope="col" class="th-sort th-num"
-                                    @@click="sortBTable('amount')"
-                                    :class="{ 'is-active': bSortKey === 'amount' }"
-                                    :aria-sort="bSortKey === 'amount' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'">
-                                    <span class="th-label">Amount <i class="bi" :class="sortIcon('amount')"></i></span>
-                                </th>
-                                <th scope="col" class="th-sort col-date"
-                                    @@click="sortBTable('transactionDate')"
-                                    :class="{ 'is-active': bSortKey === 'transactionDate' }"
-                                    :aria-sort="bSortKey === 'transactionDate' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'">
-                                    <span class="th-label">Date <i class="bi" :class="sortIcon('transactionDate')"></i></span>
-                                </th>
-                                <th scope="col" class="th-sort col-cur"
-                                    @@click="sortBTable('currencyCode')"
-                                    :class="{ 'is-active': bSortKey === 'currencyCode' }"
-                                    :aria-sort="bSortKey === 'currencyCode' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'">
-                                    <span class="th-label">Currency <i class="bi" :class="sortIcon('currencyCode')"></i></span>
-                                </th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr v-for="(balance, index) in paginatedBalances"
-                                :key="balance.supplierName + '-' + index">
-                                <td>
-                                    <div class="bal-supplier">
-                                            <span class="inv-avatar inv-avatar--sm"
-                                                  :class="'tone-' + toneFor(balance.supplierName)">
-                                                {{ initials(balance.supplierName) }}
-                                            </span>
-                                        <span class="bal-supplier__name">{{ balance.supplierName }}</span>
-                                    </div>
-                                </td>
-                                <td class="td-num">
-                                    <span class="bal-amount">{{ formatAmount(balance.amount) }}</span>
-                                    <span class="cur cur--inline" :class="currencyClass(balance.currencyCode)">
-                                            {{ balance.currencyCode }}
-                                        </span>
-                                </td>
-                                <td class="bal-date col-date">{{ formatDate(balance.transactionDate) }}</td>
-                                <td class="col-cur">
-                                        <span class="cur" :class="currencyClass(balance.currencyCode)">
-                                            {{ balance.currencyCode }}
-                                        </span>
-                                </td>
-                            </tr>
-
-                            <tr v-if="paginatedBalances.length === 0">
-                                <td colspan="4">
-                                    <div class="empty-state">
-                                        <i class="bi bi-inbox"></i>
-                                        <span>{{ balanceSearch ? 'No suppliers match your search.' : 'No opening balances found.' }}</span>
-                                    </div>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="pager">
-                        <span class="pager__info">
-                            {{ balanceRange.from }}–{{ balanceRange.to }} of {{ balanceRange.total }}
-                        </span>
-                        <div class="pager__buttons">
-                            <button type="button" class="pager-btn" @@click="prevBPage"
-                                    :disabled="currentBPage === 1" aria-label="Previous page">
-                                <i class="bi bi-chevron-left"></i>
-                            </button>
-                            <span class="pager-page">{{ currentBPage }} / {{ totalBPages }}</span>
-                            <button type="button" class="pager-btn" @@click="nextBPage"
-                                    :disabled="currentBPage === totalBPages" aria-label="Next page">
-                                <i class="bi bi-chevron-right"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Invoice payments — narrow -->
-            <div class="card dash-card md:col-span-2 xl:col-span-1" data-card-title="Invoice Payments">
-                <div class="dash-body">
-                    <div class="chart-top">
-                        <div class="chart-total">
-                            <span class="chart-total__label">Paid to suppliers</span>
-                            <span class="chart-total__value">{{ formatMoney(paymentsTotal) }}</span>
-                        </div>
-                        <span class="chart-range">
-                            <i class="bi bi-people"></i>
-                            {{ payments.length }} suppliers
-                        </span>
-                    </div>
-                    <div class="chart-wrap">
-                        <canvas id="supplierChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
+    <!-- Quick Actions -->
+    <div class="card mb-6" data-card-title="Quick Actions">
+        <div class="flex flex-wrap items-center gap-2.5">
+            <a id="agingAction" href="/Ap/Aging"
+               class="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3.5 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-blue-400 dark:hover:bg-slate-700">
+                <i class="bi bi-hourglass-split"></i> Aging Summary
+            </a>
+            <a id="glAction" href="/Ap/GlTransactions"
+               class="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-400 dark:hover:bg-slate-700">
+                <i class="bi bi-journal-text"></i> G/L Transactions
+            </a>
+            <a href="/Ap/Vouchers"
+               class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
+                <i class="bi bi-receipt"></i> Payment Vouchers
+            </a>
+            <a href="/Ap/OpeningBalances"
+               class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
+                <i class="bi bi-wallet2"></i> Opening Balances
+            </a>
+            <a href="/Ap/CanceledInvoices"
+               class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
+                <i class="bi bi-x-circle"></i> Canceled Invoices
+            </a>
+            <a href="/Ap/DebitMemos"
+               class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
+                <i class="bi bi-file-earmark-minus"></i> Debit Memos
+            </a>
         </div>
-    </section>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
+        <!-- Open invoices -->
+        <div class="card flex items-center gap-4">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
+                <i class="bi bi-journal-text text-2xl"></i>
+            </div>
+            <div class="min-w-0">
+                <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Open Invoices</p>
+                <h3 id="openInvoiceCount" class="text-2xl font-bold text-gray-900 dark:text-white">—</h3>
+                <p class="mt-0.5 text-xs text-gray-400">Invoices with an outstanding balance</p>
+            </div>
+        </div>
+
+        <!-- Suppliers -->
+        <div class="card flex items-center gap-4 p-5">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                <i class="bi bi-truck text-2xl"></i>
+            </div>
+            <div class="min-w-0">
+                <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Suppliers</p>
+                <h3 id="supplierCount" class="text-2xl font-bold text-gray-900 dark:text-white">—</h3>
+                <p class="mt-0.5 text-xs text-gray-400">Records returned by the shared resource API</p>
+            </div>
+        </div>
+
+        <!-- Payments -->
+        <div class="card flex items-center gap-4 p-5">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+                <i class="bi bi-credit-card-2-front text-2xl"></i>
+            </div>
+            <div class="min-w-0">
+                <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Payments</p>
+                <h3 id="paymentCount" class="text-2xl font-bold text-gray-900 dark:text-white">—</h3>
+                <p class="mt-0.5 text-xs text-gray-400">Records returned by the AP payments report</p>
+            </div>
+        </div>
+
+        <!-- Opening balances -->
+        <div class="card flex items-center gap-4 p-5">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+                <i class="bi bi-cash-coin text-2xl"></i>
+            </div>
+            <div class="min-w-0">
+                <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Opening Balances</p>
+                <h3 id="openingBalanceCount" class="text-2xl font-bold text-gray-900 dark:text-white">—</h3>
+                <p class="mt-0.5 text-xs text-gray-400">Opening balance records across all statuses</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
+
+        <!-- Invoice aging -->
+        <div class="card xl:col-span-2" data-card-title="Invoice Aging">
+            <div class="flex items-start justify-between gap-4 border-b border-gray-100 px-5 py-4 dark:border-slate-800">
+                <div>
+                    <h4 class="text-sm font-bold text-gray-900 dark:text-white">Invoice Aging</h4>
+                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Invoice counts by aging bucket</p>
+                </div>
+                <span class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300">
+                    <i class="bi bi-calendar3 text-blue-500"></i>
+                    <span id="agingAsOfLabel"></span>
+                </span>
+            </div>
+            <div class="h-[290px] p-4">
+                <div id="agingChart" class="h-full w-full"></div>
+            </div>
+            <p class="border-t border-gray-100 px-5 py-3 text-xs text-gray-400 dark:border-slate-800">
+                Counts are used so invoices in different currencies are not added together.
+            </p>
+        </div>
+
+        <!-- Invoices by currency -->
+        <div class="card" data-card-title="Invoices by Currency">
+            <div class="border-b border-gray-100 px-5 py-4 dark:border-slate-800">
+                <h4 class="text-sm font-bold text-gray-900 dark:text-white">Invoices by Currency</h4>
+                <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Invoice records per currency</p>
+            </div>
+            <div class="h-[290px] p-4">
+                <div id="currencyChart" class="h-full w-full"></div>
+                <div id="currencyEmpty" class="hidden py-10 text-center text-sm text-gray-400">
+                    <i class="bi bi-pie-chart block text-4xl mb-2"></i>
+                    No invoice currency data available.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tables Row -->
+    <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
+
+        <!-- Recent invoices -->
+        <div class="card xl:col-span-2" data-card-title="Recent Invoices">
+            <div class="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-slate-800">
+                <div>
+                    <h4 class="text-sm font-bold text-gray-900 dark:text-white">Recent Invoices</h4>
+                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Latest records returned by the AP invoice endpoint</p>
+                </div>
+                <a href="/Ap/GetAllApInvoices" target="_blank" rel="noopener"
+                   class="text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400">
+                    View all <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+            <div class="table-scroll">
+                <table class="data-table">
+                    <thead>
+                    <tr>
+                        <th>Supplier</th>
+                        <th>Invoice</th>
+                        <th>Invoice date</th>
+                        <th>Currency</th>
+                        <th class="text-right">Balance</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody id="invoiceTableBody">
+                    <tr>
+                        <td colspan="6">
+                            <i class="bi bi-inbox block text-3xl mb-2"></i>
+                            Loading invoices…
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Recent payments -->
+        <div class="card" data-card-title="Recent Payments">
+            <div class="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-slate-800">
+                <div>
+                    <h4 class="text-sm font-bold text-gray-900 dark:text-white">Recent Payments</h4>
+                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Payment activity from the AP payments report</p>
+                </div>
+                <a href="/Ap/GetApPaymentsReport" target="_blank" rel="noopener"
+                   class="text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400">
+                    View all <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+            <div class="table-scroll">
+                <table class="data-table">
+                    <thead>
+                    <tr>
+                        <th>Supplier</th>
+                        <th>Payment / batch</th>
+                        <th>Date</th>
+                        <th>Currency</th>
+                        <th class="text-right">Amount</th>
+                    </tr>
+                    </thead>
+                    <tbody id="paymentTableBody">
+                    <tr>
+                        <td colspan="5">
+                            <i class="bi bi-credit-card block text-3xl mb-2"></i>
+                            Loading payments…
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <footer class="py-8 text-center text-xs text-gray-400">
+        Accounts Payable dashboard · amounts remain grouped by their source currencies
+    </footer>
 </div>
+       
+@*<script src="~/js/ap/Dashboard/ap.js" asp-append-version="true"></script>*@
+   
 
-<script>
-    const { createApp } = Vue;
+  <script>
+        (function () {
+            'use strict';
 
-    /* ------------------------------------------------------------------
-       Dummy data — replace with the payload from your controller/API
-       (e.g. fetch('/api/ap/dashboard').then(r => r.json()) in mounted()).
-    ------------------------------------------------------------------ */
-    const supplierNames = [
-        "Accra Office Supplies Ltd",
-        "Kumasi Steel Works",
-        "Tema Logistics Co.",
-        "Golden Palm Foods",
-        "Takoradi Marine Services",
-        "Ashanti Print House",
-        "Volta Fresh Produce",
-        "Cape Coast Hardware",
-        "Sunyani Timber Mills",
-        "Tamale Agro Traders",
-        "Osu Tech Solutions",
-        "Ho Water Systems"
-    ];
-
-    const dummyInvoices = Array.from({ length: 23 }, (_, i) => ({
-        id: i + 1,
-        supplierName: supplierNames[i % supplierNames.length],
-        invoiceNumber: `INV-2026-${String(1001 + i)}`,
-        currencyCode: i % 6 === 5 ? "USD" : "GHS",
-        totalInvoiceAmount: (((i * 7919) % 9000) + 350 + 0.35).toFixed(2),
-        // spread invoices across Apr - Oct 2026
-        invoiceDate: new Date(2026, 3 + (i % 7), 1 + ((i * 3) % 27)).toISOString().slice(0, 10),
-        isPosted: i % 4 !== 0
-    }));
-
-    const dummyBalances = [
-        { supplierName: "Accra Office Supplies Ltd", amount: 12450.0, transactionDate: "2026-01-02", currencyCode: "GHS" },
-        { supplierName: "Kumasi Steel Works", amount: 58200.5, transactionDate: "2026-01-02", currencyCode: "GHS" },
-        { supplierName: "Tema Logistics Co.", amount: 9800.75, transactionDate: "2026-01-05", currencyCode: "GHS" },
-        { supplierName: "Golden Palm Foods", amount: 23100.0, transactionDate: "2026-01-05", currencyCode: "GHS" },
-        { supplierName: "Takoradi Marine Services", amount: 4300.0, transactionDate: "2026-01-08", currencyCode: "USD" },
-        { supplierName: "Ashanti Print House", amount: 7650.25, transactionDate: "2026-01-10", currencyCode: "GHS" },
-        { supplierName: "Volta Fresh Produce", amount: 15920.0, transactionDate: "2026-01-12", currencyCode: "GHS" },
-        { supplierName: "Cape Coast Hardware", amount: 31400.9, transactionDate: "2026-01-15", currencyCode: "GHS" },
-        { supplierName: "Sunyani Timber Mills", amount: 2750.0, transactionDate: "2026-01-15", currencyCode: "USD" },
-        { supplierName: "Tamale Agro Traders", amount: 18890.4, transactionDate: "2026-01-20", currencyCode: "GHS" },
-        { supplierName: "Osu Tech Solutions", amount: 41250.0, transactionDate: "2026-01-22", currencyCode: "GHS" },
-        { supplierName: "Ho Water Systems", amount: 6120.0, transactionDate: "2026-01-25", currencyCode: "GHS" }
-    ];
-
-    const dummyPayments = [
-        { supplierName: "Kumasi Steel Works", amount: 48000 },
-        { supplierName: "Osu Tech Solutions", amount: 36500 },
-        { supplierName: "Cape Coast Hardware", amount: 27800 },
-        { supplierName: "Golden Palm Foods", amount: 19400 },
-        { supplierName: "Tamale Agro Traders", amount: 14250 },
-        { supplierName: "Other Suppliers", amount: 22100 }
-    ];
-
-    /* Draws the total in the middle of the doughnut */
-    const centerTextPlugin = {
-        id: "centerText",
-        afterDraw(chart) {
-            const opts = chart.options.plugins.centerText || {};
-            if (!opts.text) return;
-            const meta = chart.getDatasetMeta(0);
-            const arc = meta && meta.data ? meta.data[0] : null;
-            if (!arc) return;
-            const ctx = chart.ctx;
-            ctx.save();
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillStyle = opts.color || "#0f172a";
-            ctx.font = '800 17px "Inter", ui-sans-serif, system-ui, sans-serif';
-            ctx.fillText(opts.text, arc.x, arc.y - 6);
-            ctx.fillStyle = opts.subColor || "#94a3b8";
-            ctx.font = '700 9px "Inter", ui-sans-serif, system-ui, sans-serif';
-            ctx.fillText((opts.subtext || "").toUpperCase(), arc.x, arc.y + 13);
-            ctx.restore();
-        }
-    };
-
-    createApp({
-        data() {
-            return {
-                // number cards
-                stats: {
-                    totalSuppliers: 2150,
-                    totalInvoices: 54,
-                    postedInvoices: 54,
-                    postedPayments: 14
-                },
-
-                // invoices list
-                invoices: dummyInvoices,
-                currentPage: 1,
-                pageSize: 6,
-
-                // opening balances
-                balances: dummyBalances,
-                balanceSearch: "",
-                currentBPage: 1,
-                bPageSize: 6,
-                bSortKey: "supplierName",
-                sortOrder: "asc",
-
-                // payments chart
-                payments: dummyPayments,
-
-                refreshing: false,
-                lastRefreshed: new Date()
+            const endpoints = {
+                aging: '/Ap/GetApAgingSummary',
+                invoices: '/Ap/GetInvoices',
+                payments: '/Ap/GetPayments',
+                balances: '/Ap/GetApBalancesReport?status=all',
+                suppliers: '/SharedResource/GetSuppliers'
             };
-        },
 
-        computed: {
-            /* ---------- invoices ---------- */
-            totalPages() {
-                return Math.max(1, Math.ceil(this.invoices.length / this.pageSize));
-            },
-            paginatedInvoices() {
-                const start = (this.currentPage - 1) * this.pageSize;
-                return this.invoices.slice(start, start + this.pageSize);
-            },
-            invoiceRange() {
-                if (!this.invoices.length) return { from: 0, to: 0, total: 0 };
-                const from = (this.currentPage - 1) * this.pageSize + 1;
-                const to = Math.min(from + this.pageSize - 1, this.invoices.length);
-                return { from, to, total: this.invoices.length };
-            },
+            const byId = id => document.getElementById(id);
+            const today = new Date();
+            const localToday = new Date(
+                today.getTime() - today.getTimezoneOffset() * 60000
+            ).toISOString().slice(0, 10);
 
-            /* ---------- opening balances ---------- */
-            filteredBalances() {
-                const q = (this.balanceSearch || "").trim().toLowerCase();
-                if (!q) return this.balances;
-                return this.balances.filter((b) =>
-                    [b.supplierName, b.currencyCode, b.transactionDate, String(b.amount)]
-                        .join(" ")
-                        .toLowerCase()
-                        .includes(q)
-                );
-            },
-            sortedBalances() {
-                const key = this.bSortKey;
-                const dir = this.sortOrder === "asc" ? 1 : -1;
-                return [...this.filteredBalances].sort((a, b) => {
-                    const x = a[key];
-                    const y = b[key];
-                    if (typeof x === "number" && typeof y === "number") return (x - y) * dir;
-                    return String(x).localeCompare(String(y)) * dir;
-                });
-            },
-            totalBPages() {
-                return Math.max(1, Math.ceil(this.filteredBalances.length / this.bPageSize));
-            },
-            paginatedBalances() {
-                const start = (this.currentBPage - 1) * this.bPageSize;
-                return this.sortedBalances.slice(start, start + this.bPageSize);
-            },
-            balanceRange() {
-                if (!this.filteredBalances.length) return { from: 0, to: 0, total: 0 };
-                const from = (this.currentBPage - 1) * this.bPageSize + 1;
-                const to = Math.min(from + this.bPageSize - 1, this.filteredBalances.length);
-                return { from, to, total: this.filteredBalances.length };
-            },
+            byId('asOfDate').value = localToday;
+            byId('agingAsOfLabel').textContent = 'As of ' + localToday;
 
-            /* ---------- KPI helpers ---------- */
-            postedInvoicesPct() {
-                const { postedInvoices, totalInvoices } = this.stats;
-                return totalInvoices ? Math.round((postedInvoices / totalInvoices) * 100) : 0;
-            },
-            postedPaymentsPct() {
-                const { postedPayments, postedInvoices } = this.stats;
-                return postedInvoices ? Math.round((postedPayments / postedInvoices) * 100) : 0;
-            },
-            kpis() {
-                return [
-                    {
-                        key: "suppliers",
-                        label: "Total Suppliers",
-                        icon: "bi-people-fill",
-                        value: this.formatNumber(this.stats.totalSuppliers),
-                        pct: null,
-                        foot: "Registered in the system"
-                    },
-                    {
-                        key: "invoices",
-                        label: "Total Invoices",
-                        icon: "bi-receipt",
-                        value: this.formatNumber(this.stats.totalInvoices),
-                        pct: null,
-                        foot: "Across all currencies"
-                    },
-                    {
-                        key: "postedInvoices",
-                        label: "Posted Invoices",
-                        icon: "bi-box-arrow-in-up",
-                        value: this.formatNumber(this.stats.postedInvoices),
-                        pct: this.postedInvoicesPct,
-                        foot: this.postedInvoicesPct + "% posted"
-                    },
-                    {
-                        key: "postedPayments",
-                        label: "Posted Payments",
-                        icon: "bi-bank",
-                        value: this.formatNumber(this.stats.postedPayments),
-                        pct: this.postedPaymentsPct,
-                        foot: this.postedPaymentsPct + "% settled"
+            function escapeHtml(value) {
+                return String(value ?? '').replace(/[&<>"']/g, character => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                })[character]);
+            }
+
+            function property(row, name) {
+                if (!row) return undefined;
+                const pascalName = name.charAt(0).toUpperCase() + name.slice(1);
+                return row[name] ?? row[pascalName];
+            }
+
+            function firstValue(row, names) {
+                for (const name of names) {
+                    const value = property(row, name);
+                    if (value !== undefined && value !== null && value !== '') {
+                        return value;
                     }
+                }
+                return '';
+            }
+
+            function rowsFrom(raw) {
+                if (!raw) return [];
+                if (Array.isArray(raw)) return raw;
+                if (typeof raw !== 'object') return [];
+
+                const keys = [
+                    'result',
+                    'items',
+                    'data',
+                    'invoices',
+                    'payments',
+                    'balances',
+                    'openingBalances',
+                    'apOpeningBalances',
+                    'suppliers',
+                    'records'
                 ];
-            },
-            invoiceTotals() {
-                return {
-                    total: this.invoices.reduce((sum, inv) => sum + (parseFloat(inv.totalInvoiceAmount) || 0), 0)
-                };
-            },
-            paymentsTotal() {
-                return this.payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-            },
-            updatedLabel() {
-                return this.lastRefreshed.toLocaleTimeString("en-GB", {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                });
-            },
-            todayLabel() {
-                return new Date().toLocaleDateString("en-GB", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric"
-                });
-            },
 
-            /* ---------- chart data: invoice totals per month ---------- */
-            invoiceChartData() {
-                const months = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"];
-                const posted = Array(7).fill(0);
-                const unposted = Array(7).fill(0);
-                this.invoices.forEach((inv) => {
-                    const idx = new Date(inv.invoiceDate).getMonth() - 3;
-                    if (idx < 0 || idx > 6) return;
-                    const amt = parseFloat(inv.totalInvoiceAmount);
-                    if (inv.isPosted) posted[idx] += amt;
-                    else unposted[idx] += amt;
-                });
-                return { months, posted, unposted };
+                for (const key of keys) {
+                    const pascalKey = key.charAt(0).toUpperCase() + key.slice(1);
+                    const value = raw[key] ?? raw[pascalKey];
+                    if (Array.isArray(value)) return value;
+                }
+
+                for (const key of ['result', 'data']) {
+                    const pascalKey = key.charAt(0).toUpperCase() + key.slice(1);
+                    const nested = raw[key] ?? raw[pascalKey];
+                    if (nested && typeof nested === 'object') {
+                        const found = rowsFrom(nested);
+                        if (found.length) return found;
+                    }
+                }
+
+                return [];
             }
-        },
 
-        watch: {
-            balanceSearch() {
-                this.currentBPage = 1;
+            async function fetchRows(url) {
+                const response = await fetch(url, {
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Request failed (' + response.status + ') for ' + url);
+                }
+
+                return rowsFrom(await response.json());
             }
-        },
 
-        methods: {
-            /* ---------- formatting helpers ---------- */
-            formatNumber(value) {
-                return new Intl.NumberFormat("en-US").format(Number(value) || 0);
-            },
-            formatAmount(value) {
-                return new Intl.NumberFormat("en-GH", {
-                    minimumFractionDigits: 2,
+            async function safeRows(url, label, issues) {
+                try {
+                    return await fetchRows(url);
+                } catch (error) {
+                    console.error(label + ' loading error:', error);
+                    issues.push(label);
+                    return [];
+                }
+            }
+
+            function numberValue(value) {
+                const parsed = Number(String(value ?? 0).replace(/,/g, ''));
+                return Number.isFinite(parsed) ? parsed : 0;
+            }
+
+            function formatNumber(value) {
+                return new Intl.NumberFormat(undefined, {
                     maximumFractionDigits: 2
-                }).format(Number(value) || 0);
-            },
-            formatMoney(value, currency = "GHS") {
-                const amount = Number(value) || 0;
-                try {
-                    return new Intl.NumberFormat("en-GH", {
-                        style: "currency",
-                        currency,
-                        currencyDisplay: "narrowSymbol",
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    }).format(amount);
-                } catch (e) {
-                    return `${currency} ${amount.toFixed(2)}`;
-                }
-            },
-            formatMoneyCompact(value, currency = "GHS") {
-                const amount = Number(value) || 0;
-                try {
-                    return new Intl.NumberFormat("en-GH", {
-                        style: "currency",
-                        currency,
-                        currencyDisplay: "narrowSymbol",
-                        notation: "compact",
-                        maximumFractionDigits: 1
-                    }).format(amount);
-                } catch (e) {
-                    return `${currency} ${Math.round(amount)}`;
-                }
-            },
-            formatDate(value) {
-                if (!value) return "";
-                const isIsoDate = typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value);
-                const date = isIsoDate
-                    ? new Date(value.slice(0, 10) + "T00:00:00")
-                    : new Date(value);
-                if (Number.isNaN(date.getTime())) return value;
-                return date.toLocaleDateString("en-GB", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric"
-                });
-            },
-            initials(name) {
-                if (!name) return "?";
-                const ignored = ["ltd", "ltd.", "co", "co.", "plc", "inc", "inc.", "llc"];
-                const words = String(name).split(/\s+/).filter((w) => w && !ignored.includes(w.toLowerCase()));
-                const picked = (words.length ? words : String(name).split(/\s+/)).slice(0, 2);
-                return picked.map((w) => w[0]).join("").toUpperCase();
-            },
-            toneFor(name) {
-                const text = String(name || "");
-                let hash = 0;
-                for (let i = 0; i < text.length; i++) hash = (hash * 31 + text.charCodeAt(i)) % 9973;
-                return hash % 6;
-            },
-            currencyClass(code) {
-                const map = { GHS: "cur--ghs", USD: "cur--usd", EUR: "cur--eur", GBP: "cur--gbp" };
-                return map[String(code || "").toUpperCase()] || "cur--plain";
-            },
-            sortIcon(key) {
-                if (this.bSortKey !== key) return "bi-arrow-down-up";
-                return this.sortOrder === "asc" ? "bi-caret-up-fill" : "bi-caret-down-fill";
-            },
-
-            /* ---------- invoices pagination ---------- */
-            prevPage() {
-                if (this.currentPage > 1) this.currentPage--;
-            },
-            nextPage() {
-                if (this.currentPage < this.totalPages) this.currentPage++;
-            },
-
-            /* ---------- balances pagination + sorting ---------- */
-            prevBPage() {
-                if (this.currentBPage > 1) this.currentBPage--;
-            },
-            nextBPage() {
-                if (this.currentBPage < this.totalBPages) this.currentBPage++;
-            },
-            sortBTable(key) {
-                if (this.bSortKey === key) {
-                    this.sortOrder = this.sortOrder === "asc" ? "desc" : "asc";
-                } else {
-                    this.bSortKey = key;
-                    this.sortOrder = "asc";
-                }
-                this.currentBPage = 1;
-            },
-
-            // Replace with your real report call, e.g. window.open(`/Reports/Invoice?id=${id}`, "_blank")
-            printReport(id) {
-                console.log("Print report for invoice id:", id);
-            },
-
-            refresh() {
-                this.refreshing = true;
-                this.lastRefreshed = new Date();
-                this.renderCharts();
-                window.setTimeout(() => { this.refreshing = false; }, 650);
-            },
-
-            /* ---------- charts ---------- */
-            renderCharts() {
-                const isDark = document.documentElement.classList.contains("dark");
-                const textColor = isDark ? "#cbd5e1" : "#64748b";
-                const gridColor = isDark ? "rgba(148, 163, 184, .14)" : "rgba(100, 116, 139, .12)";
-                const surface = isDark ? "#0b1220" : "#ffffff";
-
-                Chart.defaults.font.family = '"Inter", ui-sans-serif, system-ui, sans-serif';
-                Chart.defaults.font.size = 11;
-                Chart.defaults.color = textColor;
-
-                // Chart instances are kept off `data` so Vue doesn't make them reactive
-                this._charts = this._charts || {};
-                Object.values(this._charts).forEach((chart) => chart.destroy());
-
-                const verticalGradient = (chart, top, bottom) => {
-                    const ctx = chart.ctx;
-                    const area = chart.chartArea;
-                    if (!area) return bottom;
-                    const gradient = ctx.createLinearGradient(0, area.top, 0, area.bottom);
-                    gradient.addColorStop(0, top);
-                    gradient.addColorStop(1, bottom);
-                    return gradient;
-                };
-
-                /* ---- Invoice analysis ---- */
-                const invoiceCanvas = document.getElementById("invoiceChart");
-                if (invoiceCanvas) {
-                    const { months, posted, unposted } = this.invoiceChartData;
-                    this._charts.invoice = new Chart(invoiceCanvas, {
-                        type: "bar",
-                        data: {
-                            labels: months,
-                            datasets: [
-                                {
-                                    label: "Posted",
-                                    data: posted,
-                                    backgroundColor: (ctx) =>
-                                        verticalGradient(ctx.chart, isDark ? "#8b93ff" : "#818cf8", isDark ? "#5b52e8" : "#4f46e5"),
-                                    hoverBackgroundColor: "#4338ca",
-                                    borderRadius: 7,
-                                    borderSkipped: "bottom",
-                                    maxBarThickness: 20,
-                                    categoryPercentage: .62,
-                                    barPercentage: .85
-                                },
-                                {
-                                    label: "Unposted",
-                                    data: unposted,
-                                    backgroundColor: (ctx) =>
-                                        verticalGradient(ctx.chart, "#fcd34d", "#f59e0b"),
-                                    hoverBackgroundColor: "#d97706",
-                                    borderRadius: 7,
-                                    borderSkipped: "bottom",
-                                    maxBarThickness: 20,
-                                    categoryPercentage: .62,
-                                    barPercentage: .85
-                                }
-                            ]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            interaction: { mode: "index", intersect: false },
-                            layout: { padding: { top: 6 } },
-                            plugins: {
-                                legend: {
-                                    position: "bottom",
-                                    labels: {
-                                        usePointStyle: true,
-                                        pointStyle: "circle",
-                                        boxWidth: 6,
-                                        boxHeight: 6,
-                                        padding: 18,
-                                        color: textColor,
-                                        font: { size: 11, weight: "600" },
-                                        generateLabels: (chart) => {
-                                            const labels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
-                                            const solid = ["#6366f1", "#f59e0b"];
-                                            return labels.map((item, index) => ({
-                                                ...item,
-                                                fillStyle: solid[index] || item.fillStyle,
-                                                strokeStyle: "transparent",
-                                                pointStyle: "circle"
-                                            }));
-                                        }
-                                    }
-                                },
-                                tooltip: {
-                                    backgroundColor: isDark ? "rgba(2, 6, 23, .96)" : "rgba(15, 23, 42, .94)",
-                                    titleColor: "#f1f5f9",
-                                    bodyColor: "#e2e8f0",
-                                    padding: 11,
-                                    cornerRadius: 10,
-                                    boxWidth: 7,
-                                    boxHeight: 7,
-                                    usePointStyle: true,
-                                    callbacks: {
-                                        label: (ctx) => ` ${ctx.dataset.label}: ${this.formatMoney(ctx.parsed.y)}`
-                                    }
-                                }
-                            },
-                            scales: {
-                                x: {
-                                    grid: { display: false },
-                                    border: { display: false },
-                                    ticks: { color: textColor, font: { size: 11, weight: "600" } }
-                                },
-                                y: {
-                                    beginAtZero: true,
-                                    grid: { color: gridColor, drawTicks: false },
-                                    border: { display: false },
-                                    ticks: {
-                                        color: textColor,
-                                        padding: 8,
-                                        callback: (value) => {
-                                            if (value >= 1000000) return (value / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
-                                            if (value >= 1000) return Math.round(value / 1000) + "k";
-                                            return value;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }
-
-                /* ---- Invoice payments ---- */
-                const supplierCanvas = document.getElementById("supplierChart");
-                if (supplierCanvas) {
-                    this._charts.supplier = new Chart(supplierCanvas, {
-                        type: "doughnut",
-                        data: {
-                            labels: this.payments.map((p) => p.supplierName),
-                            datasets: [{
-                                data: this.payments.map((p) => p.amount),
-                                backgroundColor: ["#6366f1", "#06b6d4", "#10b981", "#f59e0b", "#f43f5e", "#94a3b8"],
-                                hoverBackgroundColor: ["#4f46e5", "#0891b2", "#059669", "#d97706", "#e11d48", "#64748b"],
-                                borderColor: surface,
-                                borderWidth: 2,
-                                hoverOffset: 6,
-                                spacing: 2,
-                                borderRadius: 6
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            cutout: "72%",
-                            layout: { padding: 6 },
-                            plugins: {
-                                legend: {
-                                    position: "bottom",
-                                    labels: {
-                                        usePointStyle: true,
-                                        pointStyle: "circle",
-                                        boxWidth: 6,
-                                        boxHeight: 6,
-                                        padding: 13,
-                                        color: textColor,
-                                        font: { size: 10, weight: "600" }
-                                    }
-                                },
-                                tooltip: {
-                                    backgroundColor: isDark ? "rgba(2, 6, 23, .96)" : "rgba(15, 23, 42, .94)",
-                                    titleColor: "#f1f5f9",
-                                    bodyColor: "#e2e8f0",
-                                    padding: 11,
-                                    cornerRadius: 10,
-                                    boxWidth: 7,
-                                    boxHeight: 7,
-                                    usePointStyle: true,
-                                    callbacks: {
-                                        label: (ctx) => {
-                                            const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
-                                            const pct = total ? Math.round((ctx.parsed / total) * 100) : 0;
-                                            return ` ${ctx.label}: ${this.formatMoney(ctx.parsed)} (${pct}%)`;
-                                        }
-                                    }
-                                },
-                                centerText: {
-                                    text: this.formatMoneyCompact(this.paymentsTotal),
-                                    subtext: "paid to suppliers",
-                                    color: isDark ? "#e2e8f0" : "#0f172a",
-                                    subColor: isDark ? "#94a3b8" : "#8b96a9"
-                                }
-                            }
-                        },
-                        plugins: [centerTextPlugin]
-                    });
-                }
+                }).format(numberValue(value));
             }
-        },
 
-        mounted() {
-            this.renderCharts();
+            function formatDate(value) {
+                if (!value) return '—';
+                const text = String(value);
+                const dotNetDate = text.match(/\/Date\((-?\d+)\)\//);
+                let date;
 
-            // Re-draw charts when the layout switches light/dark
-            this._themeObserver = new MutationObserver(() => this.renderCharts());
-            this._themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-        },
+                if (dotNetDate) {
+                    date = new Date(Number(dotNetDate[1]));
+                } else if (/^\d{4}-\d{2}-\d{2}/.test(text)) {
+                    const parts = text.slice(0, 10).split('-').map(Number);
+                    date = new Date(parts[0], parts[1] - 1, parts[2]);
+                } else {
+                    date = new Date(text);
+                }
 
-        beforeUnmount() {
-            if (this._themeObserver) this._themeObserver.disconnect();
-            if (this._charts) Object.values(this._charts).forEach((chart) => chart.destroy());
-        }
-    }).mount("#app");
-</script>
+                if (Number.isNaN(date.getTime())) return escapeHtml(text);
+
+                return new Intl.DateTimeFormat(undefined, {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                }).format(date);
+            }
+
+            function setCellText(id, value) {
+                byId(id).textContent = value;
+            }
+
+            function renderAgingChart(rows) {
+                const buckets = [
+                    { label: 'Current', key: 'currentDay' },
+                    { label: '1–30 days', key: 'agingFirst' },
+                    { label: '31–60 days', key: 'agingSecond' },
+                    { label: '61+ days', key: 'agingThird' }
+                ];
+
+                const counts = buckets.map(bucket => ({
+                    label: bucket.label,
+                    count: rows.filter(row => numberValue(property(row, bucket.key)) > 0).length
+                }));
+
+                const max = Math.max(1, ...counts.map(item => item.count));
+
+                byId('agingChart').innerHTML = counts.map(item => {
+                    const width = item.count === 0 ? 0 : Math.max(3, (item.count / max) * 100);
+                    return '<div class="chart-row">' +
+                        '<span class="text-xs font-medium text-slate-500">' + escapeHtml(item.label) + '</span>' +
+                        '<div class="chart-track"><div class="chart-fill" style="width:' + width + '%"></div></div>' +
+                        '<span class="text-right text-xs font-bold text-slate-700">' + item.count + '</span>' +
+                    '</div>';
+                }).join('');
+            }
+
+            function renderCurrencyChart(rows) {
+                const totals = new Map();
+
+                rows.forEach(row => {
+                    const currency = String(
+                        firstValue(row, ['currencyCode', 'currencyName']) || 'Unspecified'
+                    );
+                    totals.set(currency, (totals.get(currency) || 0) + 1);
+                });
+
+                const values = Array.from(totals.entries())
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 6);
+
+                if (!values.length) {
+                    byId('currencyChart').innerHTML = '';
+                    byId('currencyEmpty').classList.remove('hidden');
+                    return;
+                }
+
+                byId('currencyEmpty').classList.add('hidden');
+                const max = Math.max(1, ...values.map(item => item[1]));
+
+                byId('currencyChart').innerHTML = values.map(item => {
+                    const width = Math.max(3, (item[1] / max) * 100);
+                    return '<div class="chart-row">' +
+                        '<span class="truncate text-xs font-medium text-slate-500" title="' + escapeHtml(item[0]) + '">' + escapeHtml(item[0]) + '</span>' +
+                        '<div class="chart-track"><div class="chart-fill currency-fill" style="width:' + width + '%"></div></div>' +
+                        '<span class="text-right text-xs font-bold text-slate-700">' + item[1] + '</span>' +
+                    '</div>';
+                }).join('');
+            }
+
+            function statusBadge(status) {
+                const label = String(status || '—');
+                const normalized = label.toLowerCase();
+                const color = normalized.includes('cancel')
+                    ? 'bg-rose-50 text-rose-700'
+                    : normalized.includes('post')
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : 'bg-amber-50 text-amber-700';
+
+                return '<span class="rounded-full px-2.5 py-1 text-xs font-semibold ' +
+                    color + '">' + escapeHtml(label) + '</span>';
+            }
+
+            function renderInvoiceTable(rows) {
+                const recent = rows.slice().sort((a, b) => {
+                    const dateA = String(firstValue(a, ['invoiceDate', 'transactionDate', 'creationTime']));
+                    const dateB = String(firstValue(b, ['invoiceDate', 'transactionDate', 'creationTime']));
+                    return dateB.localeCompare(dateA);
+                }).slice(0, 7);
+
+                if (!recent.length) {
+                    byId('invoiceTableBody').innerHTML =
+                        '<tr><td colspan="6" class="py-8 text-center text-slate-400">No invoice records returned.</td></tr>';
+                    return;
+                }
+
+                byId('invoiceTableBody').innerHTML = recent.map(row => {
+                    const supplier = firstValue(row, ['supplierName', 'name']);
+                    const invoice = firstValue(row, ['invoiceNumber', 'invoiceNo']);
+                    const date = firstValue(row, ['invoiceDate', 'transactionDate', 'creationTime']);
+                    const currency = firstValue(row, ['currencyCode', 'currencyName']);
+                    const balance = firstValue(row, ['balance', 'invoiceBalance', 'amount']);
+                    const status = firstValue(row, ['statusName', 'status', 'isPosted']);
+
+                    return '<tr>' +
+                        '<td class="font-medium text-slate-800">' + escapeHtml(supplier || '—') + '</td>' +
+                        '<td>' + escapeHtml(invoice || '—') + '</td>' +
+                        '<td>' + formatDate(date) + '</td>' +
+                        '<td>' + escapeHtml(currency || '—') + '</td>' +
+                        '<td class="text-right font-semibold tabular-nums">' + formatNumber(balance) + '</td>' +
+                        '<td>' + statusBadge(status === true ? 'Posted' : status === false ? 'Unposted' : status) + '</td>' +
+                    '</tr>';
+                }).join('');
+            }
+
+            function renderPaymentTable(rows) {
+                const recent = rows.slice().sort((a, b) => {
+                    const dateA = String(firstValue(a, ['transactionDate', 'paymentDate', 'creationTime']));
+                    const dateB = String(firstValue(b, ['transactionDate', 'paymentDate', 'creationTime']));
+                    return dateB.localeCompare(dateA);
+                }).slice(0, 6);
+
+                if (!recent.length) {
+                    byId('paymentTableBody').innerHTML =
+                        '<tr><td colspan="5" class="py-8 text-center text-slate-400">No payment records returned.</td></tr>';
+                    return;
+                }
+
+                byId('paymentTableBody').innerHTML = recent.map(row => {
+                    const supplier = firstValue(row, ['supplierName', 'name']);
+                    const reference = firstValue(row, ['paymentNumber', 'voucherNumber', 'batchNumber', 'referenceNumber']);
+                    const date = firstValue(row, ['transactionDate', 'paymentDate', 'creationTime']);
+                    const currency = firstValue(row, ['currencyCode', 'currencyName']);
+                    const amount = firstValue(row, ['amount', 'paidAmount', 'totalAmount']);
+
+                    return '<tr>' +
+                        '<td class="font-medium text-slate-800">' + escapeHtml(supplier || '—') + '</td>' +
+                        '<td>' + escapeHtml(reference || '—') + '</td>' +
+                        '<td>' + formatDate(date) + '</td>' +
+                        '<td>' + escapeHtml(currency || '—') + '</td>' +
+                        '<td class="text-right font-semibold tabular-nums">' + formatNumber(amount) + '</td>' +
+                    '</tr>';
+                }).join('');
+            }
+
+            function updateActionLinks() {
+                const startDate = byId('asOfDate').value || localToday;
+                const interval = byId('agingInterval').value || '30';
+                const endDate = localToday;
+
+                byId('agingAction').href =
+                    endpoints.aging +
+                    '?startDate=' + encodeURIComponent(startDate) +
+                    '&agingInterval=' + encodeURIComponent(interval);
+
+                byId('glAction').href =
+                    '/Ap/GetApGlTransaction' +
+                    '?startDate=' + encodeURIComponent(startDate) +
+                    '&endDate=' + encodeURIComponent(endDate) +
+                    '&isMultiCurrency=false';
+            }
+
+            function showIssues(issues) {
+                const notice = byId('loadNotice');
+
+                if (!issues.length) {
+                    notice.classList.add('hidden');
+                    notice.textContent = '';
+                    return;
+                }
+
+                notice.textContent =
+                    'Some dashboard data could not be loaded: ' + issues.join(', ') + '.';
+                notice.classList.remove('hidden');
+            }
+
+            async function loadDashboard() {
+                const button = byId('refreshButton');
+                const issues = [];
+                const startDate = byId('asOfDate').value || localToday;
+                const interval = byId('agingInterval').value || '30';
+
+                button.disabled = true;
+                button.textContent = 'Loading…';
+                button.classList.add('loading-pulse');
+                byId('agingAsOfLabel').textContent = 'As of ' + startDate;
+                updateActionLinks();
+
+                const agingUrl = endpoints.aging +
+                    '?startDate=' + encodeURIComponent(startDate) +
+                    '&agingInterval=' + encodeURIComponent(interval);
+
+                const [agingRows, invoices, payments, balances, suppliers] =
+                    await Promise.all([
+                        safeRows(agingUrl, 'Aging summary', issues),
+                        safeRows(endpoints.invoices, 'Invoices', issues),
+                        safeRows(endpoints.payments, 'Payments', issues),
+                        safeRows(endpoints.balances, 'Opening balances', issues),
+                        safeRows(endpoints.suppliers, 'Suppliers', issues)
+                    ]);
+
+                const openInvoices = invoices.filter(row => {
+                    const balance = firstValue(row, ['balance', 'invoiceBalance']);
+                    return balance === '' || numberValue(balance) > 0;
+                });
+
+                setCellText('openInvoiceCount', formatNumber(openInvoices.length));
+                setCellText('supplierCount', formatNumber(suppliers.length));
+                setCellText('paymentCount', formatNumber(payments.length));
+                setCellText('openingBalanceCount', formatNumber(balances.length));
+
+                renderAgingChart(agingRows);
+                renderCurrencyChart(invoices);
+                renderInvoiceTable(invoices);
+                renderPaymentTable(payments);
+                showIssues(issues);
+
+                button.disabled = false;
+                button.textContent = 'Refresh data';
+                button.classList.remove('loading-pulse');
+            }
+
+            byId('refreshButton').addEventListener('click', loadDashboard);
+            byId('asOfDate').addEventListener('change', updateActionLinks);
+            byId('agingInterval').addEventListener('change', updateActionLinks);
+
+            updateActionLinks();
+            loadDashboard();
+        })();
+    </script>
+
+

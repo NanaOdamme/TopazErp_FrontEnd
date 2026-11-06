@@ -78,15 +78,7 @@ const app = Vue.createApp({
                 }
             ],
 
-            supplierGroupList: [
-                { id: 'SG-001', name: 'General Suppliers' },
-                { id: 'SG-002', name: 'Raw Materials' },
-                { id: 'SG-003', name: 'Office Supplies' },
-                { id: 'SG-004', name: 'IT Equipment and Services' },
-                { id: 'SG-005', name: 'Transport and Logistics' },
-                { id: 'SG-006', name: 'Maintenance and Repairs' },
-                { id: 'SG-007', name: 'Professional Services' }
-            ],
+            supplierGroupList: [],
 
             statusList: [
                 { id: 1, name: 'Active' },
@@ -95,10 +87,6 @@ const app = Vue.createApp({
             ],
 
             currencyList: [
-                { id: 1, currencyName: 'GHS - Ghana Cedi' },
-                { id: 2, currencyName: 'USD - US Dollar' },
-                { id: 3, currencyName: 'EUR - Euro' },
-                { id: 4, currencyName: 'GBP - British Pound' }
             ],
 
             supplierList: [],

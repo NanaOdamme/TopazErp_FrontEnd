@@ -16,7 +16,7 @@ const app = Vue.createApp({
             agingInterval: 30,
             theme: '#0645e7',
             agingData: [],
-            
+            isShimmerLoading: false
         }
     },
         computed: {
@@ -45,21 +45,48 @@ const app = Vue.createApp({
                 ];
             }
         },
-   
+   watch: {
+        startDate(newValue, oldValue) {
+            if (newValue !== oldValue) {
+                this.getAgingData();
+            }
+        },
+        agingInterval(newValue, oldValue) {
+            if (newValue !== oldValue) {
+                this.getAgingData();
+            }
+        }
+    },
     methods: {
-        getAgingData() {
-            let url = `http://localhost:5300/ApReports/GetAgeingByDate?startDate=${this.startDate}&agingInterval=${this.agingInterval}`
-            axios.get(url, {WithCredentials:true}).then(response => {
-                this.agingData = response.data.reportDetails.invoices;
-              
-                this.isLoading = false;
 
-            }).catch(err => {
+        async getAgingData() {
+            this.isShimmerLoading = true;
+            this.isLoading = true;
 
+            try {
+                console.log('Aging Request:', {
+                    startDate: this.startDate,
+                    agingInterval: this.agingInterval
+                });
+
+                const response = await axios.get('/Ap/GetAgingByDate', {
+                    params: {
+                        startDate: this.startDate,
+                        agingInterval: Number(this.agingInterval)
+                    }
+                });
+
+                this.agingData = response.data.result || [];
+
+                console.log('Aging Response:', this.agingData);
+
+            } catch (err) {
+                console.error('Aging Error:', err);
                 this.toastHandler('error', 'Unable to get data');
+            } finally {
                 this.isLoading = false;
-
-            });
+                this.isShimmerLoading = false;
+            }
         },
 
     
@@ -88,8 +115,9 @@ const app = Vue.createApp({
 
 
     mounted() {
-
+        this.isShimmerLoading = true;
       this.getAgingData();
+      this.isShimmerLoading = false;
 
 
     },

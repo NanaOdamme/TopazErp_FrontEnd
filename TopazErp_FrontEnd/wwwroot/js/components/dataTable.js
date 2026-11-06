@@ -103,16 +103,23 @@
     const DOT_CLASSES = { blue:'bg-blue-500', indigo:'bg-indigo-500', violet:'bg-violet-500', emerald:'bg-emerald-500', amber:'bg-amber-500',
         orange:'bg-orange-500', rose:'bg-rose-500', pink:'bg-pink-500', teal:'bg-teal-500', cyan:'bg-cyan-500', slate:'bg-slate-400' };
     const hashStr = (s) => { let h = 0; s = String(s); for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); };
-    const optionList = (col) => (col.options || []).map((option) => {
-        if (!option || typeof option !== 'object') return { value:option, label:option };
-        const value = col.value ? getIn(option, col.value) : (option.value !== undefined ? option.value : option);
-        const label = col.display ? getIn(option, col.display) : (option.label !== undefined ? option.label : value);
-        return Object.assign({}, option, { value, label });
-    });
-    const findOption = (col, value) => optionList(col).find((o) => String(o.value) === String(value));
-    const optionLabel = (col, value) => { const o = findOption(col, value); return o ? (o.label ?? o.value) : value; };
-    const colorOf = (col, value) => {
-        const o = findOption(col, value);
+    const optionList = (col, context = {}) => {
+        let options = col.options;
+        if (typeof options === 'function') {
+            const values = context.values || context.row || {};
+            options = options(values, context.row || null, context.mode || 'view', col);
+        }
+        return (Array.isArray(options) ? options : []).map((option) => {
+            if (!option || typeof option !== 'object') return { value:option, label:option };
+            const value = col.value ? getIn(option, col.value) : (option.value !== undefined ? option.value : option);
+            const label = col.display ? getIn(option, col.display) : (option.label !== undefined ? option.label : value);
+            return Object.assign({}, option, { value, label });
+        });
+    };
+    const findOption = (col, value, context) => optionList(col, context).find((o) => String(o.value) === String(value));
+    const optionLabel = (col, value, context) => { const o = findOption(col, value, context); return o ? (o.label ?? o.value) : value; };
+    const colorOf = (col, value, context) => {
+        const o = findOption(col, value, context);
         if (o && o.color) return o.color;
         if (isNil(value)) return 'slate';
         return COLOR_KEYS[hashStr(value + (col.key || '')) % COLOR_KEYS.length];
@@ -161,8 +168,14 @@
             cell: (v) => { const d = toDate(v); return d ? '<span class="tabular-nums whitespace-nowrap">' + fmtDate(d, true) + '</span>' : DASH; } },
         time:    { kind:'text',   input:'time',     cmp:'string', cell:(v) => isNil(v) ? DASH : '<span class="tabular-nums">' + esc(v) + '</span>' },
         boolean: { kind:'bool',   input:'checkbox', cmp:'bool', align:'center', agg:'true', cell:(v) => boolIcon(v) },
-        badge:   { kind:'enum',   input:'select',   cmp:'string', cell:(v, c) => badge(optionLabel(c, v), colorOf(c, v)) },
-        select:  { kind:'enum',   input:'select',   cmp:'string', cell:(v, c) => dotPill(optionLabel(c, v), colorOf(c, v)) },
+        badge:   { kind:'enum',   input:'select',   cmp:'string', cell:(v, c, r) => {
+                const context = { values:r || {}, row:r || null, mode:'view' };
+                return badge(optionLabel(c, v, context), colorOf(c, v, context));
+            } },
+        select:  { kind:'enum',   input:'select',   cmp:'string', cell:(v, c, r) => {
+                const context = { values:r || {}, row:r || null, mode:'view' };
+                return dotPill(optionLabel(c, v, context), colorOf(c, v, context));
+            } },
         tags:    { kind:'array',  input:'tags',     cmp:'string', wrap:true, minWidth:200, cell:(v) => tagsHtml(v) },
         avatar:  { kind:'text',   input:'text',     cmp:'string', minWidth:230,
             cell: (v, c, r) => {
@@ -333,11 +346,33 @@
         },
         methods: {
             t: typeOf,
-            optionList(c) { return optionList(c); },
+            optionList(c) { return optionList(c, { values:this.values, row:this.row, mode:this.mode }); },
             label(c) { return c.label ?? c.key; },
             isDisabled(c) {
                 if (this.isReadOnly) return true;
-                return typeof c.disabled === 'function' ? !!c.disabled(this.row, this.mode, c) : c.disabled === true;
+                return typeof c.disabled === 'function' ? !!c.disabled(this.row, this.mode, c, this.values) : c.disabled === true;
+            },
+            onSelectChange(col) {
+                this.$nextTick(() => {
+                    this.columns.forEach((dependent) => {
+                        const dependencies = Array.isArray(dependent.dependsOn) ? dependent.dependsOn : [dependent.dependsOn];
+                        if (!dependencies.includes(col.key)) return;
+
+                        if (typeof dependent.valueFrom === 'function') {
+                            const value = dependent.valueFrom(this.values, this.row, this.mode, dependent);
+                            if (value !== undefined) this.values[dependent.key] = value;
+                            return;
+                        }
+
+                        // dependsOn also supports computed fields via valueFrom. Without valueFrom,
+                        // only dependent selects need stale-option validation; don't clear numbers/text.
+                        if (typeOf(dependent).input !== 'select') return;
+                        const current = this.values[dependent.key];
+                        if (isNil(current)) return;
+                        const stillValid = this.optionList(dependent).some((option) => String(option.value) === String(current));
+                        if (!stillValid) this.values[dependent.key] = '';
+                    });
+                });
             },
             inputStep(c) {
                 if (c.step !== undefined) return c.step;
@@ -357,7 +392,20 @@
                 if (t.input === 'checkbox') return !!v;
                 return v ?? '';
             },
-            build() { const v = {}; this.columns.forEach((c) => { v[c.key] = this.rawValue(c); }); this.values = v; this.errors = {}; },
+            build() {
+                const v = {};
+                this.columns.forEach((c) => { v[c.key] = this.rawValue(c); });
+                this.values = v;
+                this.errors = {};
+                // Derived fields are initialized for new forms; on edit, keep the saved value until a dependency changes.
+                if (this.mode === 'create') {
+                    this.columns.forEach((c) => {
+                        if (typeof c.valueFrom !== 'function') return;
+                        const value = c.valueFrom(this.values, this.row, this.mode, c);
+                        if (value !== undefined) this.values[c.key] = value;
+                    });
+                }
+            },
             /* form -> typed value */
             parse(c) {
                 const t = typeOf(c); let v = this.values[c.key];
@@ -440,7 +488,7 @@
                 class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"></textarea>
 
               <!-- select -->
-              <select v-else-if="t(c).input === 'select'" :id="idOf(c)" v-model="values[c.key]" :disabled="isDisabled(c)"
+              <select v-else-if="t(c).input === 'select'" :id="idOf(c)" v-model="values[c.key]" :disabled="isDisabled(c)" @change="onSelectChange(c)"
                 class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm focus:border-primary-500 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
                 <option value="">— Select —</option>
                 <option v-for="o in optionList(c)" :key="String(o.value)" :value="o.value">
@@ -490,7 +538,7 @@
             child: { type: Object, default: null },         // { key, title, columns, child }
             rowId: { type: String, default: 'id' },
             groupHeader: { type: String, default: '' }, // column/property key used to group visible rows
-            rowDisabled: { type: Function, default: null }, // return true for rows that cannot be selected/edited/deleted
+            rowDisabled: { type: Function, default: null }, // identify locked rows; edit opens a read-only form
             labelKey: { type: String, default: 'name' },
             title: { type: String, default: '' },
             subtitle: { type: String, default: '' },

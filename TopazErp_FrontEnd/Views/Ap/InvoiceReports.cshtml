@@ -21,34 +21,33 @@
         </div>
     </div>
     <div id="app" class="card" data-card-title="Reports - Invoices">
-    <div class="mb-5 w-64">
-        <label  class="label block text-sm">
-            Select Report Type: <select class="select" v-model="reportType" ref="reportType">
-                <option value="summary-report"> All </option>
-                <option value="bySupplier"> By Supplier </option>
-                <option value="byInvoiceNumber"> By Invoice Number </option>
-                <option value="byDate"> By Date </option>
-                <option value="byInvoiceRange"> By Range</option>
-            </select></label>
-    </div>
+
        
         <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4 mb-5">
-           
+            <label  class="label block text-sm">
+                Select Report Type: <select class="select" v-model="reportType" ref="reportType">
+                    <option value="summary-report"> All </option>
+                    <option value="bySupplier"> By Supplier </option>
+                    <option value="byInvoiceNumber"> By Invoice Number </option>
+                    <option value="byDate"> By Date </option>
+                    <option value="byInvoiceRange"> By Range</option>
+                </select></label>
             <w-select v-show="reportType == 'bySupplier'"
+                @@change="getReportData"
                 v-model="supplierId"
                 :options="supplierList"
                 display-key="name"
                 value-key="id"
                 label="Supplier:"
             >
-        
             </w-select>
         
             <w-select v-show="reportType == 'byInvoiceNumber'"
+                @@change="getReportData"
                 v-model="invoiceNumber"
                 :options="invoiceList"
                 display-key="invoiceNumber"
-                value-key="id"
+                value-key="invoiceNumber"
                 label="Invoice Number:"
             >
         
@@ -66,8 +65,25 @@
                 End Date: <input id="endDate" v-model="endDate"  type="date" class="input-control" />
             </label>
         </div>
-        <hr>
-        <div class="bg-gray-50 p-4 my-4 rounded-xl dark:bg-slate-800">
+        <!-- Generate Report -->
+        <div class="flex justify-end mb-5">
+            <button type="button"
+                    @@click="getReportData"
+                    :disabled="isLoading"
+                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                <span v-if="isLoading">
+                    <i class="las la-spinner la-spin mr-1"></i>
+                    Generating...
+                </span>
+                <span v-else>
+                    <i class="las la-file-alt mr-1"></i>
+                    Generate Report
+                </span>
+            </button>
+        </div>
+
+        <hr class="my-4">
+        <div class="p-4 my-4 rounded-xl dark:bg-slate-800">
             <div style="height:auto;width:auto;min-height:500px;" id="reportView">  </div>
         </div>
       
