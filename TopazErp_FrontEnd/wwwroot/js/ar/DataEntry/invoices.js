@@ -4,8 +4,8 @@
     const EMPTY_GUID = '00000000-0000-0000-0000-000000000000';
 
     const ENDPOINTS = {
-        invoices: '/Ap/GetInvoices',
-        suppliers: '/SharedResource/GetSuppliers',
+        invoices: '/Ar/GetInvoices',
+        customers: '/SharedResource/GetCustomers',
         currencies: '/SharedResource/GetCurrencies',
         organizationalUnits: '/SharedResource/GetCostCenters/',
         accounts: '/Ap/InitJournalEntry',
@@ -100,7 +100,7 @@
                 theme1: '#545454',
                 tenantId: null,
                 accounts: [],
-                suppliers: [],
+                customers: [],
                 currencies: [],
                 organizationalUnits: [],
                 taxCatalog: [],
@@ -111,8 +111,8 @@
                 invoiceId: '',
                 invoiceNumber: '',
                 batchNumber: '',
-                supplierId: '',
-                supplierName: '',
+                customerId: '',
+                customerName: '',
                 accountNumber: '',
                 address: '',
                 invoiceDate: today,
@@ -131,8 +131,8 @@
                 isVatWithheld: false,
                 ouId: '',
                 ouName: '',
-                liabilityAccountId: EMPTY_GUID,
-                liabilityAccountName: '',
+                accountId: EMPTY_GUID,
+                accountName: '',
                 vatRate: 15,
                 vatAmount: 0,
                 isVatInclusive: false,
@@ -155,10 +155,9 @@
                 getflGl: '',
                 cstGl: '',
                 defaultGlSetup: null,
-                debitAccountId: EMPTY_GUID,
-                // FIX #7b: keeps one stable GUID per levy row, so a regenerated tax row
-                // reuses the id the DB already knows instead of a new one on every recalc.
+                creditAccountId: EMPTY_GUID,
                 taxRowIdMap: {},
+                isShimmerLoading:false
 
             };
         },
@@ -169,9 +168,9 @@
                     { key: 'invoiceId', label: 'Invoice ID', type: 'text', hidden: true, editable: false },
                     { key: 'taxId', label: 'Tax ID', type: 'text', hidden: true, editable: false },
                     { key: 'isTax', label: 'Tax row', type: 'boolean', hidden: true, editable: false },
-                    { key: 'referenceNumber', label: 'Ref No.', type: 'text', searchable: true, width: 150 },
+                    { key: 'referenceNo', label: 'Ref No.', type: 'text', searchable: true, width: 150 },
                     { key: 'description', label: 'Description', type: 'text', required: true, searchable: true, width: 220 },
-                    { key: 'debitAccountId', label: 'Debit G/L Account', type: 'select', options: this.accounts, display: 'accountIdentifier', value: 'id', width: 220, defaultValue: this.debitAccountId },
+                    { key: 'creditAccountId', label: 'Credit G/L Account', type: 'select', options: this.accounts, display: 'accountIdentifier', value: 'id', width: 220, defaultValue: this.creditAccountId },
                     { key: 'quantity', label: 'Quantity', type: 'number', required: true, defaultValue: 1, min: 0, decimals: 2, width: 110 },
                     { key: 'unitPrice', label: 'Unit Price', type: 'number', required: true, defaultValue: 0, min: 0, decimals: 2, width: 130 },
                     { key: 'discountAsPercentage', label: 'Disc. as %?', type: 'boolean', defaultValue: false, width: 120 },
@@ -185,7 +184,7 @@
                     { key: 'id', label: 'ID', type: 'text', hidden: true, editable: false },
                     { key: 'invoiceNumber', label: 'Invoice #', type: 'text', width: 150, required: true, searchable: true },
                     { key: 'batchNumber', label: 'Batch #', type: 'text', width: 125, searchable: true },
-                    { key: 'supplierId', label: 'Supplier', type: 'select', options: this.suppliers, value: 'id', display: 'name', width: 280, required: true, searchable: true },
+                    { key: 'customerId', label: 'Customer', type: 'select', options: this.customers, value: 'id', display: 'name', width: 280, required: true, searchable: true },
                     { key: 'invoiceDate', label: 'Invoice Date', type: 'date', width: 130, searchable: true },
                     { key: 'projectedPayDate', label: 'Projected Pay Date', type: 'date', width: 160, searchable: true },
                     { key: 'currencyId', label: 'Currency', type: 'select', options: this.currencies, value: 'id', display: 'currencyName', width: 180, searchable: true },
@@ -197,7 +196,7 @@
                 ];
             },
             invoiceDetailChild() {
-                return { key: 'invoiceDetails', title: 'Invoice Details', columns: this.detailColumns };
+                return { key: 'details', title: 'Invoice Details', columns: this.detailColumns };
             }
         },
         watch: {
@@ -248,16 +247,16 @@
                     // ABP wraps the payload in { result: ... }; fall back to the raw body.
                     const d = (response.data && response.data.result) || response.data || {};
                     this.defaultGlSetup = d;
-                    this.vatGl = d.vatPaidAccountId || '';
-                    this.nhilGl = d.nhilPaidAccountId || '';
-                    this.getflGl = d.getflPaidAccountId || '';
-                    this.cstGl = d.cstPaidAccountId || d.vatPaidAccountId || '';
+                    this.vatGl = d.vatReceivedAccountId || '';
+                    this.nhilGl = d.nhilReceivedAccountId || '';
+                    this.getflGl = d.getflReceivedAccountId || '';
+                    this.cstGl = d.cstReceivedAccountId || d.vatReceivedAccountId || '';
 
                     // liability default (don't overwrite if user already picked)
-                    if (!this.liabilityAccountId || this.liabilityAccountId === EMPTY_GUID) {
-                        this.liabilityAccountId = d.accountsPayableAccountId || EMPTY_GUID;
+                    if (!this.accountId || this.accountId === EMPTY_GUID) {
+                        this.accountId = d.accountsReceivableAccountId || EMPTY_GUID;
                     }
-                    this.debitAccountId = d.accountsPayableAccountId || EMPTY_GUID;
+                    this.creditAccountId = d.accountsReceivableAccountId || EMPTY_GUID;
 
                     this.applyTaxGlMapping();
                     return d;
@@ -323,13 +322,15 @@
                     return [];
                 }
             },
-            async getApInvoices() {
-                this.invoiceList = await this.fetchList(ENDPOINTS.invoices, 'AP invoices');
+            async getArInvoices() {
+                const invoiceList = await this.fetchList(ENDPOINTS.invoices, 'AR invoices');
+                this.invoiceList = invoiceList.filter(i => !i.isCanceled);
+                return this.invoiceList;
             },
             async loadLookups() {
-                const [rawAccounts, rawSuppliers, rawCurrencies, rawUnits, rawTaxes] = await Promise.all([
+                const [rawAccounts, rawCustomers, rawCurrencies, rawUnits, rawTaxes] = await Promise.all([
                     this.fetchList(ENDPOINTS.accounts, 'accounts', 'accounts'),
-                    this.fetchList(ENDPOINTS.suppliers, 'suppliers'),
+                    this.fetchList(ENDPOINTS.customers, 'customers'),
                     this.fetchList(ENDPOINTS.currencies, 'currencies'),
                     this.fetchList(ENDPOINTS.organizationalUnits, 'organizational units'),
                     this.fetchList(ENDPOINTS.taxLevies, 'tax levies')
@@ -343,8 +344,8 @@
                     accountName: a.accountName || a.name
                 }));
 
-                // Suppliers
-                this.suppliers = rawSuppliers.map(s => ({
+                
+                this.customers = rawCustomers.map(s => ({
                     ...s,
                     name: (s.name || '').trim()
                 }));
@@ -419,14 +420,14 @@
 
                 this.ouId = EMPTY_GUID;
                 this.ouName = '';
-                this.liabilityAccountId = EMPTY_GUID;
-                this.liabilityAccountName = '';
+                this.accountId = EMPTY_GUID;
+                this.accountName = '';
             },
 
-            onSupplierChange() {
-                const supplier = this.suppliers.find((item) => item.id === this.supplierId);
-                this.supplierName = supplier ? supplier.name : '';
-                this.accountNumber = supplier ? supplier.accountNumber || '' : '';
+            onCustomerChange() {
+                const customer = this.customers.find((item) => item.id === this.customerId);
+                this.customerName = customer ? customer.name : '';
+                this.accountNumber = customer ? customer.accountNumber || '' : '';
             },
             onCurrencyChange() {
                 const currency = this.currencies.find((item) => item.id === this.currencyId);
@@ -443,9 +444,9 @@
                 const unit = this.organizationalUnits.find((item) => item.id === this.ouId);
                 this.ouName = unit ? unit.name : '';
             },
-            onLiabilityAccountChange() {
-                const account = this.accounts.find((item) => item.id === this.liabilityAccountId);
-                this.liabilityAccountName = account ? account.accountIdentifier : '';
+            onAccountChange() {
+                const account = this.accounts.find((item) => item.id === this.accountId);
+                this.accountName = account ? account.accountIdentifier : '';
             },
             nextInvoiceNumber() {
                 const year = (this.invoiceDate || today).slice(0, 4);
@@ -483,7 +484,7 @@
                 const rows = Array.isArray(fallbackRows) ? fallbackRows : [];
                 for (const row of rows) {
                     if (!row || this.isLegacyTaxRow(row)) continue;
-                    const ref = String(row.referenceNumber ?? '').trim();
+                    const ref = String(row.referenceNo ?? '').trim();
                     if (ref) return ref;
                 }
                 return this.firstDetailReference() || this.referenceNumber || this.invoiceNumber || '';
@@ -491,7 +492,7 @@
             normalizeDetail(detail) {
                 const row = { ...detail };
                 const calculated = this.lineSubtotal(row);
-                const account = this.accounts.find((item) => String(item.id) === String(row.debitAccountId));
+                const account = this.accounts.find((item) => String(item.id) === String(row.creditAccountId));
                 return {
                     ...row,
                     // FIX #7: never keep a non-GUID id on a detail row - the API validates
@@ -499,10 +500,10 @@
                     id: isGuid(row.id) ? row.id.trim() : this.uuid(),
                     // NOTE: ApInvoiceDetail has no InvoiceId - the child rows are owned
                     // by the aggregate, so nothing invoice-scoped belongs on the row.
-                    referenceNumber: String(row.referenceNumber ?? '').trim() || this.firstDetailReference() || this.referenceNumber || this.invoiceNumber || '',
+                    referenceNo: String(row.referenceNo ?? '').trim() || this.firstDetailReference() || this.referenceNumber || this.invoiceNumber || '',
                     description: String(row.description || '').trim(),
-                    debitAccountId: row.debitAccountId || '',
-                    debitAccountName: account ? account.accountIdentifier : (row.debitAccountName || ''),
+                    creditAccountId: row.creditAccountId || '',
+                    creditAccountName: account ? account.accountIdentifier : (row.debitAccountName || ''),
                     quantity: Math.max(0, toNumber(row.quantity, 1)),
                     unitPrice: Math.max(0, toNumber(row.unitPrice, 0)),
                     discountAsPercentage: asBoolean(row.discountAsPercentage),
@@ -535,15 +536,8 @@
             },
             isLegacyTaxRow(detail) {
                 if (this.isTaxRow(detail)) return true;
-                // Fallback for backends that don't persist isTax / lineType / taxId:
-                // match the description against the levy catalogue, ignoring case,
-                // percentages and punctuation ("NHIL 2.5%" === "NHIL" === "nhil").
-                // The row's amount/account are regenerated from the levy anyway.
                 return !!this.findTaxByName(detail && detail.description);
             },
-            // Split a persisted detail collection into plain lines + tax lines.
-            // `extraNameKeys` lets the caller supply levy names from InvoiceTaxLevies,
-            // because ApInvoiceDetail has no IsTax/TaxId column of its own.
             splitTaxRows(details, extraNameKeys) {
                 const extra = extraNameKeys instanceof Set ? extraNameKeys : new Set();
                 const lines = [];
@@ -599,9 +593,7 @@
                 const baseAmount = roundMoney(lineRows.reduce((sum, detail) => sum + toNumber(detail.subTotal), 0));
                 const taxRows = [];
                 const taxSummary = [];
-                // FIX #6: when the details table already has rows, every tax levy row inherits
-                // the FIRST row's reference number (only when the table is empty does it fall
-                // back to the invoice reference / invoice number).
+              
                 const taxReference = this.resolveInvoiceReference(lineRows);
 
                 if (!this.isVatInclusive) {
@@ -609,21 +601,21 @@
                     const seenTaxIds = new Set();
                     appliedTaxes.forEach((tax) => {
                         const taxKey = String(tax.id ?? tax.name);
-                        if (seenTaxIds.has(taxKey)) return; // never emit the same levy twice
+                        if (seenTaxIds.has(taxKey)) return; 
                         seenTaxIds.add(taxKey);
 
                         const rate = tax.type === 'vat' ? Math.max(0, toNumber(this.vatRate, tax.rate)) : Math.max(0, toNumber(tax.rate));
                         const taxAmount = roundMoney(baseAmount * rate / 100);
                         const account = this.accounts.find((item) => String(item.id) === String(tax.accountId));
                         const row = {
-                            id: this.resolveTaxRowId(tax), // FIX #7: real GUID, stable across recalcs
+                            id: this.resolveTaxRowId(tax),
                             taxId: tax.id,
                             isTax: true,
                             lineType: 'tax',
-                            referenceNumber: taxReference,
+                            referenceNo: taxReference,
                             description: tax.name,
-                            debitAccountId: tax.accountId || '',
-                            debitAccountName: account ? account.accountIdentifier : '',
+                            creditAccountId: tax.accountId || '',
+                            creditAccountName: account ? account.accountIdentifier : '',
                             quantity: 1,
                             unitPrice: taxAmount,
                             discountAsPercentage: false,
@@ -670,7 +662,7 @@
             createNewInvoice() {
                 this.isEditing = false;
                 this.invoiceId = ''; this.invoiceNumber = ''; this.batchNumber = '';
-                this.supplierId = ''; this.supplierName = ''; this.accountNumber = ''; this.address = '';
+                this.customerId = ''; this.customerName = ''; this.accountNumber = ''; this.address = '';
                 this.invoiceDate = isoDate(new Date());
                 this.projectedPayDate = addDays(this.invoiceDate, 30);
                 this.purchaseOrderNumber = ''; this.voucherNumber = ''; this.referenceNumber = ''; this.description = '';
@@ -679,7 +671,7 @@
                 this.vatRate = 15; this.vatAmount = 0; this.isVatInclusive = false;
                 this.invoiceNumber = '';
                 this.setMessage('Creating a new invoice.', 'info');
-                this.taxRowIdMap = {}; // FIX #7b: fresh ids for a new document
+                this.taxRowIdMap = {}; 
                 this.taxLevyList = this.freshTaxLevies(); this.computedTaxLevies = []; this.detailsList = [];
                 this.totalInvoiceAmount = 0; this.amount = 0; this.paidAmount = 0; this.invoiceBalance = 0; this.withHeldAmount = 0;
                 if (this.$refs.invoices && this.$refs.invoices.clearSelection) this.$refs.invoices.clearSelection();
@@ -706,7 +698,7 @@
                 if (!invoice) return;
                 this.isEditing = true;
                 this.invoiceId = invoice.id || ''; this.invoiceNumber = invoice.invoiceNumber || ''; this.batchNumber = invoice.batchNumber || '';
-                this.supplierId = invoice.supplierId || ''; this.supplierName = invoice.supplierName || '';
+                this.customerId = invoice.customerId || ''; this.customerName = invoice.customerName || '';
                 this.accountNumber = invoice.accountNumber || ''; this.address = invoice.address || '';
                 this.invoiceDate = isoDate(invoice.invoiceDate) || today;
                 this.projectedPayDate = isoDate(invoice.projectedPayDate) || this.invoiceDate;
@@ -723,8 +715,8 @@
                 // entity names: VatWithHeld / WithheldAmount (not isVatWithheld / withHeldAmount)
                 this.isVatWithheld = asBoolean(invoice.vatWithHeld ?? invoice.isVatWithheld);
                 this.ouId = invoice.ouId || ''; this.ouName = invoice.ouName || '';
-                this.liabilityAccountId = invoice.liabilityAccountId || EMPTY_GUID;
-                this.liabilityAccountName = invoice.liabilityAccountName || '';
+                this.accountId = invoice.accountId || EMPTY_GUID;
+                this.accountName = invoice.accountName || '';
                 this.vatRate = toNumber(invoice.vatRate, 15);
                 this.isVatInclusive = asBoolean(invoice.isVatInclusive);
                 this.paidAmount = toNumber(invoice.paidAmount);
@@ -733,8 +725,8 @@
                 this.isApproved = asBoolean(invoice.isApproved);
                 this.isPosted = asBoolean(invoice.isPosted);
                 this.isCanceled = asBoolean(invoice.isCanceled);
-                this.onSupplierChange();
-                if (invoice.supplierName) this.supplierName = invoice.supplierName;
+                this.onCustomerChange();
+                if (invoice.customerName) this.customerName = invoice.customerName;
                 if (invoice.accountNumber) this.accountNumber = invoice.accountNumber;
 
                 // ---------------- tax synchronisation (rewritten) ----------------
@@ -742,7 +734,7 @@
                 this.taxRowIdMap = {};
 
                 const savedTaxes = Array.isArray(invoice.invoiceTaxLevies) ? invoice.invoiceTaxLevies : [];
-                const sourceDetails = Array.isArray(invoice.invoiceDetails) ? invoice.invoiceDetails : [];
+                const sourceDetails = Array.isArray(invoice.details) ? invoice.details : [];
 
                 // 1) strip EVERY persisted tax line out of the details collection.
                 //    The entity has no isTax/taxId column, so levy names coming back in
@@ -797,17 +789,13 @@
                 this.recalculateInvoice();
                 this.setMessage(`Editing ${this.invoiceNumber || 'selected invoice'}.`, 'info');
             },
-            // ============ payload builders: the exact ApInvoice / ApInvoiceDetail shape ============
-            // ApInvoiceDetail = { Id, ReferenceNumber, Description, Quantity(int), Amount,
-            //                     UnitPrice, SubTotal, DiscountAsPercentage, Discount,
-            //                     DebitAccountId(Guid), DebitAccountName }
-            // No InvoiceId, IsTax, LineType or TaxId - so those stay client-side only.
+           
             buildDetailPayload(referenceFallback) {
                 return this.dedupeTaxRows(this.detailsList).map((detail) => {
                     const quantity = Math.max(0, toNumber(detail.quantity, 1));
                     return {
                         id: isGuid(detail.id) ? String(detail.id).trim() : this.uuid(),
-                        referenceNumber: String(detail.referenceNumber ?? '').trim() || referenceFallback,
+                        referenceNo: String(detail.referenceNo ?? '').trim() || referenceFallback,
                         description: String(detail.description || '').trim(),
                         quantity: Math.round(quantity), // Quantity is an int on the entity
                         amount: roundMoney(toNumber(detail.amount)),
@@ -815,8 +803,8 @@
                         subTotal: roundMoney(toNumber(detail.subTotal)),
                         discountAsPercentage: asBoolean(detail.discountAsPercentage),
                         discount: roundMoney(toNumber(detail.discount)),
-                        debitAccountId: isGuid(detail.debitAccountId) ? String(detail.debitAccountId).trim() : EMPTY_GUID,
-                        debitAccountName: detail.debitAccountName || ''
+                        creditAccountId: isGuid(detail.creditAccountId) ? String(detail.creditAccountId).trim() : EMPTY_GUID,
+                        creditAccountName: detail.creditAccountName || ''
                     };
                 });
             },
@@ -843,7 +831,7 @@
             },
             saveInvoice() {
                 this.setMessage('', 'info');
-                if (!this.supplierId) { this.setMessage('Choose a supplier before saving.', 'error'); this.scrollToAdd(); return; }
+                if (!this.customerId) { this.setMessage('Choose a customer before saving.', 'error'); this.scrollToAdd(); return; }
                 if (!this.currencyId) { this.setMessage('Choose a currency before saving.', 'error'); this.scrollToAdd(); return; }
                 const lineRows = this.detailsList.filter((detail) => !this.isLegacyTaxRow(detail));
                 if (!lineRows.length) { this.setMessage('Add at least one invoice detail row before saving.', 'error'); this.scrollToAdd(); return; }
@@ -868,10 +856,10 @@
                     return;
                 }
                 this.recalculateInvoice();
-                const supplier = this.suppliers.find((item) => item.id === this.supplierId);
+                const customer = this.customers.find((item) => item.id === this.customerId);
                 const currency = this.currencies.find((item) => item.id === this.currencyId);
                 const ou = this.organizationalUnits.find((item) => item.id === this.ouId);
-                const liability = this.accounts.find((item) => item.id === this.liabilityAccountId);
+                const account = this.accounts.find((item) => item.id === this.accountId);
                 const invoiceNumber = this.invoiceNumber || this.nextInvoiceNumber();
                 const batchNumber = this.batchNumber || `BATCH-${invoiceNumber.split('-').pop()}`;
                 const invoiceReference = this.referenceNumber || invoiceNumber;
@@ -883,7 +871,7 @@
                     return {
                         ...detail,
                         id: isGuid(detail.id) ? detail.id.trim() : this.uuid(),
-                        referenceNumber: detail.referenceNumber || invoiceReference,
+                        referenceNo: detail.referenceNo || invoiceReference,
                         isTax,
                         lineType: isTax ? 'tax' : 'line'
                     };
@@ -892,12 +880,12 @@
                 const invoice = {
                     invoiceNumber, batchNumber,
                     status:0,
-                    supplierId: this.supplierId, supplierName: supplier ? supplier.name : this.supplierName,
-                    accountNumber: supplier ? supplier.accountNumber || '' : this.accountNumber,
-                    address: supplier ? supplier.address || '' : this.address,
+                    customerId: this.customerId, customerName: customer ? customer.name : this.customerName,
+                    accountNumber: customer ? customer.accountNumber || '' : this.accountNumber,
+                    address: customer ? customer.address || '' : this.address,
                     invoiceDate: this.invoiceDate, projectedPayDate: this.projectedPayDate,
                     purchaseOrderNumber: this.purchaseOrderNumber, voucherNumber: this.voucherNumber,
-                    referenceNumber: invoiceReference, description: this.description,
+                    referenceNo: invoiceReference, description: this.description,
                     currencyId: this.currencyId, currencyName: currency ? (currency.currencyName || currency.name) : this.currencyName,
                     currencyCode: currency ? (currency.currencyCode || currency.code) : this.currencyCode,
                     minorName: currency ? currency.minorName : this.minorName,
@@ -915,40 +903,40 @@
                     ouId: isGuid(this.ouId) ? String(this.ouId).trim() : EMPTY_GUID,
                     ouName: ou ? ou.name : this.ouName,
                     isPosted: this.isPosted, isApproved: this.isApproved, isCanceled: this.isCanceled,
-                    liabilityAccountId: isGuid(this.liabilityAccountId) ? String(this.liabilityAccountId).trim() : EMPTY_GUID,
-                    liabilityAccountName: liability ? liability.accountIdentifier : this.liabilityAccountName,
+                    accountId: isGuid(this.accountId) ? String(this.accountId).trim() : EMPTY_GUID,
+                    accountName: account ? account .accountIdentifier : this.accountName,
                     isMultiCurrency: this.isMultiCurrency, isVatInclusive: this.isVatInclusive,
                     invoiceTaxLevies: this.buildTaxLevyPayload(),
-                    invoiceDetails: this.buildDetailPayload(invoiceReference)
+                    details: this.buildDetailPayload(invoiceReference)
                 };
                 const index = this.invoiceList.findIndex((item) => String(item.id) === String(invoice.id));
                 if (index >= 0) this.invoiceList.splice(index, 1, invoice); else this.invoiceList.unshift(invoice);
                 if (this.isEditing === true) {
                     invoice.id = this.invoiceId;
-                    axios.post('/Ap/UpdateInvoice', invoice)
+                    axios.post('/Ar/UpdateInvoice', invoice)
                         .then(async response => {
                             this.toastHandler('', 'Invoice updated.');
                             this.isLoading = false;
-                            await this.getApInvoices();
+                            await this.getArInvoices();
                         })
                         .catch(async err => {
                             this.toastHandler('error', 'Unable to update invoice.');
                             this.isLoading = false;
-                            await this.getApInvoices();
+                            await this.getArInvoices();
                         });
 
                 } else {
-                    axios.post('/Ap/CreateInvoice', invoice,
+                    axios.post('/Ar/CreateInvoice', invoice,
                     )
                         .then(async response => {
                             if (response.data.result.code === 200) {
                                 this.toastHandler('', 'Invoice saved.');
                                 this.isLoading = false;
-                                await this.getApInvoices();
+                                await this.getArInvoices();
                             } else {
                                 this.toastHandler('error', response.data.result.message);
                                 this.isLoading = false;
-                                await this.getApInvoices();
+                                await this.getArInvoices();
                             }
                         })
                         .catch(err => {
@@ -1035,15 +1023,7 @@
                 try {
                     const invoiceIds = selected.map(invoice => invoice.id);
 
-                    const res = await axios.post('/Ap/CancelInvoices', invoiceIds);
-
-                    if (res.data && res.data.success === false) {
-                        this.toastHandler(
-                            'error',
-                            res.data.message || 'Unable to cancel selected invoices.'
-                        );
-                        return;
-                    }
+                    const res = await axios.post('/Ar/CancelInvoices', invoiceIds);
 
                     if (grid.clearSelection) {
                         grid.clearSelection();
@@ -1051,7 +1031,7 @@
 
                     this.toastHandler('success', 'Canceled successfully.');
 
-                    await this.getApInvoices();
+                    await this.getArInvoices();
                 } catch (error) {
                     console.error('Invoice cancellation failed:', error);
 
@@ -1088,7 +1068,7 @@
                     const invoiceIds = invoicesToApprove.map(invoice => invoice.id);
 
                     const res = await axios.post(
-                        '/Ap/ApproveInvoices',
+                        '/Ar/ApproveInvoices',
                         invoiceIds 
                     );
 
@@ -1110,7 +1090,7 @@
 
                     this.toastHandler('success', message);
 
-                    await this.getApInvoices();
+                    await this.getArInvoices();
                 } catch (error) {
                     console.error('Invoice approval failed:', error);
 
@@ -1162,7 +1142,7 @@
                     const invoiceIds = invoicesToPost.map(invoice => invoice.id);
 
                     const res = await axios.post(
-                        '/Ap/PostInvoices',
+                        '/Ar/PostInvoices',
                         invoiceIds
                     );
 
@@ -1185,7 +1165,7 @@
                             : 'Posted successfully.'
                     );
 
-                    await this.getApInvoices();
+                    await this.getArInvoices();
                 } catch (error) {
                     console.error('Invoice posting failed:', error);
 
@@ -1197,13 +1177,13 @@
             },
         },
         async mounted() {
-            this.isLoading = true;
+            this.isShimmerLoading = true;
             await this.loadLookups();
             this.getDefaultGlSetup();
             this.getBusinessProfile();
-            await this.getApInvoices();
+            await this.getArInvoices();
             this.recalculateInvoice();
-            this.isLoading = false;
+            this.isShimmerLoading = false;
         }
     });
 

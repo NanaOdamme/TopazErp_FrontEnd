@@ -77,7 +77,7 @@
 
                 reportPath: '',
                 reportHeader:[],
-                summaryReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1755773604/erp-reports/ap/invoices_d8emhd.rdl'
+                summaryReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1744299834/erp-reports/ar/invoices_jczqlj_xpsoqv.rdl',
             };
         },
         
@@ -108,7 +108,7 @@
 
                 this.reportPath = this.summaryReportPath;
 
-                axios.get('/Ap/GetApCanceledInvoices')
+                axios.get('/Ar/GetCanceledInvoices')
                     .then(async response => {
                         const data = response?.data?.result;
 

@@ -95,8 +95,8 @@
     const app = Vue.createApp({
         data() {
             return {
-                theme: '#0645e7',
-                theme1: '#383636',
+                theme: '#ff2056',
+                theme1: '#0645e7',
 
                 isLoading: false,
                 isShimmerLoading: false,

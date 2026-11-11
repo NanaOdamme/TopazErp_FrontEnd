@@ -53,7 +53,7 @@
         return local.toISOString().slice(0, 10);
     };
 
-   
+
     const today = isoDate(new Date());
 
     const app = Vue.createApp({
@@ -81,17 +81,17 @@
                 startNumber: '1',
                 endNumber: '10',
 
-                supplierList: [],
-                supplierId: '',
+                customerList: [],
+                customerId: '',
                 reportHeader:[],
 
                 reportPath: '',
 
                 reportPathConfig: {
-                    summaryReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1755773604/erp-reports/ap/invoices_d8emhd.rdl',
 
-                    supplierInvoiceReport: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1755773604/erp-reports/ap/invoices_d8emhd.rdl',
-                }
+                    summaryReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1744299834/erp-reports/ar/invoices_jczqlj_xpsoqv.rdl',
+                    customerInvoiceReport: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1744299834/erp-reports/ar/invoices_jczqlj_xpsoqv.rdl',
+                },
             };
         },
 
@@ -112,7 +112,7 @@
             },
             // report header
             async getReportHeader() {
-                const url = `/Ap/GetReportHeader?title=AP Invoices`;
+                const url = `/Ap/GetReportHeader?title=AR Invoices`;
                 const response = await axios.get(url);
 
                 this.reportHeader = response.data?.result || [];
@@ -121,7 +121,7 @@
             async getReportData() {
                 if (this.isLoading) return;
 
-                let url = '/Ap/GetAllApInvoices';
+                let url = '/Ar/GetAllInvoices';
 
                 let selectedReportPath =
                     this.reportPathConfig.summaryReportPath;
@@ -130,19 +130,19 @@
                     case 'summary-report':
                         break;
 
-                    case 'bySupplier':
-                        if (!this.supplierId) {
+                    case 'byCustomer':
+                        if (!this.customerId) {
                             this.toastHandler(
                                 'warning',
-                                'Please select a supplier.'
+                                'Please select a customer.'
                             );
                             return;
                         }
 
                         selectedReportPath =
-                            this.reportPathConfig.supplierInvoiceReport;
+                            this.reportPathConfig.customerInvoiceReport;
 
-                        url = `/Ap/GetApInvoiceReport?SupplierId=${encodeURIComponent(this.supplierId)}`;
+                        url = `/Ar/GetInvoiceReport?CustomerId=${encodeURIComponent(this.customerId)}`;
                         break;
 
                     case 'byBatch':
@@ -155,9 +155,9 @@
                         }
 
                         selectedReportPath =
-                            this.reportPathConfig.supplierInvoiceReport;
+                            this.reportPathConfig.customerInvoiceReport;
 
-                        url = `/Ap/GetApInvoiceByBatch?batchNumber=${encodeURIComponent(this.batchNumber)}`;
+                        url = `/Ar/GetInvoiceByBatch?batchNumber=${encodeURIComponent(this.batchNumber)}`;
                         break;
 
                     case 'byInvoiceNumber':
@@ -170,9 +170,9 @@
                         }
 
                         selectedReportPath =
-                            this.reportPathConfig.supplierInvoiceReport;
+                            this.reportPathConfig.customerInvoiceReport;
 
-                        url = `/Ap/GetApInvoiceByInvoiceNumber?invoiceNumber=${encodeURIComponent(this.invoiceNumber)}`;
+                        url = `/Ar/GetInvoiceByInvoiceNumber?invoiceNumber=${encodeURIComponent(this.invoiceNumber)}`;
                         break;
 
                     case 'byDate':
@@ -193,9 +193,9 @@
                         }
 
                         selectedReportPath =
-                            this.reportPathConfig.supplierInvoiceReport;
+                            this.reportPathConfig.customerInvoiceReport;
 
-                        url = `/Ap/GetApInvoiceByDate?startDate=${encodeURIComponent(this.startDate)}&endDate=${encodeURIComponent(this.endDate)}`;
+                        url = `/Ar/GetInvoiceByDate?startDate=${encodeURIComponent(this.startDate)}&endDate=${encodeURIComponent(this.endDate)}`;
                         break;
 
                     case 'byInvoiceRange':
@@ -223,9 +223,9 @@
                         }
 
                         selectedReportPath =
-                            this.reportPathConfig.supplierInvoiceReport;
+                            this.reportPathConfig.customerInvoiceReport;
 
-                        url = `/Ap/GetApInvoiceByRange?startNumber=${encodeURIComponent(this.startNumber)}&endNumber=${encodeURIComponent(this.endNumber)}`;
+                        url = `/Ar/GetInvoiceByRange?startNumber=${encodeURIComponent(this.startNumber)}&endNumber=${encodeURIComponent(this.endNumber)}`;
                         break;
 
                     default:
@@ -295,29 +295,29 @@
                 });
             },
 
-            async getSuppliers() {
+            async getCustomers() {
                 try {
                     const response = await axios.get(
-                        '/SharedResource/GetSuppliers'
+                        '/SharedResource/GetCustomers'
                     );
 
-                    this.supplierList = this.unwrapList(response.data);
+                    this.customerList = this.unwrapList(response.data);
 
-                    if (this.supplierList.length > 0) {
-                        this.supplierId = this.supplierList[0].id;
+                    if (this.customerList.length > 0) {
+                        this.customerId = this.customerList[0].id;
                     } else {
-                        this.supplierId = '';
+                        this.customerId = '';
                     }
 
                 } catch (error) {
-                    console.error('Get suppliers error:', error);
+                    console.error('Get customers error:', error);
 
-                    this.supplierList = [];
-                    this.supplierId = '';
+                    this.customerList = [];
+                    this.customerId = '';
 
                     this.toastHandler(
                         'error',
-                        'Unable to get suppliers.'
+                        'Unable to get customers.'
                     );
                 }
             },
@@ -325,7 +325,7 @@
             async getInvoices() {
                 try {
                     const response = await axios.get(
-                        '/Ap/GetInvoices'
+                        '/Ar/GetInvoices'
                     );
 
                     const invoices = this.unwrapList(response.data);
@@ -340,7 +340,7 @@
                         this.invoiceId = firstInvoice.id;
                         this.batchNumber = firstInvoice.batchNumber;
                         this.invoiceNumber = firstInvoice.invoiceNumber;
-                        
+
                     } else {
                         this.invoiceId = '';
                         this.batchNumber = '';
@@ -381,7 +381,7 @@
         mounted() {
             this.reportApiBaseUrl = reportApiBaseUrl;
 
-            this.getSuppliers();
+            this.getCustomers();
             this.getInvoices();
 
             this.getReportData();

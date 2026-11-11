@@ -318,13 +318,12 @@ public interface ITopazErpApi
     Task<BaseApiResponse> DeleteApVoucher(Guid id);
     Task<BaseApiResponse> PostApVouchers(List<Guid> voucherIds);
     
-    //reports
+    //Ap reports
     Task<ApAgingResponse> GetApAgingByDate(DateTime startDate, int agingInterval);
     Task<BaseApiResponse> SendApEmail(object dto);
     Task<ReportHeaderResponse> GetReportHeader(string title);
     Task<SupplierResponse> GetSuppliers();
     Task<ApStatementResponse> GetApStatement(Guid supplierId);
-/*Task<SupplierResponse> GetSuppliersByGroup(Guid supplierGroupId);*/
     Task<ApStatementResponse> GetApStatementType2(Guid supplierId, DateTime startDate, DateTime endDate);
     Task<ApStatementResponse> GetApStatementType3(Guid supplierId, DateTime startDate, DateTime endDate);
     Task<ApStatementResponse> GetApStatementByOu(Guid supplierId, Guid ouid, DateTime startDate, DateTime endDate);
@@ -359,4 +358,71 @@ public interface ITopazErpApi
     Task<ApAgingResponse> GetApAgingSummary(DateTime startDate, int agingInterval);
     Task<ApAgingResponse> GetApAgingBySupplier(Guid supplierId, DateTime startDate, int agingInterval);
     Task<ApGlTransactionResponse> GetApGlTransaction(DateTime startDate, DateTime endDate, bool isMultiCurrency);
+    
+    //AR
+    //opening Balance
+    Task<ArOpeningBalanceResponse> GetArOpeningBalances(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreateArOpeningBalance(object dto);
+    Task<BaseApiResponse> UpdateArOpeningBalance(object dto);
+    Task<BaseApiResponse> DeleteArOpeningBalance(Guid id);
+    Task<BaseApiResponse> PostArOpeningBalances(List<Guid> balanceIds);
+    //ArInvoice
+    Task<ArInvoiceResponse> GetArInvoices(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreateArInvoice(object dto);
+    Task<BaseApiResponse> UpdateArInvoice(object dto);
+    Task<BaseApiResponse> PostArInvoices(List<Guid> invoiceIds);
+    Task<BaseApiResponse> CancelArInvoices(List<Guid> invoiceIds);
+    Task<BaseApiResponse> ApproveArInvoices(List<Guid> invoiceIds);
+    //ArPayment
+    Task<ArPaymentResponse> GetArPayments(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreateArPayment(object dto);
+    Task<BaseApiResponse> UpdateArPayment(object dto);
+    Task<BaseApiResponse> DeleteArPayment(Guid id);
+    Task<BaseApiResponse> PostArPayments(List<Guid> paymentIds);
+    Task<BaseApiResponse> CancelArPayments(List<Guid> paymentIds);
+
+    //CreditMemo
+    Task<CreditMemoResponse> GetCreditMemos(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreateCreditMemo(object dto);
+    Task<BaseApiResponse> UpdateCreditMemo(object dto);
+    Task<BaseApiResponse> DeleteCreditMemo(Guid id);
+    Task<BaseApiResponse> ApplyCreditMemo(object dto);
+    
+    //Quotations
+    Task<QuotationResponse> GetQuotations(int pageNo, int pageSize, string query);
+    Task<BaseApiResponse> CreateQuotation(object dto);
+    Task<BaseApiResponse> UpdateQuotation(object dto);
+    Task<BaseApiResponse> DeleteQuotation(Guid id);
+    
+    //Ar reports
+    Task<ArAgingResponse> GetArAgingByDate(DateTime startDate, int agingInterval);
+    Task<BaseApiResponse> SendArEmail(object dto);
+    Task<ArStatementResponse> GetArStatement(Guid customerId);
+    Task<ArStatementResponse> GetArStatementType2(Guid customerId, DateTime startDate, DateTime endDate);
+    Task<ArStatementResponse> GetArStatementType3(Guid customerId, DateTime startDate, DateTime endDate);
+    Task<ArStatementResponse> GetArStatementByOu(Guid customerId, Guid ouid, DateTime startDate, DateTime endDate);
+    Task<ArStatementResponse> GetArStatementByOuType2(Guid customerId, Guid ouid, DateTime startDate, DateTime endDate);
+    Task<ArInvoiceReportResponse> GetArInvoiceReport(Guid customerId);
+    Task<ArInvoiceReportResponse> GetAllArInvoices();
+    Task<ArInvoiceReportResponse> GetArCanceledInvoices();
+    Task<ArInvoiceReportResponse> GetArInvoiceByBatch(string batchNumber);
+    Task<ArInvoiceReportResponse> GetArInvoiceByInvoiceNumber(string invoiceNumber);
+    Task<ArInvoiceReportResponse> GetArInvoiceByDate(DateTime startDate, DateTime endDate);
+    Task<ArInvoiceReportResponse> GetArInvoiceByRange(int startNumber, int endNumber);
+    Task<ArInvoiceReportResponse> GetArInvoiceReportById(Guid id);
+    Task<ArInvoicePdfResponse> GetArInvoiceDetails(Guid id);
+    Task<ArOpeningBalanceResponse> GetArBalancesReport(string status);
+    Task<ArOpeningBalanceResponse> GetArBalancesByCustomer(Guid customerId, string status);
+    Task<ArOpeningBalanceResponse> GetAllConvertedArBalances(string status);
+
+    Task<ArPaymentReportResponse> GetArPaymentsReport();
+    Task<ArPaymentReportResponse> GetArPaymentsByCustomer(Guid customerId);
+    Task<ArPaymentReportResponse> GetArPaymentsByDate(DateTime startDate, DateTime endDate);
+    Task<ArPaymentReceiptResponse> GetArPaymentReceipts(Guid id);
+    Task<ArPaymentReceiptResponse> GetArPaymentReceipts(List<Guid> ids);
+
+    Task<QuotationResponse> GetQuotationsReport();
+    Task<ArAgingResponse> GetArAgingSummary(DateTime startDate, int agingInterval);
+    Task<ArAgingResponse> GetArAgingByCustomer(Guid customerId, DateTime startDate, int agingInterval);
+    Task<ArGlTransactionResponse> GetArGlTransaction(DateTime startDate, DateTime endDate, bool isMultiCurrency);
 }

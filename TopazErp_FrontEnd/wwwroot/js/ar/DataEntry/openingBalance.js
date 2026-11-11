@@ -1,4 +1,4 @@
-﻿
+
 (() => {
     'use strict';
 
@@ -10,10 +10,9 @@
             : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
         return `${prefix}-${value}`;
     };
-    /*const api = axios.create({ baseURL: 'http://localhost:5300', withCredentials: true });*/
     const ENDPOINTS = {
-        balances: '/Ap/GetOpeningBalances',
-        suppliers: '/SharedResource/GetSuppliers',
+        balances: '/Ar/GetOpeningBalances',
+        customers: '/SharedResource/GetCustomers',
         currencies: '/SharedResource/GetCurrencies/?pageNo=1&pageSize=1000',
         organizationalUnits: '/SharedResource/GetCostCenters/',
     };
@@ -47,14 +46,15 @@
     };
     const today = isoDate(new Date());
 
-    
+
     const app = Vue.createApp({
         data() {
             return {
                 theme: '#0645e7',
                 emptyGuid: EMPTY_GUID,
                 tenantId: null,
-                suppliers: [],
+                customers: [],
+                customerId: '',
                 currencies: [],
                 ouList: [],
                 openingBalanceList:[],
@@ -62,14 +62,14 @@
                 currencyId: '',
                 buyRate:'',
                 isEditing: false,
-                supplierName:'',
+                customerName:'',
                 accountNumber:'',
                 currencyCode:'',
                 sellRate:0,
                 ouName:'',
                 isShimmerLoading:false
-                
-                
+
+
             };
         },
 
@@ -77,7 +77,7 @@
             columns (){
                 return [
                     { key: 'id', label: 'ID', type: 'text', hidden: true, width: 74, help: 'Generated opening balance ID.'},
-                    { key: 'supplierId', label: 'Supplier', type: 'select', width: 250, required: true, searchable: true, options: this.suppliers, value: 'id', display:'name',},
+                    { key: 'customerId', label: 'Customer', type: 'select', width: 250, required: true, searchable: true, options: this.customers, value: 'id', display:'name',},
                     { key: 'transactionDate', label: 'Date', type: 'date', width: 160, required: true, searchable: true, defaultValue:today},
                     { key: 'amount', label: 'Amount', type: 'number', width: 160, required: true, decimals: 2},
                     { key: 'currencyId', label: 'Currency', type: 'select', width: 180, required: true, options: this.currencies, value: 'id', display:'currencyName', defaultValue: this.currencyId},
@@ -85,13 +85,13 @@
                     { key: 'ouId', label: 'OU / Cost Center', type: 'select', width: 240, options: this.ouList, display: 'name', value: 'id', help: 'Add if needed', },
                     { key: 'isPosted', label: 'Posted', type: 'boolean', width: 110, searchable: true, help: 'Posted Balances cannot be updated later', defaultValue: false, disabled: true},
                     { key: 'sellRate', label: 'Sell Rate', type: 'number', width: 140,  decimals: 4, hidden: true},
-                    { key: 'supplierName', label: 'name', type: 'text', width: 70, hidden: true},
+                    { key: 'customerName', label: 'name', type: 'text', width: 70, hidden: true},
                     { key: 'accountNumber', label: 'Acc #', type: 'text', width: 70, hidden: true},
                     { key: 'currencyCode', label: 'code', type: 'text', width: 70, hidden: true},
                     { key: 'currencyName', label: 'CurrencyName', type: 'text', width: 70, hidden: true},
                 ]
             },
-            
+
         },
 
         methods: {
@@ -134,14 +134,14 @@
             },
             async loadLookups() {
                 this.isShimmerLoading = true;
-                const [rawSuppliers, rawCurrencies, rawUnits] = await Promise.all([
-                    this.fetchList(ENDPOINTS.suppliers, 'suppliers'),
+                const [rawCustomers, rawCurrencies, rawUnits] = await Promise.all([
+                    this.fetchList(ENDPOINTS.customers, 'customers'),
                     this.fetchList(ENDPOINTS.currencies, 'currencies'),
                     this.fetchList(ENDPOINTS.organizationalUnits, 'organizational units'),
                 ]);
 
-                // Suppliers
-                this.suppliers = rawSuppliers.map(s => ({
+                // Customers
+                this.customers = rawCustomers.map(s => ({
                     ...s,
                     name: (s.name || '').trim()
                 }));
@@ -206,10 +206,10 @@
                 const ou = this.ouList.find(x => String(x.id) === String(ouId));
                 return ou?.name || '-';
             },
-            onSupplierChange() {
-                const supplier = this.suppliers.find((item) => item.id === this.supplierId);
-                this.supplierName = supplier ? supplier.name : '';
-                this.accountNumber = supplier ? supplier.accountNumber || '' : '';
+            onCustomerChange() {
+                const customer = this.customers.find((item) => item.id === this.customerId);
+                this.customerName = customer ? customer.name : '';
+                this.accountNumber = customer ? customer.accountNumber || '' : '';
             },
             onCurrencyChange() {
                 const currency = this.currencies.find((item) => item.id === this.currencyId);
@@ -240,7 +240,7 @@
                 return {
                     ...row,
                     id: row.id || createId('det'),
-                    supplierId: row.supplierId,
+                    customerId: row.customerId,
                     transactionDate: new Date(row.transactionDate),
                     currencyId: row.currencyId,
                     buyRate: row.buyRate,
@@ -256,8 +256,8 @@
                     ...(payload.data || payload.row || payload)
                 };
 
-                const supplier = this.suppliers.find(
-                    item => item.id === row.supplierId
+                const customer = this.customers.find(
+                    item => item.id === row.customerId
                 );
 
                 const currency = this.currencies.find(
@@ -265,9 +265,9 @@
                 );
 
                 const record = {
-                    supplierId: row.supplierId,
-                    supplierName: supplier?.name || row.supplierName || '',
-                    accountNumber: supplier?.accountNumber || row.accountNumber || '',
+                    customerId: row.customerId,
+                    customerName: customer?.name || row.customerName || '',
+                    accountNumber: customer?.accountNumber || row.accountNumber || '',
 
                     transactionDate: row.transactionDate
                         ? new Date(row.transactionDate).toISOString()
@@ -286,10 +286,10 @@
                 };
 
                 console.log('Opening balance create payload:', record);
-               
+
                 try {
                     const res = await axios.post(
-                        '/Ap/CreateOpeningBalance',
+                        '/Ar/CreateOpeningBalance',
                         record
                     );
 
@@ -302,14 +302,14 @@
                         );
                         await this.getOpeningBalances();
                         return;
-                        
+
                     }
 
                     this.toastHandler('success', result?.message || 'Opening balance created successfully.');
                     await this.getOpeningBalances();
                 } catch (error) {
                     console.error('Opening balance creation failed:', error);
-                    
+
                     this.toastHandler(
                         'error',
                         error.response?.data?.message ||
@@ -334,8 +334,8 @@
                     this.toastHandler('error', 'Opening balance record was not found.');
                     return;
                 }
-                const supplier = this.suppliers.find(
-                    item => item.id === row.supplierId
+                const customer = this.customers.find(
+                    item => item.id === row.customerId
                 );
 
                 const currency = this.currencies.find(
@@ -346,9 +346,9 @@
                     ...existing,
                     ...row,
                     id: existing.id,
-                    supplierId: row.supplierId,
-                    supplierName: supplier?.name || row.supplierName || '',
-                    accountNumber: supplier?.accountNumber || row.accountNumber || '',
+                    customerId: row.customerId,
+                    customerName: customer?.name || row.customerName || '',
+                    accountNumber: customer?.accountNumber || row.accountNumber || '',
 
                     transactionDate: row.transactionDate
                         ? new Date(row.transactionDate).toISOString()
@@ -370,7 +370,7 @@
 
                 try {
                     const res = await axios.put(
-                        '/Ap/UpdateOpeningBalance',
+                        '/Ar/UpdateOpeningBalance',
                         record
                     );
 
@@ -423,7 +423,7 @@
                         }
 
                         const res = await axios.delete(
-                            `/Ap/DeleteOpeningBalance?id=${encodeURIComponent(id)}`
+                            `/Ar/DeleteOpeningBalance?id=${encodeURIComponent(id)}`
                         );
 
                         if (res.data?.success === false) {
@@ -487,7 +487,7 @@
                 try {
                     const balanceIds = balancesToPost.map(balance => balance.id);
 
-                    const res = await axios.post('/Ap/PostOpeningBalances', balanceIds);
+                    const res = await axios.post('/Ar/PostOpeningBalances', balanceIds);
 
                     if (res.data && res.data.success === false) {
                         this.toastHandler(
@@ -528,7 +528,7 @@
         }
     });
 
-   
+
     app.use(DataGridPlugin);
     app.mount('#app');
 })();

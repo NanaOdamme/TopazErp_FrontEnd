@@ -397,3 +397,71 @@ public class ApInvoicePdfResponse : BaseApiResponseModel
     [JsonProperty("result")]
     public List<InvoicePdfData> Result { get; set; }
 }
+
+//API Response for AR
+//opening balance
+public class ArOpeningBalanceResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ArOpeningBalance> Result { get; set; }
+}
+//ArInvoice
+public class ArInvoiceResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ArInvoice> Result { get; set; }
+}
+//ArPayment
+public class ArPaymentResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ArPayment> Result { get; set; }
+}
+//creditmemo
+public class CreditMemoResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ArCreditMemo> Result { get; set; }
+}
+//quotation
+public class QuotationResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<Quotation> Result { get; set; }
+}
+//reports
+public class ArAgingResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ArAgingData> Result { get; set; }
+}
+public class ArStatementResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ArStatementRecord> Result { get; set; }
+}
+public class ArPaymentReceiptResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ArPaymentReceipt> Result { get; set; }
+}
+public class ArPaymentReportResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ArPaymentReport> Result { get; set; }
+}
+public class ArGlTransactionResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ArGlTransactions> Result { get; set; }
+}
+public class ArInvoiceReportResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ArInvoiceReport> Result { get; set; }
+}
+public class ArInvoicePdfResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ArInvoicePdfData> Result { get; set; }
+}

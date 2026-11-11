@@ -1,4 +1,3 @@
-
 (() => {
     'use strict';
     const isoDate = (date) => {
@@ -22,20 +21,18 @@
                 reportApiBaseUrl: '',
 
                 balanceId: '',
-                supplierId: '',
+                customerId: '',
 
-                supplierList: [],
+                customerList: [],
                 openingBalanceList: [],
                 reportHeader:[],
                 reportPath: '',
 
                 reportPathConfig: {
-                    SummaryReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1755775403/erp-reports/ap/openingBalanceSummary_ofo8p1.rdl',
-
-                    supplierReport: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1755775403/erp-reports/ap/openingBalanceBySupplier_zwkiag.rdl',
-
-                    type2Report: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1755775403/erp-reports/ap/openingBalancesType2_bzd5ow.rdl',
-                }
+                    SummaryReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1744301933/erp-reports/ar/openingBalancesByCustomer_fv64js.rdl',
+                    customerReport: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1744299832/erp-reports/ar/OpeningBalance_zzychr_a0rwll.rdl',
+                    type2Report: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1744301932/erp-reports/ar/openingBalancesType2_ysq5em_gjeyq8.rdl',
+                },
             };
         },
         computed: {
@@ -57,7 +54,7 @@
                 }
 
                 const titles = {
-                    bySupplier: 'Supplier Opening Balances',
+                    byCustomer: 'Customer Opening Balances',
                     type2: 'Local Currency Opening Balances'
                 };
 
@@ -86,30 +83,30 @@
                 this.reportHeader = response.data?.result || [];
                 return this.reportHeader;
             },
-            async getSuppliers() {
+            async getCustomers() {
                 try {
                     const response = await axios.get(
-                        '/SharedResource/GetSuppliers'
+                        '/SharedResource/GetCustomers'
                     );
 
-                    this.supplierList = this.unwrapList(response.data);
+                    this.customerList = this.unwrapList(response.data);
 
                     if (
-                        this.supplierList.length > 0 &&
-                        !this.supplierId
+                        this.customerList.length > 0 &&
+                        !this.customerId
                     ) {
-                        this.supplierId = this.supplierList[0].id;
+                        this.customerId = this.customerList[0].id;
                     }
 
                 } catch (error) {
-                    console.error('Get suppliers error:', error);
+                    console.error('Get customers error:', error);
 
-                    this.supplierList = [];
-                    this.supplierId = '';
+                    this.customerList = [];
+                    this.customerId = '';
 
                     this.toastHandler(
                         'error',
-                        'Unable to get suppliers.'
+                        'Unable to get customers.'
                     );
                 }
             },
@@ -118,12 +115,12 @@
                 if (this.isLoading) return;
 
                 if (
-                    this.reportType === 'bySupplier' &&
-                    !this.supplierId
+                    this.reportType === 'byCustomer' &&
+                    !this.customerId
                 ) {
                     this.toastHandler(
                         'warning',
-                        'Please select a supplier.'
+                        'Please select a customer.'
                     );
                     return;
                 }
@@ -136,21 +133,21 @@
                         selectedReportPath =
                             this.reportPathConfig.SummaryReportPath;
 
-                        url = `/Ap/GetApBalancesReport?status=${encodeURIComponent(this.reportStatus)}`;
+                        url = `/Ar/GetBalancesReport?status=${encodeURIComponent(this.reportStatus)}`;
                         break;
 
-                    case 'bySupplier':
+                    case 'byCustomer':
                         selectedReportPath =
-                            this.reportPathConfig.supplierReport;
+                            this.reportPathConfig.customerReport;
 
-                        url = `/Ap/GetApBalancesBySupplier?SupplierId=${encodeURIComponent(this.supplierId)}&status=${encodeURIComponent(this.reportStatus)}`;
+                        url = `/Ar/GetBalancesByCustomer?CustomerId=${encodeURIComponent(this.customerId)}&status=${encodeURIComponent(this.reportStatus)}`;
                         break;
 
                     case 'type2':
                         selectedReportPath =
                             this.reportPathConfig.type2Report;
 
-                        url = `/Ap/GetAllConvertedApBalances?status=${encodeURIComponent(this.reportStatus)}`;
+                        url = `/Ar/GetAllConvertedBalances?status=${encodeURIComponent(this.reportStatus)}`;
                         break;
 
                     default:
@@ -247,7 +244,7 @@
         async mounted() {
             this.reportApiBaseUrl = reportApiBaseUrl;
 
-            await this.getSuppliers();
+            await this.getCustomers();
             await this.getReportData();
         }
     });

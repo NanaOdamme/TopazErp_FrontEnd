@@ -1,8 +1,9 @@
+
 const LOOKUP_URLS = {
     currencies: '/SharedResource/GetCurrencies',
     accounts: '/Ap/InitJournalEntry',
-    supplierGroups: '/SharedResource/GetSupplierGroups',
-    createSupplier: '/SharedResource/CreateSupplier'
+    customerGroups: '/SharedResource/GetCustomerGroups',
+    createCustomer: '/SharedResource/CreateCustomer'
 };
 
 const app = Vue.createApp({
@@ -17,15 +18,14 @@ const app = Vue.createApp({
 
             currencies: [],
             accounts: [],
-            supplierGroups: [],
+            customerGroups: [],
 
             currentPage: 1,
             pageSize: 10,
 
-            // Keep the existing mappings and add the missing contact/tax fields.
             columnMap: {
                 name: 'name',
-                suppliername: 'name',
+                customername: 'name',
                 accountno: 'accountNumber',
                 accountnumber: 'accountNumber',
                 email: 'email',
@@ -35,8 +35,9 @@ const app = Vue.createApp({
                 balance: 'balance',
                 currency: 'currencyName',
                 currencyname: 'currencyName',
-                group: 'supplierGroupName',
-                suppliergroup: 'supplierGroupName',
+                group: 'customerGroupName',
+                customergroup: 'customerGroupName',
+                customergroupname: 'customerGroupName',
                 creditlimit: 'creditLimit',
                 creditgl: 'creditAccountName',
                 debitgl: 'debitAccountName',
@@ -116,22 +117,24 @@ const app = Vue.createApp({
                 ] = await Promise.all([
                     axios.get(LOOKUP_URLS.currencies),
                     axios.get(LOOKUP_URLS.accounts),
-                    axios.get(LOOKUP_URLS.supplierGroups)
+                    axios.get(LOOKUP_URLS.customerGroups)
                 ]);
 
                 this.currencies = this.unwrapList(currencyResponse.data);
                 this.accounts = this.unwrapList(accountResponse.data);
-                this.supplierGroups = this.unwrapList(groupResponse.data);
+                this.customerGroups = this.unwrapList(groupResponse.data);
 
                 this.lookupsReady = true;
+
             } catch (error) {
                 console.error('Lookup loading error:', error);
                 this.lookupsReady = false;
 
                 this.toastHandler(
                     'error',
-                    'Unable to load currencies, accounts, or supplier groups.'
+                    'Unable to load currencies, accounts, or customer groups.'
                 );
+
             } finally {
                 this.isLoading = false;
             }
@@ -147,7 +150,7 @@ const app = Vue.createApp({
                 'data',
                 'accounts',
                 'currencies',
-                'supplierGroups'
+                'customerGroups'
             ]) {
                 if (Array.isArray(raw[key])) return raw[key];
             }
@@ -174,6 +177,7 @@ const app = Vue.createApp({
                     'warning',
                     'Please choose an Excel (.xlsx, .xls) or .csv file.'
                 );
+
                 event.target.value = '';
                 return;
             }
@@ -184,7 +188,10 @@ const app = Vue.createApp({
 
         async previewFile() {
             if (!this.file) {
-                this.toastHandler('warning', 'Please select a file to preview.');
+                this.toastHandler(
+                    'warning',
+                    'Please select a file to preview.'
+                );
                 return;
             }
 
@@ -202,6 +209,7 @@ const app = Vue.createApp({
 
                 if (rawRows.length === 0) {
                     this.previewData = [];
+
                     this.toastHandler(
                         'warning',
                         'The selected file has no data rows.'
@@ -212,7 +220,9 @@ const app = Vue.createApp({
                 this.previewData = this.validateRows(
                     rawRows.map(row => this.mapRow(row))
                 );
+
                 this.currentPage = 1;
+
             } catch (error) {
                 console.error(error);
                 this.previewData = [];
@@ -221,6 +231,7 @@ const app = Vue.createApp({
                     'error',
                     'Failed to read the file. Make sure it is a valid Excel file.'
                 );
+
             } finally {
                 this.isLoading = false;
             }
@@ -256,7 +267,7 @@ const app = Vue.createApp({
                 address: '',
                 balance: 0,
                 currencyName: '',
-                supplierGroupName: '',
+                customerGroupName: '',
                 creditLimit: 0,
                 creditAccountName: '',
                 debitAccountName: '',
@@ -307,25 +318,33 @@ const app = Vue.createApp({
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
             rows.forEach(row => {
-                if (!row.name) row.errors.push('Name is required.');
+                if (!row.name) {
+                    row.errors.push('Name is required.');
+                }
+
                 if (!row.accountNumber) {
                     row.errors.push('Account No is required.');
                 }
+
                 if (!row.currencyName) {
                     row.errors.push('Currency is required.');
                 }
-                if (!row.supplierGroupName) {
-                    row.errors.push('Supplier Group is required.');
+
+                if (!row.customerGroupName) {
+                    row.errors.push('Customer Group is required.');
                 }
+
                 if (row.email && !emailRegex.test(row.email)) {
                     row.errors.push('Email is not valid.');
                 }
+
                 if (
                     row.contactPersonEmail &&
                     !emailRegex.test(row.contactPersonEmail)
                 ) {
                     row.errors.push('Contact Person Email is not valid.');
                 }
+
                 if (row.creditLimit < 0) {
                     row.errors.push('Credit Limit cannot be negative.');
                 }
@@ -335,6 +354,7 @@ const app = Vue.createApp({
 
                     if (seenAccounts.has(key)) {
                         row.errors.push('Duplicate Account No in file.');
+
                         seenAccounts.get(key).errors.push(
                             'Duplicate Account No in file.'
                         );
@@ -362,7 +382,7 @@ const app = Vue.createApp({
             return item?.id || item?.Id || '';
         },
 
-        buildSupplierPayload(row) {
+        buildCustomerPayload(row) {
             const errors = [];
 
             const currency = this.findByName(
@@ -371,10 +391,10 @@ const app = Vue.createApp({
                 ['currencyName', 'name', 'currencyCode']
             );
 
-            const supplierGroup = this.findByName(
-                this.supplierGroups,
-                row.supplierGroupName,
-                ['supplierGroupName', 'groupName', 'name']
+            const customerGroup = this.findByName(
+                this.customerGroups,
+                row.customerGroupName,
+                ['customerGroupName', 'groupName', 'name']
             );
 
             const findAccount = (excelValue, label) => {
@@ -407,7 +427,9 @@ const app = Vue.createApp({
                 const accountNo = account.accountNo;
                 const accountName = account.accountName || '';
 
-                return accountNo !== null && accountNo !== undefined && accountName
+                return accountNo !== null &&
+                accountNo !== undefined &&
+                accountName
                     ? `${accountNo} - ${accountName}`
                     : accountName;
             };
@@ -416,14 +438,17 @@ const app = Vue.createApp({
                 row.creditAccountName,
                 'Credit account'
             );
+
             const debitAccount = findAccount(
                 row.debitAccountName,
                 'Debit account'
             );
+
             const irsAccount = findAccount(
                 row.irsAccountName,
                 'IRS account'
             );
+
             const vatAccount = findAccount(
                 row.vatAccountName,
                 'VAT account'
@@ -433,9 +458,9 @@ const app = Vue.createApp({
                 errors.push(`Currency "${row.currencyName}" was not found.`);
             }
 
-            if (!supplierGroup || !this.lookupId(supplierGroup)) {
+            if (!customerGroup || !this.lookupId(customerGroup)) {
                 errors.push(
-                    `Supplier group "${row.supplierGroupName}" was not found.`
+                    `Customer group "${row.customerGroupName}" was not found.`
                 );
             }
 
@@ -443,57 +468,69 @@ const app = Vue.createApp({
                 return { payload: null, errors };
             }
 
-            const accountName = (account, fallback) =>
-                account
-                    ? account.accountName ||
-                    account.name ||
-                    account.accountIdentifier ||
-                    fallback
-                    : '';
-
             return {
                 payload: {
                     accountNumber: row.accountNumber,
 
-                    supplierGroupId: this.lookupId(supplierGroup),
-                    supplierGroupName:
-                        supplierGroup.supplierGroupName ||
-                        supplierGroup.groupName ||
-                        supplierGroup.name,
+                    customerGroupId: this.lookupId(customerGroup),
+                    customerGroupName:
+                        customerGroup.customerGroupName ||
+                        customerGroup.groupName ||
+                        customerGroup.name,
 
                     statusId: row.status,
                     statusName: row.status,
                     balance: row.balance,
 
-                    creditAccountId: this.lookupId(creditAccount) || this.emptyGuid,
-                    creditAccountName: accountDisplayName(creditAccount),
+                    creditAccountId:
+                        this.lookupId(creditAccount) || this.emptyGuid,
+                    creditAccountName:
+                        accountDisplayName(creditAccount),
 
-                    debitAccountId: this.lookupId(debitAccount) || this.emptyGuid,
-                    debitAccountName: accountDisplayName(debitAccount),
+                    debitAccountId:
+                        this.lookupId(debitAccount) || this.emptyGuid,
+                    debitAccountName:
+                        accountDisplayName(debitAccount),
 
-                    irsAccountId: this.lookupId(irsAccount) || this.emptyGuid,
-                    irsAccountName: accountDisplayName(irsAccount),
+                    irsAccountId:
+                        this.lookupId(irsAccount) || this.emptyGuid,
+                    irsAccountName:
+                        accountDisplayName(irsAccount),
 
-                    vatAccountId: this.lookupId(vatAccount) || this.emptyGuid,
-                    vatAccountName: accountDisplayName(vatAccount),
-                
+                    vatAccountId:
+                        this.lookupId(vatAccount) || this.emptyGuid,
+                    vatAccountName:
+                        accountDisplayName(vatAccount),
 
                     tinNumber: '',
                     name: row.name,
                     email: row.email,
                     phoneNo: row.phoneNo,
                     address: row.address,
+
                     contactPerson: row.contactPerson,
                     contactPersonPhone: row.contactPersonPhoneNo,
                     contactPersonEmail: row.contactPersonEmail,
+
                     vatNumber: row.vatNumber,
 
                     currencyId: this.lookupId(currency),
                     currencyName:
-                        currency.currencyName || currency.name || row.currencyName,
+                        currency.currencyName ||
+                        currency.name ||
+                        row.currencyName,
+
                     currencyCode: currency.currencyCode || '',
-                    buyingRate: currency.buyingRate ?? currency.buyRate ?? 0,
-                    sellingRate: currency.sellingRate ?? currency.sellRate ?? 0,
+
+                    buyingRate:
+                        currency.buyingRate ??
+                        currency.buyRate ??
+                        0,
+
+                    sellingRate:
+                        currency.sellingRate ??
+                        currency.sellRate ??
+                        0,
 
                     creditLimit: row.creditLimit,
                     isResident: false,
@@ -504,15 +541,20 @@ const app = Vue.createApp({
         },
 
         async importData() {
+            if (this.isLoading) return;
+
             if (this.previewData.length === 0) {
-                this.toastHandler('warning', 'There are no suppliers to import.');
+                this.toastHandler(
+                    'warning',
+                    'There are no customers to import.'
+                );
                 return;
             }
 
             if (!this.lookupsReady) {
                 this.toastHandler(
                     'warning',
-                    'Wait for the currency, account, and supplier group lookups to load.'
+                    'Wait for the currency, account, and customer group lookups to load.'
                 );
                 return;
             }
@@ -525,7 +567,7 @@ const app = Vue.createApp({
             });
 
             const preparedRows = this.previewData.map(row => {
-                const result = this.buildSupplierPayload(row);
+                const result = this.buildCustomerPayload(row);
 
                 row.errors.push(
                     ...result.errors.map(error => `Lookup: ${error}`)
@@ -547,28 +589,31 @@ const app = Vue.createApp({
             try {
                 for (const payload of preparedRows) {
                     const response = await axios.post(
-                        LOOKUP_URLS.createSupplier,
+                        LOOKUP_URLS.createCustomer,
                         payload
                     );
 
                     if (response.data?.success === false) {
                         throw new Error(
-                            response.data.message || 'Supplier creation failed.'
+                            response.data.message ||
+                            'Customer creation failed.'
                         );
                     }
                 }
 
                 const importedCount = preparedRows.length;
+
                 this.previewData = [];
                 this.currentPage = 1;
                 this.file = null;
 
                 this.toastHandler(
                     'success',
-                    `${importedCount} suppliers imported.`
+                    `${importedCount} customers imported.`
                 );
+
             } catch (error) {
-                console.error('Supplier import error:', error);
+                console.error('Customer import error:', error);
 
                 this.toastHandler(
                     'error',
@@ -576,6 +621,7 @@ const app = Vue.createApp({
                     error.message ||
                     'Import failed.'
                 );
+
             } finally {
                 this.isLoading = false;
             }

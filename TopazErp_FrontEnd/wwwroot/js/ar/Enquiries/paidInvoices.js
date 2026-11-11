@@ -2,8 +2,8 @@
     'use strict';
     const EMPTY_GUID = '00000000-0000-0000-0000-000000000000';
     const ENDPOINTS = {
-        invoices: '/Ap/GetInvoices',
-        suppliers: '/SharedResource/GetSuppliers',
+        invoices: '/Ar/GetInvoices',
+        customers: '/SharedResource/GetCustomers',
         currencies: '/SharedResource/GetCurrencies',
         accounts: '/Ap/InitJournalEntry',
         costCenters: '/SharedResource/GetCostCenters',
@@ -31,7 +31,7 @@
                 theme: '#0645e7',
                 invoiceList:[],
                 accounts:[],
-                suppliers:[],
+                customers:[],
                 currencies: [],
                 costCenters: [],
                 isLoading: false,
@@ -60,7 +60,7 @@
                     { key: 'tenantId', label: 'Tenant ID', type: 'number', hidden: true, editable: false },
                     { key: 'invoiceNumber', label: 'Invoice #', type: 'text', width: 150, required: true, searchable: true },
                     { key: 'batchNumber', label: 'Batch #', type: 'text', width: 125, searchable: true },
-                    { key: 'supplierId', label: 'Supplier', type: 'select', options: this.suppliers, value: 'id', display: 'name', width: 280, required: true, searchable: true },
+                    { key: 'customerId', label: 'Customer', type: 'select', options: this.customers, value: 'id', display: 'name', width: 280, required: true, searchable: true },
                     { key: 'invoiceDate', label: 'Invoice Date', type: 'date', width: 130, searchable: true },
                     { key: 'projectedPayDate', label: 'Projected Pay Date', type: 'date', width: 160, searchable: true },
                     { key: 'currencyId', label: 'Currency', type: 'select', options: this.currencies, value: 'id', display: 'currencyName', width: 180, searchable: true },
@@ -86,15 +86,15 @@
                 }
             },
             async getInvoices() {
-                const list = await this.fetchList(ENDPOINTS.invoices, 'AP invoices');
+                const list = await this.fetchList(ENDPOINTS.invoices, 'AR invoices');
                 this.invoiceList = list.filter(inv => !inv.isCanceled && inv.isPosted && inv.balance === 0);
 
                 return this.invoiceList;
             },
             async loadLookups() {
-                const [rawAccounts, rawSuppliers, rawCurrencies, rawUnits,] = await Promise.all([
+                const [rawAccounts, rawCustomers, rawCurrencies, rawUnits,] = await Promise.all([
                     this.fetchList(ENDPOINTS.accounts, 'accounts', 'accounts'),
-                    this.fetchList(ENDPOINTS.suppliers, 'suppliers'),
+                    this.fetchList(ENDPOINTS.customers, 'customers'),
                     this.fetchList(ENDPOINTS.currencies, 'currencies'),
                     this.fetchList(ENDPOINTS.costCenters, 'organizational units'),
 
@@ -108,8 +108,8 @@
                     accountName: a.accountName || a.name
                 }));
 
-                // Suppliers
-                this.suppliers = rawSuppliers.map(s => ({
+                // customers
+                this.customers = rawCustomers.map(s => ({
                     ...s,
                     name: (s.name || '').trim()
                 }));

@@ -78,7 +78,7 @@
     const app = Vue.createApp({
     data() {
         return {
-            theme: '#0645e7',
+            theme: '#ff2056',
             debitMemos: [],
             isLoading: false,
             payload: {},

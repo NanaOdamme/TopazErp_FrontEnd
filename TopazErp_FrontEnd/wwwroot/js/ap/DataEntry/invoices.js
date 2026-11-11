@@ -96,8 +96,8 @@
         data() {
             return {
                 emptyGuid: EMPTY_GUID,
-                theme: '#0645e7',
-                theme1: '#545454',
+                theme: '#ff2056',
+                theme1: '#0645e7',
                 tenantId: null,
                 accounts: [],
                 suppliers: [],
@@ -324,7 +324,9 @@
                 }
             },
             async getApInvoices() {
-                this.invoiceList = await this.fetchList(ENDPOINTS.invoices, 'AP invoices');
+                const invoiceList = await this.fetchList(ENDPOINTS.invoices, 'AP invoices');
+                this.invoiceList = invoiceList.filter(i => !i.isCanceled);
+                return this.invoiceList;
             },
             async loadLookups() {
                 const [rawAccounts, rawSuppliers, rawCurrencies, rawUnits, rawTaxes] = await Promise.all([

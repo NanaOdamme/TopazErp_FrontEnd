@@ -1,651 +1,718 @@
 ﻿@{
-ViewBag.Title = "Dashboard | Ap";
-Layout = "~/Views/Shared/_adminApLayout.cshtml";
+    ViewBag.Title = "Dashboard | Ap";
+    Layout = "~/Views/Shared/_adminApLayout.cshtml";
 }
 <style>
-    /* GL-style surface for the classes the AP scripts already write into.
-       Scoped to this page; mirrors the GL dashboard card/table look. */
-    #apDashboard .card {
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        border-radius: .75rem;
-        box-shadow: 0 1px 2px rgb(0 0 0 / .05);
-        overflow: hidden;
-    }
-    #apDashboard .table-scroll { max-height: 340px; overflow: auto; }
+        [v-cloak] { display: none; }
 
-    #apDashboard .data-table { width: 100%; min-width: 640px; border-collapse: collapse; text-align: left; font-size: .75rem; }
-    #apDashboard .data-table thead {
-        position: sticky; top: 0; z-index: 10;
-        background: #f1f5f9; color: #64748b;
-        font-size: 11px; letter-spacing: .04em; text-transform: uppercase;
-    }
-    #apDashboard .data-table thead th { padding: .75rem 1.25rem; font-weight: 600; white-space: nowrap; }
-    #apDashboard .data-table thead th.text-right { text-align: right; }
-    #apDashboard .data-table tbody tr { border-top: 1px solid #f3f4f6; transition: background-color .15s; }
-    #apDashboard .data-table tbody tr:hover { background: #f8fafc; }
-    #apDashboard .data-table tbody td { padding: .75rem 1.25rem; color: #334155; vertical-align: middle; }
-    #apDashboard .data-table tbody td.text-right { text-align: right; }
-    #apDashboard .data-table tbody tr td[colspan] { padding: 2.5rem 1.25rem; text-align: center; color: #9ca3af; }
+        .ap-line {
+            stroke-dasharray: 1;
+            stroke-dashoffset: 1;
+            transition: stroke-dashoffset 1.15s cubic-bezier(.22, 1, .36, 1);
+        }
+        .ap-line.is-drawn { stroke-dashoffset: 0; }
 
-  
-    .dark #apDashboard .card { background: #1e293b; border-color: #334155; }
-    .dark #apDashboard .data-table thead { background: #1e293b; color: #94a3b8; }
-    .dark #apDashboard .data-table tbody tr { border-top-color: #334155; }
-    .dark #apDashboard .data-table tbody tr:hover { background: rgb(30 41 59 / .6); }
-    .dark #apDashboard .data-table tbody td { color: #e2e8f0; }
-</style>
+        .ap-fade { opacity: 0; transition: opacity .8s ease .25s; }
+        .ap-fade.is-drawn { opacity: 1; }
 
+        .ap-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+        .ap-scroll::-webkit-scrollbar-track { background: transparent; }
+        .ap-scroll::-webkit-scrollbar-thumb { border-radius: 9999px; background: rgba(100, 116, 139, .3); }
+        .ap-scroll::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, .5); }
+    </style>
 <div class="content" id="apDashboard">
 
-    <!-- Page Header & Breadcrumbs -->
-    <div class="mb-6 content-header">
-        <div class="mb-2 flex items-center gap-2 text-sm text-gray-500">
-            <span>AP</span>
-            <i class="bi bi-chevron-right text-xs"></i>
-            <span class="font-medium text-blue-600">Dashboard</span>
-        </div>
+    <!-- =============================================================
+         Hero header + filters
+         ============================================================= -->
+    <section class="relative mb-6 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-700/70 dark:bg-slate-800">
+        <div class="pointer-events-none absolute -right-24 -top-32 h-72 w-72 rounded-full bg-gradient-to-br from-indigo-400/25 via-violet-300/15 to-transparent blur-3xl"></div>
+        <div class="pointer-events-none absolute -bottom-36 left-1/3 h-64 w-64 rounded-full bg-gradient-to-tr from-emerald-300/20 to-transparent blur-3xl"></div>
+        <div class="pointer-events-none absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-slate-50 to-transparent dark:from-slate-900/40 dark:to-transparent"></div>
 
-        <div class="flex flex-wrap items-center justify-between gap-4">
-            <div class="page-title">
-                <h2 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                    Accounts Payable Dashboard
+        <div class="relative flex flex-wrap items-start justify-between gap-6 p-6">
+            <div class="min-w-0">
+    
+                <h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                    Accounts Payable
                 </h2>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Payables control center — invoices, payments, supplier balances and aging at a glance.
+                <p class="mt-1 max-w-xl text-sm text-slate-500 dark:text-slate-400">
+                    Payables control centre — invoices, payment vouchers, supplier balances and aging at a glance.
                 </p>
+
+                <div class="mt-4 flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300">
+                        <span class="relative flex h-1.5 w-1.5">
+                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                        </span>
+                        Live
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+                        <i class="bi bi-clock-history"></i>
+                        Updated <span v-cloak>{{ lastUpdatedLabel }}</span>
+                    </span>
+            
+                </div>
             </div>
 
             <div class="flex flex-wrap items-end gap-2.5">
                 <label class="block">
-                    <span class="mb-1 block text-xs font-semibold text-gray-500 dark:text-gray-400">Aging as of</span>
-                    <input id="asOfDate" type="date"
-                           class="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-200" />
+                    <span class="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Aging as of</span>
+                    <input id="asOfDate" type="date" v-model="asOfDate"
+                           class="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-indigo-500 dark:focus:ring-indigo-900/40" />
                 </label>
+
                 <label class="block">
-                    <span class="mb-1 block text-xs font-semibold text-gray-500 dark:text-gray-400">Interval</span>
-                    <select id="agingInterval"
-                            class="rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-200">
+                    <span class="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Interval</span>
+                    <select id="agingInterval" v-model="agingInterval"
+                            class="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-indigo-500 dark:focus:ring-indigo-900/40">
                         <option value="30">30 days</option>
                         <option value="60">60 days</option>
                         <option value="90">90 days</option>
                     </select>
                 </label>
-                <button id="refreshButton" type="button"
-                        class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
-                    <i class="bi bi-arrow-clockwise"></i>
+
+                <button id="refreshButton" type="button" v-on:click="loadDashboard" :disabled="isLoading"
+                        class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-400 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-rose-600/20 transition hover:from-rose-400 hover:to-rose-600 hover:shadow-rose-600/30 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-60 dark:focus:ring-indigo-900/50">
+                    <i class="bi bi-arrow-clockwise" :class="{ 'animate-spin': isLoading }"></i>
                     <span>Refresh</span>
                 </button>
             </div>
         </div>
+    </section>
+
+    <!-- =============================================================
+         Load issues
+         ============================================================= -->
+    <div v-if="loadIssues.length" class="mb-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-800 shadow-sm dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">
+        <i class="bi bi-exclamation-triangle-fill mt-0.5"></i>
+        <p class="text-xs leading-relaxed">
+            Some data could not be loaded: <strong>{{ loadIssues.join(', ') }}</strong>. The rest of the dashboard is unaffected.
+        </p>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="card mb-6" data-card-title="Quick Actions">
-        <div class="flex flex-wrap items-center gap-2.5">
+    <!-- =============================================================
+         Quick actions
+         ============================================================= -->
+    <div class="mb-6 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-700/70 dark:bg-slate-800" data-card-title="Quick Actions">
+        <div class="flex flex-wrap items-center gap-2">
             <a id="agingAction" href="/Ap/Aging"
-               class="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3.5 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-blue-400 dark:hover:bg-slate-700">
-                <i class="bi bi-hourglass-split"></i> Aging Summary
+               class="group inline-flex items-center gap-2 rounded-xl border border-rose-100 bg-rose-50/70 px-3.5 py-2 text-xs font-semibold text-rose-700 transition hover:-translate-y-0.5 hover:border-rose-200 hover:bg-rose-100 hover:shadow-sm dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20">
+                <i class="bi bi-hourglass-split transition group-hover:rotate-180"></i> Aging Summary
             </a>
             <a id="glAction" href="/Ap/GlTransactions"
-               class="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-400 dark:hover:bg-slate-700">
+               class="group inline-flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50/70 px-3.5 py-2 text-xs font-semibold text-emerald-700 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-100 hover:shadow-sm dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20">
                 <i class="bi bi-journal-text"></i> G/L Transactions
             </a>
             <a href="/Ap/Vouchers"
-               class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
+               class="group inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300 dark:hover:bg-slate-700/60">
                 <i class="bi bi-receipt"></i> Payment Vouchers
             </a>
             <a href="/Ap/OpeningBalances"
-               class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
+               class="group inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300 dark:hover:bg-slate-700/60">
                 <i class="bi bi-wallet2"></i> Opening Balances
             </a>
             <a href="/Ap/CanceledInvoices"
-               class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
+               class="group inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300 dark:hover:bg-slate-700/60">
                 <i class="bi bi-x-circle"></i> Canceled Invoices
             </a>
             <a href="/Ap/DebitMemos"
-               class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
+               class="group inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300 dark:hover:bg-slate-700/60">
                 <i class="bi bi-file-earmark-minus"></i> Debit Memos
             </a>
         </div>
     </div>
 
-    <!-- KPI Cards -->
-    <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <!-- =============================================================
+         KPI cards
+         ============================================================= -->
+    <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <!-- Suppliers -->
+        <article class="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60 dark:border-slate-700/70 dark:bg-slate-800 dark:hover:shadow-slate-900/60">
+            <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-red-600 to-rose-400"></div>
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Suppliers</p>
+                    <h3 id="supplierCount" class="mt-2 text-3xl font-bold tabular-nums tracking-tight text-slate-900 dark:text-white" v-cloak>{{ formatCount(counters.suppliers) }}</h3>
+                    <p class="mt-1 truncate text-xs text-slate-400 dark:text-slate-500">All available vendors</p>
+                </div>
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600 transition duration-300 group-hover:scale-110 group-hover:bg-sky-100 dark:bg-sky-500/10 dark:text-sky-300">
+                    <i class="bi bi-truck text-lg"></i>
+                </span>
+            </div>
+        </article>
 
         <!-- Open invoices -->
-        <div class="card flex items-center gap-4">
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
-                <i class="bi bi-journal-text text-2xl"></i>
+        <article class="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60 dark:border-slate-700/70 dark:bg-slate-800 dark:hover:shadow-slate-900/60">
+            <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-500 to-violet-500"></div>
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Open Invoices</p>
+                    <h3 id="openInvoiceCount" class="mt-2 text-3xl font-bold tabular-nums tracking-tight text-slate-900 dark:text-white" v-cloak>{{ formatCount(counters.openInvoices) }}</h3>
+                    <p class="mt-1 truncate text-xs text-slate-400 dark:text-slate-500">With an outstanding balance</p>
+                </div>
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 transition duration-300 group-hover:scale-110 group-hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-300">
+                    <i class="bi bi-journal-text text-lg"></i>
+                </span>
             </div>
-            <div class="min-w-0">
-                <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Open Invoices</p>
-                <h3 id="openInvoiceCount" class="text-2xl font-bold text-gray-900 dark:text-white">—</h3>
-                <p class="mt-0.5 text-xs text-gray-400">Invoices with an outstanding balance</p>
+        </article>
+        <!-- Vouchers -->
+        <article class="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60 dark:border-slate-700/70 dark:bg-slate-800 dark:hover:shadow-slate-900/60">
+            <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-violet-500 to-fuchsia-500"></div>
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Vouchers</p>
+                    <h3 id="voucherCount" class="mt-2 text-3xl font-bold tabular-nums tracking-tight text-slate-900 dark:text-white" v-cloak>{{ formatCount(counters.vouchers) }}</h3>
+                    <p class="mt-1 truncate text-xs text-slate-400 dark:text-slate-500">Payment vouchers</p>
+                </div>
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600 transition duration-300 group-hover:scale-110 group-hover:bg-violet-100 dark:bg-violet-500/10 dark:text-violet-300">
+                    <i class="bi bi-receipt-cutoff text-lg"></i>
+                </span>
             </div>
-        </div>
-
-        <!-- Suppliers -->
-        <div class="card flex items-center gap-4 p-5">
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                <i class="bi bi-truck text-2xl"></i>
-            </div>
-            <div class="min-w-0">
-                <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Suppliers</p>
-                <h3 id="supplierCount" class="text-2xl font-bold text-gray-900 dark:text-white">—</h3>
-                <p class="mt-0.5 text-xs text-gray-400">Records returned by the shared resource API</p>
-            </div>
-        </div>
+           
+        </article>
 
         <!-- Payments -->
-        <div class="card flex items-center gap-4 p-5">
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
-                <i class="bi bi-credit-card-2-front text-2xl"></i>
+        <article class="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60 dark:border-slate-700/70 dark:bg-slate-800 dark:hover:shadow-slate-900/60">
+            <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Payments</p>
+                    <h3 id="paymentCount" class="mt-2 text-3xl font-bold tabular-nums tracking-tight text-slate-900 dark:text-white" v-cloak>{{ formatCount(counters.payments) }}</h3>
+                    <p class="mt-1 truncate text-xs text-slate-400 dark:text-slate-500">Invoice payments</p>
+                </div>
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition duration-300 group-hover:scale-110 group-hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300">
+                    <i class="bi bi-credit-card-2-front text-lg"></i>
+                </span>
             </div>
-            <div class="min-w-0">
-                <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Payments</p>
-                <h3 id="paymentCount" class="text-2xl font-bold text-gray-900 dark:text-white">—</h3>
-                <p class="mt-0.5 text-xs text-gray-400">Records returned by the AP payments report</p>
-            </div>
-        </div>
+        </article>
 
         <!-- Opening balances -->
-        <div class="card flex items-center gap-4 p-5">
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
-                <i class="bi bi-cash-coin text-2xl"></i>
+        <article class="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60 dark:border-slate-700/70 dark:bg-slate-800 dark:hover:shadow-slate-900/60">
+            <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-400 to-orange-500"></div>
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Opening Balances</p>
+                    <h3 id="openingBalanceCount" class="mt-2 text-3xl font-bold tabular-nums tracking-tight text-slate-900 dark:text-white" v-cloak>{{ formatCount(counters.openingBalances) }}</h3>
+                    <p class="mt-1 truncate text-xs text-slate-400 dark:text-slate-500">Across all statuses</p>
+                </div>
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 transition duration-300 group-hover:scale-110 group-hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-300">
+                    <i class="bi bi-cash-coin text-lg"></i>
+                </span>
             </div>
-            <div class="min-w-0">
-                <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Opening Balances</p>
-                <h3 id="openingBalanceCount" class="text-2xl font-bold text-gray-900 dark:text-white">—</h3>
-                <p class="mt-0.5 text-xs text-gray-400">Opening balance records across all statuses</p>
-            </div>
-        </div>
+        </article>
     </div>
 
-    <!-- Charts Row -->
+    <!-- =============================================================
+         Row 1 — hero chart + vouchers by currency
+         ============================================================= -->
+    <div class="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
+
+        <!-- Payment voucher trend (the hero chart) -->
+        <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:shadow-md dark:border-slate-700/70 dark:bg-slate-800 xl:col-span-2" data-card-title="Voucher Payment Trend">
+            <div class="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 p-5 dark:border-slate-700/70">
+                <div>
+                    <h4 class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                        <i class="bi bi-graph-up-arrow text-indigo-500"></i>
+                        Voucher Payment Trend
+                    </h4>
+                    <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                        <span v-cloak>{{ formatNumber(trendTotal) }}</span>
+                        paid over <span v-cloak>{{ trendPeriodLabel }}</span> · grouped by voucherEntryDate
+                    </p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <span v-if="trendDelta !== null"
+                          class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold"
+                          :class="{
+                              'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300': trendDelta >= 0,
+                              'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300': trendDelta < 0
+                          }">
+                        <i class="bi" :class="trendDelta >= 0 ? 'bi-arrow-up-right' : 'bi-arrow-down-right'"></i>
+                        <span v-cloak>{{ trendDeltaLabel }}</span>
+                    </span>
+
+                    <select v-model="trendCurrency" v-on:change="trendCurrencyLocked = true"
+                            class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:focus:ring-indigo-900/40">
+                        <option value="">All currencies</option>
+                        <option v-for="name in trendCurrencies" :key="name" :value="name" v-cloak>{{ name }}</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="ap-scroll relative h-[300px] w-full overflow-x-auto p-3">
+                <svg v-if="trendChart.points.length" viewBox="0 0 960 270" preserveAspectRatio="xMidYMid meet"
+                     class="h-full w-full min-w-[620px] touch-none select-none"
+                     v-on:mousemove="onTrendHover" v-on:mouseleave="hoverIndex = null">
+                    <defs>
+                        <linearGradient id="apTrendArea" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#6366f1" stop-opacity="0.32"></stop>
+                            <stop offset="55%" stop-color="#8b5cf6" stop-opacity="0.12"></stop>
+                            <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0"></stop>
+                        </linearGradient>
+                        <linearGradient id="apTrendLine" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stop-color="#6366f1"></stop>
+                            <stop offset="50%" stop-color="#8b5cf6"></stop>
+                            <stop offset="100%" stop-color="#0ea5e9"></stop>
+                        </linearGradient>
+                    </defs>
+
+                    <!-- horizontal grid + y axis -->
+                    <g>
+                        <line v-for="tick in trendChart.ticks" :key="'grid-' + tick.y"
+                              :x1="trendChart.pad.left" :x2="trendChart.width - trendChart.pad.right"
+                              :y1="tick.y" :y2="tick.y"
+                              class="stroke-slate-200 dark:stroke-slate-700"
+                              stroke-width="1" stroke-dasharray="4 6"></line>
+                        <text v-for="tick in trendChart.ticks" :key="'ytick-' + tick.y"
+                              :x="trendChart.pad.left - 12" :y="tick.y + 4" text-anchor="end"
+                              class="fill-slate-400 text-[12px] tabular-nums dark:fill-slate-500">{{ tick.label }}</text>
+                    </g>
+
+                    <!-- series -->
+                    <path :d="trendChart.area" fill="url(#apTrendArea)" class="ap-fade" :class="{ 'is-drawn': chartReady }"></path>
+                    <path :d="trendChart.line" fill="none" stroke="url(#apTrendLine)" stroke-width="3"
+                          stroke-linecap="round" stroke-linejoin="round" pathLength="1"
+                          class="ap-line" :class="{ 'is-drawn': chartReady }"></path>
+
+                    <!-- points -->
+                    <circle v-for="(point, index) in trendChart.points" :key="'dot-' + index"
+                            :cx="point.x" :cy="point.y" :r="hoverIndex === index ? 5 : 3.4"
+                            fill="#ffffff" stroke="#6366f1" stroke-width="2"
+                            class="transition-all duration-150"></circle>
+
+                    <!-- crosshair + tooltip -->
+                    <g v-if="hoverPoint" class="pointer-events-none">
+                        <line :x1="hoverPoint.x" :x2="hoverPoint.x"
+                              :y1="trendChart.pad.top" :y2="trendChart.height - trendChart.pad.bottom"
+                              stroke="#6366f1" stroke-width="1" stroke-dasharray="3 5" opacity="0.45"></line>
+                        <g :transform="'translate(' + hoverPoint.tipX + ',' + hoverPoint.tipY + ')'">
+                            <rect :width="hoverPoint.tipWidth" :height="hoverPoint.tipHeight" rx="10"
+                                  fill="#0f172a" opacity="0.94"></rect>
+                            <text x="14" y="23" class="fill-white text-[12px]" opacity="0.7">{{ hoverPoint.caption }}</text>
+                            <text x="14" y="45" class="fill-white text-[17px] font-bold tabular-nums">{{ hoverPoint.amount }}</text>
+                        </g>
+                    </g>
+
+                    <!-- x axis -->
+                    <text v-for="(label, index) in trendChart.xLabels" :key="'xtick-' + index"
+                          :x="label.x" :y="trendChart.height - 12" text-anchor="middle"
+                          class="fill-slate-400 text-[12px] dark:fill-slate-500">{{ label.label }}</text>
+                </svg>
+
+                <div v-else class="flex h-full flex-col items-center justify-center gap-2 text-center">
+                    <i class="bi bi-graph-up text-4xl text-slate-300 dark:text-slate-600"></i>
+                    <p class="text-sm font-medium text-slate-400 dark:text-slate-500">No voucher data yet</p>
+                    <p class="text-xs text-slate-400 dark:text-slate-500">Vouchers with a voucherEntryDate will appear here.</p>
+                </div>
+            </div>
+
+            <p class="border-t border-slate-100 px-5 py-3 text-[11px] text-slate-400 dark:border-slate-700/70 dark:text-slate-500">
+                paymentAmount is summed per entry month. Pick a single currency to avoid mixing currencies in one total.
+            </p>
+        </section>
+
+        <!-- Vouchers by currency (replaces "Invoices by Currency") -->
+        <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:shadow-md dark:border-slate-700/70 dark:bg-slate-800" data-card-title="Vouchers by Currency">
+            <div class="flex items-start justify-between gap-3 border-b border-slate-100 p-5 dark:border-slate-700/70">
+                <div>
+                    <h4 class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                        <i class="bi bi-pie-chart text-violet-500"></i>
+                        Vouchers by Currency
+                    </h4>
+                    <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Grouped by currencyName</p>
+                </div>
+
+                <div class="flex shrink-0 rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-[11px] font-semibold dark:border-slate-700 dark:bg-slate-900">
+                    <button type="button" v-on:click="donutMetric = 'count'"
+                            class="rounded-md px-2.5 py-1 transition"
+                            :class="donutMetric === 'count' ? 'bg-white text-indigo-600 shadow-sm dark:bg-slate-700 dark:text-indigo-300' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500'">
+                        Count
+                    </button>
+                    <button type="button" v-on:click="donutMetric = 'value'"
+                            class="rounded-md px-2.5 py-1 transition"
+                            :class="donutMetric === 'value' ? 'bg-white text-indigo-600 shadow-sm dark:bg-slate-700 dark:text-indigo-300' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500'">
+                        Value
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-5">
+                <div v-if="hasDonutData" class="flex flex-col items-center">
+                    <div class="relative">
+                        <svg viewBox="0 0 42 42" class="h-40 w-40">
+                            <circle cx="21" cy="21" r="15.915" fill="none"
+                                    class="stroke-slate-100 dark:stroke-slate-700" stroke-width="3.4"></circle>
+                            <circle v-for="(segment, index) in donutSegments" :key="segment.name"
+                                    cx="21" cy="21" r="15.915" fill="none"
+                                    :stroke="segment.color"
+                                    :stroke-width="hoverSegment === index ? 4.6 : 3.4"
+                                    :stroke-dasharray="segment.length + ' ' + (100 - segment.length)"
+                                    :stroke-dashoffset="25 - segment.offset"
+                                    stroke-linecap="round"
+                                    class="cursor-pointer transition-all duration-500"
+                                    :style="{ opacity: hoverSegment === null || hoverSegment === index ? 1 : 0.3 }"
+                                    v-on:mouseenter="hoverSegment = index"
+                                    v-on:mouseleave="hoverSegment = null"></circle>
+                        </svg>
+                        <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                            <span class="text-2xl font-bold tabular-nums tracking-tight text-slate-900 dark:text-white" v-cloak>{{ donutCenterValue }}</span>
+                            <span class="text-[11px] font-medium text-slate-400 dark:text-slate-500" v-cloak>{{ donutCenterLabel }}</span>
+                        </div>
+                    </div>
+
+                    <ul class="mt-5 w-full space-y-1.5">
+                        <li v-for="(segment, index) in donutSegments" :key="'legend-' + segment.name"
+                            class="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 transition"
+                            :class="hoverSegment === index ? 'bg-slate-50 dark:bg-slate-700/50' : 'hover:bg-slate-50 dark:hover:bg-slate-700/40'"
+                            v-on:mouseenter="hoverSegment = index"
+                            v-on:mouseleave="hoverSegment = null">
+                            <span class="h-2.5 w-2.5 shrink-0 rounded-full" :style="{ backgroundColor: segment.color }"></span>
+                            <span class="min-w-0 flex-1 truncate text-xs font-semibold text-slate-600 dark:text-slate-300">{{ segment.name }}</span>
+                            <span class="shrink-0 text-xs tabular-nums text-slate-400 dark:text-slate-500">{{ formatCount(segment.count) }}×</span>
+                            <span class="w-20 shrink-0 text-right text-xs font-semibold tabular-nums text-slate-700 dark:text-slate-200">{{ formatCompact(segment.total) }}</span>
+                            <span class="w-10 shrink-0 text-right text-[11px] tabular-nums text-slate-400 dark:text-slate-500">{{ segment.share.toFixed(0) }}%</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div v-else id="currencyEmpty" class="flex flex-col items-center justify-center gap-2 py-14 text-center">
+                    <i class="bi bi-pie-chart text-4xl text-slate-300 dark:text-slate-600"></i>
+                    <p class="text-sm font-medium text-slate-400 dark:text-slate-500">No voucher currency data</p>
+                    <p class="text-xs text-slate-400 dark:text-slate-500">Vouchers are grouped by their currencyName.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- =============================================================
+         Row 2 — aging + voucher activity
+         ============================================================= -->
     <div class="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
 
         <!-- Invoice aging -->
-        <div class="card xl:col-span-2" data-card-title="Invoice Aging">
-            <div class="flex items-start justify-between gap-4 border-b border-gray-100 px-5 py-4 dark:border-slate-800">
+        <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:shadow-md dark:border-slate-700/70 dark:bg-slate-800 xl:col-span-2" data-card-title="Invoice Aging">
+            <div class="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 p-5 dark:border-slate-700/70">
                 <div>
-                    <h4 class="text-sm font-bold text-gray-900 dark:text-white">Invoice Aging</h4>
-                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Invoice counts by aging bucket</p>
+                    <h4 class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                        <i class="bi bi-hourglass-split text-sky-500"></i>
+                        Invoice Aging
+                    </h4>
+                    <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                        Invoice counts by aging bucket · <span v-cloak>{{ formatCount(agingTotal) }}</span> aged in total
+                    </p>
                 </div>
-                <span class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-600 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300">
-                    <i class="bi bi-calendar3 text-blue-500"></i>
-                    <span id="agingAsOfLabel"></span>
+                <span class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                    <i class="bi bi-calendar3 text-indigo-500"></i>
+                    <span id="agingAsOfLabel" v-cloak>{{ formatDate(asOfDate) }}</span>
                 </span>
             </div>
-            <div class="h-[290px] p-4">
-                <div id="agingChart" class="h-full w-full"></div>
+
+            <div id="agingChart" class="flex h-[210px] items-stretch gap-3 px-6 pb-2 pt-6">
+                <div v-for="(bucket, index) in agingBuckets" :key="bucket.label"
+                     class="group/bar flex min-w-0 flex-1 flex-col items-center"
+                     v-on:mouseenter="hoverBucket = index" v-on:mouseleave="hoverBucket = null">
+                    <span class="text-sm font-bold tabular-nums text-slate-700 dark:text-slate-200" v-cloak>{{ formatCount(bucket.count) }}</span>
+                    <span class="mb-1.5 text-[10px] font-medium text-slate-400 dark:text-slate-500" v-cloak>{{ bucket.share.toFixed(0) }}%</span>
+
+                    <div class="relative flex w-full flex-1 items-end">
+                        <div class="ap-bar w-full rounded-t-xl"
+                             :style="{
+                                 height: bucket.height + '%',
+                                 backgroundImage: 'linear-gradient(to top, ' + bucket.tone.to + ', ' + bucket.tone.from + ')',
+                                 opacity: hoverBucket === null || hoverBucket === index ? 1 : 0.35
+                             }"></div>
+                        <div class="absolute inset-x-0 -top-8 flex justify-center opacity-0 transition group-hover/bar:opacity-100">
+                            <span class="whitespace-nowrap rounded-lg bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white shadow-lg dark:bg-slate-700">
+                                {{ formatCount(bucket.count) }} invoices
+                            </span>
+                        </div>
+                    </div>
+
+                    <span class="mt-2 truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">{{ bucket.label }}</span>
+                </div>
             </div>
-            <p class="border-t border-gray-100 px-5 py-3 text-xs text-gray-400 dark:border-slate-800">
+
+            <p class="border-t border-slate-100 px-5 py-3 text-[11px] text-slate-400 dark:border-slate-700/70 dark:text-slate-500">
                 Counts are used so invoices in different currencies are not added together.
             </p>
-        </div>
+        </section>
 
-        <!-- Invoices by currency -->
-        <div class="card" data-card-title="Invoices by Currency">
-            <div class="border-b border-gray-100 px-5 py-4 dark:border-slate-800">
-                <h4 class="text-sm font-bold text-gray-900 dark:text-white">Invoices by Currency</h4>
-                <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Invoice records per currency</p>
-            </div>
-            <div class="h-[290px] p-4">
-                <div id="currencyChart" class="h-full w-full"></div>
-                <div id="currencyEmpty" class="hidden py-10 text-center text-sm text-gray-400">
-                    <i class="bi bi-pie-chart block text-4xl mb-2"></i>
-                    No invoice currency data available.
+        <!-- Voucher activity -->
+        <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:shadow-md dark:border-slate-700/70 dark:bg-slate-800" data-card-title="Voucher Activity">
+            <div class="flex items-center justify-between gap-3 border-b border-slate-100 p-5 dark:border-slate-700/70">
+                <div>
+                    <h4 class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                        <i class="bi bi-lightning-charge text-amber-500"></i>
+                        Voucher Activity
+                    </h4>
+                    <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Latest entries by voucherEntryDate</p>
                 </div>
+                <a href="/Ap/Vouchers" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
+                    View all <i class="bi bi-arrow-right"></i>
+                </a>
             </div>
-        </div>
+
+            <ul class="divide-y divide-slate-100 dark:divide-slate-700/60">
+                <li v-if="isLoading && !voucherActivity.length" v-for="n in 5" :key="'vsk-' + n" class="flex items-center gap-3 px-5 py-3.5">
+                    <div class="h-9 w-9 animate-pulse rounded-lg bg-slate-100 dark:bg-slate-700"></div>
+                    <div class="flex-1 space-y-1.5">
+                        <div class="h-2.5 w-2/3 animate-pulse rounded bg-slate-100 dark:bg-slate-700"></div>
+                        <div class="h-2.5 w-1/3 animate-pulse rounded bg-slate-100 dark:bg-slate-700"></div>
+                    </div>
+                </li>
+
+                <li v-if="!isLoading && !voucherActivity.length" class="px-5 py-12 text-center">
+                    <i class="bi bi-receipt mb-2 block text-3xl text-slate-300 dark:text-slate-600"></i>
+                    <span class="text-xs text-slate-400 dark:text-slate-500">No vouchers found.</span>
+                </li>
+
+                <li v-for="(row, index) in voucherActivity" :key="'vact-' + index"
+                    class="group flex items-center gap-3 px-5 py-3 transition hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                    <span class="flex h-9 w-9 shrink-0 flex-col items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition group-hover:border-indigo-200 group-hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                        <span class="text-[13px] font-bold leading-none tabular-nums">{{ dateParts(voucherDate(row)).day }}</span>
+                        <span class="text-[8px] font-semibold uppercase leading-none text-slate-400">{{ dateParts(voucherDate(row)).month }}</span>
+                    </span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block truncate text-xs font-semibold text-slate-700 dark:text-slate-200">{{ value(row, ['supplierName', 'vendorName', 'supplier', 'name']) || '—' }}</span>
+                        <span class="block truncate text-[11px] text-slate-400 dark:text-slate-500">{{ value(row, ['voucherNumber', 'voucherNo', 'paymentNumber', 'reference']) || '—' }}</span>
+                    </span>
+                    <span class="shrink-0 text-right">
+                        <span class="block text-xs font-bold tabular-nums text-slate-800 dark:text-slate-100">{{ formatNumber(voucherAmount(row)) }}</span>
+                        <span class="block text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">{{ currencyOf(row) }}</span>
+                    </span>
+                </li>
+            </ul>
+        </section>
     </div>
 
-    <!-- Tables Row -->
-    <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
+    <!-- =============================================================
+         Row 3 — recent invoices + recent payments
+         ============================================================= -->
+    <div class="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
 
         <!-- Recent invoices -->
-        <div class="card xl:col-span-2" data-card-title="Recent Invoices">
-            <div class="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-slate-800">
+        <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:shadow-md dark:border-slate-700/70 dark:bg-slate-800 xl:col-span-2" data-card-title="Recent Invoices">
+            <div class="flex items-center justify-between gap-3 border-b border-slate-100 p-5 dark:border-slate-700/70">
                 <div>
-                    <h4 class="text-sm font-bold text-gray-900 dark:text-white">Recent Invoices</h4>
-                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Latest records returned by the AP invoice endpoint</p>
+                    <h4 class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                        <i class="bi bi-journal-text text-indigo-500"></i>
+                        Recent Invoices
+                    </h4>
+                    <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Latest records from the AP invoice endpoint</p>
                 </div>
-                <a href="/Ap/GetAllApInvoices" target="_blank" rel="noopener"
-                   class="text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400">
+                <a href="/Ap/InvoiceReports" target="_blank" rel="noopener"
+                   class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
                     View all <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
-            <div class="table-scroll">
-                <table class="data-table">
-                    <thead>
-                    <tr>
-                        <th>Supplier</th>
-                        <th>Invoice</th>
-                        <th>Invoice date</th>
-                        <th>Currency</th>
-                        <th class="text-right">Balance</th>
-                        <th>Status</th>
-                    </tr>
+
+            <div class="ap-scroll max-h-[340px] overflow-auto">
+                <table class="w-full min-w-[640px] border-collapse text-left text-xs">
+                    <thead class="sticky top-0 z-10 bg-slate-50/95 backdrop-blur text-[11px] uppercase tracking-wider text-slate-500 dark:bg-slate-900/80 dark:text-slate-400">
+                        <tr>
+                            <th class="whitespace-nowrap px-5 py-3 font-semibold">Supplier</th>
+                            <th class="whitespace-nowrap px-5 py-3 font-semibold">Invoice</th>
+                            <th class="whitespace-nowrap px-5 py-3 font-semibold">Invoice date</th>
+                            <th class="whitespace-nowrap px-5 py-3 font-semibold">Currency</th>
+                            <th class="whitespace-nowrap px-5 py-3 text-right font-semibold">Balance</th>
+                        </tr>
                     </thead>
-                    <tbody id="invoiceTableBody">
-                    <tr>
-                        <td colspan="6">
-                            <i class="bi bi-inbox block text-3xl mb-2"></i>
-                            Loading invoices…
-                        </td>
-                    </tr>
+
+                    <tbody id="invoiceTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/60">
+                        <template v-if="isLoading && !recentInvoices.length">
+                            <tr v-for="n in 6" :key="'isk-' + n">
+                                <td v-for="c in 5" :key="'iskc-' + c" class="px-5 py-3.5">
+                                    <span class="block h-2.5 w-full animate-pulse rounded bg-slate-100 dark:bg-slate-700"></span>
+                                </td>
+                            </tr>
+                        </template>
+
+                        <tr v-else-if="hasIssue('Invoices')">
+                            <td colspan="5" class="px-5 py-10 text-center text-slate-400 dark:text-slate-500">
+                                <i class="bi bi-exclamation-triangle mb-2 block text-3xl"></i>
+                                Could not load invoices.
+                            </td>
+                        </tr>
+
+                        <tr v-else-if="!recentInvoices.length">
+                            <td colspan="5" class="px-5 py-10 text-center text-slate-400 dark:text-slate-500">
+                                <i class="bi bi-inbox mb-2 block text-3xl"></i>
+                                No invoices found.
+                            </td>
+                        </tr>
+
+                        <template v-else>
+                            <tr v-for="(row, index) in recentInvoices" :key="'inv-' + index"
+                                class="transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                                <td class="max-w-[220px] truncate px-5 py-3 text-slate-600 dark:text-slate-300">{{ value(row, ['supplierName', 'vendorName', 'supplier', 'name']) || '—' }}</td>
+                                <td class="whitespace-nowrap px-5 py-3 font-semibold text-slate-800 dark:text-slate-100">{{ value(row, ['invoiceNumber', 'invoiceNo', 'invoiceId', 'number']) || '—' }}</td>
+                                <td class="whitespace-nowrap px-5 py-3 text-slate-500 dark:text-slate-400">{{ formatDate(value(row, ['invoiceDate', 'transactionDate', 'creationTime'])) }}</td>
+                                <td class="whitespace-nowrap px-5 py-3">
+                                    <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:bg-slate-700 dark:text-slate-300">{{ value(row, ['currencyCode', 'currencyName']) || '—' }}</span>
+                                </td>
+                                <td class="whitespace-nowrap px-5 py-3 text-right font-semibold tabular-nums text-slate-800 dark:text-slate-100">{{ formatNumber(value(row, ['balance', 'invoiceBalance'])) }}</td>
+                            </tr>
+                        </template>
                     </tbody>
                 </table>
             </div>
-        </div>
+        </section>
 
         <!-- Recent payments -->
-        <div class="card" data-card-title="Recent Payments">
-            <div class="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-slate-800">
+        <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:shadow-md dark:border-slate-700/70 dark:bg-slate-800" data-card-title="Recent Payments">
+            <div class="flex items-center justify-between gap-3 border-b border-slate-100 p-5 dark:border-slate-700/70">
                 <div>
-                    <h4 class="text-sm font-bold text-gray-900 dark:text-white">Recent Payments</h4>
-                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Payment activity from the AP payments report</p>
+                    <h4 class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                        <i class="bi bi-credit-card-2-front text-emerald-500"></i>
+                        Recent Payments
+                    </h4>
+                    <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">AP payments report activity</p>
                 </div>
-                <a href="/Ap/GetApPaymentsReport" target="_blank" rel="noopener"
-                   class="text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400">
+                <a href="/Ap/PaymentReports" target="_blank" rel="noopener"
+                   class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
                     View all <i class="bi bi-arrow-right"></i>
                 </a>
             </div>
-            <div class="table-scroll">
-                <table class="data-table">
-                    <thead>
-                    <tr>
-                        <th>Supplier</th>
-                        <th>Payment / batch</th>
-                        <th>Date</th>
-                        <th>Currency</th>
-                        <th class="text-right">Amount</th>
-                    </tr>
+
+            <div class="ap-scroll max-h-[340px] overflow-auto">
+                <table class="w-full min-w-[520px] border-collapse text-left text-xs">
+                    <thead class="sticky top-0 z-10 bg-slate-50/95 backdrop-blur text-[11px] uppercase tracking-wider text-slate-500 dark:bg-slate-900/80 dark:text-slate-400">
+                        <tr>
+                            <th class="whitespace-nowrap px-5 py-3 font-semibold">Supplier</th>
+                            <th class="whitespace-nowrap px-5 py-3 font-semibold">Payment / batch</th>
+                            <th class="whitespace-nowrap px-5 py-3 font-semibold">Date</th>
+                            <th class="whitespace-nowrap px-5 py-3 font-semibold">Currency</th>
+                            <th class="whitespace-nowrap px-5 py-3 text-right font-semibold">Amount</th>
+                        </tr>
                     </thead>
-                    <tbody id="paymentTableBody">
-                    <tr>
-                        <td colspan="5">
-                            <i class="bi bi-credit-card block text-3xl mb-2"></i>
-                            Loading payments…
-                        </td>
-                    </tr>
+
+                    <tbody id="paymentTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/60">
+                        <template v-if="isLoading && !recentPayments.length">
+                            <tr v-for="n in 6" :key="'psk-' + n">
+                                <td v-for="c in 5" :key="'pskc-' + c" class="px-5 py-3.5">
+                                    <span class="block h-2.5 w-full animate-pulse rounded bg-slate-100 dark:bg-slate-700"></span>
+                                </td>
+                            </tr>
+                        </template>
+
+                        <tr v-else-if="hasIssue('Payments')">
+                            <td colspan="5" class="px-5 py-10 text-center text-slate-400 dark:text-slate-500">
+                                <i class="bi bi-exclamation-triangle mb-2 block text-3xl"></i>
+                                Could not load payments.
+                            </td>
+                        </tr>
+
+                        <tr v-else-if="!recentPayments.length">
+                            <td colspan="5" class="px-5 py-10 text-center text-slate-400 dark:text-slate-500">
+                                <i class="bi bi-credit-card mb-2 block text-3xl"></i>
+                                No payments found.
+                            </td>
+                        </tr>
+
+                        <template v-else>
+                            <tr v-for="(row, index) in recentPayments" :key="'pay-' + index"
+                                class="transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                                <td class="max-w-[180px] truncate px-5 py-3 text-slate-600 dark:text-slate-300">{{ value(row, ['supplierName', 'vendorName', 'supplier', 'name']) || '—' }}</td>
+                                <td class="whitespace-nowrap px-5 py-3 font-semibold text-slate-800 dark:text-slate-100">{{ value(row, ['paymentNumber', 'batchNumber', 'batchName', 'voucherNumber', 'reference', 'paymentId']) || '—' }}</td>
+                                <td class="whitespace-nowrap px-5 py-3 text-slate-500 dark:text-slate-400">{{ formatDate(value(row, ['transactionDate', 'paymentDate', 'creationTime'])) }}</td>
+                                <td class="whitespace-nowrap px-5 py-3">
+                                    <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:bg-slate-700 dark:text-slate-300">{{ value(row, ['currencyName']) || '—' }}</span>
+                                </td>
+                                <td class="whitespace-nowrap px-5 py-3 text-right font-semibold tabular-nums text-slate-800 dark:text-slate-100">{{ formatNumber(value(row, ['amountToPay'])) }}</td>
+                            </tr>
+                        </template>
                     </tbody>
                 </table>
             </div>
-        </div>
+        </section>
     </div>
 
-    <footer class="py-8 text-center text-xs text-gray-400">
-        Accounts Payable dashboard · amounts remain grouped by their source currencies
-    </footer>
+    <!-- =============================================================
+         Row 4 — all vouchers (Ap/GetVouchers)
+         ============================================================= -->
+    <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:shadow-md dark:border-slate-700/70 dark:bg-slate-800" data-card-title="Recent Vouchers">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-5 dark:border-slate-700/70">
+            <div>
+                <h4 class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                    <i class="bi bi-receipt-cutoff text-violet-500"></i>
+                    Recent Vouchers
+                </h4>
+                <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                    Ap/GetVouchers · entry date and payment amount per record
+                </p>
+            </div>
+            <a href="/Ap/Vouchers" target="_blank" rel="noopener"
+               class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
+                View all <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+
+        <div class="ap-scroll overflow-x-auto">
+            <table class="w-full min-w-[860px] border-collapse text-left text-xs">
+                <thead class="bg-slate-50/95 text-[11px] uppercase tracking-wider text-slate-500 dark:bg-slate-900/80 dark:text-slate-400">
+                    <tr>
+                        <th class="whitespace-nowrap px-5 py-3 font-semibold">Voucher</th>
+                        <th class="whitespace-nowrap px-5 py-3 font-semibold">Supplier</th>
+                        <th class="whitespace-nowrap px-5 py-3 font-semibold">Entry date</th>
+                        <th class="whitespace-nowrap px-5 py-3 font-semibold">Currency</th>
+                        <th class="whitespace-nowrap px-5 py-3 font-semibold">Status</th>
+                        <th class="whitespace-nowrap px-5 py-3 text-right font-semibold">Payment amount</th>
+                    </tr>
+                </thead>
+
+                <tbody id="voucherTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/60">
+                    <template v-if="isLoading && !recentVouchers.length">
+                        <tr v-for="n in 5" :key="'vskr-' + n">
+                            <td v-for="c in 6" :key="'vskrc-' + c" class="px-5 py-3.5">
+                                <span class="block h-2.5 w-full animate-pulse rounded bg-slate-100 dark:bg-slate-700"></span>
+                            </td>
+                        </tr>
+                    </template>
+
+                    <tr v-else-if="hasIssue('Vouchers')">
+                        <td colspan="6" class="px-5 py-10 text-center text-slate-400 dark:text-slate-500">
+                            <i class="bi bi-exclamation-triangle mb-2 block text-3xl"></i>
+                            Could not load vouchers.
+                        </td>
+                    </tr>
+
+                    <tr v-else-if="!recentVouchers.length">
+                        <td colspan="6" class="px-5 py-10 text-center text-slate-400 dark:text-slate-500">
+                            <i class="bi bi-receipt mb-2 block text-3xl"></i>
+                            No vouchers found.
+                        </td>
+                    </tr>
+
+                    <template v-else>
+                        <tr v-for="(row, index) in recentVouchers" :key="'vou-' + index"
+                            class="transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                            <td class="whitespace-nowrap px-5 py-3 font-semibold text-slate-800 dark:text-slate-100">{{ value(row, ['voucherNumber', 'voucherNo', 'paymentNumber', 'reference', 'voucherId']) || '—' }}</td>
+                            <td class="max-w-[260px] truncate px-5 py-3 text-slate-600 dark:text-slate-300">{{ value(row, ['supplierName', 'vendorName', 'supplier', 'name']) || '—' }}</td>
+                            <td class="whitespace-nowrap px-5 py-3 text-slate-500 dark:text-slate-400">{{ formatDate(voucherDate(row)) }}</td>
+                            <td class="whitespace-nowrap px-5 py-3">
+                                <span class="inline-flex items-center gap-1.5 rounded-md bg-violet-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-700 dark:bg-violet-500/10 dark:text-violet-300">
+                                    <i class="bi bi-cash-stack"></i>{{ currencyOf(row) }}
+                                </span>
+                            </td>
+                            <td class="whitespace-nowrap px-5 py-3">
+                                <span class="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                                      :class="{
+                                          'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300': statusKind(row) === 'cancel',
+                                          'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300': statusKind(row) === 'posted',
+                                          'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300': statusKind(row) === 'pending'
+                                      }">{{ statusText(row) }}</span>
+                            </td>
+                            <td class="whitespace-nowrap px-5 py-3 text-right font-semibold tabular-nums text-slate-800 dark:text-slate-100">{{ formatNumber(voucherAmount(row)) }}</td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
 </div>
-       
-@*<script src="~/js/ap/Dashboard/ap.js" asp-append-version="true"></script>*@
-   
 
-  <script>
-        (function () {
-            'use strict';
-
-            const endpoints = {
-                aging: '/Ap/GetApAgingSummary',
-                invoices: '/Ap/GetInvoices',
-                payments: '/Ap/GetPayments',
-                balances: '/Ap/GetApBalancesReport?status=all',
-                suppliers: '/SharedResource/GetSuppliers'
-            };
-
-            const byId = id => document.getElementById(id);
-            const today = new Date();
-            const localToday = new Date(
-                today.getTime() - today.getTimezoneOffset() * 60000
-            ).toISOString().slice(0, 10);
-
-            byId('asOfDate').value = localToday;
-            byId('agingAsOfLabel').textContent = 'As of ' + localToday;
-
-            function escapeHtml(value) {
-                return String(value ?? '').replace(/[&<>"']/g, character => ({
-                    '&': '&amp;',
-                    '<': '&lt;',
-                    '>': '&gt;',
-                    '"': '&quot;',
-                    "'": '&#39;'
-                })[character]);
-            }
-
-            function property(row, name) {
-                if (!row) return undefined;
-                const pascalName = name.charAt(0).toUpperCase() + name.slice(1);
-                return row[name] ?? row[pascalName];
-            }
-
-            function firstValue(row, names) {
-                for (const name of names) {
-                    const value = property(row, name);
-                    if (value !== undefined && value !== null && value !== '') {
-                        return value;
-                    }
-                }
-                return '';
-            }
-
-            function rowsFrom(raw) {
-                if (!raw) return [];
-                if (Array.isArray(raw)) return raw;
-                if (typeof raw !== 'object') return [];
-
-                const keys = [
-                    'result',
-                    'items',
-                    'data',
-                    'invoices',
-                    'payments',
-                    'balances',
-                    'openingBalances',
-                    'apOpeningBalances',
-                    'suppliers',
-                    'records'
-                ];
-
-                for (const key of keys) {
-                    const pascalKey = key.charAt(0).toUpperCase() + key.slice(1);
-                    const value = raw[key] ?? raw[pascalKey];
-                    if (Array.isArray(value)) return value;
-                }
-
-                for (const key of ['result', 'data']) {
-                    const pascalKey = key.charAt(0).toUpperCase() + key.slice(1);
-                    const nested = raw[key] ?? raw[pascalKey];
-                    if (nested && typeof nested === 'object') {
-                        const found = rowsFrom(nested);
-                        if (found.length) return found;
-                    }
-                }
-
-                return [];
-            }
-
-            async function fetchRows(url) {
-                const response = await fetch(url, {
-                    headers: { 'Accept': 'application/json' },
-                    credentials: 'same-origin'
-                });
-
-                if (!response.ok) {
-                    throw new Error('Request failed (' + response.status + ') for ' + url);
-                }
-
-                return rowsFrom(await response.json());
-            }
-
-            async function safeRows(url, label, issues) {
-                try {
-                    return await fetchRows(url);
-                } catch (error) {
-                    console.error(label + ' loading error:', error);
-                    issues.push(label);
-                    return [];
-                }
-            }
-
-            function numberValue(value) {
-                const parsed = Number(String(value ?? 0).replace(/,/g, ''));
-                return Number.isFinite(parsed) ? parsed : 0;
-            }
-
-            function formatNumber(value) {
-                return new Intl.NumberFormat(undefined, {
-                    maximumFractionDigits: 2
-                }).format(numberValue(value));
-            }
-
-            function formatDate(value) {
-                if (!value) return '—';
-                const text = String(value);
-                const dotNetDate = text.match(/\/Date\((-?\d+)\)\//);
-                let date;
-
-                if (dotNetDate) {
-                    date = new Date(Number(dotNetDate[1]));
-                } else if (/^\d{4}-\d{2}-\d{2}/.test(text)) {
-                    const parts = text.slice(0, 10).split('-').map(Number);
-                    date = new Date(parts[0], parts[1] - 1, parts[2]);
-                } else {
-                    date = new Date(text);
-                }
-
-                if (Number.isNaN(date.getTime())) return escapeHtml(text);
-
-                return new Intl.DateTimeFormat(undefined, {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric'
-                }).format(date);
-            }
-
-            function setCellText(id, value) {
-                byId(id).textContent = value;
-            }
-
-            function renderAgingChart(rows) {
-                const buckets = [
-                    { label: 'Current', key: 'currentDay' },
-                    { label: '1–30 days', key: 'agingFirst' },
-                    { label: '31–60 days', key: 'agingSecond' },
-                    { label: '61+ days', key: 'agingThird' }
-                ];
-
-                const counts = buckets.map(bucket => ({
-                    label: bucket.label,
-                    count: rows.filter(row => numberValue(property(row, bucket.key)) > 0).length
-                }));
-
-                const max = Math.max(1, ...counts.map(item => item.count));
-
-                byId('agingChart').innerHTML = counts.map(item => {
-                    const width = item.count === 0 ? 0 : Math.max(3, (item.count / max) * 100);
-                    return '<div class="chart-row">' +
-                        '<span class="text-xs font-medium text-slate-500">' + escapeHtml(item.label) + '</span>' +
-                        '<div class="chart-track"><div class="chart-fill" style="width:' + width + '%"></div></div>' +
-                        '<span class="text-right text-xs font-bold text-slate-700">' + item.count + '</span>' +
-                    '</div>';
-                }).join('');
-            }
-
-            function renderCurrencyChart(rows) {
-                const totals = new Map();
-
-                rows.forEach(row => {
-                    const currency = String(
-                        firstValue(row, ['currencyCode', 'currencyName']) || 'Unspecified'
-                    );
-                    totals.set(currency, (totals.get(currency) || 0) + 1);
-                });
-
-                const values = Array.from(totals.entries())
-                    .sort((a, b) => b[1] - a[1])
-                    .slice(0, 6);
-
-                if (!values.length) {
-                    byId('currencyChart').innerHTML = '';
-                    byId('currencyEmpty').classList.remove('hidden');
-                    return;
-                }
-
-                byId('currencyEmpty').classList.add('hidden');
-                const max = Math.max(1, ...values.map(item => item[1]));
-
-                byId('currencyChart').innerHTML = values.map(item => {
-                    const width = Math.max(3, (item[1] / max) * 100);
-                    return '<div class="chart-row">' +
-                        '<span class="truncate text-xs font-medium text-slate-500" title="' + escapeHtml(item[0]) + '">' + escapeHtml(item[0]) + '</span>' +
-                        '<div class="chart-track"><div class="chart-fill currency-fill" style="width:' + width + '%"></div></div>' +
-                        '<span class="text-right text-xs font-bold text-slate-700">' + item[1] + '</span>' +
-                    '</div>';
-                }).join('');
-            }
-
-            function statusBadge(status) {
-                const label = String(status || '—');
-                const normalized = label.toLowerCase();
-                const color = normalized.includes('cancel')
-                    ? 'bg-rose-50 text-rose-700'
-                    : normalized.includes('post')
-                        ? 'bg-emerald-50 text-emerald-700'
-                        : 'bg-amber-50 text-amber-700';
-
-                return '<span class="rounded-full px-2.5 py-1 text-xs font-semibold ' +
-                    color + '">' + escapeHtml(label) + '</span>';
-            }
-
-            function renderInvoiceTable(rows) {
-                const recent = rows.slice().sort((a, b) => {
-                    const dateA = String(firstValue(a, ['invoiceDate', 'transactionDate', 'creationTime']));
-                    const dateB = String(firstValue(b, ['invoiceDate', 'transactionDate', 'creationTime']));
-                    return dateB.localeCompare(dateA);
-                }).slice(0, 7);
-
-                if (!recent.length) {
-                    byId('invoiceTableBody').innerHTML =
-                        '<tr><td colspan="6" class="py-8 text-center text-slate-400">No invoice records returned.</td></tr>';
-                    return;
-                }
-
-                byId('invoiceTableBody').innerHTML = recent.map(row => {
-                    const supplier = firstValue(row, ['supplierName', 'name']);
-                    const invoice = firstValue(row, ['invoiceNumber', 'invoiceNo']);
-                    const date = firstValue(row, ['invoiceDate', 'transactionDate', 'creationTime']);
-                    const currency = firstValue(row, ['currencyCode', 'currencyName']);
-                    const balance = firstValue(row, ['balance', 'invoiceBalance', 'amount']);
-                    const status = firstValue(row, ['statusName', 'status', 'isPosted']);
-
-                    return '<tr>' +
-                        '<td class="font-medium text-slate-800">' + escapeHtml(supplier || '—') + '</td>' +
-                        '<td>' + escapeHtml(invoice || '—') + '</td>' +
-                        '<td>' + formatDate(date) + '</td>' +
-                        '<td>' + escapeHtml(currency || '—') + '</td>' +
-                        '<td class="text-right font-semibold tabular-nums">' + formatNumber(balance) + '</td>' +
-                        '<td>' + statusBadge(status === true ? 'Posted' : status === false ? 'Unposted' : status) + '</td>' +
-                    '</tr>';
-                }).join('');
-            }
-
-            function renderPaymentTable(rows) {
-                const recent = rows.slice().sort((a, b) => {
-                    const dateA = String(firstValue(a, ['transactionDate', 'paymentDate', 'creationTime']));
-                    const dateB = String(firstValue(b, ['transactionDate', 'paymentDate', 'creationTime']));
-                    return dateB.localeCompare(dateA);
-                }).slice(0, 6);
-
-                if (!recent.length) {
-                    byId('paymentTableBody').innerHTML =
-                        '<tr><td colspan="5" class="py-8 text-center text-slate-400">No payment records returned.</td></tr>';
-                    return;
-                }
-
-                byId('paymentTableBody').innerHTML = recent.map(row => {
-                    const supplier = firstValue(row, ['supplierName', 'name']);
-                    const reference = firstValue(row, ['paymentNumber', 'voucherNumber', 'batchNumber', 'referenceNumber']);
-                    const date = firstValue(row, ['transactionDate', 'paymentDate', 'creationTime']);
-                    const currency = firstValue(row, ['currencyCode', 'currencyName']);
-                    const amount = firstValue(row, ['amount', 'paidAmount', 'totalAmount']);
-
-                    return '<tr>' +
-                        '<td class="font-medium text-slate-800">' + escapeHtml(supplier || '—') + '</td>' +
-                        '<td>' + escapeHtml(reference || '—') + '</td>' +
-                        '<td>' + formatDate(date) + '</td>' +
-                        '<td>' + escapeHtml(currency || '—') + '</td>' +
-                        '<td class="text-right font-semibold tabular-nums">' + formatNumber(amount) + '</td>' +
-                    '</tr>';
-                }).join('');
-            }
-
-            function updateActionLinks() {
-                const startDate = byId('asOfDate').value || localToday;
-                const interval = byId('agingInterval').value || '30';
-                const endDate = localToday;
-
-                byId('agingAction').href =
-                    endpoints.aging +
-                    '?startDate=' + encodeURIComponent(startDate) +
-                    '&agingInterval=' + encodeURIComponent(interval);
-
-                byId('glAction').href =
-                    '/Ap/GetApGlTransaction' +
-                    '?startDate=' + encodeURIComponent(startDate) +
-                    '&endDate=' + encodeURIComponent(endDate) +
-                    '&isMultiCurrency=false';
-            }
-
-            function showIssues(issues) {
-                const notice = byId('loadNotice');
-
-                if (!issues.length) {
-                    notice.classList.add('hidden');
-                    notice.textContent = '';
-                    return;
-                }
-
-                notice.textContent =
-                    'Some dashboard data could not be loaded: ' + issues.join(', ') + '.';
-                notice.classList.remove('hidden');
-            }
-
-            async function loadDashboard() {
-                const button = byId('refreshButton');
-                const issues = [];
-                const startDate = byId('asOfDate').value || localToday;
-                const interval = byId('agingInterval').value || '30';
-
-                button.disabled = true;
-                button.textContent = 'Loading…';
-                button.classList.add('loading-pulse');
-                byId('agingAsOfLabel').textContent = 'As of ' + startDate;
-                updateActionLinks();
-
-                const agingUrl = endpoints.aging +
-                    '?startDate=' + encodeURIComponent(startDate) +
-                    '&agingInterval=' + encodeURIComponent(interval);
-
-                const [agingRows, invoices, payments, balances, suppliers] =
-                    await Promise.all([
-                        safeRows(agingUrl, 'Aging summary', issues),
-                        safeRows(endpoints.invoices, 'Invoices', issues),
-                        safeRows(endpoints.payments, 'Payments', issues),
-                        safeRows(endpoints.balances, 'Opening balances', issues),
-                        safeRows(endpoints.suppliers, 'Suppliers', issues)
-                    ]);
-
-                const openInvoices = invoices.filter(row => {
-                    const balance = firstValue(row, ['balance', 'invoiceBalance']);
-                    return balance === '' || numberValue(balance) > 0;
-                });
-
-                setCellText('openInvoiceCount', formatNumber(openInvoices.length));
-                setCellText('supplierCount', formatNumber(suppliers.length));
-                setCellText('paymentCount', formatNumber(payments.length));
-                setCellText('openingBalanceCount', formatNumber(balances.length));
-
-                renderAgingChart(agingRows);
-                renderCurrencyChart(invoices);
-                renderInvoiceTable(invoices);
-                renderPaymentTable(payments);
-                showIssues(issues);
-
-                button.disabled = false;
-                button.textContent = 'Refresh data';
-                button.classList.remove('loading-pulse');
-            }
-
-            byId('refreshButton').addEventListener('click', loadDashboard);
-            byId('asOfDate').addEventListener('change', updateActionLinks);
-            byId('agingInterval').addEventListener('change', updateActionLinks);
-
-            updateActionLinks();
-            loadDashboard();
-        })();
-    </script>
-
-
+<script src="~/js/ap/Dashboard/ap.js" asp-append-version="true"></script>

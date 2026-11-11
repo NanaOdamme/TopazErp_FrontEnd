@@ -78,7 +78,7 @@
                 reportHeader:[],
                 reportPath: '',
 
-                summaryReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1755785681/erp-reports/ap/debitMemo_q1sdox.rdl'
+                summaryReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1744299833/erp-reports/ar/creditMemo_ai3dvb.rdl',
             };
         },
 
@@ -107,7 +107,7 @@
 
                 this.reportPath = this.summaryReportPath;
 
-                axios.get('/Ap/GetApDebitMemo')
+                axios.get('/Ar/GetCreditMemos')
                     .then(async response => {
                         const data = response?.data?.result;
 
@@ -139,7 +139,7 @@
             },
 
             renderReport(header, details, reportPath) {
-                console.log('Debit Memo Report Details:', details);
+                console.log('Credit Memo Report Details:', details);
 
                 $('#reportView').empty();
 

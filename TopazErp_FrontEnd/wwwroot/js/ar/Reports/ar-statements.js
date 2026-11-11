@@ -1,6 +1,6 @@
 (() => {
     'use strict';
-    
+
     const isoDate = (date) => {
         if (date === null || date === undefined || date === '') return '';
 
@@ -50,24 +50,22 @@
                 reportApiBaseUrl: '',
                 reportPath: '',
 
-                supplierList: [],
-                supplierId: '',
+                customerList: [],
+                customerId: '',
                 reportHeader:[],
 
                 reportPathConfig: {
-                    summaryReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1760443454/erp-reports/ap/ap-statement-type-1_qxagi6_unqa1o.rdl',
-
-                    type1ReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1758199618/erp-reports/ap/ap-statement-type-2_ukbixr.rdl',
-
-                    type2ReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1758199818/erp-reports/ap/ap-statement-type-3_eegzh5.rdl',
-                }
+                    summaryReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1760443956/erp-reports/ar/ar-statement-type-1_ykllj4_za9ccp.rdl',
+                    type1ReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1758199967/erp-reports/ar/ar-statement-type-2_ioobvb.rdl',
+                    type2ReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1758192334/erp-reports/ar/ar-statement-type-3_iywf6x.rdl',
+                },
             };
         },
 
         methods: {
             // report header
             async getReportHeader() {
-                let title = 'Supplier Statements';
+                let title = 'Customer Statements';
 
                 if (this.reportType === 'type2' || this.reportType === 'type3') {
                     title = `For the Duration of ${this.startDate} to ${this.endDate}`;
@@ -102,11 +100,11 @@
                     }
                 }
 
-                // Validate supplier
-                if (!this.supplierId) {
+                // Validate customer
+                if (!this.customerId) {
                     this.toastHandler(
                         'warning',
-                        'Please select a supplier.'
+                        'Please select a customer.'
                     );
                     return;
                 }
@@ -118,19 +116,19 @@
                     case 'type1':
                         selectedReportPath = this.reportPathConfig.summaryReportPath;
 
-                        url = `/Ap/GetApStatement?supplierId=${encodeURIComponent(this.supplierId)}`;
+                        url = `/Ar/GetStatement?customerId=${encodeURIComponent(this.customerId)}`;
                         break;
 
                     case 'type2':
                         selectedReportPath = this.reportPathConfig.type1ReportPath;
 
-                        url = `/Ap/GetApStatementType2?supplierId=${encodeURIComponent(this.supplierId)}&startDate=${encodeURIComponent(this.startDate)}&endDate=${encodeURIComponent(this.endDate)}`;
+                        url = `/Ar/GetStatementType2?customerId=${encodeURIComponent(this.customerId)}&startDate=${encodeURIComponent(this.startDate)}&endDate=${encodeURIComponent(this.endDate)}`;
                         break;
 
                     case 'type3':
                         selectedReportPath = this.reportPathConfig.type2ReportPath;
 
-                        url = `/Ap/GetApStatementType3?supplierId=${encodeURIComponent(this.supplierId)}&startDate=${encodeURIComponent(this.startDate)}&endDate=${encodeURIComponent(this.endDate)}`;
+                        url = `/Ar/GetStatementType3?customerId=${encodeURIComponent(this.customerId)}&startDate=${encodeURIComponent(this.startDate)}&endDate=${encodeURIComponent(this.endDate)}`;
                         break;
 
                     default:
@@ -158,12 +156,12 @@
                     );
 
                 } catch (error) {
-                    console.error('Supplier statement error:', error);
+                    console.error('Customer statement error:', error);
 
                     this.toastHandler(
                         'error',
                         error.response?.data?.message ||
-                        'Unable to get supplier statement data.'
+                        'Unable to get customer statement data.'
                     );
                 } finally {
                     this.isLoading = false;
@@ -205,44 +203,44 @@
                 });
             },
 
-            async getSuppliers() {
+            async getCustomers() {
                 this.isShimmerLoading = true;
 
                 try {
                     const response = await axios.get(
-                        '/SharedResource/GetSuppliers'
+                        '/SharedResource/GetCustomers'
                     );
 
-                    let suppliers = response.data.result;
+                    let customers = response.data.result;
 
                     // Handle possible ABP response wrappers.
-                    if (!Array.isArray(suppliers)) {
-                        suppliers =
-                            suppliers?.result ??
-                            suppliers?.items ??
-                            suppliers?.data ??
+                    if (!Array.isArray(customers)) {
+                        customers =
+                            customers?.result ??
+                            customers?.items ??
+                            customers?.data ??
                             [];
                     }
 
-                    this.supplierList = Array.isArray(suppliers)
-                        ? suppliers
+                    this.customerList = Array.isArray(customers)
+                        ? customers
                         : [];
 
-                    if (this.supplierList.length > 0) {
-                        this.supplierId = this.supplierList[0].id;
+                    if (this.customerList.length > 0) {
+                        this.customerId = this.customerList[0].id;
                     } else {
-                        this.supplierId = '';
+                        this.customerId = '';
                     }
 
                 } catch (error) {
-                    console.error('Get suppliers error:', error);
+                    console.error('Get customers error:', error);
 
-                    this.supplierList = [];
-                    this.supplierId = '';
+                    this.customerList = [];
+                    this.customerId = '';
 
                     this.toastHandler(
                         'error',
-                        'Unable to get suppliers.'
+                        'Unable to get customers.'
                     );
                 } finally {
                     this.isShimmerLoading = false;
@@ -273,7 +271,7 @@
 
         mounted() {
             this.reportApiBaseUrl = reportApiBaseUrl;
-            this.getSuppliers();
+            this.getCustomers();
         }
     });
     app.use(WSelectPlugin);

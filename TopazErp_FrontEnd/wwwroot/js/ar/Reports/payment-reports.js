@@ -1,6 +1,6 @@
 (() => {
     'use strict';
-    
+
     const pad = (value) => String(value).padStart(2, '0');
 
     // Convert dates to YYYY-MM-DD without Moment.
@@ -61,7 +61,7 @@
                 payload: {},
 
                 reportType: 'Invoice',
-                subReportType: 'supplier-report',
+                subReportType: 'customer-report',
 
                 reportApiBaseUrl: '',
 
@@ -69,37 +69,30 @@
                 endDate: isoDate(new Date()),
 
                 paymentList: [],
-                supplierList: [],
+                customerList: [],
 
                 batchNumber: '',
-                supplierId: '',
+                customerId: '',
                 paymentId: '',
 
                 reportPath: '',
                 reportHeader:[],
                 reportPathConfig: {
-                    invoicePaymentReceiptReportPath:
-                        'https://res.cloudinary.com/dusydqiob/raw/upload/v1760621477/erp-reports/ap/paymentReceipts_ugn96o_sz1a4c_zci4hg.rdl',
-
-                    invoicePaymentSummaryReportPath:
-                        'https://res.cloudinary.com/dusydqiob/raw/upload/v1758628496/erp-reports/ap/ap-payment-history-all_fwuftf.rdl',
-
-                    invoicePaymentSupplierReport:
-                        'https://res.cloudinary.com/dusydqiob/raw/upload/v1758628545/erp-reports/ap/ap-payment-history_iq9bhl.rdl',
-
-                    invoicePaymentByDateReportPath:
-                        'https://res.cloudinary.com/dusydqiob/raw/upload/v1758628496/erp-reports/ap/ap-payment-history-all_fwuftf.rdl'
-                }
+                    invoicePaymentReceiptReportPath:'https://res.cloudinary.com/dusydqiob/raw/upload/v1745323121/erp-reports/ar/paymentReceiptUpdated_ddqlmg.rdl',
+                    invoicePaymentSummaryReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1758628390/erp-reports/ar/ar-payment-history-all_upylwj.rdl',
+                    invoicePaymentCustomerReport: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1758628390/erp-reports/ar/ar-payment-history_uwikt3.rdl',
+                    invoicePaymentByDateReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1758628390/erp-reports/ar/ar-payment-history-all_upylwj.rdl',
+                },
             };
         },
 
         methods: {
             // report header
             async getReportHeader() {
-                let title = 'AP Payments';
+                let title = 'AR Payments';
 
                 if (this.subReportType === 'date-report') {
-                    title = `AP Payments from ${this.startDate} to ${this.endDate}`;
+                    title = `AR Payments from ${this.startDate} to ${this.endDate}`;
                 }
 
                 const url = `/Ap/GetReportHeader?title=${encodeURIComponent(title)}`;
@@ -121,14 +114,14 @@
             },
 
             getPayments() {
-                axios.get('/Ap/GetPayments/')
+                axios.get('/Ar/GetPayments/')
                     .then(response => {
                         this.paymentList = this.unwrapList(response)
                             .filter(payment => payment.isCanceled === false)
                             .map(payment => ({
                                 ...payment,
                                 paymentId: payment.id,
-                                displayText: `${payment.batchNumber}-${payment.supplierName}`
+                                displayText: `${payment.batchNumber}-${payment.customerName}`
                             }));
 
                         if (this.paymentList.length > 0) {
@@ -141,23 +134,23 @@
                     });
             },
 
-            getSuppliers() {
-                axios.get('/SharedResource/GetSuppliers')
+            getCustomers() {
+                axios.get('/SharedResource/GetCustomers')
                     .then(response => {
-                        this.supplierList = this.unwrapList(response);
+                        this.customerList = this.unwrapList(response);
 
-                        if (this.supplierList.length > 0) {
-                            this.supplierId = this.supplierList[0].id;
+                        if (this.customerList.length > 0) {
+                            this.customerId = this.customerList[0].id;
                         }
                     })
                     .catch(err => {
-                        console.error('Error loading suppliers:', err);
-                        this.toastHandler('error', 'Unable to get suppliers.');
+                        console.error('Error loading customers:', err);
+                        this.toastHandler('error', 'Unable to get customers.');
                     });
             },
 
             getReportData() {
-                let url = '/Ap/GetApPaymentsReport';
+                let url = '/Ar/GetPaymentsReport';
 
                 this.reportPath = this.reportPathConfig.invoicePaymentSummaryReportPath;
 
@@ -171,19 +164,19 @@
                         this.reportPath =
                             this.reportPathConfig.invoicePaymentSummaryReportPath;
 
-                        url = '/Ap/GetApPaymentsReport';
+                        url = '/Ar/GetPaymentsReport';
                         break;
 
-                    case 'supplier-report':
-                        if (!this.supplierId) {
-                            this.toastHandler('warning', 'Please select a supplier.');
+                    case 'customer-report':
+                        if (!this.customerId) {
+                            this.toastHandler('warning', 'Please select a customer.');
                             return;
                         }
 
                         this.reportPath =
-                            this.reportPathConfig.invoicePaymentSupplierReport;
+                            this.reportPathConfig.invoicePaymentCustomerReport;
 
-                        url = `/Ap/GetApPaymentsBySupplier?SupplierId=${encodeURIComponent(this.supplierId)}`;
+                        url = `/Ar/GetPaymentsByCustomer?CustomerId=${encodeURIComponent(this.customerId)}`;
                         break;
 
                     case 'date-report':
@@ -200,7 +193,7 @@
                         this.reportPath =
                             this.reportPathConfig.invoicePaymentByDateReportPath;
 
-                        url = `/Ap/GetApPaymentsByDate?StartDate=${encodeURIComponent(this.startDate)}&EndDate=${encodeURIComponent(this.endDate)}`;
+                        url = `/Ar/GetPaymentsByDate?StartDate=${encodeURIComponent(this.startDate)}&EndDate=${encodeURIComponent(this.endDate)}`;
                         break;
 
                     case 'batchNumber':
@@ -212,7 +205,7 @@
                         this.reportPath =
                             this.reportPathConfig.invoicePaymentReceiptReportPath;
 
-                        url = `/Ap/GetApPaymentReceipts?id=${encodeURIComponent(this.paymentId)}`;
+                        url = `/Ar/GetPaymentReceipts?id=${encodeURIComponent(this.paymentId)}`;
                         break;
 
                     default:
@@ -295,7 +288,7 @@
         mounted() {
             this.reportApiBaseUrl = reportApiBaseUrl;
 
-            this.getSuppliers();
+            this.getCustomers();
             this.getPayments();
         }
     });

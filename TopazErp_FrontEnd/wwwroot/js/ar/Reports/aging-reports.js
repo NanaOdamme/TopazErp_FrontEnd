@@ -1,3 +1,4 @@
+
 (() => {
     'use strict';
 
@@ -72,37 +73,34 @@
 
                 reportApiBaseUrl: '',
 
-                supplierGroupId: '',
-                supplierGroupList: [],
-                supplierGroupName: '',
+                customerGroupId: '',
+                customerGroupList: [],
+                customerGroupName: '',
 
-                supplierList: [],
-                supplierId: '',
+                customerList: [],
+                customerId: '',
 
                 reportPath: '',
-                reportHeader:[],
+                reportHeader: [],
+
                 reportPathConfig: {
-
-                    summaryReportPath:
-                        'https://res.cloudinary.com/dusydqiob/raw/upload/v1755784323/erp-reports/ap/agingSummary_p4a5eg.rdl',
-
-                    summaryReportByDatePath:
-                        'https://res.cloudinary.com/dusydqiob/raw/upload/v1755784323/erp-reports/ap/agingByDate_oqqmjy.rdl',
-
-                    summaryReportBySupplierPath:
-                        'https://res.cloudinary.com/dusydqiob/raw/upload/v1755784324/erp-reports/ap/agingBySupplier_swloka.rdl'
-
-                }
+                    summaryReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1744299058/erp-reports/ar/ARAging_tzoc8x.rdl',
+                    summaryReportByDatePath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1744299280/erp-reports/ar/agingByDate_anucfg_sig94f.rdl',
+                    summaryReportByCustomerPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1744299280/erp-reports/ar/agingByDate_anucfg_sig94f.rdl',
+                },
             };
         },
 
+
         computed: {
             reportTitle() {
-                return this.reportType === 'bySupplier'
-                    ? 'Ageing by Supplier'
+                return this.reportType === 'byCustomer'
+                    ? 'Ageing by Customer'
                     : 'Ageing Summary by Date';
             }
         },
+
+
         methods: {
 
             // ==========================================
@@ -160,7 +158,11 @@
                     });
             },
 
-            // report header
+
+            // ==========================================
+            // GET REPORT HEADER
+            // ==========================================
+
             async getReportHeader() {
                 const url = `/Ap/GetReportHeader?title=${encodeURIComponent(this.reportTitle)}`;
                 const response = await axios.get(url);
@@ -169,13 +171,14 @@
                 return this.reportHeader;
             },
 
+
             // ==========================================
             // GET REPORT DATA
             // ==========================================
 
             getReportData() {
 
-                let url = `/Ap/GetAgingSummary?startDate=${encodeURIComponent(this.startDate)}&agingInterval=${encodeURIComponent(this.agingInterval)}`;
+                let url = `/Ar/GetAgingSummary?startDate=${encodeURIComponent(this.startDate)}&agingInterval=${encodeURIComponent(this.agingInterval)}`;
 
                 this.reportPath = this.reportPathConfig.summaryReportPath;
 
@@ -200,26 +203,26 @@
                         this.reportPath =
                             this.reportPathConfig.summaryReportByDatePath;
 
-                        url = `/Ap/GetAgingByDate?startDate=${encodeURIComponent(this.startDate)}&agingInterval=${encodeURIComponent(this.agingInterval)}`;
+                        url = `/Ar/GetAgingByDate?startDate=${encodeURIComponent(this.startDate)}&agingInterval=${encodeURIComponent(this.agingInterval)}`;
 
                         break;
 
 
                     // ----------------------------------
-                    // AGEING BY SUPPLIER
+                    // AGEING BY CUSTOMER
                     // ----------------------------------
 
-                    case 'bySupplier':
+                    case 'byCustomer':
 
-                        if (!this.supplierId) {
-                            this.toastHandler('warning', 'Please select a supplier.');
+                        if (!this.customerId) {
+                            this.toastHandler('warning', 'Please select a customer.');
                             return;
                         }
 
                         this.reportPath =
-                            this.reportPathConfig.summaryReportBySupplierPath;
+                            this.reportPathConfig.summaryReportByCustomerPath;
 
-                        url = `/Ap/GetApAgingBySupplier?SupplierId=${encodeURIComponent(this.supplierId)}&startDate=${encodeURIComponent(this.startDate)}&agingInterval=${encodeURIComponent(this.agingInterval)}`;
+                        url = `/Ar/GetAgingByCustomer?CustomerId=${encodeURIComponent(this.customerId)}&startDate=${encodeURIComponent(this.startDate)}&agingInterval=${encodeURIComponent(this.agingInterval)}`;
 
                         break;
 
@@ -243,8 +246,10 @@
                     .then(async response => {
 
                         const reportDetails = response.data.result;
+
                         this.reportHeader = await this.getReportHeader();
-                        if (!this.reportHeader || !reportDetails.length) {
+
+                        if (!this.reportHeader || !reportDetails || !reportDetails.length) {
                             this.toastHandler('warning', 'No ageing report data was returned.');
                             return;
                         }
@@ -309,28 +314,28 @@
 
 
             // ==========================================
-            // GET SUPPLIERS
+            // GET CUSTOMERS
             // ==========================================
 
-            getSuppliers() {
+            getCustomers() {
 
-                axios.get('/SharedResource/GetSuppliers')
+                axios.get('/SharedResource/GetCustomers')
                     .then(response => {
 
-                        this.supplierList = this.unwrapList(response);
+                        this.customerList = this.unwrapList(response);
 
-                        if (this.supplierList.length > 0) {
-                            this.supplierId = this.supplierList[0].id;
+                        if (this.customerList.length > 0) {
+                            this.customerId = this.customerList[0].id;
                         } else {
-                            this.supplierId = '';
+                            this.customerId = '';
                         }
 
                     })
                     .catch(err => {
 
-                        console.error('Error loading suppliers:', err);
+                        console.error('Error loading customers:', err);
 
-                        this.toastHandler('error', 'Unable to get suppliers.');
+                        this.toastHandler('error', 'Unable to get customers.');
 
                     });
             },
@@ -345,6 +350,7 @@
                     console.log(message);
                     return;
                 }
+
                 Swal.fire({
                     toast: true,
                     position: 'top-end',
@@ -355,7 +361,7 @@
                     timerProgressBar: true
                 });
 
-            },
+            }
         },
 
 
@@ -365,9 +371,8 @@
 
         mounted() {
             this.reportApiBaseUrl = reportApiBaseUrl;
-            this.getSuppliers();
+            this.getCustomers();
             this.getReportData();
-
         }
 
     });

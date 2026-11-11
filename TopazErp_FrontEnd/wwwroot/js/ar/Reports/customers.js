@@ -1,4 +1,3 @@
-
 const app = Vue.createApp({
     data() {
         return {
@@ -9,16 +8,17 @@ const app = Vue.createApp({
             reportType: 'summary-report',
             reportApiBaseUrl: '',
 
-            supplierGroupId: '',
-            supplierGroupList: [],
-            supplierGroupName: '',
+            customerGroupId: '',
+            customerGroupList: [],
+            customerGroupName: '',
 
             reportPath: '',
             reportHeader:[],
             reportPathConfig: {
-                summaryReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1755697772/erp-reports/ap/suppliers_xtpls7.rdl',
-                supplierGroupReport: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1755697772/erp-reports/ap/suppliers_xtpls7.rdl'
-            }
+
+                summaryReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1744299058/erp-reports/ar/customers_eylpvf.rdl',
+                customerGroupReport: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1744299058/erp-reports/ar/customers_eylpvf.rdl',
+            },
         };
     },
 
@@ -42,10 +42,10 @@ const app = Vue.createApp({
             return firstArray || [];
         },
         async getReportHeader() {
-            let title = 'Suppliers';
+            let title = 'Customers';
 
-            if (this.reportType === 'supplier-group') {
-                title = `Suppliers - ${this.supplierGroupName}`;
+            if (this.reportType === 'customer-group') {
+                title = `Customers - ${this.customerGroupName}`;
             }
 
             const url = `/Ap/GetReportHeader?title=${encodeURIComponent(title)}`;
@@ -60,17 +60,17 @@ const app = Vue.createApp({
             this.isLoading = true;
 
             try {
-                let url = '/SharedResource/GetSuppliers';
+                let url = '/SharedResource/GetCustomers';
 
                 this.reportPath = this.reportPathConfig.summaryReportPath;
 
-                if (this.reportType === 'supplier-group') {
-                    if (!this.supplierGroupId) {
-                        this.toastHandler('warning', 'Please select a supplier group.');
+                if (this.reportType === 'customer-group') {
+                    if (!this.customerGroupId) {
+                        this.toastHandler('warning', 'Please select a customer group.');
                         return;
                     }
 
-                    this.reportPath = this.reportPathConfig.supplierGroupReport;
+                    this.reportPath = this.reportPathConfig.customerGroupReport;
                 }
 
                 const response = await axios.get(url);
@@ -79,10 +79,10 @@ const app = Vue.createApp({
 
                 let reportDetails = this.unwrapList(response.data);
 
-                // Filter suppliers by selected supplier group
-                if (this.reportType === 'supplier-group') {
+                // Filter customers by selected customer group
+                if (this.reportType === 'customer-group') {
                     reportDetails = reportDetails.filter(
-                        item => String(item.supplierGroupId) === String(this.supplierGroupId)
+                        item => String(item.customerGroupId) === String(this.customerGroupId)
                     );
                 }
 
@@ -136,20 +136,20 @@ const app = Vue.createApp({
             });
         },
 
-        async getSupplierGroups() {
+        async getCustomerGroups() {
             try {
                 const response = await axios.get(
-                    '/SharedResource/GetSupplierGroups'
+                    '/SharedResource/GetCustomerGroups'
                 );
 
-                this.supplierGroupList = this.unwrapList(response.data);
+                this.customerGroupList = this.unwrapList(response.data);
 
             } catch (error) {
-                console.error('Supplier groups loading failed:', error);
+                console.error('Customer groups loading failed:', error);
 
                 this.toastHandler(
                     'error',
-                    'Unable to get supplier groups.'
+                    'Unable to get customer groups.'
                 );
             }
         },
@@ -173,12 +173,12 @@ const app = Vue.createApp({
     },
 
     watch: {
-        supplierGroupId(val) {
-            const supplierGroupInfo = this.supplierGroupList.find(
+        customerGroupId(val) {
+            const customerGroupInfo = this.customerGroupList.find(
                 item => String(item.id) === String(val)
             );
 
-            this.supplierGroupName = supplierGroupInfo?.name || '';
+            this.customerGroupName = customerGroupInfo?.name || '';
             this.getReportData();
         }
     },
@@ -186,7 +186,7 @@ const app = Vue.createApp({
     async mounted() {
         this.reportApiBaseUrl = reportApiBaseUrl;
 
-        await this.getSupplierGroups();
+        await this.getCustomerGroups();
         await this.getReportData();
     }
 });

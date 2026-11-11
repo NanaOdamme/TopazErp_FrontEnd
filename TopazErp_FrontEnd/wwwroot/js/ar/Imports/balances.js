@@ -1,8 +1,9 @@
+
 const API_URLS = {
-    suppliers: '/SharedResource/GetSuppliers',
+    customers: '/SharedResource/GetCustomers',
     currencies: '/SharedResource/GetCurrencies',
-    existingBalances: '/Ap/GetApBalancesReport?status=all',
-    createOpeningBalance: '/Ap/CreateAp/CreateOpeningBalance'
+    existingBalances: '/Ar/GetBalancesReport?status=all',
+    createOpeningBalance: '/Ar/CreateOpeningBalance'
 };
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000';
@@ -18,8 +19,8 @@ const app = Vue.createApp({
 
             // Normalized Excel header -> preview row property
             columnMap: {
-                supplier: 'supplier',
-                suppliername: 'supplier',
+                customer: 'customer',
+                customername: 'customer',
                 transactiondate: 'transactionDate',
                 date: 'transactionDate',
                 currency: 'currencyName',
@@ -108,7 +109,10 @@ const app = Vue.createApp({
 
         async previewFile() {
             if (!this.file) {
-                this.toastHandler('warning', 'Please select a file to preview.');
+                this.toastHandler(
+                    'warning',
+                    'Please select a file to preview.'
+                );
                 return;
             }
 
@@ -134,16 +138,18 @@ const app = Vue.createApp({
                     return;
                 }
 
-                // Use an arrow so mapRow keeps the Vue component as `this`.
                 this.previewData = rawRows.map(raw => this.mapRow(raw));
                 this.currentPage = 1;
+
             } catch (error) {
                 console.error(error);
                 this.previewData = [];
+
                 this.toastHandler(
                     'error',
                     'Failed to read the file. Make sure it is a valid Excel file.'
                 );
+
             } finally {
                 this.isLoading = false;
             }
@@ -165,6 +171,7 @@ const app = Vue.createApp({
             if (typeof value === 'number') return value;
 
             const cleaned = String(value ?? '').replace(/[^0-9.\-]/g, '');
+
             if (cleaned === '' || cleaned === '-' || cleaned === '.') {
                 return NaN;
             }
@@ -180,11 +187,11 @@ const app = Vue.createApp({
                 'result',
                 'items',
                 'data',
-                'suppliers',
+                'customers',
                 'currencies',
                 'balances',
                 'openingBalances',
-                'apOpeningBalances'
+                'arOpeningBalances'
             ]) {
                 if (Array.isArray(raw[key])) return raw[key];
             }
@@ -204,7 +211,9 @@ const app = Vue.createApp({
             const response = await fetch(url);
 
             if (!response.ok) {
-                throw new Error(`Request failed (${response.status}) for ${url}`);
+                throw new Error(
+                    `Request failed (${response.status}) for ${url}`
+                );
             }
 
             const data = await response.json();
@@ -214,7 +223,9 @@ const app = Vue.createApp({
         getField(item, name) {
             if (!item) return undefined;
 
-            const pascalName = name.charAt(0).toUpperCase() + name.slice(1);
+            const pascalName =
+                name.charAt(0).toUpperCase() + name.slice(1);
+
             return item[name] ?? item[pascalName];
         },
 
@@ -222,10 +233,10 @@ const app = Vue.createApp({
             return this.toText(value).toLocaleLowerCase();
         },
 
-        makeBalanceKey(supplierId, currencyId) {
-            if (!supplierId || !currencyId) return '';
+        makeBalanceKey(customerId, currencyId) {
+            if (!customerId || !currencyId) return '';
 
-            return `${String(supplierId).toLowerCase()}|${String(currencyId).toLowerCase()}`;
+            return `${String(customerId).toLowerCase()}|${String(currencyId).toLowerCase()}`;
         },
 
         // Returns YYYY-MM-DD or '' when the value cannot be parsed.
@@ -253,6 +264,7 @@ const app = Vue.createApp({
 
             // YYYY-MM-DD or YYYY/MM/DD.
             let match = text.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+
             if (match) {
                 return this.buildDate(
                     Number(match[1]),
@@ -263,6 +275,7 @@ const app = Vue.createApp({
 
             // DD/MM/YYYY, DD-MM-YYYY, or DD.MM.YYYY.
             match = text.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+
             if (match) {
                 return this.buildDate(
                     Number(match[3]),
@@ -305,7 +318,7 @@ const app = Vue.createApp({
 
         mapRow(raw) {
             const row = {
-                supplier: '',
+                customer: '',
                 transactionDate: '',
                 currencyName: '',
                 currencyRate: 0,
@@ -318,7 +331,8 @@ const app = Vue.createApp({
             const found = {};
 
             Object.keys(raw).forEach(header => {
-                const property = this.columnMap[this.normalizeHeader(header)];
+                const property =
+                    this.columnMap[this.normalizeHeader(header)];
 
                 if (property) {
                     found[property] = {
@@ -328,11 +342,11 @@ const app = Vue.createApp({
                 }
             });
 
-            row.supplier = this.toText(found.supplier?.value);
+            row.customer = this.toText(found.customer?.value);
             row.currencyName = this.toText(found.currencyName?.value);
 
-            if (!row.supplier) {
-                row.errors.push('Supplier is required.');
+            if (!row.customer) {
+                row.errors.push('Customer is required.');
             }
 
             if (!row.currencyName) {
@@ -361,7 +375,9 @@ const app = Vue.createApp({
                 const rate = this.toNumber(rawRate);
 
                 if (Number.isNaN(rate)) {
-                    row.errors.push(`Rate must be a number (found "${rawRate}").`);
+                    row.errors.push(
+                        `Rate must be a number (found "${rawRate}").`
+                    );
                 } else if (rate <= 0) {
                     row.errors.push('Rate must be greater than zero.');
                 } else {
@@ -411,31 +427,34 @@ const app = Vue.createApp({
 
             try {
                 // Fetch fresh data before checking duplicates.
-                const [suppliers, currencies, existingBalances] =
+                const [customers, currencies, existingBalances] =
                     await Promise.all([
-                        this.fetchList(API_URLS.suppliers),
+                        this.fetchList(API_URLS.customers),
                         this.fetchList(API_URLS.currencies),
                         this.fetchList(API_URLS.existingBalances)
                     ]);
 
-                const supplierByName = new Map();
+                // Build customer lookup using active customers only.
+                const customerByName = new Map();
 
-                suppliers.forEach(supplier => {
+                customers.forEach(customer => {
                     const status = this.normalizeName(
-                        this.getField(supplier, 'statusName') ||
-                        this.getField(supplier, 'status')
+                        this.getField(customer, 'statusName') ||
+                        this.getField(customer, 'status')
                     );
 
-                    // Only active suppliers may receive an opening balance.
                     if (status !== 'active') return;
 
                     const name = this.normalizeName(
-                        this.getField(supplier, 'name')
+                        this.getField(customer, 'name')
                     );
 
-                    if (name) supplierByName.set(name, supplier);
+                    if (name) {
+                        customerByName.set(name, customer);
+                    }
                 });
 
+                // Build currency lookup.
                 const currencyByName = new Map();
 
                 currencies.forEach(currency => {
@@ -443,25 +462,32 @@ const app = Vue.createApp({
                         this.getField(currency, 'currencyName')
                     );
 
-                    if (name) currencyByName.set(name, currency);
+                    if (name) {
+                        currencyByName.set(name, currency);
+                    }
                 });
 
+                // Existing customer + currency opening balances.
                 const existingKeys = new Set();
 
                 existingBalances.forEach(balance => {
-                    const supplierId = this.getField(balance, 'supplierId');
+                    const customerId = this.getField(balance, 'customerId');
                     const currencyId = this.getField(balance, 'currencyId');
-                    const key = this.makeBalanceKey(supplierId, currencyId);
+
+                    const key = this.makeBalanceKey(
+                        customerId,
+                        currencyId
+                    );
 
                     if (key) existingKeys.add(key);
                 });
 
-                // Resolve each preview row to supplier and currency IDs.
+                // Resolve each preview row to customer and currency IDs.
                 const preparedRows = this.previewData.map(row => {
                     if (row.imported) {
                         return {
                             row,
-                            supplier: null,
+                            customer: null,
                             currency: null,
                             key: ''
                         };
@@ -469,50 +495,57 @@ const app = Vue.createApp({
 
                     row.importError = '';
 
-                    const supplier = supplierByName.get(
-                        this.normalizeName(row.supplier)
+                    const customer = customerByName.get(
+                        this.normalizeName(row.customer)
                     );
 
                     const currency = currencyByName.get(
                         this.normalizeName(row.currencyName)
                     );
 
-                    if (!supplier || !currency) {
+                    if (!customer || !currency) {
                         const missing = [];
 
-                        if (!supplier) {
-                            missing.push(`active supplier "${row.supplier}"`);
+                        if (!customer) {
+                            missing.push(
+                                `active customer "${row.customer}"`
+                            );
                         }
 
                         if (!currency) {
-                            missing.push(`currency "${row.currencyName}"`);
+                            missing.push(
+                                `currency "${row.currencyName}"`
+                            );
                         }
 
                         row.importError =
                             `No matching ${missing.join(' and ')} was found.`;
                     }
 
-                    const supplierId = this.getField(supplier, 'id');
+                    const customerId = this.getField(customer, 'id');
                     const currencyId = this.getField(currency, 'id');
 
                     if (
-                        supplier &&
+                        customer &&
                         currency &&
-                        (!supplierId || !currencyId)
+                        (!customerId || !currencyId)
                     ) {
                         row.importError =
-                            'The matched supplier or currency is missing its ID.';
+                            'The matched customer or currency is missing its ID.';
                     }
 
                     return {
                         row,
-                        supplier,
+                        customer,
                         currency,
-                        key: this.makeBalanceKey(supplierId, currencyId)
+                        key: this.makeBalanceKey(
+                            customerId,
+                            currencyId
+                        )
                     };
                 });
 
-                // Find duplicate supplier + currency pairs inside the preview.
+                // Find duplicate customer + currency pairs inside the preview.
                 const previewGroups = new Map();
 
                 preparedRows.forEach(item => {
@@ -529,8 +562,8 @@ const app = Vue.createApp({
                     if (group.length < 2) return;
 
                     const description =
-                        `Duplicate supplier and currency in the uploaded file: ` +
-                        `"${group[0].row.supplier}" / "${group[0].row.currencyName}".`;
+                        `Duplicate customer and currency in the uploaded file: ` +
+                        `"${group[0].row.customer}" / "${group[0].row.currencyName}".`;
 
                     group.forEach(item => {
                         if (!item.row.imported) {
@@ -548,7 +581,7 @@ const app = Vue.createApp({
 
                     const description =
                         `An opening balance already exists for ` +
-                        `"${item.row.supplier}" in "${item.row.currencyName}".`;
+                        `"${item.row.customer}" in "${item.row.currencyName}".`;
 
                     item.row.importError = item.row.importError
                         ? `${item.row.importError} ${description}`
@@ -559,19 +592,24 @@ const app = Vue.createApp({
                 let failedCount = 0;
 
                 for (const item of preparedRows) {
-                    const { row, supplier, currency, key } = item;
+                    const { row, customer, currency, key } = item;
 
                     if (row.imported) continue;
 
-                    if (row.importError || !supplier || !currency || !key) {
+                    if (
+                        row.importError ||
+                        !customer ||
+                        !currency ||
+                        !key
+                    ) {
                         failedCount++;
                         continue;
                     }
 
                     const payload = {
-                        supplierId: this.getField(supplier, 'id'),
-                        supplierName: this.getField(supplier, 'name'),
-                        accountNumber: this.getField(supplier, 'accountNumber'),
+                        customerId: this.getField(customer, 'id'),
+                        customerName: this.getField(customer, 'name'),
+                        accountNumber: this.getField(customer, 'accountNumber'),
 
                         currencyId: this.getField(currency, 'id'),
                         currencyName: this.getField(currency, 'currencyName'),
@@ -625,8 +663,11 @@ const app = Vue.createApp({
 
                         // Prevent another row from creating this pair during this run.
                         existingKeys.add(key);
+
                     } catch (error) {
-                        row.importError = error.message || 'Import failed.';
+                        row.importError =
+                            error.message || 'Import failed.';
+
                         failedCount++;
                     }
                 }
@@ -642,13 +683,18 @@ const app = Vue.createApp({
                         `${importedCount} opening balances imported.`
                     );
                 }
+
             } catch (error) {
-                console.error('Opening balance import error:', error);
+                console.error(
+                    'Opening balance import error:',
+                    error
+                );
 
                 this.toastHandler(
                     'error',
                     error.message || 'Unable to import opening balances.'
                 );
+
             } finally {
                 this.isLoading = false;
             }

@@ -69,8 +69,9 @@
                 reportPath: '',
 
                 reportPathConfig: {
-                    summaryReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1759157558/erp-reports/ap/APGLTransactionLocal_szvowo.rdl'
-                }
+                    summaryReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1759157593/erp-reports/ar/GLTransactionLocal_sqhq9f.rdl',
+
+                },
             };
         },
 
@@ -105,7 +106,7 @@
                     return;
                 }
 
-                const url = `/Ap/GetApGlTransaction?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&isMultiCurrency=${this.showMultiCurrency}`;
+                const url = `/Ar/GetGlTransaction?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&isMultiCurrency=${this.showMultiCurrency}`;
 
                 this.reportPath = this.reportPathConfig.summaryReportPath;
 

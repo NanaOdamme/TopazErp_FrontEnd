@@ -557,3 +557,59 @@ html.no-bi-font i[class^="bi-"], html.no-bi-font i[class*=" bi-"] {
     .app-sidebar, .app-topbar, .nav-flyout-layer, .sidebar-backdrop { display: none !important; }
     .page-main, .page-footer { margin-left: 0 !important; padding-top: 0 !important; }
 }
+
+
+/*
+//scrollbars*/
+
+/* ==============================
+   CUSTOM SCROLLBARS - LIGHT MODE
+================================= */
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #aebbd0 #f1f5f9;
+}
+
+/* Chrome, Edge, Safari */
+*::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: #aebbd0;
+    border-radius: 10px;
+    border: 2px solid #f1f5f9;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+/* ==============================
+   CUSTOM SCROLLBARS - DARK MODE
+================================= */
+
+.dark,
+.dark * {
+    scrollbar-color: #475569 #1e293b;
+}
+
+.dark *::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+
+.dark *::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-color: #1e293b;
+}
+
+.dark *::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}

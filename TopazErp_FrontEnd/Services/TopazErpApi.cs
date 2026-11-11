@@ -568,7 +568,7 @@ public class TopazErpApi: ITopazErpApi
     {
         var authToken = _claimsHelper.GetAuthToken();
         
-        string url = $"{_apiBaseUrl}Customer/GetAll?pageNo={pageNo}&pageSize={pageSize}";
+        string url = $"{_apiBaseUrl}Customer/ListAll?pageNo={pageNo}&pageSize={pageSize}";
 
         if (!string.IsNullOrEmpty(query))
         {
@@ -4001,7 +4001,1247 @@ public class TopazErpApi: ITopazErpApi
     }
     
 
-    //AP
+    //AR
+    //Balance
+    public async Task<ArOpeningBalanceResponse> GetArOpeningBalances(int pageNo, int pageSize, string query)
+    {
+         var authToken = _claimsHelper.GetAuthToken();
+                
+                string url = $"{_apiBaseUrl}ArOpeningBalance/ListAll?pageNo={pageNo}&pageSize={pageSize}";
+        
+                if (!string.IsNullOrEmpty(query))
+                {
+                    url += $"&query={query}";
+                }
+                
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.Add("Authorization", $"Bearer {authToken}");
+        
+                var response = await _httpClient.SendAsync(request);
+        
+                if (response.IsSuccessStatusCode)
+                {
+                    string json = await response.Content.ReadAsStringAsync();
+        
+                    return JsonConvert.DeserializeObject<ArOpeningBalanceResponse>(json);
+                }
+        
+                return new ArOpeningBalanceResponse { };
+    }
+    public async Task<BaseApiResponse> CreateArOpeningBalance(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        var url = $"{_apiBaseUrl}ArOpeningBalance/Create";
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);
+
+        using var response = await _httpClient.SendAsync(request);
+        var responseData = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Create failed ({(int)response.StatusCode}): {responseData}");
+        }
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+               ?? throw new InvalidOperationException(
+                   "The Create API returned an empty or invalid response.");
+    }
+    public async Task<BaseApiResponse> UpdateArOpeningBalance(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        var url = $"{_apiBaseUrl}ArOpeningBalance/Update";
+
+        using var request = new HttpRequestMessage(HttpMethod.Put, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);
+
+        using var response = await _httpClient.SendAsync(request);
+        var body = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Upstream update failed ({(int)response.StatusCode}): {body}");
+        }
+        return JsonConvert.DeserializeObject<BaseApiResponse>(body);
+    }
+    public async Task<BaseApiResponse> DeleteArOpeningBalance(Guid id)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}ArOpeningBalance/Delete?id={id}";
+
+        var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<BaseApiResponse>(json);
+        }
+
+        return new BaseApiResponse { };
+    }
+    public async Task<BaseApiResponse> PostArOpeningBalances(List<Guid> balanceIds)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        var url = $"{_apiBaseUrl}ArOpeningBalance/PostArOpeningBalances";
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(balanceIds);
+
+        using var response = await _httpClient.SendAsync(request);
+        var responseData = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Posting failed ({(int)response.StatusCode}): {responseData}");
+        }
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+               ?? throw new InvalidOperationException(
+                   "The Posting API returned an empty or invalid response.");
+    }
+    //ApInvoice
+    public async Task<ArInvoiceResponse> GetArInvoices(int pageNo, int pageSize, string query)
+    {
+         var authToken = _claimsHelper.GetAuthToken();
+                
+                string url = $"{_apiBaseUrl}ArInvoice/ListAll?pageNo={pageNo}&pageSize={pageSize}";
+        
+                if (!string.IsNullOrEmpty(query))
+                {
+                    url += $"&query={query}";
+                }
+                
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.Add("Authorization", $"Bearer {authToken}");
+        
+                var response = await _httpClient.SendAsync(request);
+        
+                if (response.IsSuccessStatusCode)
+                {
+                    string json = await response.Content.ReadAsStringAsync();
+        
+                    return JsonConvert.DeserializeObject<ArInvoiceResponse>(json);
+                }
+        
+                return new ArInvoiceResponse { };
+    }
+    public async Task<BaseApiResponse> CreateArInvoice(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        var url = $"{_apiBaseUrl}ArInvoice/Create";
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);
+
+        using var response = await _httpClient.SendAsync(request);
+        var responseData = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Create failed ({(int)response.StatusCode}): {responseData}");
+        }
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+               ?? throw new InvalidOperationException(
+                   "The Create API returned an empty or invalid response.");
+    }
+    public async Task<BaseApiResponse> UpdateArInvoice(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        var url = $"{_apiBaseUrl}ArInvoice/Update";
+
+        using var request = new HttpRequestMessage(HttpMethod.Put, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);
+
+        using var response = await _httpClient.SendAsync(request);
+        var body = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Upstream update failed ({(int)response.StatusCode}): {body}");
+        }
+        return JsonConvert.DeserializeObject<BaseApiResponse>(body);
+    }
+    [HttpPost]
+    public async Task<BaseApiResponse> PostArInvoices(List<Guid> invoiceIds)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        var url = $"{_apiBaseUrl}ArInvoice/PostInvoice";
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(invoiceIds);
+
+        using var response = await _httpClient.SendAsync(request);
+        var responseData = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Posting failed ({(int)response.StatusCode}): {responseData}");
+        }
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+               ?? throw new InvalidOperationException(
+                   "The Posting API returned an empty or invalid response.");
+    }
+    public async Task<BaseApiResponse> CancelArInvoices(List<Guid> invoiceIds)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        var url = $"{_apiBaseUrl}ArInvoice/CancelInvoice";
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(invoiceIds);
+
+        using var response = await _httpClient.SendAsync(request);
+        var responseData = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Cancel failed ({(int)response.StatusCode}): {responseData}");
+        }
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+               ?? throw new InvalidOperationException(
+                   "The Cancel API returned an empty or invalid response.");
+    }
+    public async Task<BaseApiResponse> ApproveArInvoices(List<Guid> invoiceIds)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        var url = $"{_apiBaseUrl}ArInvoice/ApproveInvoice";
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(invoiceIds);
+
+        using var response = await _httpClient.SendAsync(request);
+        var responseData = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Approve failed ({(int)response.StatusCode}): {responseData}");
+        }
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+               ?? throw new InvalidOperationException(
+                   "The Approve API returned an empty or invalid response.");
+    }
+    //ApPayments
+    public async Task<ArPaymentResponse> GetArPayments(
+    int pageNo,
+    int pageSize,
+    string query)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    var url =
+        $"{_apiBaseUrl}ArPayment/ListAll?pageNo={pageNo}&pageSize={pageSize}";
+
+    if (!string.IsNullOrWhiteSpace(query))
+    {
+        url += $"&query={Uri.EscapeDataString(query)}";
+    }
+
+    using var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    using var response = await _httpClient.SendAsync(request);
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"Failed to get AP payments ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<ArPaymentResponse>(responseData)
+        ?? throw new InvalidOperationException(
+            "The AP payment list API returned an empty or invalid response.");
+}
+
+public async Task<BaseApiResponse> CreateArPayment(object dto)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+    var url = $"{_apiBaseUrl}ArPayment/Create";
+
+    using var request = new HttpRequestMessage(HttpMethod.Post, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+    request.Content = JsonContent.Create(dto);
+
+    using var response = await _httpClient.SendAsync(request);
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"AP payment creation failed ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+        ?? throw new InvalidOperationException(
+            "The AP payment Create API returned an empty or invalid response.");
+}
+
+public async Task<BaseApiResponse> UpdateArPayment(object dto)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+    var url = $"{_apiBaseUrl}ArPayment/Update";
+
+    using var request = new HttpRequestMessage(HttpMethod.Put, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+    request.Content = JsonContent.Create(dto);
+
+    using var response = await _httpClient.SendAsync(request);
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"AP payment update failed ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+        ?? throw new InvalidOperationException(
+            "The AP payment Update API returned an empty or invalid response.");
+}
+
+public async Task<BaseApiResponse> DeleteArPayment(Guid id)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+    var url = $"{_apiBaseUrl}ArPayment/Delete?id={Uri.EscapeDataString(id.ToString())}";
+
+    using var request = new HttpRequestMessage(HttpMethod.Delete, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    using var response = await _httpClient.SendAsync(request);
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"AP payment deletion failed ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+        ?? throw new InvalidOperationException(
+            "The AP payment Delete API returned an empty or invalid response.");
+}
+
+public async Task<BaseApiResponse> PostArPayments(List<Guid> paymentIds)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+    var url = $"{_apiBaseUrl}ArPayment/PostPayments";
+
+    using var request = new HttpRequestMessage(HttpMethod.Post, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+    request.Content = JsonContent.Create(paymentIds);
+
+    using var response = await _httpClient.SendAsync(request);
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"AP payment posting failed ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+        ?? throw new InvalidOperationException(
+            "The AP payment posting API returned an empty or invalid response.");
+}
+
+public async Task<BaseApiResponse> CancelArPayments(List<Guid> paymentIds)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+    var url = $"{_apiBaseUrl}ArPayment/CancelPayment";
+
+    using var request = new HttpRequestMessage(HttpMethod.Post, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+    request.Content = JsonContent.Create(paymentIds);
+
+    using var response = await _httpClient.SendAsync(request);
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"AP payment cancellation failed ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+        ?? throw new InvalidOperationException(
+            "The AP payment cancellation API returned an empty or invalid response.");
+}
+//debit memo
+public async Task<CreditMemoResponse> GetCreditMemos(
+    int pageNo,
+    int pageSize,
+    string query)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    var url =
+        $"{_apiBaseUrl}ArCreditMemos/ListAll?pageNo={pageNo}&pageSize={pageSize}";
+
+    if (!string.IsNullOrWhiteSpace(query))
+    {
+        url += $"&query={Uri.EscapeDataString(query)}";
+    }
+
+    using var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    using var response = await _httpClient.SendAsync(request);
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"Failed to get debit memos ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<CreditMemoResponse>(responseData)
+        ?? throw new InvalidOperationException(
+            "The debit memo list API returned an empty or invalid response.");
+}
+
+public async Task<BaseApiResponse> CreateCreditMemo(object dto)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+    var url = $"{_apiBaseUrl}ArCreditMemos/Create";
+
+    using var request = new HttpRequestMessage(HttpMethod.Post, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+    request.Content = JsonContent.Create(dto);
+
+    using var response = await _httpClient.SendAsync(request);
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"Debit memo creation failed ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+        ?? throw new InvalidOperationException(
+            "The debit memo Create API returned an empty or invalid response.");
+}
+
+public async Task<BaseApiResponse> UpdateCreditMemo(object dto)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+    var url = $"{_apiBaseUrl}ArCreditMemos/Update";
+
+    using var request = new HttpRequestMessage(HttpMethod.Put, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+    request.Content = JsonContent.Create(dto);
+
+    using var response = await _httpClient.SendAsync(request);
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"Credit memo update failed ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+        ?? throw new InvalidOperationException(
+            "The credit memo Update API returned an empty or invalid response.");
+}
+
+public async Task<BaseApiResponse> DeleteCreditMemo(Guid id)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+    var url =
+        $"{_apiBaseUrl}ArCreditMemos/Delete?id={Uri.EscapeDataString(id.ToString())}";
+
+    using var request = new HttpRequestMessage(HttpMethod.Delete, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    using var response = await _httpClient.SendAsync(request);
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"Credit memo deletion failed ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+        ?? throw new InvalidOperationException(
+            "The Credit memo Delete API returned an empty or invalid response.");
+}
+
+public async Task<BaseApiResponse> ApplyCreditMemo(object dto)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+    var url = $"{_apiBaseUrl}ArCreditMemos/Apply";
+
+    using var request = new HttpRequestMessage(HttpMethod.Put, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+    request.Content = JsonContent.Create(dto);
+
+    using var response = await _httpClient.SendAsync(request);
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"Applying Credit memo failed ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+        ?? throw new InvalidOperationException(
+            "The Credit memo Apply API returned an empty or invalid response.");
+}
+//Quotation
+    public async Task<QuotationResponse> GetQuotations(int pageNo, int pageSize, string query)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}Quotations/ListAll?pageNo={pageNo}&pageSize={pageSize}";
+
+        //if query is not null
+        if (!string.IsNullOrEmpty(query))
+        {
+            url += $"&query={query}";
+        }
+        
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<QuotationResponse>(json);
+        }
+
+        return new QuotationResponse { };
+    }
+    
+    public async Task<BaseApiResponse> CreateQuotation(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}Quotations/Create";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);  
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+    
+    public async Task<BaseApiResponse> UpdateQuotation(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}Quotations/Update";
+
+        var request = new HttpRequestMessage(HttpMethod.Put, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);  
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+    
+    public async Task<BaseApiResponse> DeleteQuotation(Guid id)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}Quotations/Delete?id={id}";
+        
+        using var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        using var response = await _httpClient.SendAsync(request);
+        var responseData = await response.Content.ReadAsStringAsync();
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"Quotation deletion failed ({(int)response.StatusCode}): {responseData}");
+        }
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+               ?? throw new InvalidOperationException(
+                   "The Quotation Delete API returned an empty or invalid response.");
+    }
+    //aging
+    public async Task<ArAgingResponse> GetArAgingByDate(DateTime startDate, int agingInterval)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}ArReport/GetAgeingByDate?startDate={startDate.ToString("yyyy-MM-dd")}&agingInterval={agingInterval}";   
+        
+        
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<ArAgingResponse>(json);
+        }
+
+        return new ArAgingResponse();
+        
+    }
+    public async Task<BaseApiResponse> SendArEmail(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}EmailArInvoices/DispatchInvoice";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);  
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+    public async Task<ArStatementResponse> GetArStatement(Guid customerId)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+
+        string url = $"{_apiBaseUrl}ArReport/GetStatement?customerId={customerId}";
+
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ArStatementResponse>(json)
+                   ?? new ArStatementResponse();
+        }
+
+        return new ArStatementResponse();
+    }
+    public async Task<ArStatementResponse> GetArStatementType2(
+        Guid customerId, DateTime startDate, DateTime endDate)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+    
+        string url = $"{_apiBaseUrl}ArReport/GetStatementType2" +
+                     $"?customerId={customerId}" +
+                     $"&startDate={startDate.ToString("yyyy-MM-dd")}" +
+                     $"&endDate={endDate.ToString("yyyy-MM-dd")}";
+    
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+    
+        var response = await _httpClient.SendAsync(request);
+    
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ArStatementResponse>(json)
+                   ?? new ArStatementResponse();
+        }
+    
+        return new ArStatementResponse();
+    }
+    
+    public async Task<ArStatementResponse> GetArStatementType3(
+        Guid customerId, DateTime startDate, DateTime endDate)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+    
+        string url = $"{_apiBaseUrl}ApReports/GetStatementType3" +
+                     $"?customerId={customerId}" +
+                     $"&startDate={startDate.ToString("yyyy-MM-dd")}" +
+                     $"&endDate={endDate.ToString("yyyy-MM-dd")}";
+    
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+    
+        var response = await _httpClient.SendAsync(request);
+    
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ArStatementResponse>(json)
+                   ?? new ArStatementResponse();
+        }
+    
+        return new ArStatementResponse();
+    }
+    
+    public async Task<ArStatementResponse>GetArStatementByOu(
+        Guid customerId, Guid ouid, DateTime startDate, DateTime endDate)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+    
+        string url = $"{_apiBaseUrl}ArReport/GetStatementByOu" +
+                     $"?customerId={customerId}" +
+                     $"&ouid={ouid}" +
+                     $"&startDate={startDate.ToString("yyyy-MM-dd")}" +
+                     $"&endDate={endDate.ToString("yyyy-MM-dd")}";
+    
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+    
+        var response = await _httpClient.SendAsync(request);
+    
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ArStatementResponse>(json)
+                   ?? new ArStatementResponse();
+        }
+    
+        return new ArStatementResponse();
+    }
+    
+    public async Task<ArStatementResponse>GetArStatementByOuType2(
+        Guid customerId, Guid ouid, DateTime startDate, DateTime endDate)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+    
+        string url = $"{_apiBaseUrl}ArReport/GetStatementByOuType2" +
+                     $"?customerId={customerId}" +
+                     $"&ouid={ouid}" +
+                     $"&startDate={startDate.ToString("yyyy-MM-dd")}" +
+                     $"&endDate={endDate.ToString("yyyy-MM-dd")}";
+    
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+    
+        var response = await _httpClient.SendAsync(request);
+    
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ArStatementResponse>(json)
+                   ?? new ArStatementResponse();
+        }
+    
+        return new ArStatementResponse();
+    }
+    public async Task<ArInvoiceReportResponse> GetArInvoiceReport(Guid customerId)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+    
+        string url = $"{_apiBaseUrl}ArReport/GetInvoice?supplierId={customerId}";
+    
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+    
+        var response = await _httpClient.SendAsync(request);
+    
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ArInvoiceReportResponse>(json)
+                   ?? new ArInvoiceReportResponse();
+        }
+    
+        return new ArInvoiceReportResponse();
+    }
+    
+    public async Task<ArInvoiceReportResponse> GetAllArInvoices()
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+    
+        string url = $"{_apiBaseUrl}ArReport/GetAllInvoices";
+    
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+    
+        var response = await _httpClient.SendAsync(request);
+    
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ArInvoiceReportResponse>(json)
+                   ?? new ArInvoiceReportResponse();
+        }
+    
+        return new ArInvoiceReportResponse();
+    }
+    
+    public async Task<ArInvoiceReportResponse> GetArCanceledInvoices()
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+    
+        string url = $"{_apiBaseUrl}ArReport/GetCanceledInvoices";
+    
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+    
+        var response = await _httpClient.SendAsync(request);
+    
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ArInvoiceReportResponse>(json)
+                   ?? new ArInvoiceReportResponse();
+        }
+    
+        return new ArInvoiceReportResponse();
+    }
+    
+    public async Task<ArInvoiceReportResponse> GetArInvoiceByBatch(string batchNumber)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+    
+        string url = $"{_apiBaseUrl}ArReport/GetInvoiceByBatch" +
+                     $"?batchNumber={Uri.EscapeDataString(batchNumber)}";
+    
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+    
+        var response = await _httpClient.SendAsync(request);
+    
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ArInvoiceReportResponse>(json)
+                   ?? new ArInvoiceReportResponse();
+        }
+    
+        return new ArInvoiceReportResponse();
+    }
+    public async Task<ArInvoiceReportResponse> GetArInvoiceByInvoiceNumber(string invoiceNumber)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ArReport/GetInvoiceByInvoiceNumber" +
+                 $"?invoiceNumber={Uri.EscapeDataString(invoiceNumber)}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ArInvoiceReportResponse>(json)
+               ?? new ArInvoiceReportResponse();
+    }
+
+    return new ArInvoiceReportResponse();
+}
+
+public async Task<ArInvoiceReportResponse> GetArInvoiceByDate(
+    DateTime startDate, DateTime endDate)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ArReport/GetInvoiceByDate" +
+                 $"?startDate={startDate.ToString("yyyy-MM-dd")}" +
+                 $"&endDate={endDate.ToString("yyyy-MM-dd")}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ArInvoiceReportResponse>(json)
+               ?? new ArInvoiceReportResponse();
+    }
+
+    return new ArInvoiceReportResponse();
+}
+
+public async Task<ArInvoiceReportResponse> GetArInvoiceByRange(
+    int startNumber, int endNumber)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ArReport/GetInvoiceByRange" +
+                 $"?startNumber={startNumber}" +
+                 $"&endNumber={endNumber}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ArInvoiceReportResponse>(json)
+               ?? new ArInvoiceReportResponse();
+    }
+
+    return new ArInvoiceReportResponse();
+}
+
+public async Task<ArInvoiceReportResponse> GetArInvoiceReportById(Guid id)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ArReport/GetInvoiceReport?id={id}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ArInvoiceReportResponse>(json)
+               ?? new ArInvoiceReportResponse();
+    }
+
+    return new ArInvoiceReportResponse();
+}
+public async Task<ArInvoicePdfResponse> GetArInvoiceDetails(Guid id)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ArReport/GetInvoiceDetails?id={id}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ArInvoicePdfResponse>(json)
+               ?? new ArInvoicePdfResponse();
+    }
+
+    return new ArInvoicePdfResponse();
+}
+
+public async Task<ArOpeningBalanceResponse> GetArBalancesReport(string status)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ArReport/GetOpeningBalances" +
+                 $"?status={Uri.EscapeDataString(status)}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ArOpeningBalanceResponse>(json)
+               ?? new ArOpeningBalanceResponse();
+    }
+
+    return new ArOpeningBalanceResponse();
+}
+
+public async Task<ArOpeningBalanceResponse> GetArBalancesByCustomer(
+    Guid customerId, string status)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ArReport/GetOpeningBalancesByCustomer" +
+                 $"?customerId={customerId}" +
+                 $"&status={Uri.EscapeDataString(status)}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ArOpeningBalanceResponse>(json)
+               ?? new ArOpeningBalanceResponse();
+    }
+
+    return new ArOpeningBalanceResponse();
+}
+
+public async Task<ArOpeningBalanceResponse> GetAllConvertedArBalances(string status)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ArReport/GetAllConvertedOpeningBalances" +
+                 $"?status={Uri.EscapeDataString(status)}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ArOpeningBalanceResponse>(json)
+               ?? new ArOpeningBalanceResponse();
+    }
+
+    return new ArOpeningBalanceResponse();
+}
+public async Task<ArPaymentReportResponse> GetArPaymentsReport()
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ArReport/GetPayments";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ArPaymentReportResponse>(json)
+               ?? new ArPaymentReportResponse();
+    }
+
+    return new ArPaymentReportResponse();
+}
+
+public async Task<ArPaymentReportResponse> GetArPaymentsByCustomer(Guid customerId)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ArReport/GetPaymentsByCustomer?customerId={customerId}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ArPaymentReportResponse>(json)
+               ?? new ArPaymentReportResponse();
+    }
+
+    return new ArPaymentReportResponse();
+}
+
+public async Task<ArPaymentReportResponse> GetArPaymentsByDate(
+    DateTime startDate, DateTime endDate)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ArReport/GetPaymentsByDate" +
+                 $"?startDate={startDate.ToString("yyyy-MM-dd")}" +
+                 $"&endDate={endDate.ToString("yyyy-MM-dd")}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ArPaymentReportResponse>(json)
+               ?? new ArPaymentReportResponse();
+    }
+
+    return new ArPaymentReportResponse();
+}
+
+public async Task<ArPaymentReceiptResponse> GetArPaymentReceipts(Guid id)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ArReport/GetPaymentReceipts?id={id}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ArPaymentReceiptResponse>(json)
+               ?? new ArPaymentReceiptResponse();
+    }
+
+    return new ArPaymentReceiptResponse();
+}
+
+public async Task<ArPaymentReceiptResponse> GetArPaymentReceipts(List<Guid> ids)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string idsQuery = string.Join("&", ids.Select(id => $"ids={id}"));
+    string url = $"{_apiBaseUrl}ArReport/GetPaymentReceipts";
+
+    if (!string.IsNullOrEmpty(idsQuery))
+    {
+        url += $"?{idsQuery}";
+    }
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ArPaymentReceiptResponse>(json)
+               ?? new ArPaymentReceiptResponse();
+    }
+
+    return new ArPaymentReceiptResponse();
+}
+public async Task<QuotationResponse> GetQuotationsReport()
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ApReports/GetQuotations";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<QuotationResponse>(json)
+               ?? new QuotationResponse();
+    }
+
+    return new QuotationResponse();
+}
+
+public async Task<ArAgingResponse> GetArAgingSummary(
+    DateTime startDate, int agingInterval)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ArReport/GetAgingSummary" +
+                 $"?startDate={startDate.ToString("yyyy-MM-dd")}" +
+                 $"&agingInterval={agingInterval}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ArAgingResponse>(json)
+               ?? new ArAgingResponse();
+    }
+
+    return new ArAgingResponse();
+}
+
+public async Task<ArAgingResponse> GetArAgingByCustomer(
+    Guid customerId, DateTime startDate, int agingInterval)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ArReport/GetAgeingByCustomer" +
+                 $"?customerId={customerId}" +
+                 $"&startDate={startDate.ToString("yyyy-MM-dd")}" +
+                 $"&agingInterval={agingInterval}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ArAgingResponse>(json)
+               ?? new ArAgingResponse();
+    }
+
+    return new ArAgingResponse();
+}
+
+public async Task<ArGlTransactionResponse> GetArGlTransaction(
+    DateTime startDate, DateTime endDate, bool isMultiCurrency)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ArReport/GetGlTransaction" +
+                 $"?startDate={startDate.ToString("yyyy-MM-dd")}" +
+                 $"&endDate={endDate.ToString("yyyy-MM-dd")}" +
+                 $"&isMultiCurrency={isMultiCurrency.ToString().ToLowerInvariant()}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ArGlTransactionResponse>(json)
+               ?? new ArGlTransactionResponse();
+    }
+
+    return new ArGlTransactionResponse();
+}
+
+
+ //AP
     //Balance
     public async Task<ApOpeningBalanceResponse> GetApOpeningBalances(int pageNo, int pageSize, string query)
     {
@@ -4347,7 +5587,7 @@ public async Task<BaseApiResponse> DeleteApPayment(Guid id)
 public async Task<BaseApiResponse> PostApPayments(List<Guid> paymentIds)
 {
     var authToken = _claimsHelper.GetAuthToken();
-    var url = $"{_apiBaseUrl}ApPayment/PostPayment";
+    var url = $"{_apiBaseUrl}ApPayment/PostPayments";
 
     using var request = new HttpRequestMessage(HttpMethod.Post, url);
     request.Headers.Add("Authorization", $"Bearer {authToken}");
@@ -5459,5 +6699,4 @@ public async Task<ApGlTransactionResponse> GetApGlTransaction(
 
     return new ApGlTransactionResponse();
 }
-
 }

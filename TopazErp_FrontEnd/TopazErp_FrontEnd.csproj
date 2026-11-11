@@ -3290,6 +3290,12 @@
       <_ContentIncludedByDefault Remove="wwwroot\js\ar\Reports\payment-vouchers.js" />
       <_ContentIncludedByDefault Remove="wwwroot\js\ar\Reports\statements.js" />
       <_ContentIncludedByDefault Remove="wwwroot\js\ar\Reports\suppliers.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\DataEntry\creditMemo.js" />
+      <_ContentIncludedByDefault Remove="wwwroot\js\ar\Imports\customers.js" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="wwwroot\css\Ap\" />
     </ItemGroup>
 
 </Project>

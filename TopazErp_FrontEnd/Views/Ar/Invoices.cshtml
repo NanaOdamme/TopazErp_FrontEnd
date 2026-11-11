@@ -64,7 +64,8 @@
                     data-density="compact"
                     :allow-add="false"
                     :allow-edit="false"
-                    :allow-delete="false">
+                    :allow-delete="false"
+                    :loading="isShimmerLoading">
                 </data-grid>
                 
                 <div id="add" class="my-5">
@@ -229,7 +230,8 @@
             data-density="compact"
             @@create="onCreateDetail"
             @@update="onUpdateDetail"
-            @@delete="onDeleteDetail">
+            @@delete="onDeleteDetail"
+            :loading="isShimmerLoading">
           </data-grid>
         </section>
 

@@ -19,33 +19,33 @@ const app = Vue.createApp({
             isShimmerLoading: false
         }
     },
-        computed: {
-            first() {
-                return this.agingInterval;
-            },
-            second() {
-                return this.agingInterval * 2;
-            },
-            third() {
-                return this.agingInterval * 3;
-            },
-            agingColumns() {
-                return [
-                    { key: 'currencyCode', label: 'Currency', type: 'text', hidden: true, editable: false },
-                    { key: 'invoiceNumber', label: 'Invoice Number', type: 'text', width: 150, searchable: true },
-                    { key: 'invoiceDate', label: 'Invoice Date', type: 'date', width: 130, searchable: true },
-                    { key: 'purchaseOrderNumber', label: 'PO Number', type: 'text', width: 130, searchable: true },
-                    { key: 'totalInvoiceAmount', label: 'Amount', type: 'number', width: 130, decimals: 2, agg: 'sum' },
-                    { key: 'paidAmount', label: 'Paid', type: 'number', width: 120, decimals: 2, agg: 'sum' },
-                    { key: 'balance', label: 'Balance', type: 'number', width: 130, decimals: 2, agg: 'sum' },
-                    { key: 'currentDay', label: 'Current', type: 'number', width: 120, decimals: 2, agg: 'sum' },
-                    { key: 'agingFirst', label: `${this.first} Days`, type: 'number', width: 120, decimals: 2, agg: 'sum' },
-                    { key: 'agingSecond', label: `${this.second} Days`, type: 'number', width: 120, decimals: 2, agg: 'sum' },
-                    { key: 'agingThird', label: `${this.third}+ Days`, type: 'number', width: 120, decimals: 2, agg: 'sum' }
-                ];
-            }
+    computed: {
+        first() {
+            return this.agingInterval;
         },
-   watch: {
+        second() {
+            return this.agingInterval * 2;
+        },
+        third() {
+            return this.agingInterval * 3;
+        },
+        agingColumns() {
+            return [
+                { key: 'currencyCode', label: 'Currency', type: 'text', hidden: true, editable: false },
+                { key: 'invoiceNumber', label: 'Invoice Number', type: 'text', width: 150, searchable: true },
+                { key: 'invoiceDate', label: 'Invoice Date', type: 'date', width: 130, searchable: true },
+                { key: 'purchaseOrderNumber', label: 'PO Number', type: 'text', width: 130, searchable: true },
+                { key: 'totalInvoiceAmount', label: 'Amount', type: 'number', width: 130, decimals: 2, agg: 'sum' },
+                { key: 'paidAmount', label: 'Paid', type: 'number', width: 120, decimals: 2, agg: 'sum' },
+                { key: 'balance', label: 'Balance', type: 'number', width: 130, decimals: 2, agg: 'sum' },
+                { key: 'currentDay', label: 'Current', type: 'number', width: 120, decimals: 2, agg: 'sum' },
+                { key: 'agingFirst', label: `${this.first} Days`, type: 'number', width: 120, decimals: 2, agg: 'sum' },
+                { key: 'agingSecond', label: `${this.second} Days`, type: 'number', width: 120, decimals: 2, agg: 'sum' },
+                { key: 'agingThird', label: `${this.third}+ Days`, type: 'number', width: 120, decimals: 2, agg: 'sum' }
+            ];
+        }
+    },
+    watch: {
         startDate(newValue, oldValue) {
             if (newValue !== oldValue) {
                 this.getAgingData();
@@ -69,7 +69,7 @@ const app = Vue.createApp({
                     agingInterval: this.agingInterval
                 });
 
-                const response = await axios.get('/Ap/GetAgingByDate', {
+                const response = await axios.get('/Ar/GetAgingByDate', {
                     params: {
                         startDate: this.startDate,
                         agingInterval: Number(this.agingInterval)
@@ -89,10 +89,10 @@ const app = Vue.createApp({
             }
         },
 
-    
 
 
-          toastHandler(type, message = 'An unexpected error occurred.') {
+
+        toastHandler(type, message = 'An unexpected error occurred.') {
             if (typeof Swal === 'undefined') {
                 console.log(message);
                 return;
@@ -108,7 +108,7 @@ const app = Vue.createApp({
             });
 
         },
-   
+
     },
 
 
@@ -116,8 +116,8 @@ const app = Vue.createApp({
 
     mounted() {
         this.isShimmerLoading = true;
-      this.getAgingData();
-      this.isShimmerLoading = false;
+        this.getAgingData();
+        this.isShimmerLoading = false;
 
 
     },

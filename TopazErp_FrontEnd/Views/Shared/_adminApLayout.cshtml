@@ -62,7 +62,7 @@
           href="https://cdn.jsdelivr.net/npm/line-awesome@1.3.0/dist/line-awesome/css/line-awesome.min.css" />
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="~/css/shell.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/Ap/shell.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/card.css" asp-append-version="true" />
     @*PDF*@
     <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
@@ -99,7 +99,7 @@
 
 </head>
 
-<body class="h-full min-h-full bg-grey-50 font-sans text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-200">
+<body class="h-full min-h-full font-sans text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-200">
 
 @* ══════════════════════════════ SIDEBAR ══════════════════════════════ *@
 <aside class="app-sidebar" id="appSidebar" aria-label="Main navigation">
@@ -108,9 +108,12 @@
         <div class="sidebar-brand-link">
             <span class="sidebar-logo"> <img class="brand-logo" alt="" src="/app-assets/images/topazLogo.png"></span>
             <span class="sidebar-brand-text">
-                    <span class="sidebar-brand-name">Topaz ERP</span>
-                
+                <span class="sidebar-brand-name flex items-center gap-1.5 font-bold tracking-tight text-slate-900 dark:text-white">
+                    Topaz ERP
+                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">AP</span>
                 </span>
+                <span class="sidebar-brand-sub text-xs text-slate-500 dark:text-slate-400">Account Payables Management</span>
+            </span>
         </div>
         <button type="button" class="sidebar-icon-btn" data-action="collapse" title="Collapse sidebar (Ctrl+B)" aria-label="Collapse sidebar">
             <i class="bi bi-chevron-double-left" aria-hidden="true"></i>
@@ -138,7 +141,9 @@
                 </a>
             </li>
             <!-- General Setups -->
-            @*<li class="nav-section"><span class="menu-title">General</span></li>*@
+            <li class="nav-section">
+                <span class="menu-title">General Setups</span>
+            </li>
             <li class="nav-item has-sub">
                 <a href="#" class="menu-link">
                     <i class="bi bi-share"></i>
@@ -224,19 +229,22 @@
 
             <!-- Data Entry -->
 
+            <li class="nav-section">
+                <span class="menu-title">Data Entries & Transactions</span>
+            </li>
+
             <li class="nav-item has-sub">
                 <a href="#" class="menu-link">
-                    <i class="bi bi-pencil-square"></i>
-                    <span class="menu-title">Data Entry</span>
+                    <i class="bi bi-arrow-left-right"></i>
+                    <span class="menu-title">Transactions</span>
                 </a>
 
-               
                 <ul class="menu-content">
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="OpeningBalances">
-                            <i class="bi bi-wallet2"></i>
-                            <span class="menu-title">Opening Balances</span>
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="DebitMemos">
+                            <i class="bi bi-file-earmark-minus"></i>
+                            <span class="menu-title">Debit Memos</span>
                         </a>
                     </li>
 
@@ -244,6 +252,13 @@
                         <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Invoices">
                             <i class="bi bi-receipt"></i>
                             <span class="menu-title">Invoices</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="OpeningBalances">
+                            <i class="bi bi-wallet2"></i>
+                            <span class="menu-title">Opening Balances</span>
                         </a>
                     </li>
 
@@ -261,18 +276,11 @@
                         </a>
                     </li>
 
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="DebitMemos">
-                            <i class="bi bi-file-earmark-minus"></i>
-                            <span class="menu-title">Debit Memo</span>
-                        </a>
-                    </li>
-
                 </ul>
-                
-
             </li>
-         <!-- Enquiries -->
+
+            <!-- Enquiries -->
+        
             <li class="nav-item has-sub">
                 <a href="#" class="menu-link">
                     <i class="bi bi-search"></i>
@@ -310,7 +318,7 @@
             </li>
 
             <!-- Imports -->
-
+         
             <li class="nav-item has-sub">
                 <a href="#" class="menu-link">
                     <i class="bi bi-cloud-upload"></i>
@@ -339,7 +347,6 @@
             </li>
 
             <!-- Email -->
-
             <li class="nav-item has-sub">
                 <a href="#" class="menu-link">
                     <i class="bi bi-envelope"></i>
@@ -361,7 +368,6 @@
             </li>
 
             <!-- Reports -->
-
             <li class="nav-item has-sub">
                 <a href="#" class="menu-link">
                     <i class="bi bi-file-earmark-text"></i>
@@ -490,10 +496,10 @@
     </button>
 
     <div class="hidden sm:flex items-center gap-2 pl-1">
-        <span class="inline-flex items-center gap-2 rounded-full border border-blue-600/20 bg-blue-500/10 px-3 py-1.5 text-xs font-medium text-blue-600">
+        <span class="inline-flex items-center gap-2 rounded-full border border-rose-600/20 bg-rose-500/10 px-3 py-1.5 text-xs font-medium text-rose-600">
             <span class="relative flex h-2 w-2">
-                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-600/60"></span>
-                <span class="relative inline-flex h-2 w-2 rounded-full bg-blue-600"></span>
+                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-600/60"></span>
+                <span class="relative inline-flex h-2 w-2 rounded-full bg-rose-600"></span>
             </span>
             Accounts Payables
         </span>
@@ -506,6 +512,45 @@
        
         <div class="dropdown-panel search-results" id="searchResults" hidden></div>
     </div>
+ <!-- Quick Action: Run Ap -->
+        <div class="dropdown hidden md:block" data-dropdown="quickaction">
+            <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white shadow-sm transition-all focus:outline-none" data-toggle aria-haspopup="menu">
+                <i class="bi bi-plus-circle font-bold"></i>
+                <span>New Batch</span>
+                <i class="bi bi-chevron-down text-[10px] opacity-75"></i>
+            </button>
+            <div class="dropdown-panel w-56 p-1.5 shadow-2xl rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900" role="menu">
+                <div class="px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800">
+                    Quick Transactions
+                </div>
+                <ul class="py-1 text-xs">
+                    <li>
+                        <a asp-area="" asp-controller="Ap" asp-action="Invoices" class="flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600">
+                            <i class="bi bi-list text-rose-500 text-sm"></i>
+                            <span>Create New Invoice</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-area="" asp-controller="Ap" asp-action="Vouchers" class="flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600">
+                            <i class="bi bi-receipt text-blue-500 text-sm"></i>
+                            <span>New Voucher Entry</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-area="" asp-controller="Ap" asp-action="Payments" class="flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600">
+                            <i class="bi bi-cash text-emerald-500 text-sm"></i>
+                            <span>Add Invoice Payment</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a asp-area="" asp-controller="Ap" asp-action="DebitMemos" class="flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600">
+                            <i class="bi bi-receipt text-indigo-500 text-sm"></i>
+                            <span>Create Debit Memo</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
 
     <div class="topbar-actions">
         <button type="button" class="topbar-btn md:hidden" data-action="mobile-search" aria-label="Search">
@@ -559,13 +604,13 @@
             </a>
 
             <a href="/Dashboard/Ap"
-               class="flex items-center gap-2 rounded-xl bg-emerald-500/10 p-3 ring-1 ring-emerald-500/50 transition hover:bg-emerald-500/15">
+               class="flex items-center gap-2 rounded-xl bg-rose-500/10 p-3 ring-1 ring-rose-500/50 transition hover:bg-emerald-500/15">
                 <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300">
                     <i class="bi bi-receipt text-lg"></i>
                 </div>
                 <div class="min-w-0">
                     <p class="text-xs font-semibold text-slate-900 dark:text-white">Payables</p>
-                    <p class="text-[10px] text-emerald-600 dark:text-emerald-400">Active</p>
+                    <p class="text-[10px] text-rose-600 dark:text-rose-400">Active</p>
                 </div>
             </a>
 
@@ -596,7 +641,7 @@
         @* Hello Admin *@
             <div class="dropdown" data-dropdown="user">
                 <button type="button" class="topbar-user" data-toggle aria-haspopup="menu">
-                    <span class="topbar-avatar" id="userInitials"></span>
+                    <span class="topbar-avatar bg-rose-500" id="userInitials"></span>
                     <span class="topbar-user-text">
                         <span class="hello">Hello,</span>
                         <span  class="name " id="userFullName"> Loading user...</span>
@@ -606,7 +651,7 @@
                 </button>
                 <div class="dropdown-panel dropdown-panel-user" role="menu">
                     <div class="dropdown-head user-head">
-                        <span class="topbar-avatar lg" id="userInitialsLg"></span>
+                        <span class="topbar-avatar lg bg-rose-500" id="userInitialsLg"></span>
                         <span class="user-head-text">
                             <span class="name" id="userFullNameLg"></span>
                             <span class="email" id="userEmail"></span>

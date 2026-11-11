@@ -6,7 +6,7 @@ Layout = "~/Views/Shared/_adminArLayout.cshtml";
 <div class="content">
     <div class="mb-6 content-header">
         <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
-            <span>AR - SharedResources</span>
+            <span>AP - SharedResources</span>
             <i class="bi bi-chevron-right text-xs"></i>
             <span class="text-blue-600 font-medium">Company Profile</span>
         </div>
@@ -372,7 +372,19 @@ Layout = "~/Views/Shared/_adminArLayout.cshtml";
                     </div>
 
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      
+                       <label  class="label flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 dark:border-slate-800 p-4 transition hover:border-blue-300 hover:bg-blue-50/40">
+                            <input
+                                type="checkbox"
+                                id="isTaxLevyInclusive"
+                                v-model="isTaxLeviesInclusive"
+                                class="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                            <span>
+                                <span class="block text-sm font-semibold text-slate-800">VAT Inclusive</span>
+                                <span class="mt-1 block text-xs leading-5 text-slate-500">
+                                    Include applicable tax levies, such as GETFL, in the relevant amounts.
+                                </span>
+                            </span>
+                        </label>
 
                        <label  class="label flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 dark:border-slate-800 p-4 transition hover:border-blue-300 hover:bg-blue-50/40">
                             <input

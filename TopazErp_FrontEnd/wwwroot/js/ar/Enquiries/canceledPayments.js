@@ -2,12 +2,12 @@
     'use strict';
     const EMPTY_GUID = '00000000-0000-0000-0000-000000000000';
     const ENDPOINTS = {
-        invoices: '/Ap/GetInvoices',
-        suppliers: '/SharedResource/GetSuppliers',
+        invoices: '/Ar/GetInvoices',
+        customers: '/SharedResource/GetCustomers',
         currencies: '/SharedResource/GetCurrencies',
         organizationalUnits: '/SharedResource/GetCostCenters/',
         accounts: '/Ap/InitJournalEntry',
-        payments: '/Ap/GetPayments',
+        payments: '/Ar/GetPayments',
         banks: '/SharedResource/GetBanks',
     };
 
@@ -85,7 +85,7 @@
             return {
                 theme: '#0645e7',
                 theme1: '#383636',
-                suppliers: [],
+                customers: [],
                 accounts: [],
                 currencies: [],
                 ouList: [],
@@ -99,9 +99,9 @@
                 invoiceList: [],
                 invoiceId: '',
                 detailsList: [],
-                supplierList: [],
-                supplierId: '',
-                supplierName: '',
+                customerList: [],
+                customerId: '',
+                customerName: '',
                 accountNumber: '',
                 invoiceNumber: '',
                 paymentDate: isoDate(new Date()),
@@ -214,7 +214,7 @@
                     { key: 'id', label: 'ID', type: 'text', hidden: true, width: 74, help: 'Generated payment ID.' },
                     { key: 'batchNumber', label: 'Batch #', type: 'text', width: 170, required: true, searchable: true },
                     { key: 'paymentDate', label: 'Date', type: 'date', width: 145, required: true, searchable: true, defaultValue: today },
-                    { key: 'supplierId', label: 'Supplier', type: 'select', width: 240, required: true, searchable: true, options: this.suppliers, display: 'name', value: 'id' },
+                    { key: 'customerId', label: 'Customer', type: 'select', width: 240, required: true, searchable: true, options: this.customers, display: 'name', value: 'id' },
                     { key: 'currencyId', label: 'Currency', type: 'select', width: 170, required: true, options: this.currencies, display: 'currencyName', value: 'id' },
                     { key: 'buyRate', label: 'Rate', type: 'number', width: 130, required: true, decimals: 4 },
                     { key: 'amountToPay', label: 'Payment Amount', type: 'number', width: 160, required: true, decimals: 2 },
@@ -228,7 +228,7 @@
                     columns: [
                         { key: 'id', label: 'ID', type: 'text', hidden: true, width: 74, help: 'Generated payment-record ID.' },
                         { key: 'paymentId', label: 'Payment ID', type: 'text', hidden: true },
-                        { key: 'supplierName', label: 'Supplier', type: 'text', width: 40, required: true, searchable: true },
+                        { key: 'customerName', label: 'Customer', type: 'text', width: 40, required: true, searchable: true },
                         { key: 'invoiceNumber', label: 'Invoice', type: 'text', width: 40, required: true, searchable: true },
                         { key: 'currencyName', label: 'Currency', type: 'text', width: 40, required: true, searchable: true },
                         { key: 'buyRate', label: 'Rate', type: 'number', width: 40, decimals: 4 },
@@ -258,16 +258,16 @@
                 this.paymentList = paymentList.filter(pay => pay.isCanceled)
                 return this.paymentList;
             },
-            async getApInvoices() {
-                const list = await this.fetchList(ENDPOINTS.invoices, 'AP invoices');
+            async getArInvoices() {
+                const list = await this.fetchList(ENDPOINTS.invoices, 'AR invoices');
                 // Never wipe a previously loaded list because one refresh failed
                 if (list.length || !this.invoices.length) this.invoices = list;
                 return this.invoices;
             },
             async loadLookups() {
-                const [rawAccounts, rawSuppliers, rawCurrencies, rawUnits, rawBanks] = await Promise.all([
+                const [rawAccounts, rawCustomers, rawCurrencies, rawUnits, rawBanks] = await Promise.all([
                     this.fetchList(ENDPOINTS.accounts, 'accounts', 'accounts'),
-                    this.fetchList(ENDPOINTS.suppliers, 'suppliers'),
+                    this.fetchList(ENDPOINTS.customers, 'customers'),
                     this.fetchList(ENDPOINTS.currencies, 'currencies'),
                     this.fetchList(ENDPOINTS.organizationalUnits, 'organizational units'),
                     this.fetchList(ENDPOINTS.banks, 'banks')
@@ -281,8 +281,8 @@
                     accountName: a.accountName || a.name
                 }));
 
-                // Suppliers
-                this.suppliers = rawSuppliers.map(s => ({
+                // customers
+                this.customerrs = rawCustomers.map(s => ({
                     ...s,
                     name: (s.name || '').trim()
                 }));
@@ -400,7 +400,7 @@
                 this.invoiceDetailsMap = detailsMap;
                 return this.invoiceList;
             },
-            
+
             paymentInfoInvoice(responseData) {
                 const saved = Array.isArray(responseData) ? responseData : [];
                 this.selectedInvoiceList = saved.map(invoice => ({ ...invoice }));
@@ -455,7 +455,7 @@
 
                 return restoredExplicit > 0;
             },
-            
+
             toastHandler(type, message = 'An unexpected error occurred.') {
                 if (typeof Swal === 'undefined') {
                     console.log(message);
@@ -471,11 +471,11 @@
                     timerProgressBar: true
                 });
             },
-         
+
         },
         async mounted() {
             await this.loadLookups();
-            await this.getApInvoices();
+            await this.getArInvoices();
             await this.getPayments();
         }
     });
