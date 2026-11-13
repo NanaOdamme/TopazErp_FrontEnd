@@ -28,6 +28,11 @@ public class SharedResourceController: Controller
         return Json(result);
 
     }
+    public async Task<ActionResult> UpdateBusinessProfile([FromBody] object input)
+    {
+        var result = await _topazErpApi.UpdateCompanyProfile(input);
+        return Json(result);
+    }
         
         //tax levies
         public async Task<ActionResult> GetTaxLevies([FromQuery]int pageNo, int pageSize, string query)

@@ -1,451 +1,343 @@
 (() => {
     'use strict';
 
-    const EMPTY_GUID = '00000000-0000-0000-0000-000000000000';
-
     const pad = (value) => String(value).padStart(2, '0');
 
-    const isoDate = (date = new Date()) => {
-        const year = date.getFullYear();
-        const month = pad(date.getMonth() + 1);
-        const day = pad(date.getDate());
+    const MONTHS = {
+        jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+        jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12',
+    };
 
-        return `${year}-${month}-${day}`;
+    // Convert dates to YYYY-MM-DD without Moment.
+    const isoDate = (date) => {
+        if (date === null || date === undefined || date === '') return '';
+
+        if (typeof date === 'string') {
+            const raw = date.trim();
+
+            if (!raw) return '';
+
+            if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+                return raw.slice(0, 10);
+            }
+
+            // Handle .NET JSON dates.
+            const ms = /\/Date\((-?\d+)\)\//.exec(raw);
+
+            if (ms) {
+                const d = new Date(Number(ms[1]));
+
+                return Number.isNaN(d.getTime())
+                    ? ''
+                    : `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+            }
+
+            // Handle dd-MMM-yyyy (e.g. "12-Nov-2026").
+            const dMonY = /^(\d{1,2})[/-]([A-Za-z]{3})[/-](\d{4})$/.exec(raw);
+
+            if (dMonY) {
+                const month = MONTHS[dMonY[2].toLowerCase()];
+                if (month) return `${dMonY[3]}-${month}-${pad(dMonY[1])}`;
+            }
+
+            // Handle DD/MM/YYYY or DD-MM-YYYY.
+            const dmy = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/.exec(raw);
+
+            if (dmy) {
+                return `${dmy[3]}-${pad(dmy[2])}-${pad(dmy[1])}`;
+            }
+
+            // Handle YYYY/MM/DD.
+            const ymd = /^(\d{4})[/-](\d{1,2})[/-](\d{1,2})/.exec(raw);
+
+            if (ymd) {
+                return `${ymd[1]}-${pad(ymd[2])}-${pad(ymd[3])}`;
+            }
+        }
+
+        const d = date instanceof Date ? date : new Date(date);
+
+        if (Number.isNaN(d.getTime())) return '';
+
+        const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+
+        return local.toISOString().slice(0, 10);
+    };
+
+    const today = isoDate(new Date());
+
+    const formatAmount = (value) => {
+        if (value === null || value === undefined || value === '') return '';
+
+        const num = Number(value);
+        if (!Number.isFinite(num)) return value;
+
+        const rounded = Math.round(num * 100) / 100;
+        const text = Math.abs(rounded).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+
+        return rounded < 0 ? `(${text})` : text;
+    };
+
+    const formatQuantity = (value) => {
+        if (value === null || value === undefined || value === '') return '';
+
+        const num = Number(value);
+        if (!Number.isFinite(num)) return value;
+
+        return num.toLocaleString('en-US', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+        });
+    };
+
+    const formatDetailRow = (item, idx) => ({
+        index: item.index > 0 ? item.index : idx + 1,
+        rowNumber: idx + 1,
+        description: item.description ?? '',
+        referenceNumber: item.referenceNumber ?? '',
+        quantity: formatQuantity(item.quantity),
+        unitPrice: formatAmount(item.unitPrice),
+        amount: formatAmount(item.amount),
+        discount: formatAmount(item.discount),
+        subTotal: formatAmount(item.subTotal),
+        rowClass: 'data-row',
+    });
+
+    const TRANSPARENT_PIXEL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
+    const toLogoDataUri = (logo) => {
+        if (!logo || typeof logo !== 'string') return TRANSPARENT_PIXEL;
+
+        const trimmed = logo.trim();
+
+        if (!trimmed) return TRANSPARENT_PIXEL;
+
+        if (trimmed.startsWith('data:')) return trimmed;
+
+        return `data:image/jpeg;base64,${trimmed}`;
     };
 
     const app = Vue.createApp({
         data() {
             return {
-                emptyGuid: EMPTY_GUID,
+                emptyGuid: '00000000-0000-0000-0000-000000000000',
                 isLoading: false,
                 payload: {},
 
-                reportType: 'summary-report',
                 reportApiBaseUrl: '',
-                PrintedDate: isoDate(),
 
                 invoiceList: [],
+                invoiceId: '',
                 invoiceNumber: '',
-                invoiceId: 'ALL',
 
-                reportPath: '',
                 reportHeader: [],
-                reportDetails: [],
-                supplierInfo: [],
-                invoiceDetails: [],
-                pdfUrl: '',
-                referenceNumber: '',
+                reportPath: '',
+                reportData: [],
+                viewerColor: '#ff2056',
+                showReport: false,
 
                 reportPathConfig: {
-                    summaryReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1742396578/erp-reports/ap/invoiceDetails_mmyqoy_iryhog.rdl'
+                    invoiceReportPath: '/ReportTemplates/Ap/ap-invoice-by-id.html',
                 },
-
-                selectedInvoices: [],
-                selectAll: false,
-                showDropdown: false,
-
-                modalActionType: '',
-                modalInvoiceId: null,
-                modalTitle: '',
-                modalMessage: '',
-                modalBulkIds: [],
-
-                searchQuery: '',
-                sortKey: '',
-                sortAsc: true,
-
-                perPage: 10,
-                currentPage: 1,
-
-                expanded: [],
-                expandedYears: []
             };
         },
 
         computed: {
-            filteredInvoices() {
-                let list = this.invoiceList.filter(i => i.id !== 'ALL');
-
-                if (this.searchQuery) {
-                    const q = this.searchQuery.toLowerCase();
-
-                    list = list.filter(i =>
-                        String(i.batchNumber || '').toLowerCase().includes(q) ||
-                        String(i.invoiceNumber || '').toLowerCase().includes(q) ||
-                        String(i.supplierName || '').toLowerCase().includes(q) ||
-                        String(i.isPosted ?? '').toLowerCase().includes(q)
-                    );
-                }
-
-                if (this.sortKey) {
-                    list.sort((a, b) => {
-                        let valA = a[this.sortKey] ?? '';
-                        let valB = b[this.sortKey] ?? '';
-
-                        if (typeof valA === 'string') {
-                            valA = valA.toLowerCase();
-                        }
-
-                        if (typeof valB === 'string') {
-                            valB = valB.toLowerCase();
-                        }
-
-                        if (valA < valB) return this.sortAsc ? -1 : 1;
-                        if (valA > valB) return this.sortAsc ? 1 : -1;
-
-                        return 0;
-                    });
-                }
-
-                return list;
+            reportTitle() {
+                return 'AP INVOICE';
             },
-
-            isAllSelected() {
-                const invoices = this.invoiceList.filter(i => i.id !== 'ALL');
-
-                return invoices.length > 0 &&
-                    this.selectedInvoices.length === invoices.length;
-            },
-
-            paginatedInvoices() {
-                const start = (this.currentPage - 1) * this.perPage;
-
-                return this.filteredInvoices.slice(start, start + this.perPage);
-            },
-
-            totalPages() {
-                return Math.ceil(this.filteredInvoices.length / this.perPage) || 1;
-            },
-
-            selectedInvoice() {
-                if (this.selectedInvoices.length === 1) {
-                    return this.invoiceList.find(i => i.id === this.selectedInvoices[0]);
-                }
-
-                return null;
-            },
-
-            paginationPages() {
-                const total = this.totalPages;
-                const current = this.currentPage;
-                const delta = 2;
-
-                const range = [];
-                const rangeWithDots = [];
-
-                let lastPage;
-
-                for (let i = 1; i <= total; i++) {
-                    if (
-                        i === 1 ||
-                        i === total ||
-                        (i >= current - delta && i <= current + delta)
-                    ) {
-                        range.push(i);
-                    }
-                }
-
-                for (const page of range) {
-                    if (lastPage) {
-                        if (page - lastPage === 2) {
-                            rangeWithDots.push(lastPage + 1);
-                        } else if (page - lastPage > 2) {
-                            rangeWithDots.push('...');
-                        }
-                    }
-
-                    rangeWithDots.push(page);
-                    lastPage = page;
-                }
-
-                return rangeWithDots;
-            }
         },
 
         methods: {
-            unwrapList(response) {
-                const data = response?.data;
+            unwrapList(raw) {
+                if (!raw) return [];
 
-                if (Array.isArray(data)) return data;
-                if (Array.isArray(data?.result)) return data.result;
-                if (Array.isArray(data?.result?.items)) return data.result.items;
-                if (Array.isArray(data?.items)) return data.items;
-                if (Array.isArray(data?.data)) return data.data;
+                if (Array.isArray(raw)) return raw;
+
+                if (Array.isArray(raw.result)) return raw.result;
+
+                if (Array.isArray(raw.result?.items)) return raw.result.items;
+
+                if (Array.isArray(raw.items)) return raw.items;
+
+                if (Array.isArray(raw.data)) return raw.data;
 
                 return [];
             },
 
-            toggleYear(year) {
-                const index = this.expandedYears.indexOf(year);
+            async getReportHeader() {
+                const url = `/Ap/GetReportHeader?title=${encodeURIComponent(this.reportTitle)}`;
+                const response = await axios.get(url);
 
-                if (index > -1) {
-                    this.expandedYears.splice(index, 1);
-                } else {
-                    this.expandedYears.push(year);
+                this.reportHeader = response.data?.result || [];
+                return this.reportHeader;
+            },
+
+            async getInvoices() {
+                try {
+                    const response = await axios.get('/Ap/GetInvoices');
+
+                    const invoices = this.unwrapList(response.data);
+
+                    this.invoiceList = invoices
+                        .filter((invoice) => invoice.isCanceled === false)
+                        .map((invoice) => ({
+                            id: invoice.id,
+                            invoiceNumber: invoice.invoiceNumber,
+                        }));
+
+                    if (this.invoiceList.length > 0) {
+                        const firstInvoice = this.invoiceList[0];
+
+                        this.invoiceId = firstInvoice.id;
+                        this.invoiceNumber = firstInvoice.invoiceNumber;
+                    } else {
+                        this.invoiceId = '';
+                        this.invoiceNumber = '';
+                    }
+                } catch (error) {
+                    console.error('Get invoices error:', error);
+
+                    this.invoiceList = [];
+                    this.invoiceId = '';
+                    this.invoiceNumber = '';
+
+                    this.toastHandler('error', 'Unable to get invoices.');
                 }
             },
 
-            toggleSelectAll() {
-                if (this.selectAll) {
-                    this.selectedInvoices = this.invoiceList
-                        .filter(i => i.id !== 'ALL')
-                        .map(i => i.id);
-                } else {
-                    this.selectedInvoices = [];
-                }
-            },
+            async getReportData() {
+                if (this.isLoading) return;
 
-            sort(key) {
-                if (this.sortKey === key) {
-                    this.sortAsc = !this.sortAsc;
-                } else {
-                    this.sortKey = key;
-                    this.sortAsc = true;
-                }
-            },
-
-            toggleInvoice(id) {
-                const index = this.expanded.indexOf(id);
-
-                if (index >= 0) {
-                    this.expanded.splice(index, 1);
-                } else {
-                    this.expanded.push(id);
-                }
-            },
-
-            getPdf() {
-                if (this.invoiceId === 'ALL') {
-                    this.printAllInvoices();
-                    return;
-                }
-
-                if (!this.invoiceId) {
+                if (!this.invoiceId || this.invoiceId === this.emptyGuid) {
                     this.toastHandler('warning', 'Please select an invoice.');
                     return;
                 }
 
                 this.isLoading = true;
 
-                axios.get('/Ap/GetApInvoiceDetails', {
-                    params: {
-                        id: this.invoiceId
-                    },
-                    responseType: 'blob'
-                })
-                    .then(response => {
-                        if (!response.data.result || response.data.size === 0) {
-                            this.toastHandler('warning', 'No Data is selected for printing.');
-                            return;
-                        }
+                const selectedReportPath = this.reportPathConfig.invoiceReportPath;
+                const url = `/Ap/GetApInvoiceDetails?id=${encodeURIComponent(this.invoiceId)}`;
 
-                        const blob = new Blob([response.data], {
-                            type: 'application/pdf'
-                        });
+                try {
+                    const response = await axios.get(url);
+                    const raw = response?.data?.result ?? response?.data;
+                    const data = Array.isArray(raw) ? (raw[0] || null) : raw;
 
-                        const blobUrl = URL.createObjectURL(blob);
-
-                        window.open(blobUrl, '_blank');
-                    })
-                    .catch(error => {
-                        console.error('Invoice PDF error:', error);
-                        this.toastHandler('error', 'Unable to load the invoice.');
-                    })
-                    .finally(() => {
-                        this.isLoading = false;
-                    });
-            },
-
-            printAllInvoices() {
-                if (typeof PDFLib === 'undefined') {
-                    this.toastHandler('error', 'PDF processing library is not available.');
-                    return;
-                }
-             
-
-                const invoicesToPrint = this.selectedInvoices.length > 0
-                    ? this.invoiceList.filter(inv =>
-                        this.selectedInvoices.includes(inv.id)
-                    )
-                    : this.invoiceList.filter(inv => inv.id !== 'ALL');
-
-                if (invoicesToPrint.length === 0) {
-                    this.toastHandler('warning', 'No invoices to print.');
-                    return;
-                }
-
-                this.isLoading = true;
-
-                const { PDFDocument } = PDFLib;
-
-                PDFDocument.create()
-                    .then(mergedPdf => {
-                        let chain = Promise.resolve();
-
-                        invoicesToPrint.forEach(invoice => {
-                            chain = chain.then(() => {
-                                return axios.get('/Ap/GetApInvoiceDetails', {
-                                    params: {
-                                        id: invoice.id
-                                    },
-                                    responseType: 'arraybuffer'
-                                }).then(response => {
-                                    return PDFDocument.load(response.data);
-                                }).then(pdf => {
-                                    return mergedPdf.copyPages(
-                                        pdf,
-                                        pdf.getPageIndices()
-                                    ).then(pages => {
-                                        pages.forEach(page => {
-                                            mergedPdf.addPage(page);
-                                        });
-                                    });
-                                });
-                            });
-                        });
-
-                        return chain.then(() => mergedPdf.save());
-                    })
-                    .then(mergedBytes => {
-                        const blob = new Blob([mergedBytes], {
-                            type: 'application/pdf'
-                        });
-
-                        const url = URL.createObjectURL(blob);
-
-                        window.open(url, '_blank');
-
-                        this.toastHandler(
-                            'success',
-                            this.selectedInvoices.length > 0
-                                ? 'Selected invoices ready.'
-                                : 'All invoices ready.'
-                        );
-                    })
-                    .catch(error => {
-                        console.error('Merge invoice PDFs error:', error);
-                        this.toastHandler('error', 'Unable to merge invoice PDFs.');
-                    })
-                    .finally(() => {
-                        this.isLoading = false;
-                    });
-            },
-
-            getReportData() {
-                if (!this.invoiceId || this.invoiceId === 'ALL') {
-                    this.toastHandler('warning', 'Please select a specific invoice to generate this report.');
-                    return;
-                }
-
-                this.isLoading = true;
-
-                const url = '/Ap/GetApInvoiceDetails';
-
-                this.reportPath = this.reportPathConfig.summaryReportPath;
-
-                axios.get(url, {
-                    params: {
-                        id: this.invoiceId
+                    if (!data || (!data.invoiceNumber && !Array.isArray(data.invoiceDetails))) {
+                        this.reportData = [];
+                        this.showReport = false;
+                        this.toastHandler('warning', 'No invoice details were returned.');
+                        return;
                     }
-                })
-                    .then(response => {
-                        const data = response.data?.result ?? response.data;
 
-                        this.reportHeader = data?.reportHeader?.[0] ?? {};
-                        this.reportDetails = data?.reportDetails?.data?.[0] ?? {};
-                        this.supplierInfo = data?.reportDetails?.supplierInfo?.[0] ?? {};
-                        this.invoiceDetails = data?.reportDetails?.invoiceDetails ?? [];
+                    // Exclude smtpCredentials from report data; extract header,
+                    // supplier block and line items. supplierInfo/vendorInfo/
+                    // customerInfo are all accepted so whichever name the AP
+                    // DTO uses still works.
+                    const {
+                        smtpCredentials,
+                        reportHeader,
+                        supplierInfo,
+                        vendorInfo,
+                        customerInfo,
+                        invoiceDetails,
+                        ...invoice
+                    } = data;
 
-                        this.referenceNumber = this.invoiceDetails[0] ?? {};
+                    let headerObj = Array.isArray(reportHeader)
+                        ? (reportHeader[0] || {})
+                        : (reportHeader || {});
 
-                        // Keep the original response assignments.
-                        // Call renderReport() here if you want to display the RDL.
-                        // this.renderReport(
-                        //     data.reportHeader,
-                        //     data.reportDetails.data,
-                        //     this.reportPath
-                        // );
-                    })
-                    .catch(error => {
-                        console.error('Invoice report error:', error);
-                        this.toastHandler('error', 'Unable to get data.');
-                    })
-                    .finally(() => {
-                        this.isLoading = false;
-                    });
-            },
+                    if (!headerObj.companyName && !headerObj.companyLogo) {
+                        const fallbackHeader = await this.getReportHeader();
+                        headerObj = Array.isArray(fallbackHeader)
+                            ? (fallbackHeader[0] || {})
+                            : (fallbackHeader || {});
+                    }
 
-            renderReport(header, details, reportPath) {
-                console.log(details);
+                    const supplier = supplierInfo || vendorInfo || customerInfo || {};
+                    const details = Array.isArray(invoiceDetails) ? invoiceDetails : [];
+                    const formattedRows = details.map(formatDetailRow);
 
-                $('#reportView').empty();
+                    const headerItem = {
+                        ...headerObj,
+                        companyLogo: toLogoDataUri(headerObj.companyLogo),
+                        email: headerObj.email ?? '',
+                        CurrentDate: today,
+                        reportTitle: this.reportTitle,
 
-                $('#reportView').boldReportViewer({
-                    reportServiceUrl: this.reportApiBaseUrl,
-                    processingMode: ej.ReportViewer.ProcessingMode.Local,
+                        invoiceNumber: invoice.invoiceNumber ?? '',
+                        invoiceDate: isoDate(invoice.invoiceDate),
+                        // AP: the equivalent of the AR "projected pay date" is
+                        // the date the bill is due / expected to be paid.
+                        projectedPayDate: isoDate(
+                            invoice.projectedPayDate ??
+                            invoice.dueDate ??
+                            invoice.paymentDueDate
+                        ),
+                        purchaseOrderNumber: invoice.purchaseOrderNumber || '—',
+                        referenceNumber: invoice.referenceNumber || '—',
+                        currencyName: invoice.currencyName ?? '',
+                        totalInvoiceAmount: formatAmount(invoice.totalInvoiceAmount),
+                        balance: formatAmount(invoice.balance),
+                        amountInWords: invoice.amountInWords ?? '',
+                        // AP-only extras the template can bind if present.
+                        batchNumber: invoice.batchNumber ?? '',
+                        supplierInvoiceNumber: invoice.supplierInvoiceNumber ?? '',
+                        withholdingTax: formatAmount(invoice.withholdingTax),
+                        vatAmount: formatAmount(invoice.vatAmount),
 
-                    toolbarSettings: {
-                        showToolbar: true,
-                        items: ej.ReportViewer.ToolbarItems.All &
-                            ~ej.ReportViewer.ToolbarItems.Print
-                    },
+                        // Supplier block. Prefixed supplier* names prevent
+                        // overwriting the company header email/name.
+                        supplierName:
+                            supplier.supplierName ?? supplier.vendorName ?? supplier.customerName ?? '',
+                        supplierAddress:
+                            supplier.supplierAddress ?? supplier.vendorAddress ?? supplier.customerAddress ?? '',
+                        supplierPhoneNo:
+                            supplier.supplierPhoneNo ?? supplier.vendorPhoneNo ?? supplier.customerPhoneNo ?? '',
+                        accountNumber: supplier.accountNumber || '—',
+                        vatNumber: supplier.vatNumber || '—',
+                        contactPerson: supplier.contactPerson ?? '',
+                        supplierEmail: supplier.email ?? '',
 
-                    reportPath: reportPath,
+                        // Aliases so an AP template written against the AR
+                        // field names (customerName, customerAddress, ...)
+                        // renders without edits.
+                        customerName:
+                            supplier.supplierName ?? supplier.vendorName ?? supplier.customerName ?? '',
+                        customerAddress:
+                            supplier.supplierAddress ?? supplier.vendorAddress ?? supplier.customerAddress ?? '',
+                        customerPhoneNo:
+                            supplier.supplierPhoneNo ?? supplier.vendorPhoneNo ?? supplier.customerPhoneNo ?? '',
+                        customerEmail: supplier.email ?? '',
+                    };
 
-                    dataSources: [
-                        {
-                            value: header,
-                            name: 'DataSet1'
-                        },
-                        {
-                            value: details,
-                            name: 'DataSet2'
-                        }
-                    ]
-                });
-            },
+                    const reportData = [headerItem, ...formattedRows];
 
-            getInvoices() {
-                this.isLoading = true;
-                axios.get('/Ap/GetInvoices')
-                    .then(response => {
-                        const invoices = this.unwrapList(response)
-                            .filter(x => x.isCanceled === false);
+                    this.reportPath = selectedReportPath;
+                    this.reportData = reportData;
+                    this.showReport = reportData.length > 0 && Boolean(headerItem.invoiceNumber || formattedRows.length);
 
-                        const allOption = {
-                            id: 'ALL',
-                            invoiceNumber: 'ALL',
-                            supplierName: '',
-                            displayText: 'All Invoices'
-                        };
+                    if (!this.showReport) {
+                        this.toastHandler('warning', 'No invoice data found.');
+                    }
+                } catch (error) {
+                    console.error('Invoice report error:', error);
 
-                        invoices.forEach(item => {
-                            item.displayText =
-                                `${item.invoiceNumber} - ${item.supplierName}`;
-                        });
+                    this.reportData = [];
+                    this.showReport = false;
 
-                        this.invoiceList = [allOption, ...invoices];
-                        this.invoiceId = 'ALL';
-
-                        })
-                    .catch(error => {
-                        console.error('Get invoices error:', error);
-                        this.toastHandler('error', 'Unable to get invoices.');
-                    })
-                    .finally(() => {
-                        this.isLoading = false;
-                    });
-            },
-
-            formatNumber(value) {
-                const number = parseFloat(value ?? 0);
-
-                return isNaN(number)
-                    ? '-'
-                    : number.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    });
+                    this.toastHandler(
+                        'error',
+                        error.response?.data?.message || 'Unable to get invoice report.'
+                    );
+                } finally {
+                    this.isLoading = false;
+                }
             },
 
             toastHandler(type, message = 'An unexpected error occurred.') {
@@ -453,6 +345,7 @@
                     console.log(message);
                     return;
                 }
+
                 Swal.fire({
                     toast: true,
                     position: 'top-end',
@@ -460,17 +353,21 @@
                     title: message,
                     showConfirmButton: false,
                     timer: 4000,
-                    timerProgressBar: true
+                    timerProgressBar: true,
                 });
-
             },
         },
 
-        mounted() {
-            this.reportApiBaseUrl = reportApiBaseUrl;
-            this.getInvoices();
-        }
+        async mounted() {
+
+            await this.getInvoices();
+            if (this.invoiceId) {
+                await this.getReportData();
+            }
+        },
     });
+
     app.use(WSelectPlugin);
+    app.component('PdfViewer', PdfViewer);
     app.mount('#app');
 })();

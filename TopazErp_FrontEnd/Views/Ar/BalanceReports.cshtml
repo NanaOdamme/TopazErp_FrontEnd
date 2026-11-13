@@ -1,0 +1,149 @@
+@{
+    ViewBag.Title = "Opening Balances";
+    Layout = "~/Views/Shared/_adminArLayout.cshtml";
+}
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>AR - Reports</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Opening Balances</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+
+            <div class="page-title">
+                <h2 class="text-2xl font-semibold text-gray-800">
+                    Reports
+                </h2>
+                
+            </div>
+        </div>
+    </div>
+   
+<div id="app" class="card" data-card-title="Reports - Opening Balances">
+
+    <div class="space-y-5">
+
+        <!-- Report Status -->
+        <div>
+            <label class="label block text-sm">
+                Select Report Status:
+            </label>
+
+            <div class="flex flex-wrap items-center gap-3 rounded-lg py-3">
+
+                <label for="statusAll"
+                       class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-blue-300 hover:bg-blue-50/50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-500 dark:hover:bg-slate-800">
+
+                    <input id="statusAll"
+                           type="radio"
+                           value="all"
+                           v-model="reportStatus"
+                           class="input-control" />
+
+                    <span>All</span>
+                </label>
+
+                <label for="statusPosted"
+                       class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-blue-300 hover:bg-blue-50/50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-500 dark:hover:bg-slate-800">
+
+                    <input id="statusPosted"
+                           type="radio"
+                           value="posted"
+                           v-model="reportStatus"
+                           class="input-control" />
+
+                    <span>Posted</span>
+                </label>
+
+                <label for="statusUnposted"
+                       class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 transition-colors hover:border-blue-300 hover:bg-blue-50/50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-500 dark:hover:bg-slate-800">
+
+                    <input id="statusUnposted"
+                           type="radio"
+                           value="unposted"
+                           v-model="reportStatus"
+                           class="input-control" />
+
+                    <span>Unposted</span>
+                </label>
+
+            </div>
+        </div>
+
+        <!-- Report Filters -->
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+
+            <!-- Report Type -->
+            <label class="label block text-sm">
+                Select Report Type:
+
+                <select class="input-control"
+                        v-model="reportType">
+
+                    <option value="summary">Summary</option>
+                    <option value="byCustomer">By Customer</option>
+                    <option value="type2">Type 2</option>
+
+                </select>
+            </label>
+
+            <!-- Customer-->
+            <div v-if="reportType === 'byCustomer'">
+
+                <w-select
+                    v-model="customerId"
+                    :options="customerList"
+                    display-key="name"
+                    value-key="id"
+                    placeholder="Select Customer"
+                    label="Customer:"
+                    required>
+                </w-select>
+
+            </div>
+
+        </div>
+
+        <!-- Generate Report -->
+        <div class="flex justify-end mb-5">
+
+            <button type="button"
+                    @@click="getReportData"
+                    :disabled="isLoading"
+                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+
+                <span v-if="isLoading">
+                    <i class="las la-spinner la-spin mr-1"></i>
+                    Generating...
+                </span>
+
+                <span v-else>
+                    <i class="las la-file-alt mr-1"></i>
+                    Generate Report
+                </span>
+
+            </button>
+
+        </div>
+
+        <hr />
+        <div class="w-full mt-6" style="height: 1000px;">
+            <div style="height: 820px;" v-if="showReport">
+                <pdf-viewer :src="reportPath"
+                            :data="reportData"
+                            :color="viewerColor"
+                            :title="reportTitle"></pdf-viewer>
+            </div>
+
+        </div>
+    
+
+    </div>
+
+</div>
+
+</div>
+
+<script src="~/js/ar/Reports/balances.js" asp-append-version="true"></script>

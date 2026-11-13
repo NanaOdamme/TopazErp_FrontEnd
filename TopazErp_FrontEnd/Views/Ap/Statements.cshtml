@@ -87,31 +87,27 @@
                 label="Supplier:"
                 required>
             </w-select>
-
-        </div>
-
-        <!-- Date Filters: Only Type 2 and Type 3 -->
-        <div v-if="reportType === 'type2' || reportType === 'type3'"
-             class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-
-            <label class="label block text-sm">
-                Start Date:
-                <input id="startDate"
-                       v-model="startDate"
-                       type="date"
-                       class="input-control" />
-            </label>
-
+            <!-- Date Filters: Only Type 2 and Type 3 -->
+            <div v-if="reportType === 'type2' || reportType === 'type3'">
+                <label class="label block text-sm">
+                    Start Date:
+                    <input id="startDate"
+                           v-model="startDate"
+                           type="date"
+                           class="input-control" />
+                </label>
+            </div>
+            <div v-if="reportType === 'type2' || reportType === 'type3'">
             <label class="label block text-sm">
                 End Date:
                 <input id="endDate"
                        v-model="endDate"
                        type="date"
                        class="input-control" />
-            </label>
-
+            </label></div>
         </div>
 
+       
         <!-- Generate Report -->
         <div class="flex justify-end">
             <button type="button"
@@ -134,10 +130,14 @@
     <hr class="my-4">
 
     <!-- Report Viewer -->
-    <div class="p-4 my-4 rounded-xl dark:bg-slate-800">
-        <div id="reportView"
-             style="height:auto;width:auto;min-height:500px;">
+    <div class="w-full mt-6" style="height: 1000px;">
+        <div style="height: 820px;" v-if="showReport">
+            <pdf-viewer :src="reportPath"
+                        :data="reportData"
+                        :color="viewerColor"
+                        :title="reportTitle"></pdf-viewer>
         </div>
+
     </div>
 
 </div>

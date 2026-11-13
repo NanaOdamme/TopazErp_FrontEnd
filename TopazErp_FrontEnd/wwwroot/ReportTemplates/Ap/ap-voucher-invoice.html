@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>AP Payment Vouchers - By Invoice</title>
+
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 10mm;
+        }
+
+        .report-sheet {
+            font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+            color: #1f2937;
+            padding: 28px 32px 24px;
+            box-sizing: border-box;
+            background: #ffffff;
+        }
+
+        /* ---------- repeating header ---------- */
+        .report-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            border-bottom: 3px solid #1f1f1f;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+
+        .report-header .logo {
+            width: 120px;
+            max-height: 72px;
+            object-fit: contain;
+            flex: 0 0 auto;
+        }
+
+        .report-header .header-center {
+            flex: 1;
+        }
+
+        .report-header .company-name {
+            font-size: 22px;
+            font-weight: 700;
+            color: #010203;
+            letter-spacing: .2px;
+            margin: 0 0 4px;
+        }
+
+        .report-header .company-meta {
+            font-size: 12px;
+            color: #070606;
+            line-height: 1.55;
+        }
+
+        /* ---------- report title & parameters ---------- */
+        .report-meta-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 16px;
+            margin-bottom: 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #d1d5db;
+        }
+
+        .title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #000000;
+        }
+
+        .supplier-meta {
+            font-size: 10px;
+            color: #000000;
+            margin-top: 3px;
+        }
+
+        .supplier-meta span:not(:empty) {
+            margin-right: 12px;
+            font-weight: 600;
+        }
+
+        .report-params {
+            text-align: right;
+            font-size: 10px;
+            color: #374151;
+            white-space: nowrap;
+            line-height: 1.6;
+        }
+
+        .report-params .param-value {
+            font-weight: 700;
+            color: #111827;
+        }
+
+        /* ---------- invoice fact strip ---------- */
+        .fact-strip {
+            display: flex;
+            gap: 0;
+            border: 1px solid #d1d5db;
+            border-radius: 3px;
+            margin: 4px 0 10px;
+            overflow: hidden;
+        }
+
+        .fact-strip .fact {
+            flex: 1;
+            padding: 7px 10px;
+            border-right: 1px solid #e5e7eb;
+            background: #fbfbfc;
+        }
+
+        .fact-strip .fact:last-child {
+            border-right: 0;
+        }
+
+        .fact-strip .fact-label {
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: #6b7280;
+            font-weight: 700;
+        }
+
+        .fact-strip .fact-value {
+            font-size: 12px;
+            font-weight: 700;
+            color: #111827;
+            margin-top: 2px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ---------- voucher table ---------- */
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9px;
+            margin-top: 6px;
+        }
+
+        .report-table thead {
+            display: table-header-group;
+        }
+
+        .report-table tr {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        .report-table th {
+            text-align: left;
+            font-weight: 700;
+            padding: 6px 4px;
+            border-bottom: 1.5px solid #6b7280;
+            color: #000000;
+            white-space: nowrap;
+            background-color: #f9fafb;
+        }
+
+        .report-table td {
+            padding: 5px 4px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+            color: #000000;
+        }
+
+        .report-table th.num,
+        .report-table td.num {
+            text-align: right;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .report-table .date {
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .report-table .reference {
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .report-table .currency {
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .report-table .sub {
+            font-size: 8px;
+            color: #6b7280;
+            white-space: nowrap;
+        }
+
+        .report-table .net-col {
+            font-weight: 600;
+        }
+
+        /* ---------- grouped rows ---------- */
+        .report-table tr.group-header td {
+            font-weight: 700;
+            font-size: 10px;
+            color: #000000;
+            border-top: 1px solid #d1d5db;
+            border-bottom: 1px solid #d1d5db;
+            padding-top: 6px;
+            padding-bottom: 6px;
+        }
+
+        .report-table tr.group-total td {
+            font-weight: 700;
+            color: #000000;
+            border-top: 1px solid #9ca3af;
+            border-bottom: 2px solid #1f2937;
+            padding-top: 6px;
+            padding-bottom: 6px;
+            white-space: nowrap;
+        }
+
+        /* ---------- footer ---------- */
+        .report-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #d1d5db;
+            margin-top: 18px;
+            padding-top: 10px;
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .footer-date {
+            text-align: left;
+            flex: 1;
+        }
+
+        .footer-brand {
+            text-align: center;
+            flex: 1;
+        }
+
+        .footer-page {
+            text-align: right;
+            flex: 1;
+            font-weight: 600;
+            color: #374151;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="report-sheet">
+
+    <!-- HEADER -->
+    <header class="report-header">
+        <img class="logo" src="{{companyLogo}}" alt="Company Logo"/>
+        <div class="header-center">
+            <p class="company-name">{{companyName}}</p>
+            <div class="company-meta">
+                <div>{{primaryPhoneNo}} | {{address}} | {{email}}</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- TITLE, SUPPLIER BLOCK & REPORT FILTERS -->
+    <div class="report-meta-bar">
+        <div>
+            <div class="title">{{reportTitle}}</div>
+            <div class="supplier-meta">
+                <span>Invoice: {{invoiceNumber}}</span>
+                <span>{{supplierName}}</span>
+                <span>{{accountNumber}}</span>
+            </div>
+        </div>
+        <div class="report-params">
+            <div>Vouchers: {{voucherCount}}</div>
+        </div>
+    </div>
+
+    <!-- INVOICE FACT STRIP -->
+    <div class="fact-strip">
+        <div class="fact">
+            <div class="fact-label">Invoice Amount</div>
+            <div class="fact-value">{{invoiceAmount}}</div>
+        </div>
+        <div class="fact">
+            <div class="fact-label">Invoice Balance</div>
+            <div class="fact-value">{{balance}}</div>
+        </div>
+        <div class="fact">
+            <div class="fact-label">Currency</div>
+            <div class="fact-value">{{currencyCode}}</div>
+        </div>
+        <div class="fact">
+            <div class="fact-label">Status</div>
+            <div class="fact-value">{{isPosted}}</div>
+        </div>
+    </div>
+
+    <!-- VOUCHERS APPLIED TO THE INVOICE -->
+    <table class="report-table">
+        <thead>
+        <tr>
+            <th>Currency</th>
+            <th class="reference">Voucher No.</th>
+            <th class="date">Entry Date</th>
+            <th class="date">Pay Date</th>
+            <th>Bank</th>
+            <th>Mode / Cheque</th>
+            <th class="num">Payment Amt</th>
+            <th class="num">Withheld</th>
+            <th class="num">VAT Withheld</th>
+            <th class="num">Total Tax</th>
+            <th class="num">Net Amt</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr data-repeat="rows" class="{{@rowClass}}">
+            <td class="currency">{{@currencyCode}}</td>
+            <td class="reference">{{@voucherNumber}}</td>
+            <td class="date">{{@voucherEntryDate}}</td>
+            <td class="date">{{@paymentDate}}</td>
+            <td>{{@bankName}}</td>
+            <td>
+                <div>{{@modeOfPayment}}</div>
+                <div class="sub">{{@chequeNumber}}</div>
+            </td>
+            <td class="num">{{@paymentAmount}}</td>
+            <td class="num">{{@withHeld}}</td>
+            <td class="num">{{@vatWithHeld}}</td>
+            <td class="num">{{@totalTaxAmount}}</td>
+            <td class="num net-col">{{@netAmount}}</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <!-- FOOTER -->
+    <footer class="report-footer">
+        <div class="footer-date">
+            {{CurrentDate}}
+        </div>
+
+        <div class="footer-brand">
+            Topaz AccountingPro (AP)
+        </div>
+
+        <div class="footer-page">
+            Page {{PageNumber}} of {{PageBreakCount}}
+        </div>
+    </footer>
+
+</div>
+
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a59d9e4ccbc09339',t:'MTc5NDU3MTI1MA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a59d9e4ccbc09339',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

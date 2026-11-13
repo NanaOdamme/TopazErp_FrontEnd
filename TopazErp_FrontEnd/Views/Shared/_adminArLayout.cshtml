@@ -49,6 +49,7 @@
     <link rel="stylesheet" href="~/css/data-table.css" asp-append-version="true" />
     <script src="~/js/components/dataTable.js" asp-append-version="true"></script>
     <script src="~/js/components/select-input.js" asp-append-version="true"></script>
+    <script src="~/js/components/pdf-viewer.js" asp-append-version="true"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -140,6 +141,12 @@
                     <span class="menu-title">Dashboard</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="CompanyProfile">
+                    <i class="bi bi-house-door"></i>
+                    <span class="menu-title">Company Profile</span>
+                </a>
+            </li>
             <!-- General Setups -->
             @*<li class="nav-section"><span class="menu-title">General</span></li>*@
             <li class="nav-section">
@@ -152,12 +159,7 @@
                 </a>
                 <ul class="menu-content">
 
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="CompanyProfile">
-                            <i class="bi bi-building"></i>
-                            <span class="menu-title">Company Profile</span>
-                        </a>
-                    </li>
+                   
 
                     @*<li class="nav-item">
                         <a class="menu-link" asp-area="" asp-controller="Ap" asp-action="Departments">
@@ -267,7 +269,7 @@
                     <li class="nav-item">
                         <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="CreditMemos">
                             <i class="bi bi-file-earmark-minus"></i>
-                            <span class="menu-title">Credit Memos</span>
+                            <span class="menu-title">Credit Memos / Adv.Payments</span>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -392,7 +394,12 @@
                             <span class="menu-title">Statements</span>
                         </a>
                     </li>
-
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="PrintInvoice">
+                            <i class="bi bi-printer"></i>
+                            <span class="menu-title">Print Invoice</span>
+                        </a>
+                    </li>
                     <li class="nav-item">
                         <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="InvoiceReports">
                             <i class="bi bi-receipt"></i>
@@ -423,7 +430,7 @@
                     <li class="nav-item">
                         <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="CreditMemoReports">
                             <i class="bi bi-file-earmark-minus"></i>
-                            <span class="menu-title">Debit Memo</span>
+                            <span class="menu-title">Advanced Payments</span>
                         </a>
                     </li>
 
@@ -438,6 +445,12 @@
                         <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="GlTransactions">
                             <i class="bi bi-journal-text"></i>
                             <span class="menu-title">AR G/L Transactions</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="Ar" asp-action="QuotationsReports">
+                            <i class="bi bi-list"></i>
+                            <span class="menu-title">Quotations</span>
                         </a>
                     </li>
 

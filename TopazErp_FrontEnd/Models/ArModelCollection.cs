@@ -269,43 +269,19 @@ public class ArGlTransactions
 }
 public class ArPaymentReceipt
 {
-    // Company Header
-    public string CompanyName { get; set; }
-    public string PrimaryPhoneNo { get; set; }
-    public string Address { get; set; }
-    public string Email { get; set; }
-    public string ReportTitle { get; set; }
-    public string CompanyLogo { get; set; }
-
-    // Payment Details
-    public Guid Id { get; set; }
     public string CustomerName { get; set; }
+    public string InvoiceNo { get; set; }
+    public decimal PaidAmount { get; set; }
     public string PaymentDate { get; set; }
-    public string ChequeNo { get; set; }
-    public decimal AmountToApply { get; set; }
-    public decimal AmountToPay { get; set; }
-    public decimal OutstandingCreditMemo { get; set; }
-    public string CurrencyName { get; set; }
+    public string AmountInWords { get; set; }
     public string ModeOfPayment { get; set; }
+    public string ChequeNo { get; set; }
+    public string CurrencyName { get; set; }
     public string CurrencyCode { get; set; }
-
-    // Invoice Details
-    public decimal TotalInvoiceAmount { get; set; }
-    public decimal Rate { get; set; }
-    public string InvoiceNumber { get; set; }
-    public string InvoiceType { get; set; }
-    public string InvoiceDate { get; set; }
-
-    // Bank & GL Details
+    public string ReceiptNo { get; set; }
     public string BankName { get; set; }
     public string BankBranch { get; set; }
-    public string CreditGl { get; set; }
-    public string DebitGl { get; set; }
-    public string BatchNumber { get; set; }
-
-    // Additional Details
-    public string AmountInWords { get; set; }
-    public decimal PayRate { get; set; }
+    public SmtpCredentials SmtpCredentials { get; set; }
 }
 
 public class ArPaymentReport
@@ -366,6 +342,9 @@ public class ArInvoicePdfData
     public decimal Balance { get; set; }
     public decimal TotalInvoiceAmount { get; set; }
     public string AmountInWords { get; set; }
+
+    public decimal TotalBeforeDiscount { get; set; }
+    public decimal TotalDiscount { get; set; }
     public string CurrencyName { get; set; }
     public string PurchaseOrderNumber { get; set; }
     public decimal VatAmount { get; set; }
@@ -374,6 +353,7 @@ public class ArInvoicePdfData
     public ReportHeader ReportHeader { get; set; }
     public CustomerInfo CustomerInfo { get; set; }
     public List<ArInvoiceDetailDto> InvoiceDetails { get; set; }
+
     public SmtpCredentials SmtpCredentials { get; set; }
 
 
@@ -400,5 +380,40 @@ public class ArInvoiceDetailDto
     public decimal Quantity { get; set; }
     public decimal Amount { get; set; }
     public decimal SubTotal { get; set; }
+    public decimal Discount { get; set; }
 }
 
+public class QuotationData
+{
+    public string QuotationNumber { get; set; }
+    public string QuotationDate { get; set; }
+    public decimal TotalAmount { get; set; }
+    public string AmountInWords { get; set; }
+    public decimal TotalBeforeDiscount { get; set; }
+    public decimal TotalDiscount { get; set; }
+    public string CurrencyName { get; set; }
+    public decimal VatAmount { get; set; }
+    public string ReferenceNumber { get; set; }
+
+    public string Notes { get; set; }
+    public ReportHeader ReportHeader { get; set; }
+    public CustomerInfo CustomerInfo { get; set; }
+    public List<QuotationDetailDto> Details { get; set; }
+    public SmtpCredentials SmtpCredentials { get; set; }
+}
+
+
+
+public class QuotationDetailDto
+{
+    public int Index { get; set; }
+    public string Description { get; set; }
+    public decimal UnitPrice { get; set; }
+    public string ReferenceNumber { get; set; }
+
+    public decimal AmountBeforeDiscount { get; set; }
+    public decimal Quantity { get; set; }
+    public string Amount { get; set; }
+    public decimal SubTotal { get; set; }
+
+}

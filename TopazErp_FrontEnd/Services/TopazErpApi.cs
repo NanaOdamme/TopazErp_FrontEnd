@@ -167,6 +167,29 @@ public class TopazErpApi: ITopazErpApi
         return new CompanyProfileResponse { };
     }
     
+    public async Task<BaseApiResponse> UpdateCompanyProfile(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        var url = $"{_apiBaseUrl}CompanyProfile/Update";
+
+        using var request = new HttpRequestMessage(HttpMethod.Put, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);
+
+        using var response = await _httpClient.SendAsync(request);
+        var responseData = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"profile update failed ({(int)response.StatusCode}): {responseData}");
+        }
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+               ?? throw new InvalidOperationException(
+                   "The profile Update API returned an empty or invalid response.");
+    }
+    
     //shared
     public async Task<BankResponse> GetBanks(int pageNo, int pageSize, string query)
     {
@@ -4699,7 +4722,7 @@ public async Task<BaseApiResponse> ApplyCreditMemo(object dto)
     {
         var authToken = _claimsHelper.GetAuthToken();
     
-        string url = $"{_apiBaseUrl}ApReports/GetStatementType3" +
+        string url = $"{_apiBaseUrl}ArReport/GetStatementType3" +
                      $"?customerId={customerId}" +
                      $"&startDate={startDate.ToString("yyyy-MM-dd")}" +
                      $"&endDate={endDate.ToString("yyyy-MM-dd")}";
@@ -4774,7 +4797,7 @@ public async Task<BaseApiResponse> ApplyCreditMemo(object dto)
     {
         var authToken = _claimsHelper.GetAuthToken();
     
-        string url = $"{_apiBaseUrl}ArReport/GetInvoice?supplierId={customerId}";
+        string url = $"{_apiBaseUrl}ArReport/GetInvoice?customerId={customerId}";
     
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");
@@ -4947,10 +4970,9 @@ public async Task<ArInvoiceReportResponse> GetArInvoiceReportById(Guid id)
 public async Task<ArInvoicePdfResponse> GetArInvoiceDetails(Guid id)
 {
     var authToken = _claimsHelper.GetAuthToken();
-
     string url = $"{_apiBaseUrl}ArReport/GetInvoiceDetails?id={id}";
 
-    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    using var request = new HttpRequestMessage(HttpMethod.Get, url);
     request.Headers.Add("Authorization", $"Bearer {authToken}");
 
     var response = await _httpClient.SendAsync(request);
@@ -5149,7 +5171,7 @@ public async Task<QuotationResponse> GetQuotationsReport()
 {
     var authToken = _claimsHelper.GetAuthToken();
 
-    string url = $"{_apiBaseUrl}ApReports/GetQuotations";
+    string url = $"{_apiBaseUrl}ArReport/GetQuotations";
 
     var request = new HttpRequestMessage(HttpMethod.Get, url);
     request.Headers.Add("Authorization", $"Bearer {authToken}");
@@ -5165,6 +5187,26 @@ public async Task<QuotationResponse> GetQuotationsReport()
 
     return new QuotationResponse();
 }
+public async Task<ArQuotationPdfResponse> GetArQuotationDetails(Guid id)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+    string url = $"{_apiBaseUrl}ArReport/GetQuotationPdf?quotationId={id}";
+
+    using var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<ArQuotationPdfResponse>(json)
+               ?? new ArQuotationPdfResponse();
+    }
+
+    return new ArQuotationPdfResponse();
+}
+
 
 public async Task<ArAgingResponse> GetArAgingSummary(
     DateTime startDate, int agingInterval)
@@ -6252,10 +6294,9 @@ public async Task<ApInvoiceReportResponse> GetApInvoiceReportById(Guid id)
 public async Task<ApInvoicePdfResponse> GetApInvoiceDetails(Guid id)
 {
     var authToken = _claimsHelper.GetAuthToken();
-
     string url = $"{_apiBaseUrl}ApReports/GetInvoiceDetails?id={id}";
 
-    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    using var request = new HttpRequestMessage(HttpMethod.Get, url);
     request.Headers.Add("Authorization", $"Bearer {authToken}");
 
     var response = await _httpClient.SendAsync(request);

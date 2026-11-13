@@ -53,6 +53,38 @@
         return local.toISOString().slice(0, 10);
     };
 
+    // >>> ADDED: format amounts with thousands separators and 2 decimals
+    //     (e.g. 6000 -> "6,000.00"). Non-numeric values pass through.
+    const formatAmount = (value) => {
+        if (value === null || value === undefined || value === '') return '';
+
+        const num = Number(value);
+
+        if (!Number.isFinite(num)) return value;
+
+        return num.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+    };
+
+    // >>> ADDED: the API returns the logo as raw base64 — convert it to a
+    //     data URI so <img src="{{companyLogo}}"> can render it. Falls back
+    //     to a transparent pixel when there is no logo.
+    const TRANSPARENT_PIXEL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
+    const toLogoDataUri = (logo) => {
+        if (!logo || typeof logo !== 'string') return TRANSPARENT_PIXEL;
+
+        const trimmed = logo.trim();
+
+        if (!trimmed) return TRANSPARENT_PIXEL;
+
+        if (trimmed.startsWith('data:')) return trimmed;
+
+        return `data:image/jpeg;base64,${trimmed}`;
+    };
+
 
     const today = isoDate(new Date());
 
@@ -86,15 +118,36 @@
                 reportHeader:[],
 
                 reportPath: '',
+                reportData:[],
+                viewerColor: 'blue',
+                showReport: false,
 
                 reportPathConfig: {
-
-                    summaryReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1744299834/erp-reports/ar/invoices_jczqlj_xpsoqv.rdl',
-                    customerInvoiceReport: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1744299834/erp-reports/ar/invoices_jczqlj_xpsoqv.rdl',
+                    invoiceReportPath: '/ReportTemplates/Ar/ar-invoice-summary.html',
+                    customerInvoicesReportPath: '/ReportTemplates/Ar/ar-invoice-customer.html',
                 },
             };
         },
-
+        computed: {
+            reportTitle() {
+                let title = 'AR INVOICES'
+                if (this.reportType === 'summary-report') {
+                    title = 'Invoice Summary';
+                }
+                else if (this.reportType === 'byCustomer')
+                {
+                    title = 'Invoice Summary Report For Customer'
+                }
+                else if (this.reportType === 'byDate'){
+                    title = `Invoice Summary for the period ${this.startDate} to ${this.endDate}`;
+                }
+                else if (this.reportType === 'byInvoiceRange')
+                {
+                    title = `Invoice Summary for the ranges ${this.startNumber} to ${this.endNumber}`;
+                }
+                return title;
+            }
+        },
         methods: {
             // Handle direct arrays and common ABP response wrappers.
             unwrapList(raw) {
@@ -112,7 +165,7 @@
             },
             // report header
             async getReportHeader() {
-                const url = `/Ap/GetReportHeader?title=AR Invoices`;
+                const url = `/Ap/GetReportHeader?title=${this.reportTitle}`;
                 const response = await axios.get(url);
 
                 this.reportHeader = response.data?.result || [];
@@ -123,8 +176,12 @@
 
                 let url = '/Ar/GetAllInvoices';
 
+                // >>> CHANGED: every invoice report now uses an HTML template.
+                //     The By Customer report uses the customer invoices template.
                 let selectedReportPath =
-                    this.reportPathConfig.summaryReportPath;
+                    this.reportType === 'byCustomer'
+                        ? this.reportPathConfig.customerInvoicesReportPath
+                        : this.reportPathConfig.invoiceReportPath;
 
                 switch (this.reportType) {
                     case 'summary-report':
@@ -139,9 +196,6 @@
                             return;
                         }
 
-                        selectedReportPath =
-                            this.reportPathConfig.customerInvoiceReport;
-
                         url = `/Ar/GetInvoiceReport?CustomerId=${encodeURIComponent(this.customerId)}`;
                         break;
 
@@ -154,9 +208,6 @@
                             return;
                         }
 
-                        selectedReportPath =
-                            this.reportPathConfig.customerInvoiceReport;
-
                         url = `/Ar/GetInvoiceByBatch?batchNumber=${encodeURIComponent(this.batchNumber)}`;
                         break;
 
@@ -168,9 +219,6 @@
                             );
                             return;
                         }
-
-                        selectedReportPath =
-                            this.reportPathConfig.customerInvoiceReport;
 
                         url = `/Ar/GetInvoiceByInvoiceNumber?invoiceNumber=${encodeURIComponent(this.invoiceNumber)}`;
                         break;
@@ -191,9 +239,6 @@
                             );
                             return;
                         }
-
-                        selectedReportPath =
-                            this.reportPathConfig.customerInvoiceReport;
 
                         url = `/Ar/GetInvoiceByDate?startDate=${encodeURIComponent(this.startDate)}&endDate=${encodeURIComponent(this.endDate)}`;
                         break;
@@ -222,9 +267,6 @@
                             return;
                         }
 
-                        selectedReportPath =
-                            this.reportPathConfig.customerInvoiceReport;
-
                         url = `/Ar/GetInvoiceByRange?startNumber=${encodeURIComponent(this.startNumber)}&endNumber=${encodeURIComponent(this.endNumber)}`;
                         break;
 
@@ -237,19 +279,63 @@
                 }
 
                 this.isLoading = true;
-
                 try {
                     const response = await axios.get(url);
 
-                    const result = response.data.result || {};
+                    const result = response.data.result || [];
                     const header = await this.getReportHeader();
-                    this.reportPath = selectedReportPath;
 
-                    this.renderReport(
-                        header,
-                        result,
-                        selectedReportPath
+                    // The header comes back as an array with one object —
+                    // take the first item so reportData[0] is always the
+                    // header (even if the header array is empty).
+                    const headerObj = Array.isArray(header)
+                        ? (header[0] || {})
+                        : (header || {});
+
+                    const rows = Array.isArray(result) ? result : [result];
+
+                    // >>> ADDED: format the amount fields on every row so the
+                    //     template shows "6,000.00" instead of "6000".
+                    const formattedRows = rows.map((row) => ({
+                        ...row,
+                        balance: formatAmount(row.balance),
+                        totalInvoiceAmount: formatAmount(row.totalInvoiceAmount),
+                    }));
+
+                    // >>> ADDED: convert the logo to a data URI and add the
+                    //     current date so the template's {{companyLogo}} and
+                    //     {{CurrentDate}} placeholders are filled. The customer
+                    //     name is added too — the customer invoices template
+                    //     shows it in its customer block (falls back to the
+                    //     first row's customerName).
+                    const selectedCustomer = this.customerList.find(
+                        (customer) => customer.id === this.customerId
                     );
+
+                    const headerItem = {
+                        ...headerObj,
+                        companyLogo: toLogoDataUri(headerObj.companyLogo),
+                        CurrentDate: today,
+                        customerName: selectedCustomer
+                            ? selectedCustomer.name
+                            : (formattedRows[0]?.customerName || ''),
+                    };
+
+                    // reportData = [header, ...invoiceRows]. The PdfViewer
+                    // treats the first item as the header (top-level
+                    // placeholders) and the rest as `rows` for the template's
+                    // data-repeat loops — all markup lives in the template.
+                    const reportData = [headerItem, ...formattedRows];
+
+                    this.reportPath = selectedReportPath;
+                    this.reportData = reportData;
+
+                    // >>> ADDED: show the report in the PdfViewer.
+                    this.showReport = reportData.length > 1;
+
+                    if (!this.showReport) {
+                        this.toastHandler('warning', 'No invoice data found.');
+                    }
 
                 } catch (error) {
                     console.error('Invoice report error:', error);
@@ -262,37 +348,7 @@
                 } finally {
                     this.isLoading = false;
                 }
-            },
 
-            renderReport(header, details, reportPath) {
-                const reportElement = $('#reportView');
-
-                reportElement.empty();
-
-                reportElement.boldReportViewer({
-                    reportServiceUrl: this.reportApiBaseUrl,
-
-                    processingMode: ej.ReportViewer.ProcessingMode.Local,
-
-                    toolbarSettings: {
-                        showToolbar: true,
-                        items: ej.ReportViewer.ToolbarItems.All &
-                            ~ej.ReportViewer.ToolbarItems.Print
-                    },
-
-                    reportPath: reportPath,
-
-                    dataSources: [
-                        {
-                            value: header,
-                            name: 'DataSet1'
-                        },
-                        {
-                            value: details,
-                            name: 'DataSet2'
-                        }
-                    ]
-                });
             },
 
             async getCustomers() {
@@ -383,11 +439,10 @@
 
             this.getCustomers();
             this.getInvoices();
-
             this.getReportData();
         }
     });
-
+    app.component('PdfViewer', PdfViewer);
     app.use(WSelectPlugin);
     app.mount('#app');
 })();

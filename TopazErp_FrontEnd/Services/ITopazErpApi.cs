@@ -14,6 +14,7 @@ public interface ITopazErpApi
     //business profile
     Task<BaseApiResponse> CreateCompanyProfile(object dto);
     Task<CompanyProfileResponse> GetBusinessProfile();
+    Task<BaseApiResponse> UpdateCompanyProfile(object dto);
     
     //shared 
     Task<BankResponse> GetBanks(int pageNo, int pageSize, string query);
@@ -422,6 +423,7 @@ public interface ITopazErpApi
     Task<ArPaymentReceiptResponse> GetArPaymentReceipts(List<Guid> ids);
 
     Task<QuotationResponse> GetQuotationsReport();
+     Task<ArQuotationPdfResponse> GetArQuotationDetails(Guid id);
     Task<ArAgingResponse> GetArAgingSummary(DateTime startDate, int agingInterval);
     Task<ArAgingResponse> GetArAgingByCustomer(Guid customerId, DateTime startDate, int agingInterval);
     Task<ArGlTransactionResponse> GetArGlTransaction(DateTime startDate, DateTime endDate, bool isMultiCurrency);

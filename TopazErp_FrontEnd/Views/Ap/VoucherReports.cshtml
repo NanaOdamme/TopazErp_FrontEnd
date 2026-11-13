@@ -129,12 +129,12 @@
     <hr class="my-4">
 
     <!-- Report Viewer -->
-    <div class="w-full mt-6">
-
-        <div
-            id="reportView"
-            class="w-full"
-            style="min-height: 650px;">
+    <div class="w-full mt-6" style="height: 1000px;">
+        <div style="height: 820px;" v-if="showReport">
+            <pdf-viewer :src="reportPath"
+                        :data="reportData"
+                        :color="viewerColor"
+                        :title="reportTitle"></pdf-viewer>
         </div>
 
     </div>

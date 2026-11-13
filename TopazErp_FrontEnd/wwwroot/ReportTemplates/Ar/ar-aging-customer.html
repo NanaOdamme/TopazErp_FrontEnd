@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>AR Aging Report</title>
+
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 10mm;
+        }
+
+        .report-sheet {
+            font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+            color: #1f2937;
+            padding: 28px 32px 24px;
+            box-sizing: border-box;
+            background: #ffffff;
+        }
+
+        /* ---------- repeating header (logo left, company details next to it) ---------- */
+        .report-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            border-bottom: 3px solid #1f1f1f;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+
+        .report-header .logo {
+            width: 120px;
+            max-height: 72px;
+            object-fit: contain;
+            flex: 0 0 auto;
+        }
+
+        .report-header .header-center {
+            flex: 1;
+        }
+
+        .report-header .company-name {
+            font-size: 22px;
+            font-weight: 700;
+            color: #111827;
+            letter-spacing: .2px;
+            margin: 0 0 4px;
+        }
+
+        .report-header .company-meta {
+            font-size: 12px;
+            color: #4b5563;
+            line-height: 1.55;
+        }
+        /* CUSTOMER INFORMATION */
+
+        .customer-section {
+            border-bottom: 3px solid #1f1f1f;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-top: 5px;
+            margin-bottom: 32px;
+        }
+
+        .customer-details {
+            text-align: left;
+            font-weight: 700;
+        }
+
+        .customer-heading {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+
+        }
+
+        .customer-name {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .customer-meta {
+            font-size: 11px;
+            line-height: 1.8;
+        }
+
+        .statement-date {
+            text-align: right;
+            font-size: 11px;
+        }
+        .title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .customer-meta {
+            font-size: 10px;
+            color: #374151;
+            margin-top: 3px;
+        }
+
+        .customer-meta span:not(:empty) {
+            margin-right: 12px;
+            font-weight: 600;
+        }
+        
+
+        /* ---------- aging table ---------- */
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9px;
+            margin-top: 6px;
+        }
+
+        .report-table thead {
+            display: table-header-group;
+        }
+
+        .report-table tr {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        .report-table th {
+            text-align: left;
+            font-weight: 700;
+            padding: 6px 4px;
+            border-bottom: 1.5px solid #6b7280;
+            color: #111827;
+            white-space: nowrap;
+            background-color: #f9fafb;
+        }
+
+        .report-table td {
+            padding: 5px 4px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+            color: #000000;
+        }
+
+        .report-table th.num,
+        .report-table td.num {
+            text-align: right;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .report-table .date {
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .report-table .reference {
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .report-table .customer-col {
+            text-align: left;
+            min-width: 110px;
+            max-width: 170px;
+            word-break: break-word;
+        }
+
+        .report-table .currency {
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .report-table .balance-col {
+            font-weight: 600;
+        }
+
+        /* ---------- grouped rows ---------- */
+        .report-table tr.group-header td {
+            font-weight: 700;
+            font-size: 10px;
+            color: #111827;
+            border-top: 1px solid #d1d5db;
+            border-bottom: 1px solid #d1d5db;
+            padding-top: 6px;
+            padding-bottom: 6px;
+        }
+
+        .report-table tr.group-total td {
+            font-weight: 700;
+            color: #111827;
+            border-top: 1px solid #9ca3af;
+            border-bottom: 2px solid #1f2937;
+            padding-top: 6px;
+            padding-bottom: 6px;
+            white-space: nowrap;
+        }
+
+        /* ---------- footer ---------- */
+        .report-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #d1d5db;
+            margin-top: 18px;
+            padding-top: 10px;
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .footer-date {
+            text-align: left;
+            flex: 1;
+        }
+
+        .footer-brand {
+            text-align: center;
+            flex: 1;
+        }
+
+        .footer-page {
+            text-align: right;
+            flex: 1;
+            font-weight: 600;
+            color: #374151;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="report-sheet">
+
+    <!-- HEADER -->
+    <header class="report-header">
+        <img class="logo" src="{{companyLogo}}" alt="Company Logo"/>
+        <div class="header-center">
+            <p class="company-name">{{companyName}}</p>
+            <div class="company-meta">
+                <div>{{primaryPhoneNo}} | {{address}} | {{email}}</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- CUSTOMER DETAILS -->
+    <section class="customer-section">
+
+        <div class="customer-details">
+
+            <div class="customer-heading">
+                Customer
+            </div>
+
+            <div class="customer-name">
+                {{customerName}}
+            </div>
+
+            <div class="customer-meta">
+                <div>Account No: {{accountNumber}}</div>
+                <div>Contact: {{contactPhone}}</div>
+            </div>
+
+        </div>
+
+        <div>
+            <div class="statement-date">
+                Date:  {{CurrentDate}}
+            </div>
+            <div class="title">
+                {{reportTitle}}
+            </div>
+        </div>
+
+
+    </section>
+
+
+    <!-- AGING TABLE -->
+    <table class="report-table">
+        <thead>
+        <tr>
+            <th>Currency</th>
+            <th class="reference">Invoice No.</th>
+            <th class="date">Inv. Date</th>
+            <th class="date">Pay Date</th>
+            <th class="num">Invoice Amt</th>
+            <th class="num">Paid Amt</th>
+            <th class="num">Balance</th>
+            <th class="num">{{currentDayLabel}}</th>
+            <th class="num">{{agingFirstLabel}}</th>
+            <th class="num">{{agingSecondLabel}}</th>
+            <th class="num">{{agingThirdLabel}}</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr data-repeat="rows" class="{{@rowClass}}">
+            <td class="currency">{{@currencyCode}}</td>
+            <td class="reference">{{@invoiceNumber}}</td>
+            <td class="date">{{@invoiceDate}}</td>
+            <td class="date">{{@projectedPayDate}}</td>
+            <td class="num">{{@totalInvoiceAmount}}</td>
+            <td class="num">{{@paidAmount}}</td>
+            <td class="num balance-col">{{@balance}}</td>
+            <td class="num">{{@currentDay}}</td>
+            <td class="num">{{@agingFirst}}</td>
+            <td class="num">{{@agingSecond}}</td>
+            <td class="num">{{@agingThird}}</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <!-- FOOTER -->
+    <footer class="report-footer">
+        <div class="footer-date">
+            {{CurrentDate}}
+        </div>
+
+        <div class="footer-brand">
+            Topaz AccountingPro (AR)
+        </div>
+
+        <div class="footer-page">
+            Page {{PageNumber}} of {{PageBreakCount}}
+        </div>
+    </footer>
+
+</div>
+
+</body>
+</html>

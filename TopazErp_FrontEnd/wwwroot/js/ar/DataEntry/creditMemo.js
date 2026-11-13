@@ -544,7 +544,7 @@
             setCurrentInvoice() {
                 if (this.invoiceId) {
                     const invoice = this.invoiceList.find(a => a.id === this.invoiceId);
-                    this.InvoiceId = invoice.id;
+                    this.invoiceId = invoice.id;
                     this.invoiceNo = invoice.invoiceNumber;
                     this.invoiceCurrencyName =  invoice.currencyName;
                     this.invoiceBuyRate = invoice.buyRate;

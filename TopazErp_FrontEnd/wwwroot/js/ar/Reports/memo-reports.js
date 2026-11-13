@@ -1,6 +1,6 @@
 (() => {
     'use strict';
-    
+
     const pad = (value) => String(value).padStart(2, '0');
 
     // Convert dates to YYYY-MM-DD without Moment.
@@ -46,11 +46,144 @@
 
         if (Number.isNaN(d.getTime())) return '';
 
-        const local = new Date(
-            d.getTime() - d.getTimezoneOffset() * 60000
-        );
+        const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
 
         return local.toISOString().slice(0, 10);
+    };
+
+    const today = isoDate(new Date());
+
+    const formatAmount = (value) => {
+        if (value === null || value === undefined || value === '') return '';
+
+        const num = Number(value);
+        if (!Number.isFinite(num)) return value;
+
+        const rounded = Math.round(num * 100) / 100;
+        const text = Math.abs(rounded).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+
+        return rounded < 0 ? `(${text})` : text;
+    };
+
+    const toNumber = (value) => {
+        if (typeof value === 'string') {
+            const cleaned = value.trim().replace(/,/g, '');
+            if (/^\(.*\)$/.test(cleaned)) {
+                const neg = Number(cleaned.slice(1, -1));
+                return Number.isFinite(neg) ? -neg : 0;
+            }
+            const n = Number(cleaned);
+            return Number.isFinite(n) ? n : 0;
+        }
+        const n = Number(value);
+        return Number.isFinite(n) ? n : 0;
+    };
+
+    const blankRow = {
+        currencyName: '',
+        currencyCode: '',
+        customerName: '',
+        accountNo: '',
+        batchNumber: '',
+        invoiceNo: '',
+        transactionDate: '',
+        modeOfPayment: '',
+        bankName: '',
+        bankBranch: '',
+        chequeNo: '',
+        chequeDate: '',
+        description: '',
+        buyRate: '',
+        invoiceBalance: '',
+        amount: '',
+        rowClass: '',
+    };
+
+    const formatRow = (row) => {
+        // Exclude GL account fields from the report payload.
+        const { liabilityGlId, liabilityName, ...safeRow } = row;
+
+        return {
+            ...blankRow,
+            ...safeRow,
+            customerName: safeRow.customerName ?? '',
+            accountNo: safeRow.accountNo ?? '',
+            batchNumber: safeRow.batchNumber ?? '',
+            invoiceNo: safeRow.invoiceNo ?? '',
+            modeOfPayment: safeRow.modeOfPayment ?? '',
+            bankName: safeRow.bankName ?? '',
+            bankBranch: safeRow.bankBranch ?? '',
+            chequeNo: safeRow.chequeNo ?? '',
+            description: safeRow.description ?? '',
+            buyRate: safeRow.buyRate ?? '',
+            transactionDate: isoDate(safeRow.transactionDate),
+            chequeDate: isoDate(safeRow.chequeDate),
+            invoiceBalance: formatAmount(safeRow.invoiceBalance),
+            amount: formatAmount(safeRow.amount),
+        };
+    };
+
+    const buildGroupedRows = (rows, { totals = true } = {}) => {
+        const groups = new Map();
+
+        rows.forEach((row) => {
+            const key =
+                (row.currencyName ?? '').toString().trim() ||
+                (row.currencyCode ?? '').toString().trim() ||
+                'N/A';
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(row);
+        });
+
+        const output = [];
+
+        groups.forEach((groupRows, currency) => {
+            output.push({
+                ...blankRow,
+                currencyName: currency,
+                rowClass: 'group-header',
+            });
+
+            let totalAmount = 0;
+
+            groupRows.forEach((row) => {
+                totalAmount += toNumber(row.amount);
+
+                output.push({
+                    ...formatRow(row),
+                    currencyName: '', // shown once in the group header
+                    rowClass: 'data-row',
+                });
+            });
+
+            if (totals) {
+                output.push({
+                    ...blankRow,
+                    transactionDate: `Total ${currency}`,
+                    amount: formatAmount(totalAmount),
+                    rowClass: 'group-total',
+                });
+            }
+        });
+
+        return output;
+    };
+
+    const TRANSPARENT_PIXEL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
+    const toLogoDataUri = (logo) => {
+        if (!logo || typeof logo !== 'string') return TRANSPARENT_PIXEL;
+
+        const trimmed = logo.trim();
+
+        if (!trimmed) return TRANSPARENT_PIXEL;
+
+        if (trimmed.startsWith('data:')) return trimmed;
+
+        return `data:image/jpeg;base64,${trimmed}`;
     };
 
     const app = Vue.createApp({
@@ -75,98 +208,107 @@
                 supplierList: [],
                 supplierId: '',
 
-                reportHeader:[],
+                reportHeader: [],
                 reportPath: '',
+                reportData: [],
+                viewerColor: 'blue',
+                showReport: false,
 
-                summaryReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1744299833/erp-reports/ar/creditMemo_ai3dvb.rdl',
+                reportPathConfig: {
+                    summaryReportPath: '/ReportTemplates/Ar/ar-credit-memo.html',
+                },
             };
         },
 
-        methods: {
-            unwrapList(response) {
-                const data = response?.data;
+        computed: {
+            reportTitle() {
+                return 'Credit Memos';
+            },
+        },
 
-                if (Array.isArray(data)) return data;
-                if (Array.isArray(data?.result)) return data.result;
-                if (Array.isArray(data?.result?.items)) return data.result.items;
-                if (Array.isArray(data?.items)) return data.items;
-                if (Array.isArray(data?.data)) return data.data;
+        methods: {
+            unwrapList(raw) {
+                if (!raw) return [];
+
+                if (Array.isArray(raw)) return raw;
+
+                if (Array.isArray(raw.result)) return raw.result;
+
+                if (Array.isArray(raw.result?.items)) return raw.result.items;
+
+                if (Array.isArray(raw.items)) return raw.items;
+
+                if (Array.isArray(raw.data)) return raw.data;
 
                 return [];
             },
-            // report header
+
             async getReportHeader() {
-                const url = `/Ap/GetReportHeader?title=Debit Memos`;
+                const url = `/Ap/GetReportHeader?title=${encodeURIComponent(this.reportTitle)}`;
                 const response = await axios.get(url);
 
                 this.reportHeader = response.data?.result || [];
                 return this.reportHeader;
             },
-            getReportData() {
+
+            async getReportData() {
+                if (this.isLoading) return;
+
                 this.isLoading = true;
 
-                this.reportPath = this.summaryReportPath;
+                const selectedReportPath = this.reportPathConfig.summaryReportPath;
 
-                axios.get('/Ar/GetCreditMemos')
-                    .then(async response => {
-                        const data = response?.data?.result;
+                try {
+                    const response = await axios.get('/Ar/GetCreditMemos');
+                    const rows = this.unwrapList(response.data);
 
-                        if (!data) {
-                            this.toastHandler('error', 'No report data was returned.');
-                            return;
-                        }
+                    if (!rows.length) {
+                        this.reportData = [];
+                        this.showReport = false;
+                        this.toastHandler('warning', 'No credit memo report data was returned.');
+                        return;
+                    }
 
-                        const header = await this.getReportHeader();
-                        if (Array.isArray(data)) {
-                            data.forEach(row => {
-                                row.transactionDate = isoDate(row.transactionDate);
-                            });
-                        }
-                        this.renderReport(
-                            header,
-                            data,
-                            this.reportPath
-                        );
-                    })
-                    .catch(error => {
-                        console.error('Error generating Debit Memo report:', error);
+                    const header = await this.getReportHeader();
+                    const headerObj = Array.isArray(header)
+                        ? (header[0] || {})
+                        : (header || {});
 
-                        this.toastHandler('error', 'Unable to get debit memo report data.');
-                    })
-                    .finally(() => {
-                        this.isLoading = false;
-                    });
-            },
+                    const groupedRows = buildGroupedRows(rows);
+                    const formattedRows = groupedRows.map((item, index) => ({
+                        ...item,
+                        rowNumber: index + 1,
+                    }));
 
-            renderReport(header, details, reportPath) {
-                console.log('Credit Memo Report Details:', details);
+                    const headerItem = {
+                        ...headerObj,
+                        companyLogo: toLogoDataUri(headerObj.companyLogo),
+                        CurrentDate: today,
+                        reportTitle: headerObj.reportTitle || this.reportTitle,
+                    };
 
-                $('#reportView').empty();
+                    const reportData = [headerItem, ...formattedRows];
 
-                $('#reportView').boldReportViewer({
-                    reportServiceUrl: this.reportApiBaseUrl,
+                    this.reportPath = selectedReportPath;
+                    this.reportData = reportData;
+                    this.showReport = reportData.length > 1;
 
-                    processingMode: ej.ReportViewer.ProcessingMode.Local,
+                    if (!this.showReport) {
+                        this.toastHandler('warning', 'No data found.');
+                    }
+                } catch (error) {
+                    console.error('Error generating Credit Memo report:', error);
 
-                    toolbarSettings: {
-                        showToolbar: true,
-                        items: ej.ReportViewer.ToolbarItems.All &
-                            ~ej.ReportViewer.ToolbarItems.Print
-                    },
+                    this.reportData = [];
+                    this.showReport = false;
 
-                    reportPath: reportPath,
-
-                    dataSources: [
-                        {
-                            value: header,
-                            name: 'DataSet1'
-                        },
-                        {
-                            value: details,
-                            name: 'DataSet2'
-                        }
-                    ]
-                });
+                    this.toastHandler(
+                        'error',
+                        error.response?.data?.message || 'Unable to get credit memo report data.'
+                    );
+                } finally {
+                    this.isLoading = false;
+                }
             },
 
             toastHandler(type, message = 'An unexpected error occurred.') {
@@ -174,6 +316,7 @@
                     console.log(message);
                     return;
                 }
+
                 Swal.fire({
                     toast: true,
                     position: 'top-end',
@@ -181,19 +324,18 @@
                     title: message,
                     showConfirmButton: false,
                     timer: 4000,
-                    timerProgressBar: true
+                    timerProgressBar: true,
                 });
-
             },
         },
 
-        mounted() {
-            this.reportApiBaseUrl = reportApiBaseUrl;
+        async mounted() {
 
-            this.getReportData();
-        }
+            await this.getReportData();
+        },
     });
 
     app.use(WSelectPlugin);
+    app.component('PdfViewer', PdfViewer);
     app.mount('#app');
 })();

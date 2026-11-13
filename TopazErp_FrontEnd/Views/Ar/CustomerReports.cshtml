@@ -40,9 +40,30 @@
             </w-select>
         
         </div>
+        <div class="flex justify-end mb-4 mt-5">
+            <button
+                type="button"
+                @@click="getReportData()"
+                :disabled="isLoading"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+            
+
+                <i v-if="isLoading" class="bi bi-arrow-repeat animate-spin"></i>
+                <i v-else class="bi bi-file-earmark-bar-graph"></i>
+
+                {{ isLoading ? 'Generating...' : 'Generate Report' }}
+
+            </button>
+        </div>
         <hr>
-        <div class="p-4 my-4 rounded-xl dark:bg-slate-800">
-            <div style="height:auto;width:auto;min-height:500px;" id="reportView">  </div>
+        <div class="w-full mt-6" style="height: 1000px;">
+            <div style="height: 820px;" v-if="showReport">
+                <pdf-viewer :src="reportPath"
+                            :data="reportData"
+                            :color="viewerColor"
+                            :title="reportTitle"></pdf-viewer>
+            </div>
+
         </div>
     </div>
 </div>

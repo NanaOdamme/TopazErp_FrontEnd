@@ -395,7 +395,7 @@ public class ApInvoiceReportResponse : BaseApiResponseModel
 public class ApInvoicePdfResponse : BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public List<InvoicePdfData> Result { get; set; }
+    public InvoicePdfData Result { get; set; }
 }
 
 //API Response for AR
@@ -463,5 +463,10 @@ public class ArInvoiceReportResponse : BaseApiResponseModel
 public class ArInvoicePdfResponse : BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public List<ArInvoicePdfData> Result { get; set; }
+    public ArInvoicePdfData Result { get; set; }
+}
+public class ArQuotationPdfResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public QuotationData Result { get; set; }
 }

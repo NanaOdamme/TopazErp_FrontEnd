@@ -1,3 +1,46 @@
+(() => {
+    'use strict';
+    const isoDate = (date) => {
+        if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}/.test(date)) return date.slice(0, 10);
+        const d = date instanceof Date ? date : new Date(date);
+        if (Number.isNaN(d.getTime())) return '';
+        const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+        return local.toISOString().slice(0, 10);
+    };
+const formatAmount = (value) => {
+    if (value === null || value === undefined || value === '') return '';
+
+    const num = Number(value);
+    if (!Number.isFinite(num)) return value;
+
+    const rounded = Math.round(num * 100) / 100;
+    const text = Math.abs(rounded).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+
+    return rounded < 0 ? `(${text})` : text;
+};
+
+const toNumber = (value) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+};
+const TRANSPARENT_PIXEL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
+const toLogoDataUri = (logo) => {
+    if (!logo || typeof logo !== 'string') return TRANSPARENT_PIXEL;
+
+    const trimmed = logo.trim();
+
+    if (!trimmed) return TRANSPARENT_PIXEL;
+
+    if (trimmed.startsWith('data:')) return trimmed;
+
+    return `data:image/jpeg;base64,${trimmed}`;
+};
+const today = isoDate(new Date());
+
 const app = Vue.createApp({
     data() {
         return {
@@ -11,13 +54,15 @@ const app = Vue.createApp({
             customerGroupId: '',
             customerGroupList: [],
             customerGroupName: '',
-
+            reportData:[],
+            reportTitle:'',
+            viewerColor: 'blue',
+            showReport: false,
             reportPath: '',
             reportHeader:[],
             reportPathConfig: {
-
-                summaryReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1744299058/erp-reports/ar/customers_eylpvf.rdl',
-                customerGroupReport: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1744299058/erp-reports/ar/customers_eylpvf.rdl',
+                summaryReportPath: '/ReportTemplates/Ar/customers.html',
+                customerGroupReport: '/ReportTemplates/Ar/customers.html',
             },
         };
     },
@@ -47,6 +92,7 @@ const app = Vue.createApp({
             if (this.reportType === 'customer-group') {
                 title = `Customers - ${this.customerGroupName}`;
             }
+            this.reportTitle = title;
 
             const url = `/Ap/GetReportHeader?title=${encodeURIComponent(title)}`;
             const response = await axios.get(url);
@@ -75,7 +121,7 @@ const app = Vue.createApp({
 
                 const response = await axios.get(url);
 
-                const reportHeader = await this.getReportHeader();
+                const header = await this.getReportHeader();
 
                 let reportDetails = this.unwrapList(response.data);
 
@@ -85,12 +131,33 @@ const app = Vue.createApp({
                         item => String(item.customerGroupId) === String(this.customerGroupId)
                     );
                 }
+                const headerObj = Array.isArray(header)
+                    ? (header[0] || {})
+                    : (header || {})
+                if (Array.isArray(reportDetails)) {
+                    reportDetails.forEach(row => {
+                        row.creditLimit = formatAmount(row.creditLimit);
+                    });
+                }
+                const formattedRows = reportDetails.map((item, index) => ({
+                    ...item,
+                    rowNumber: index + 1
+                }));
+                const headerItem = {
+                    ...headerObj,
+                    companyLogo: toLogoDataUri(headerObj.companyLogo),
+                    CurrentDate: today,
+                };
+                const reportData = [headerItem, ...formattedRows];
+                this.reportData = reportData;
 
-                this.renderReport(
-                    reportHeader,
-                    reportDetails,
-                    this.reportPath
-                );
+                // >>> ADDED: show the report in the PdfViewer.
+                this.showReport = reportData.length > 1;
+
+                if (!this.showReport) {
+                    this.toastHandler('warning', 'No data found.');
+                }
+               
 
             } catch (error) {
                 console.error('Report loading failed:', error);
@@ -104,38 +171,7 @@ const app = Vue.createApp({
                 this.isLoading = false;
             }
         },
-
-        renderReport(header, details, reportPath) {
-            const reportElement = $("#reportView");
-
-            reportElement.empty();
-
-            reportElement.boldReportViewer({
-                reportServiceUrl: this.reportApiBaseUrl,
-
-                processingMode: ej.ReportViewer.ProcessingMode.Local,
-
-                toolbarSettings: {
-                    showToolbar: true,
-                    items: ej.ReportViewer.ToolbarItems.All &
-                        ~ej.ReportViewer.ToolbarItems.Print
-                },
-
-                reportPath: reportPath,
-
-                dataSources: [
-                    {
-                        value: header,
-                        name: "DataSet1"
-                    },
-                    {
-                        value: details,
-                        name: "DataSet2"
-                    }
-                ]
-            });
-        },
-
+        
         async getCustomerGroups() {
             try {
                 const response = await axios.get(
@@ -180,15 +216,16 @@ const app = Vue.createApp({
 
             this.customerGroupName = customerGroupInfo?.name || '';
             this.getReportData();
-        }
+        },
     },
 
     async mounted() {
-        this.reportApiBaseUrl = reportApiBaseUrl;
-
         await this.getCustomerGroups();
         await this.getReportData();
     }
 });
-app.use(WSelectPlugin);
-app.mount('#app');
+
+    app.use(WSelectPlugin);
+    app.component('PdfViewer', PdfViewer);
+    app.mount('#app');
+})();

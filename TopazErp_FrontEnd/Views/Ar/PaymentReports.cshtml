@@ -1,0 +1,147 @@
+@{
+    ViewBag.Title = "Payment Reports";
+    Layout = "~/Views/Shared/_adminArLayout.cshtml";
+}
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>AR - Reports</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Payment Reports</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+
+            <div class="page-title">
+                <h2 class="text-2xl font-semibold text-gray-800">
+                    Reports
+                </h2>
+                
+            </div>
+        </div>
+    </div>
+   
+<div id="app" class="card" data-card-title="Reports - AR Payments">
+
+
+
+        <!-- Report Selection -->
+        <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-4">
+        
+
+            <div>
+                <label class="label block text-sm">Report Category</label>
+                <select v-model="subReportType" class="input-control w-full">
+                    <option value="summary-report">Payment Summary</option>
+                    <option value="customer-report">Payments by Customer</option>
+                    <option value="date-report">Payments by Date</option>
+                    <option value="batchNumber">Payment Receipt</option>
+                </select>
+            </div>
+
+            <!-- Customer Filter -->
+            <div v-if="subReportType === 'customer-report'" >
+
+                <div>
+                    <w-select
+                        v-model="customerId"
+                        :options="customerList"
+                        display-key="name"
+                        value-key="id"
+                        placeholder="Select Customer"
+                        label="Customer">
+                    </w-select>
+                </div>
+
+            </div>
+
+            <!-- Date Filters -->
+            <div v-if="subReportType === 'date-report'" >
+
+                <div>
+                    <label class="label block text-sm">Start Date</label>
+                    <input
+                        type="date"
+                        v-model="startDate"
+                        class="input-control w-full">
+                </div>
+
+                <div>
+                    <label class="label block text-sm">End Date</label>
+                    <input
+                        type="date"
+                        v-model="endDate"
+                        class="input-control w-full">
+                </div>
+
+            </div>
+
+            <!-- Payment Batch Filter -->
+            <div v-if="subReportType === 'batchNumber'">
+
+                <div>
+                    <w-select
+                        v-model="paymentId"
+                        :options="paymentList"
+                        display-key="displayText"
+                        value-key="id"
+                        placeholder="Select Batch Number"
+                        label="Payment Batch">
+                    </w-select>
+                </div>
+
+            </div>
+        </div>
+
+      
+
+        <!-- Generate Report -->
+        <div class="flex justify-end mb-4 mt-5">
+            <button
+                type="button"
+                @@click="getReportData()"
+                :disabled="isLoading"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+            
+
+                <i v-if="isLoading" class="bi bi-arrow-repeat animate-spin"></i>
+                <i v-else class="bi bi-file-earmark-bar-graph"></i>
+
+                {{ isLoading ? 'Generating...' : 'Generate Report' }}
+
+            </button>
+        </div>
+
+        <hr class="my-4">
+            <div class="w-full mt-6" style="height: 1000px;">
+                
+                <div v-if="showReceipt">
+                    <div v-for="(receipt, index) in receiptList"
+                         :key="index"
+                         style="height: 820px; margin-bottom: 24px;">
+                        <pdf-viewer :src="reportPathConfig.invoicePaymentReceiptReportPath"
+                                    :data="receipt"
+                                    :color="viewerColor"
+                                    title="Payment Receipt"></pdf-viewer>
+                    </div>
+                </div>
+
+               
+                <div v-else-if="summaryData">
+                    <div style="height: 820px;">
+                        <pdf-viewer :src="reportPath"
+                                    :data="summaryData"
+                                    :color="viewerColor"
+                                    :title="summaryTitle"></pdf-viewer>
+                    </div>
+                </div>
+
+            </div>
+
+    </div>
+
+
+
+</div>
+
+<script src="~/js/ar/Reports/payment-reports.js" asp-append-version="true"></script>

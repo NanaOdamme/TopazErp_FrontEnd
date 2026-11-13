@@ -121,12 +121,27 @@
 
         <hr class="my-4">
         <!-- Report Viewer -->
-        <div class="w-full mt-6">
+        <div class="w-full mt-6" style="height: 1000px;">
+                
+            <div v-if="showReceipt">
+                <div v-for="(receipt, index) in receiptList"
+                     :key="index"
+                     style="height: 820px; margin-bottom: 24px;">
+                    <pdf-viewer :src="reportPathConfig.invoicePaymentReceiptReportPath"
+                                :data="receipt"
+                                :color="viewerColor"
+                                title="Payment Receipt"></pdf-viewer>
+                </div>
+            </div>
 
-            <div
-                id="reportView"
-                class="w-full"
-                style="min-height: 650px;">
+               
+            <div v-else-if="summaryData">
+                <div style="height: 820px;">
+                    <pdf-viewer :src="reportPath"
+                                :data="summaryData"
+                                :color="viewerColor"
+                                :title="summaryTitle"></pdf-viewer>
+                </div>
             </div>
 
         </div>

@@ -46,28 +46,172 @@
 
         if (Number.isNaN(d.getTime())) return '';
 
-        const local = new Date(
-            d.getTime() - d.getTimezoneOffset() * 60000
-        );
+        const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
 
         return local.toISOString().slice(0, 10);
     };
 
+    const today = isoDate(new Date());
+
+    const formatAmount = (value) => {
+        if (value === null || value === undefined || value === '') return '';
+
+        const num = Number(value);
+        if (!Number.isFinite(num)) return value;
+
+        const rounded = Math.round(num * 100) / 100;
+        const text = Math.abs(rounded).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+
+        return rounded < 0 ? `(${text})` : text;
+    };
+
+    const toNumber = (value) => {
+        if (typeof value === 'string') {
+            const cleaned = value.trim().replace(/,/g, '');
+            if (/^\(.*\)$/.test(cleaned)) {
+                const neg = Number(cleaned.slice(1, -1));
+                return Number.isFinite(neg) ? -neg : 0;
+            }
+            const n = Number(cleaned);
+            return Number.isFinite(n) ? n : 0;
+        }
+        const n = Number(value);
+        return Number.isFinite(n) ? n : 0;
+    };
+
+    const blankRow = {
+        currencyCode: '',
+        supplierName: '',
+        supplierAccountNumber: '',
+        invoiceNumber: '',
+        buyRate: '',
+        balance: '',
+        totalInvoiceAmount: '',
+        paidAmount: '',
+        invoiceDate: '',
+        projectedPayDate: '',
+        purchaseOrderNumber: '',
+        agingNumber: '',
+        currentDay: '',
+        agingFirst: '',
+        agingSecond: '',
+        agingThird: '',
+        rowClass: '',
+    };
+
+    // AP payloads can come back with supplier* or customer* / vendor* names,
+    // so normalise them once here before the report template sees the row.
+    const formatRow = (row) => ({
+        ...blankRow,
+        ...row,
+        supplierName: row.supplierName ?? row.vendorName ?? row.customerName ?? '',
+        supplierAccountNumber:
+            row.supplierAccountNumber ?? row.accountNumber ?? row.vendorAccountNumber ?? '',
+        invoiceNumber: row.invoiceNumber ?? '',
+        buyRate: row.buyRate ?? '',
+        purchaseOrderNumber: row.purchaseOrderNumber ?? '',
+        agingNumber: row.agingNumber ?? '',
+        invoiceDate: isoDate(row.invoiceDate),
+        projectedPayDate: isoDate(row.projectedPayDate),
+        totalInvoiceAmount: formatAmount(row.totalInvoiceAmount),
+        paidAmount: formatAmount(row.paidAmount),
+        balance: formatAmount(row.balance),
+        currentDay: formatAmount(row.currentDay),
+        agingFirst: formatAmount(row.agingFirst),
+        agingSecond: formatAmount(row.agingSecond),
+        agingThird: formatAmount(row.agingThird),
+    });
+
+    const buildGroupedRows = (rows, { totals = true } = {}) => {
+        const groups = new Map();
+
+        rows.forEach((row) => {
+            const key = (row.currencyCode ?? '').toString().trim() || 'N/A';
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(row);
+        });
+
+        const output = [];
+
+        groups.forEach((groupRows, currency) => {
+            output.push({
+                ...blankRow,
+                currencyCode: currency,
+                rowClass: 'group-header',
+            });
+
+            const groupTotals = {
+                totalInvoiceAmount: 0,
+                paidAmount: 0,
+                balance: 0,
+                currentDay: 0,
+                agingFirst: 0,
+                agingSecond: 0,
+                agingThird: 0,
+            };
+
+            groupRows.forEach((row) => {
+                groupTotals.totalInvoiceAmount += toNumber(row.totalInvoiceAmount);
+                groupTotals.paidAmount += toNumber(row.paidAmount);
+                groupTotals.balance += toNumber(row.balance);
+                groupTotals.currentDay += toNumber(row.currentDay);
+                groupTotals.agingFirst += toNumber(row.agingFirst);
+                groupTotals.agingSecond += toNumber(row.agingSecond);
+                groupTotals.agingThird += toNumber(row.agingThird);
+
+                output.push({
+                    ...formatRow(row),
+                    currencyCode: '', // shown once in the group header
+                    rowClass: 'data-row',
+                });
+            });
+
+            if (totals) {
+                output.push({
+                    ...blankRow,
+                    invoiceNumber: `Total ${currency}`,
+                    totalInvoiceAmount: formatAmount(groupTotals.totalInvoiceAmount),
+                    paidAmount: formatAmount(groupTotals.paidAmount),
+                    balance: formatAmount(groupTotals.balance),
+                    currentDay: formatAmount(groupTotals.currentDay),
+                    agingFirst: formatAmount(groupTotals.agingFirst),
+                    agingSecond: formatAmount(groupTotals.agingSecond),
+                    agingThird: formatAmount(groupTotals.agingThird),
+                    rowClass: 'group-total',
+                });
+            }
+        });
+
+        return output;
+    };
+
+    const TRANSPARENT_PIXEL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
+    const toLogoDataUri = (logo) => {
+        if (!logo || typeof logo !== 'string') return TRANSPARENT_PIXEL;
+
+        const trimmed = logo.trim();
+
+        if (!trimmed) return TRANSPARENT_PIXEL;
+
+        if (trimmed.startsWith('data:')) return trimmed;
+
+        return `data:image/jpeg;base64,${trimmed}`;
+    };
 
     const app = Vue.createApp({
-
         data() {
             return {
                 emptyGuid: '00000000-0000-0000-0000-000000000000',
 
                 isLoading: false,
-
                 payload: {},
 
                 reportType: 'byDateSummary',
-
                 startDate: isoDate(new Date()),
-
                 agingInterval: 30,
 
                 reportApiBaseUrl: '',
@@ -79,88 +223,49 @@
                 supplierList: [],
                 supplierId: '',
 
+                reportHeader: [],
                 reportPath: '',
-                reportHeader:[],
+                reportData: [],
+                viewerColor: '#ff2056',
+                showReport: false,
+
                 reportPathConfig: {
-
-                    summaryReportPath:
-                        'https://res.cloudinary.com/dusydqiob/raw/upload/v1755784323/erp-reports/ap/agingSummary_p4a5eg.rdl',
-
-                    summaryReportByDatePath:
-                        'https://res.cloudinary.com/dusydqiob/raw/upload/v1755784323/erp-reports/ap/agingByDate_oqqmjy.rdl',
-
-                    summaryReportBySupplierPath:
-                        'https://res.cloudinary.com/dusydqiob/raw/upload/v1755784324/erp-reports/ap/agingBySupplier_swloka.rdl'
-
-                }
+                    summaryReportPath: '/ReportTemplates/Ap/ap-aging.html',
+                    summaryReportByDatePath: '/ReportTemplates/Ap/ap-aging.html',
+                    summaryReportBySupplierPath: '/ReportTemplates/Ap/ap-aging-supplier.html',
+                },
             };
         },
 
         computed: {
             reportTitle() {
-                return this.reportType === 'bySupplier'
-                    ? 'Ageing by Supplier'
-                    : 'Ageing Summary by Date';
-            }
+                const titles = {
+                    summary: 'Ageing Summary Report',
+                    byDateSummary: 'Ageing Summary by Date',
+                    bySupplier: 'Ageing by Supplier',
+                };
+
+                return titles[this.reportType] || 'Ageing Report';
+            },
         },
+
         methods: {
+            unwrapList(raw) {
+                if (!raw) return [];
 
-            // ==========================================
-            // UNWRAP API RESPONSE
-            // ==========================================
+                if (Array.isArray(raw)) return raw;
 
-            unwrapList(response) {
-                const data = response?.data;
+                if (Array.isArray(raw.result)) return raw.result;
 
-                if (Array.isArray(data)) return data;
-                if (Array.isArray(data?.result)) return data.result;
-                if (Array.isArray(data?.result?.items)) return data.result.items;
-                if (Array.isArray(data?.items)) return data.items;
-                if (Array.isArray(data?.data)) return data.data;
+                if (Array.isArray(raw.result?.items)) return raw.result.items;
+
+                if (Array.isArray(raw.items)) return raw.items;
+
+                if (Array.isArray(raw.data)) return raw.data;
 
                 return [];
             },
 
-
-            // ==========================================
-            // GENERATE PDF
-            // ==========================================
-
-            generatePdf() {
-
-                const element = this.$refs.pdfContent;
-
-                if (!element) {
-                    this.toastHandler('warning', 'PDF content not found.');
-                    return;
-                }
-
-                html2canvas(element)
-                    .then(canvas => {
-
-                        const imgData = canvas.toDataURL('image/png');
-
-                        const doc = new jsPDF('p', 'mm', 'a4');
-
-                        doc.addImage(imgData, 'PNG', 10, 10, 180, 0);
-
-                        const pdfBlob = doc.output('blob');
-
-                        const pdfUrl = URL.createObjectURL(pdfBlob);
-
-                        window.open(pdfUrl, '_blank');
-
-                    })
-                    .catch(err => {
-
-                        console.error('PDF generation error:', err);
-
-                        this.toastHandler('error', 'Unable to generate PDF.');
-
-                    });
-            },
-
-            // report header
             async getReportHeader() {
                 const url = `/Ap/GetReportHeader?title=${encodeURIComponent(this.reportTitle)}`;
                 const response = await axios.get(url);
@@ -169,182 +274,153 @@
                 return this.reportHeader;
             },
 
-            // ==========================================
-            // GET REPORT DATA
-            // ==========================================
+            async getSuppliers() {
+                try {
+                    const response = await axios.get('/SharedResource/GetSuppliers');
 
-            getReportData() {
+                    this.supplierList = this.unwrapList(response.data);
 
-                let url = `/Ap/GetAgingSummary?startDate=${encodeURIComponent(this.startDate)}&agingInterval=${encodeURIComponent(this.agingInterval)}`;
+                    if (this.supplierList.length > 0 && !this.supplierId) {
+                        this.supplierId = this.supplierList[0].id;
+                    }
+                } catch (error) {
+                    console.error('Get suppliers error:', error);
 
-                this.reportPath = this.reportPathConfig.summaryReportPath;
+                    this.supplierList = [];
+                    this.supplierId = '';
 
-                if (!this.startDate) {
+                    this.toastHandler('error', 'Unable to get suppliers.');
+                }
+            },
+
+            async getReportData() {
+                if (this.isLoading) return;
+
+                const startDate = isoDate(this.startDate);
+                if (!startDate) {
                     this.toastHandler('warning', 'Please select a start date.');
                     return;
                 }
 
-                if (!Number.isFinite(Number(this.agingInterval)) || Number(this.agingInterval) <= 0) {
+                const interval = Number(this.agingInterval);
+                if (!Number.isFinite(interval) || interval <= 0) {
                     this.toastHandler('warning', 'Please enter a valid ageing interval.');
                     return;
                 }
 
-                switch (this.reportType) {
-
-                    // ----------------------------------
-                    // AGEING SUMMARY BY DATE
-                    // ----------------------------------
-
-                    case 'byDateSummary':
-
-                        this.reportPath =
-                            this.reportPathConfig.summaryReportByDatePath;
-
-                        url = `/Ap/GetAgingByDate?startDate=${encodeURIComponent(this.startDate)}&agingInterval=${encodeURIComponent(this.agingInterval)}`;
-
-                        break;
-
-
-                    // ----------------------------------
-                    // AGEING BY SUPPLIER
-                    // ----------------------------------
-
-                    case 'bySupplier':
-
-                        if (!this.supplierId) {
-                            this.toastHandler('warning', 'Please select a supplier.');
-                            return;
-                        }
-
-                        this.reportPath =
-                            this.reportPathConfig.summaryReportBySupplierPath;
-
-                        url = `/Ap/GetApAgingBySupplier?SupplierId=${encodeURIComponent(this.supplierId)}&startDate=${encodeURIComponent(this.startDate)}&agingInterval=${encodeURIComponent(this.agingInterval)}`;
-
-                        break;
-
-
-                    // ----------------------------------
-                    // DEFAULT AGEING SUMMARY
-                    // ----------------------------------
-
-                    default:
-
-                        this.toastHandler('warning', 'Please select a valid report option.');
-
-                        return;
-
+                if (this.reportType === 'bySupplier' && !this.supplierId) {
+                    this.toastHandler('warning', 'Please select a supplier.');
+                    return;
                 }
 
+                let url = '';
+                let selectedReportPath = '';
+
+                switch (this.reportType) {
+                    case 'summary':
+                        selectedReportPath = this.reportPathConfig.summaryReportPath;
+                        url = `/Ap/GetAgingSummary?startDate=${encodeURIComponent(startDate)}&agingInterval=${encodeURIComponent(interval)}`;
+                        break;
+
+                    case 'byDateSummary':
+                        selectedReportPath = this.reportPathConfig.summaryReportByDatePath;
+                        url = `/Ap/GetAgingByDate?startDate=${encodeURIComponent(startDate)}&agingInterval=${encodeURIComponent(interval)}`;
+                        break;
+
+                    case 'bySupplier':
+                        selectedReportPath = this.reportPathConfig.summaryReportBySupplierPath;
+                        url = `/Ap/GetApAgingBySupplier?SupplierId=${encodeURIComponent(this.supplierId)}&startDate=${encodeURIComponent(startDate)}&agingInterval=${encodeURIComponent(interval)}`;
+                        break;
+
+                    default:
+                        this.toastHandler('warning', 'Please select a valid report option.');
+                        return;
+                }
 
                 this.isLoading = true;
 
-                axios.get(url)
-                    .then(async response => {
+                try {
+                    const response = await axios.get(url);
+                    const rows = this.unwrapList(response.data);
 
-                        const reportDetails = response.data.result;
-                        this.reportHeader = await this.getReportHeader();
-                        if (!this.reportHeader || !reportDetails.length) {
-                            this.toastHandler('warning', 'No ageing report data was returned.');
-                            return;
-                        }
+                    if (!rows.length) {
+                        this.reportData = [];
+                        this.showReport = false;
+                        this.toastHandler('warning', 'No ageing report data was returned.');
+                        return;
+                    }
 
-                        this.renderReport(
-                            this.reportHeader,
-                            reportDetails,
-                            this.reportPath
-                        );
+                    const header = await this.getReportHeader();
+                    const headerObj = Array.isArray(header)
+                        ? (header[0] || {})
+                        : (header || {});
 
-                    })
-                    .catch(err => {
+                    const groupedRows = buildGroupedRows(rows);
+                    const formattedRows = groupedRows.map((item, index) => ({
+                        ...item,
+                        rowNumber: index + 1,
+                    }));
 
-                        console.error('Error loading ageing report:', err);
+                    const selectedSupplier = this.reportType === 'bySupplier'
+                        ? this.supplierList.find((supplier) => supplier.id === this.supplierId)
+                        : null;
 
-                        this.toastHandler('error', 'Unable to get ageing report data.');
+                    const firstDataRow = formattedRows.find((r) => r.rowClass === 'data-row');
 
-                    })
-                    .finally(() => {
+                    // Current bucket is 0 - interval, then interval+1 - interval*2, etc.
+                    const agingLabels = {
+                        currentDayLabel: 'Current',
+                        agingFirstLabel: `1 - ${interval}`,
+                        agingSecondLabel: `${interval + 1} - ${interval * 2}`,
+                        agingThirdLabel: `Over ${interval * 2}`,
+                    };
 
-                        this.isLoading = false;
+                    const headerItem = {
+                        ...headerObj,
+                        companyLogo: toLogoDataUri(headerObj.companyLogo),
+                        CurrentDate: today,
+                        startDate,
+                        agingInterval: interval,
+                        ...agingLabels,
+                        supplierName: selectedSupplier
+                            ? selectedSupplier.name
+                            : (this.reportType === 'bySupplier' ? (firstDataRow?.supplierName || '') : ''),
+                        supplierAccountNumber:
+                            selectedSupplier?.accountNumber ||
+                            (this.reportType === 'bySupplier' ? (firstDataRow?.supplierAccountNumber || '') : ''),
+                        contactPhone: selectedSupplier?.contactPersonPhone || '',
+                    };
 
-                    });
+                    const reportData = [headerItem, ...formattedRows];
+
+                    this.reportPath = selectedReportPath;
+                    this.reportData = reportData;
+                    this.showReport = reportData.length > 1;
+
+                    if (!this.showReport) {
+                        this.toastHandler('warning', 'No data found.');
+                    }
+                } catch (error) {
+                    console.error('Error loading ageing report:', error);
+
+                    this.reportData = [];
+                    this.showReport = false;
+
+                    this.toastHandler(
+                        'error',
+                        error.response?.data?.message || 'Unable to get ageing report data.'
+                    );
+                } finally {
+                    this.isLoading = false;
+                }
             },
-
-
-            // ==========================================
-            // RENDER BOLD REPORT VIEWER
-            // ==========================================
-
-            renderReport(header, details, reportPath) {
-
-                $("#reportView").empty();
-
-                $("#reportView").boldReportViewer({
-
-                    reportServiceUrl: this.reportApiBaseUrl,
-
-                    processingMode: ej.ReportViewer.ProcessingMode.Local,
-
-                    toolbarSettings: {
-                        showToolbar: true,
-                        items: ej.ReportViewer.ToolbarItems.All &
-                            ~ej.ReportViewer.ToolbarItems.Print
-                    },
-
-                    reportPath: reportPath,
-
-                    dataSources: [
-                        {
-                            value: header,
-                            name: "DataSet1"
-                        },
-                        {
-                            value: details,
-                            name: "DataSet2"
-                        }
-                    ]
-
-                });
-            },
-
-
-            // ==========================================
-            // GET SUPPLIERS
-            // ==========================================
-
-            getSuppliers() {
-
-                axios.get('/SharedResource/GetSuppliers')
-                    .then(response => {
-
-                        this.supplierList = this.unwrapList(response);
-
-                        if (this.supplierList.length > 0) {
-                            this.supplierId = this.supplierList[0].id;
-                        } else {
-                            this.supplierId = '';
-                        }
-
-                    })
-                    .catch(err => {
-
-                        console.error('Error loading suppliers:', err);
-
-                        this.toastHandler('error', 'Unable to get suppliers.');
-
-                    });
-            },
-
-
-            // ==========================================
-            // TOAST HANDLER
-            // ==========================================
 
             toastHandler(type, message = 'An unexpected error occurred.') {
                 if (typeof Swal === 'undefined') {
                     console.log(message);
                     return;
                 }
+
                 Swal.fire({
                     toast: true,
                     position: 'top-end',
@@ -352,28 +428,18 @@
                     title: message,
                     showConfirmButton: false,
                     timer: 4000,
-                    timerProgressBar: true
+                    timerProgressBar: true,
                 });
-
             },
         },
 
-
-        // ==========================================
-        // MOUNTED
-        // ==========================================
-
-        mounted() {
-            this.reportApiBaseUrl = reportApiBaseUrl;
-            this.getSuppliers();
-            this.getReportData();
-
-        }
-
+        async mounted() {
+            await this.getSuppliers();
+            await this.getReportData();
+        },
     });
 
-
     app.use(WSelectPlugin);
+    app.component('PdfViewer', PdfViewer);
     app.mount('#app');
-
 })();

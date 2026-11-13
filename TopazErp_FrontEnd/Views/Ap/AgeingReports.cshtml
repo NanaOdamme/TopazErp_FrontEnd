@@ -1,5 +1,5 @@
 @{
-    ViewBag.Title = "Ageing Reports";
+    ViewBag.Title = "Aging Reports";
     Layout = "~/Views/Shared/_adminApLayout.cshtml";
 }
 <div class="content">
@@ -7,7 +7,7 @@
     <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
         <span>AP - Reports</span>
         <i class="bi bi-chevron-right text-xs"></i>
-        <span class="text-blue-600 font-medium">Ageing</span>
+        <span class="text-blue-600 font-medium">Aging</span>
     </div>
 
     <div class="flex items-center gap-3">
@@ -20,7 +20,7 @@
         </div>
     </div>
 </div>
-<div id="app" class="card" data-card-title="AP - Ageing Report">
+<div id="app" class="card" data-card-title="AP - Aging Report">
     <div class="p-4">
         <!-- Report Filters -->
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -94,10 +94,14 @@
         <hr class="my-4">
 
         <!-- Report Viewer -->
-        <div
-            id="reportView"
-            class="w-full"
-            style="min-height: 650px;">
+        <div class="w-full mt-6" style="height: 1000px;">
+            <div style="height: 820px;" v-if="showReport">
+                <pdf-viewer :src="reportPath"
+                            :data="reportData"
+                            :color="viewerColor"
+                            :title="reportTitle"></pdf-viewer>
+            </div>
+
         </div>
 
     </div>

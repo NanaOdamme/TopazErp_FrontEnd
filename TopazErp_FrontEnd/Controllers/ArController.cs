@@ -91,7 +91,10 @@ namespace TopazErp_FrontEnd.Controllers
             return View();
         }
         
-         
+          public ActionResult QuotationsReports()
+          {
+                         return View();
+          }
             //import
             public ActionResult ImportCustomers()
             {
@@ -182,6 +185,10 @@ namespace TopazErp_FrontEnd.Controllers
             }
 
             public ActionResult GlTransactions()
+            {
+                return View();
+            }
+            public ActionResult PrintInvoice()
             {
                 return View();
             }
@@ -544,6 +551,7 @@ namespace TopazErp_FrontEnd.Controllers
                     var result = await _topazErpApi.GetArInvoiceDetails(id);
                     return Json(result);
                 }
+                
 
                 public async Task<ActionResult> GetBalancesReport([FromQuery] string status)
                 {
@@ -582,7 +590,7 @@ namespace TopazErp_FrontEnd.Controllers
                 }
 
                 // Supports either ?id={guid} or repeated ?ids={guid}&ids={guid} parameters.
-                public async Task<ActionResult> GetApPaymentReceipts([FromQuery] Guid? id, [FromQuery] List<Guid> ids)
+                public async Task<ActionResult> GetPaymentReceipts([FromQuery] Guid? id, [FromQuery] List<Guid> ids)
                 {
                     var result = id.HasValue ? await _topazErpApi.GetArPaymentReceipts(id.Value) : await _topazErpApi.GetArPaymentReceipts(ids ?? new List<Guid>());
                     return Json(result);
@@ -594,7 +602,11 @@ namespace TopazErp_FrontEnd.Controllers
                     return Json(result);
                 }
         
-
+                public async Task<ActionResult> GetQuotationDetails([FromQuery] Guid id)
+                {
+                    var result = await _topazErpApi.GetArQuotationDetails(id);
+                    return Json(result);
+                }
                 // Matches the ApReports/GetAgeingByDate URL from your API client.
                 public async Task<ActionResult> GetAgeingByDate([FromQuery] DateTime startDate, [FromQuery] int agingInterval)
                 {

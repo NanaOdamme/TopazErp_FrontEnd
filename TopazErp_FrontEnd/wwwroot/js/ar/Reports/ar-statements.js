@@ -35,6 +35,113 @@
         return iso;
     };
     const today = isoDate(new Date());
+
+    // Negative numbers are shown in brackets: -1234.5 -> (1,234.50)
+    const formatAmount = (value) => {
+        if (value === null || value === undefined || value === '') return '';
+
+        const num = Number(value);
+        if (!Number.isFinite(num)) return value;
+
+        const rounded = Math.round(num * 100) / 100;
+        const text = Math.abs(rounded).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+
+        return rounded < 0 ? `(${text})` : text;
+    };
+
+    const toNumber = (value) => {
+        const n = Number(value);
+        return Number.isFinite(n) ? n : 0;
+    };
+
+    const formatRow = (row) => ({
+        ...row,
+        paidAmount: formatAmount(row.paidAmount),
+        totalInvoiceAmount: formatAmount(row.totalInvoiceAmount),
+        amountPaid: formatAmount(row.amountPaid),
+        balance: formatAmount(row.balance),
+    });
+
+// Blank row so every placeholder in the template has a value
+    // Blank row so every placeholder in the template has a value
+    const blankRow = {
+        currencyName: '',
+        invoiceDate: '',
+        invoiceNumber: '',
+        totalInvoiceAmount: '',
+        paidAmount: '',
+        paymentDate: '',
+        description: '',
+        balance: '',
+        outstanding: '',
+        rowClass: '',
+    };
+
+// Group by currencyName (order of first appearance).
+// totals: true  -> adds a total row per currency
+// totals: false -> header + rows only
+    const buildGroupedRows = (rows, { totals = true } = {}) => {
+        const groups = new Map();
+
+        rows.forEach((row) => {
+            const key = (row.currencyName ?? '').toString().trim() || 'N/A';
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(row);
+        });
+
+        const output = [];
+
+        groups.forEach((groupRows, currency) => {
+            output.push({ ...blankRow, currencyName: currency, rowClass: 'group-header' });
+
+            let invoiceTotal = 0;
+            let paidTotal = 0;
+
+            groupRows.forEach((row) => {
+                invoiceTotal += toNumber(row.totalInvoiceAmount);
+                paidTotal += toNumber(row.paidAmount);
+
+                output.push({
+                    ...formatRow(row),
+                    currencyName: '',          // shown once in the group header
+                    rowClass: 'data-row',
+                });
+            });
+
+            if (totals) {
+                output.push({
+                    ...blankRow,
+                    invoiceNumber: `Total ${currency}`,
+                    totalInvoiceAmount: formatAmount(invoiceTotal),
+                    paidAmount: formatAmount(paidTotal),
+                    rowClass: 'group-total',
+                });
+            }
+        });
+
+        return output;
+    };
+
+    // >>> ADDED: the API returns the logo as raw base64 — convert it to a
+    //     data URI so <img src="{{companyLogo}}"> can render it. Falls back
+    //     to a transparent pixel when there is no logo.
+    const TRANSPARENT_PIXEL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
+    const toLogoDataUri = (logo) => {
+        if (!logo || typeof logo !== 'string') return TRANSPARENT_PIXEL;
+
+        const trimmed = logo.trim();
+
+        if (!trimmed) return TRANSPARENT_PIXEL;
+
+        if (trimmed.startsWith('data:')) return trimmed;
+
+        return `data:image/jpeg;base64,${trimmed}`;
+    };
+
     const app = Vue.createApp({
         data() {
             return {
@@ -53,11 +160,14 @@
                 customerList: [],
                 customerId: '',
                 reportHeader:[],
-
+                reportData:[],
+                viewerColor: 'blue',
+                showReport: false,
+                reportTitle: 'Customer Statements',
                 reportPathConfig: {
-                    summaryReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1760443956/erp-reports/ar/ar-statement-type-1_ykllj4_za9ccp.rdl',
-                    type1ReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1758199967/erp-reports/ar/ar-statement-type-2_ioobvb.rdl',
-                    type2ReportPath: 'https://res.cloudinary.com/dusydqiob/raw/upload/v1758192334/erp-reports/ar/ar-statement-type-3_iywf6x.rdl',
+                    summaryReportPath: '/ReportTemplates/Ar/ar-statement-type1.html',
+                    type1ReportPath: '/ReportTemplates/Ar/ar-statement-type2.html',
+                    type2ReportPath: '/ReportTemplates/Ar/ar-statement-type3.html',
                 },
             };
         },
@@ -148,12 +258,43 @@
                     this.reportPath = selectedReportPath;
                     const outstanding = []
                     const header = await this.getReportHeader();
-                    this.renderReport(
-                        header,
-                        result,
-                        outstanding || [],
-                        selectedReportPath
+                    const headerObj = Array.isArray(header)
+                        ? (header[0] || {})
+                        : (header || {});
+
+                    const rows = Array.isArray(result) ? result : [result];
+                    const selectedCustomer = this.customerList.find(
+                        (customer) => customer.id === this.customerId
                     );
+                    // Only the HTML template (type1) is grouped; the RDL reports just get bracketed negatives
+                    const formattedRows = this.reportType === 'type3'
+                        ? buildGroupedRows(rows, { totals: false })
+                        : buildGroupedRows(rows);
+                    
+             
+                        
+                    
+                    const headerItem = {
+                        ...headerObj,
+                        companyLogo: toLogoDataUri(headerObj.companyLogo),
+                        CurrentDate: today,
+                        customerName: selectedCustomer
+                            ? selectedCustomer.name
+                            : (formattedRows[0]?.customerName || ''),
+                        accountNumber: selectedCustomer.accountNumber,
+                        contactPhone: selectedCustomer.contactPersonPhone,
+                    };
+                    const reportData = [headerItem, ...formattedRows];
+                    this.reportPath = selectedReportPath;
+                    this.reportData = reportData;
+
+                    // >>> ADDED: show the report in the PdfViewer.
+                    this.showReport = reportData.length > 1;
+
+                    if (!this.showReport) {
+                        this.toastHandler('warning', 'No data found.');
+                    }
+
 
                 } catch (error) {
                     console.error('Customer statement error:', error);
@@ -167,42 +308,7 @@
                     this.isLoading = false;
                 }
             },
-
-            renderReport(header, details, outstanding, reportPath) {
-                const reportElement = $('#reportView');
-
-                reportElement.empty();
-
-                reportElement.boldReportViewer({
-                    reportServiceUrl: this.reportApiBaseUrl,
-
-                    processingMode: ej.ReportViewer.ProcessingMode.Local,
-
-                    toolbarSettings: {
-                        showToolbar: true,
-                        items: ej.ReportViewer.ToolbarItems.All &
-                            ~ej.ReportViewer.ToolbarItems.Print
-                    },
-
-                    reportPath: reportPath,
-
-                    dataSources: [
-                        {
-                            value: header,
-                            name: 'DataSet1'
-                        },
-                        {
-                            value: details,
-                            name: 'DataSet2'
-                        },
-                        {
-                            value: outstanding,
-                            name: 'DataSet3'
-                        }
-                    ]
-                });
-            },
-
+            
             async getCustomers() {
                 this.isShimmerLoading = true;
 
@@ -270,10 +376,10 @@
         },
 
         mounted() {
-            this.reportApiBaseUrl = reportApiBaseUrl;
             this.getCustomers();
         }
     });
+    app.component('PdfViewer', PdfViewer);
     app.use(WSelectPlugin);
     app.mount('#app');
 })();

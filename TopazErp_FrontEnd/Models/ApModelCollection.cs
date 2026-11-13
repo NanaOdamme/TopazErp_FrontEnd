@@ -229,6 +229,7 @@ public class ApVoucher:AuditedEntity<Guid>
         public string BatchNumber { get; set; }
         public string ReferenceNumber { get; set; }
         public string AmountInWords { get; set; }
+        public string OuName { get; set; }
         public List<ApVoucherDetail> Details { get; set; }
 }
 public class ApVoucherDetail
@@ -271,7 +272,7 @@ public class ApStatementRecord
     public string Type { get; set; }
     public string ContactPerson { get; set; }
     public string ContactPhone { get; set; }
-    public string SupplierName { get; set; }
+    public string CustomerName { get; set; }
     public string AccountNumber { get; set; }
     public string InvoiceNumber { get; set; }
     public string InvoiceNo { get; set; }

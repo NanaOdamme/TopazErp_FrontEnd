@@ -1,11 +1,11 @@
 (() => {
     'use strict';
-    
+
     const ENDPOINTS = {
-        invoices: '/Ap/GetInvoices',
-        suppliers: '/SharedResource/GetSuppliers',
+        invoices: '/AR/GetInvoices',
+        customers: '/SharedResource/GetCustomers',
         currencies: '/SharedResource/GetCurrencies',
-        dispatchInvoice: '/Ap/SendEmail'
+        dispatchInvoice: '/Ar/SendEmail'
     };
 
     const sameId = (a, b) =>
@@ -44,7 +44,7 @@
         data() {
             return {
                 theme: '#0645e7',
-                suppliers: [],
+                customers: [],
                 currencies: [],
                 invoiceList: [],
                 isLoading: false
@@ -70,8 +70,8 @@
             invoiceColumns() {
                 return [
                     { key: 'id', label: 'ID', type: 'text', hidden: true, editable: false },
-                    { key: 'supplierName', label: 'Supplier', type: 'avatar', width: 280, searchable: true },
-                    { key: 'supplierId', label: 'Email', type: 'select', options: this.suppliers, value: 'id', display: 'email', width: 280, searchable: true },
+                    { key: 'customerName', label: 'Customer', type: 'avatar', width: 280, searchable: true },
+                    { key: 'customerId', label: 'Email', type: 'select', options: this.customers, value: 'id', display: 'email', width: 280, searchable: true },
                     { key: 'invoiceNumber', label: 'Invoice #', type: 'text', width: 150, searchable: true },
                     { key: 'batchNumber', label: 'Batch #', type: 'text', width: 125, searchable: true },
                     { key: 'invoiceDate', label: 'Invoice Date', type: 'date', width: 130, searchable: true },
@@ -115,20 +115,20 @@
             },
 
             async getApInvoices() {
-                const invoices = await this.fetchList(ENDPOINTS.invoices, 'AP invoices');
+                const invoices = await this.fetchList(ENDPOINTS.invoices, 'AR invoices');
                 this.invoiceList = invoices.filter(invoice => !invoice.isCanceled);
             },
 
             async loadLookups() {
-                const [suppliers, currencies] = await Promise.all([
-                    this.fetchList(ENDPOINTS.suppliers, 'suppliers'),
+                const [customers, currencies] = await Promise.all([
+                    this.fetchList(ENDPOINTS.customers, 'customers'),
                     this.fetchList(ENDPOINTS.currencies, 'currencies')
                 ]);
 
-                this.suppliers = suppliers.map(supplier => ({
-                    ...supplier,
-                    name: String(supplier.name ?? '').trim(),
-                    email: String(supplier.email ?? '').trim()
+                this.customers = customers.map(customer => ({
+                    ...customer,
+                    name: String(customer.name ?? '').trim(),
+                    email: String(customer.contactPersonEmail ?? '').trim()
                 }));
 
                 this.currencies = currencies.map(currency => ({
@@ -138,7 +138,6 @@
                 }));
             },
 
-         
             async sendEmails() {
                 return this.dispatchInvoice();
             },
@@ -162,23 +161,23 @@
                     return;
                 }
 
-                const supplierId = selected[0].supplierId;
-                if (supplierId === null || supplierId === undefined || supplierId === '') {
-                    this.toastHandler('error', 'The selected invoice is missing its supplier ID.');
+                const customerId = selected[0].customerId;
+                if (customerId === null || customerId === undefined || customerId === '') {
+                    this.toastHandler('error', 'The selected invoice is missing its customer ID.');
                     return;
                 }
 
-                const hasDifferentSupplier = selected.some(invoice =>
-                    !sameId(invoice.supplierId, supplierId)
+                const hasDifferentCustomer = selected.some(invoice =>
+                    !sameId(invoice.customerId, customerId)
                 );
-                if (hasDifferentSupplier) {
-                    this.toastHandler('warning', 'Select invoices for one supplier at a time.');
+                if (hasDifferentCustomer) {
+                    this.toastHandler('warning', 'Select invoices for one customer at a time.');
                     return;
                 }
 
                 const payload = {
                     sendMultipleInvoices: selected.length > 1,
-                    supplierId,
+                    customerId,
                     invoiceIds: selected.map(invoice => invoice.id)
                 };
 

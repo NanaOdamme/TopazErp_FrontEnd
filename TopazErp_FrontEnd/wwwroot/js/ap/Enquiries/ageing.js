@@ -14,7 +14,7 @@ const app = Vue.createApp({
             payload: {},
             startDate: today,
             agingInterval: 30,
-            theme: '#0645e7',
+            theme: '#ff2056',
             agingData: [],
             isShimmerLoading: false
         }
