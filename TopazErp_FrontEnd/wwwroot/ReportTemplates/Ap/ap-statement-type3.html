@@ -1,0 +1,339 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Statement Statement</title>
+
+    <style>
+        .report-sheet {
+            font-family: "Times New Roman";
+            color: #1f2937;
+            padding: 36px 40px 28px;
+            box-sizing: border-box;
+        }
+
+
+        .report-sheet {
+            font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+            color: #1f2937;
+            padding: 36px 40px 28px;
+            box-sizing: border-box;
+        }
+
+        /* ---------- repeating header (logo left, rest centered) ---------- */
+        .report-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            border-bottom: 3px solid #1f1f1f;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+        }
+
+        .report-header .logo {
+            width: 120px;
+            object-fit: contain;
+            flex: 0 0 auto;
+        }
+
+        .report-header .header-center {
+            flex: 1;
+        }
+
+        .report-header .company-name {
+            font-size: 22px;
+            font-weight: 700;
+            color: #111827;
+            letter-spacing: .2px;
+            margin: 0 0 4px;
+        }
+
+        .report-header .company-meta {
+            font-size: 12px;
+            color: #4b5563;
+            line-height: 1.55;
+        }
+
+        .statement-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1e1d1d;
+            margin: 6px 0 6px;
+            white-space: nowrap;
+            text-align: right;
+
+        }
+        /* CUSTOMER INFORMATION */
+
+        .customer-section {
+            border-bottom: 3px solid #1f1f1f;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-top: 5px;
+            margin-bottom: 32px;
+        }
+
+        .customer-details {
+            text-align: left;
+            font-weight: 700;
+        }
+
+        .customer-heading {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+
+        }
+
+        .customer-name {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .customer-meta {
+            font-size: 11px;
+            line-height: 1.8;
+        }
+
+        .statement-date {
+            text-align: right;
+            font-size: 11px;
+        }
+        .title{
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        /* TRANSACTION TABLE */
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+            margin-top: 10px;
+            border-bottom: 3px solid #1f1f1f;
+            padding-bottom: 5px;
+
+        }
+
+        .report-table thead {
+            display: table-header-group;
+        }
+
+        .report-table th {
+            text-align: left;
+            font-weight: bold;
+            padding: 7px 5px;
+            border-bottom: 1px solid #999;
+            white-space: nowrap;
+        }
+
+        .report-table td {
+            padding: 6px 5px;
+            vertical-align: middle;
+            border: none;
+            color: #111;
+        }
+
+        .report-table .num {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .report-table .date {
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .report-table .reference {
+            text-align: left;
+        }
+
+
+        .total-outstanding {
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-top: 28px;
+            padding-right: 5px;
+            font-size: 11px;
+        }
+
+        .total-outstanding .label {
+            font-weight: bold;
+            margin-right: 100px;
+        }
+
+        .total-outstanding .amount {
+            font-weight: bold;
+            min-width: 100px;
+            text-align: right;
+        }
+
+        /* NOTE */
+
+        .report-note {
+            margin-top: 45px;
+            font-size: 10px;
+            line-height: 1.5;
+        }
+
+        .report-note strong {
+            font-weight: bold;
+        }
+
+        /* FOOTER */
+
+        .report-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #d1d5db;
+            margin-top: 16px;
+            padding-top: 10px;
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .footer-date {
+            text-align: left;
+            flex: 1;
+        }
+
+        .footer-brand {
+            text-align: center;
+            flex: 1;
+        }
+
+        .footer-page {
+            text-align: right;
+            flex: 1;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .currency{
+            font-weight: 700;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="report-sheet">
+
+    <!-- HEADER -->
+    <header class="report-header">
+        <img class="logo" src="{{companyLogo}}" alt="Company Logo"/>
+        <div class="header-center">
+            <p class="company-name">{{companyName}}</p>
+            <div class="company-meta">
+                <div>{{primaryPhoneNo}} | {{address}} | {{email}}</div>
+            </div>
+
+        </div>
+    </header>
+
+
+    <!-- CUSTOMER DETAILS -->
+    <section class="customer-section">
+
+        <div class="customer-details">
+
+            <div class="customer-heading">
+                Supplier
+            </div>
+
+            <div class="customer-name">
+                {{supplierName}}
+            </div>
+
+            <div class="customer-meta">
+                <div>Account No: {{accountNumber}}</div>
+                <div>Contact: {{contactPhone}}</div>
+            </div>
+
+        </div>
+
+        <div>
+            <div class="statement-title">
+                Statement
+            </div>
+            <div class="statement-date">
+                Date:  {{CurrentDate}}
+            </div>
+            <div class="title">
+                {{reportTitle}}
+            </div>
+        </div>
+
+
+    </section>
+
+
+    <!-- TRANSACTION TABLE -->
+    <table class="report-table">
+
+        <thead>
+        <tr>
+            <th>Currency</th>
+            <th>Date</th>
+            <th>Inv. No /Cheque No.</th>
+            <th>Description</th>
+            <th class="num">Inv Amount</th>
+            <th class="num">Payment</th>
+            <th class="num">Balance</th>
+        </tr>
+        </thead>
+
+        <tbody>
+
+        <tr data-repeat="rows" class="{{@rowClass}}">
+            <td class="currency">{{@currencyName}}</td>
+            <td class="date">{{@invoiceDate}}</td>
+            <td class="reference">{{@invoiceNumber}}</td>
+            <td class="reference">{{@description}}</td>
+            <td class="num">{{@totalInvoiceAmount}}</td>
+            <td class="num">{{@paidAmount}}</td>
+            <td class="num">{{@balance}}</td>
+        </tr>
+
+        </tbody>
+
+    </table>
+
+
+    <!-- NOTE -->
+    <div class="report-note">
+        <strong>Note:</strong>
+        A balance in brackets eg(25,00.00) indicates an advanced
+        payment to the customer
+    </div>
+
+
+    <!-- FOOTER -->
+    <footer class="report-footer">
+
+        <div class="footer-date">
+            {{CurrentDate}}
+        </div>
+
+        <div class="footer-brand">
+            Topaz AccountingPro (AP)
+        </div>
+
+        <div class="footer-page">
+            Page {{PageNumber}} of {{PageBreakCount}}
+        </div>
+
+    </footer>
+
+</div>
+
+</body>
+</html>
