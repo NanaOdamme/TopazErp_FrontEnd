@@ -28,9 +28,9 @@
     const hasColumnDefault = (column) => column.defaultValue !== undefined || column.default !== undefined;
     const normalizeIds = (ids) => Array.isArray(ids)
         ? Array.from(new Set(ids.filter((id) => id !== null && id !== undefined).map(String))) : [];
-    const resolveColumnDefault = (column, row) => {
+    const resolveColumnDefault = (column, row, parentRow = null) => {
         const value = column.defaultValue !== undefined ? column.defaultValue : column.default;
-        return typeof value === 'function' ? value.call(column, row, column) : value;
+        return typeof value === 'function' ? value.call(column, row, column, parentRow) : value;
     };
     const dateInputValue = (value) => {
         if (isNil(value)) return '';
@@ -335,7 +335,8 @@
         name: 'DataGridForm',
         props: { columns: { type: Array, required: true }, row: { type: Object, default: null }, mode: { type: String, default: 'create' },
             itemLabel: { type: String, default: 'record' }, parentLabel: { type: String, default: '' },
-            theme: { type: String, default: '#2563eb' }, rowDisabled: { type: Function, default: null } },
+            parentRow: { type: Object, default: null }, theme: { type: String, default: '#2563eb' },
+            rowDisabled: { type: Function, default: null } },
         emits: ['submit', 'close'],
         data() { return { values: {}, errors: {} }; },
         created() { this.build(); },
@@ -359,7 +360,7 @@
                         if (!dependencies.includes(col.key)) return;
 
                         if (typeof dependent.valueFrom === 'function') {
-                            const value = dependent.valueFrom(this.values, this.row, this.mode, dependent);
+                            const value = dependent.valueFrom(this.values, this.row, this.mode, dependent, this.parentRow);
                             if (value !== undefined) this.values[dependent.key] = value;
                             return;
                         }
@@ -386,7 +387,7 @@
             rawValue(c) {
                 const t = typeOf(c);
                 let v = this.row ? getIn(this.row, c.key)
-                    : (hasColumnDefault(c) ? resolveColumnDefault(c, this.row) : (t.input === 'checkbox' ? false : ''));
+                    : (hasColumnDefault(c) ? resolveColumnDefault(c, this.row, this.parentRow) : (t.input === 'checkbox' ? false : ''));
                 if (t.input === 'date') v = dateInputValue(v);
                 if (t.input === 'tags') return Array.isArray(v) ? v.join(', ') : (v ?? '');
                 if (t.input === 'checkbox') return !!v;
@@ -401,7 +402,7 @@
                 if (this.mode === 'create') {
                     this.columns.forEach((c) => {
                         if (typeof c.valueFrom !== 'function') return;
-                        const value = c.valueFrom(this.values, this.row, this.mode, c);
+                        const value = c.valueFrom(this.values, this.row, this.mode, c, this.parentRow);
                         if (value !== undefined) this.values[c.key] = value;
                     });
                 }
@@ -579,11 +580,16 @@
             densityToggle: { type: Boolean, default: true },
             exportMenu: { type: Boolean, default: true },
             refreshButton: { type: Boolean, default: true },
-            striped: { type: Boolean, default: false },
+            bordered: { type: Boolean, default: false },
+            striped: { type: Boolean, default: false }, // canonical stripe toggle
+            stripes: { type: Boolean, default: false }, // alias for callers using the plural prop name
+            stripeColor: { type: String, default: '#f8fafc' },
+            stripeDarkColor: { type: String, default: '#1e293b' },
             defaultSort: { type: Array, default: () => [] },
             stickyHeader: { type: Boolean, default: true },
             autoAdd: { type: Boolean, default: false },  // open the create form on mount (used by "add first child")
-            parentLabel: { type: String, default: '' }   // subtitle shown in the create form of a nested grid
+            parentLabel: { type: String, default: '' },  // subtitle shown in the create form of a nested grid
+            parentRow: { type: Object, default: null }  // row that owns this nested grid; available to child defaults
         },
         emits: ['create', 'update', 'delete', 'change', 'request', 'ui', 'toast', 'selection-change', 'update:selectedIds'],
         data() {
@@ -630,7 +636,14 @@
             canDelete() { return this.allowDelete && this.deleteButton; },
             showActionsColumn() { return this.actions && (this.canEdit || this.canDelete); },
             editableCols() { return this.columnsPlain.filter((c) => !this.hidden.includes(c.key) && c.editable !== false && typeOf(c).input); },
-            themeStyle() { return { '--dt-theme': this.theme || '#2563eb' }; },
+            useStripes() { return this.striped || this.stripes; },
+            themeStyle() {
+                return {
+                    '--dt-theme': this.theme || '#2563eb',
+                    '--dt-stripe-color': this.stripeColor || '#f8fafc',
+                    '--dt-stripe-dark-color': this.stripeDarkColor || '#1e293b'
+                };
+            },
             filtered() {
                 let out = this.rows.slice();
                 const q = (this.search || '').trim().toLowerCase();
@@ -929,7 +942,7 @@
                 const r = {}; setIn(r, this.rowId, uid(this.rowId));
                 this.columnsPlain.forEach((c) => {
                     if (!hasColumnDefault(c)) return;
-                    let value = resolveColumnDefault(c, r);
+                    let value = resolveColumnDefault(c, r, this.parentRow);
                     if (typeOf(c).input === 'date') value = dateInputValue(value);
                     setIn(r, c.key, value);
                 });
@@ -1353,7 +1366,7 @@
                   <template v-for="entry in group.entries" :key="keyOf(entry.row, entry.index)">
                     <tr class="dt-row dt-theme-row group border-b border-slate-100 transition-colors dark:border-slate-800"
                         :data-row="keyOf(entry.row, entry.index)" :aria-disabled="isRowDisabled(entry.row) ? 'true' : null"
-                        :class="[ selected.includes(keyOf(entry.row, entry.index)) && !isRowDisabled(entry.row) ? 'dt-row-selected bg-primary-50/70 dark:bg-primary-500/10' : (striped && entry.index % 2 ? 'bg-slate-50/60 dark:bg-slate-900/40' : ''), isRowDisabled(entry.row) ? 'dt-row-disabled opacity-60' : '', flashId === keyOf(entry.row, entry.index) ? 'dt-flash' : '' ]">
+                        :class="[ selected.includes(keyOf(entry.row, entry.index)) && !isRowDisabled(entry.row) ? 'dt-row-selected bg-primary-50/70 dark:bg-primary-500/10' : (useStripes && entry.index % 2 ? 'dt-row-striped' : ''), bordered ? 'dt-row-bordered' : '', isRowDisabled(entry.row) ? 'dt-row-disabled opacity-60' : '', flashId === keyOf(entry.row, entry.index) ? 'dt-flash' : '' ]">
                       <td v-if="showExpander" class="dt-cell text-center">
                         <template v-if="rowHasChildren(entry.row)">
                           <button data-action="toggle" :data-id="keyOf(entry.row, entry.index)" :aria-expanded="isExpanded(entry.row, entry.index)" :title="isExpanded(entry.row, entry.index) ? 'Collapse' : 'Expand'"
@@ -1394,7 +1407,7 @@
                           <div class="px-3 pb-4 pt-3 sm:px-5" :data-child-mount="keyOf(entry.row, entry.index)">
                             <data-grid v-if="hasChildSchema"
                               :columns="child.columns" :data="rowChildren(entry.row)" :child="child.child || null"
-                              :row-id="rowId" :label-key="labelKey" :level="level + 1"
+                              :row-id="rowId" :label-key="labelKey" :level="level + 1" :parent-row="entry.row"
                               :initial-state="childInitial(keyOf(entry.row, entry.index))"
                               :selectable="selectable" :actions="actions" :searchable="true" :filter-row="false"
                               :resizable="resizable" :aggregates="rowChildren(entry.row).length > 4" :expand-all="true"
@@ -1411,6 +1424,7 @@
                               empty-icon="bi-diagram-3"
                               :auto-add="childAddRequest === keyOf(entry.row, entry.index)"
                               :parent-label="'Adding under ' + (getIn(entry.row, labelKey) || keyOf(entry.row, entry.index))" :theme="theme"
+                              :bordered="bordered" :striped="useStripes" :stripe-color="stripeColor" :stripe-dark-color="stripeDarkColor"
                               @add-consumed="onChildAddConsumed"
                               @ui="onChildUi(keyOf(entry.row, entry.index), $event)"
                               @change="$emit('change', { reason:'nested', grid:$event.grid, payload:$event })"
@@ -1457,7 +1471,7 @@
         @update:page="page = $event" @update:pageSize="size = $event" />
 
       <data-grid-form v-if="form.open" :columns="editableCols" :row="form.row" :mode="form.mode" :item-label="itemLabel"
-        :parent-label="form.parentLabel" :theme="theme" :row-disabled="rowDisabled" @submit="submitForm" @close="closeForm" />
+        :parent-label="form.parentLabel" :parent-row="parentRow" :theme="theme" :row-disabled="rowDisabled" @submit="submitForm" @close="closeForm" />
     </section>`
     };
 

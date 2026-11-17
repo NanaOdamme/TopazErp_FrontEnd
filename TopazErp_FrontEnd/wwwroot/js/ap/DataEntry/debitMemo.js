@@ -582,7 +582,7 @@
             }
         },
         getInvoiceDetails(id) {
-            return this.supplierInvoices.find(a => a.id === id);
+            return this.invoiceList.find(a => a.id === id);
         },
 
         async applyMemo() {

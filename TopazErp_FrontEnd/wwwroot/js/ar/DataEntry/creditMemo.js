@@ -552,7 +552,7 @@
                 }
             },
             getInvoiceDetails(id) {
-                return this.customerInvoices.find(a => a.id === id);
+                return this.invoiceList.find(a => a.id === id);
             },
 
             async applyMemo() {
@@ -676,7 +676,7 @@
             getBankBranchDetails(id) {
                 return this.bankBranchList.find(a => a.id === id);
             },
-            async applyCreditMemo() { // FIXED: was applyDebitMemo
+            async applyCreditMemo() { 
                 this.isLoading = true;
                 if (this.amountToApply > this.invoiceBalance) {
                     this.toastHandler('warning', 'Credit memo amount exceeds the invoice balance.');
@@ -695,8 +695,8 @@
                         payload.invoiceCurrencyName = invoiceInfo.currencyName;
                         payload.invoiceBuyRate = invoiceInfo.buyRate;
                         payload.invoiceBalance = invoiceInfo.balance;
-                        payload.customerId = invoiceInfo.customerId; // FIXED: was supplierId
-                        payload.customerName = invoiceInfo.customerName; // FIXED: was supplierName
+                        payload.customerId = invoiceInfo.customerId;
+                        payload.customerName = invoiceInfo.customerName;
                         payload.accountNo = invoiceInfo.accountNumber;
                     }
                 }

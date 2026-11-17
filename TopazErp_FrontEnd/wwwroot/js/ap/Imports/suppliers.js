@@ -21,7 +21,11 @@ const app = Vue.createApp({
 
             currentPage: 1,
             pageSize: 10,
-
+            statusList: [
+                { id: 'a3b4c2f9-8e4d-4e79-b6b9-2d8c6b80b5fc', name: 'Active' },
+                { id: '6d1d2b1e-6c5e-4f31-9c3d-945d7f6e2a34', name: 'Inactive' },
+                { id: 'f28e71d1-63c9-4070-b7cb-2e5ce2cbe4a1', name: 'Dormant' }
+            ],
             // Keep the existing mappings and add the missing contact/tax fields.
             columnMap: {
                 name: 'name',
@@ -119,9 +123,9 @@ const app = Vue.createApp({
                     axios.get(LOOKUP_URLS.supplierGroups)
                 ]);
 
-                this.currencies = this.unwrapList(currencyResponse.data);
-                this.accounts = this.unwrapList(accountResponse.data);
-                this.supplierGroups = this.unwrapList(groupResponse.data);
+                this.currencies = this.unwrapList(currencyResponse.data.result);
+                this.accounts = this.unwrapList(accountResponse.data.result);
+                this.supplierGroups = this.unwrapList(groupResponse.data.result);
 
                 this.lookupsReady = true;
             } catch (error) {
@@ -376,7 +380,16 @@ const app = Vue.createApp({
                 row.supplierGroupName,
                 ['supplierGroupName', 'groupName', 'name']
             );
-
+            const status = this.findByName(
+                this.statusList,
+                row.status,
+                ['name', 'statusName']
+            );
+            if (!status || !this.lookupId(status)) {
+                errors.push(
+                    `status "${row.status}" was not found.`
+                );
+            }
             const findAccount = (excelValue, label) => {
                 if (!excelValue) return null;
 
@@ -454,30 +467,22 @@ const app = Vue.createApp({
             return {
                 payload: {
                     accountNumber: row.accountNumber,
-
                     supplierGroupId: this.lookupId(supplierGroup),
                     supplierGroupName:
                         supplierGroup.supplierGroupName ||
                         supplierGroup.groupName ||
                         supplierGroup.name,
-
-                    statusId: row.status,
+                    statusId: this.lookupId(status),
                     statusName: row.status,
                     balance: row.balance,
-
                     creditAccountId: this.lookupId(creditAccount) || this.emptyGuid,
                     creditAccountName: accountDisplayName(creditAccount),
-
                     debitAccountId: this.lookupId(debitAccount) || this.emptyGuid,
                     debitAccountName: accountDisplayName(debitAccount),
-
                     irsAccountId: this.lookupId(irsAccount) || this.emptyGuid,
                     irsAccountName: accountDisplayName(irsAccount),
-
                     vatAccountId: this.lookupId(vatAccount) || this.emptyGuid,
                     vatAccountName: accountDisplayName(vatAccount),
-                
-
                     tinNumber: '',
                     name: row.name,
                     email: row.email,
@@ -487,14 +492,11 @@ const app = Vue.createApp({
                     contactPersonPhone: row.contactPersonPhoneNo,
                     contactPersonEmail: row.contactPersonEmail,
                     vatNumber: row.vatNumber,
-
                     currencyId: this.lookupId(currency),
-                    currencyName:
-                        currency.currencyName || currency.name || row.currencyName,
+                    currencyName: currency.currencyName || currency.name || row.currencyName,
                     currencyCode: currency.currencyCode || '',
                     buyingRate: currency.buyingRate ?? currency.buyRate ?? 0,
                     sellingRate: currency.sellingRate ?? currency.sellRate ?? 0,
-
                     creditLimit: row.creditLimit,
                     isResident: false,
                     taxOffice: row.taxOffice

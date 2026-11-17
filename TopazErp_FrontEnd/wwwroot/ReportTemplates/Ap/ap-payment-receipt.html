@@ -1,474 +1,326 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Payment Receipt</title>
-
-    <script>
-        function ShowError(element) {
-            alert(element.getAttribute('data-value'));
-        }
-
-        const CurrentDate = new Intl.DateTimeFormat(undefined, {
-            year: 'numeric',
-            month: 'short',
-            day: '2-digit'
-        }).format(new Date())
-    </script>
-
+    <meta charset="UTF-8" />
+    <title>Supplier Payment Receipt</title>
     <style>
-        * {
+        .report-sheet {
+            font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+            color: #1f2937;
+            padding: 36px 40px 28px;
             box-sizing: border-box;
         }
 
-        @page {
-            size: auto;
-            margin: 5mm;
-        }
-
-        html,
-        body {
-            margin: 0;
-            padding: 0;
-            color: #17212b;
-            background: #fff;
-            font-family: Arial, Helvetica, sans-serif;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
-
-        .sheet {
-            width: 100%;
-        }
-
-        .receipt-copy {
-            height: 130mm;
-            padding: 4mm;
-            border: 1px solid #d8e1eb;
-            border-top: 3px solid #1f5a9a;
-            background: #fff;
+        /* ---------- repeating header (logo left, rest centered) ---------- */
+        .report-header {
             display: flex;
-            flex-direction: column;
-            gap: 2.5mm;
-            overflow: hidden;
+            align-items: flex-start;
+            gap: 16px;
+            border-bottom: 3px solid #1f1f1f;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
         }
 
-        .receipt-header {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5mm;
+        .report-header .logo {
+            width: 120px;
+            object-fit: contain;
+            flex: 0 0 auto;
         }
 
-        .topline,
-        .title-row,
-        .receipt-meta,
-        .signature-row,
-        .receipt-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .topline {
-            min-height: 5mm;
-            color: #526170;
-            font-size: 8pt;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
-
-        .brand,
-        h1,
-        .amount-value {
-            color: #1f5a9a;
-        }
-
-        .brand {
-            font-weight: 700;
-        }
-
-        .copy-label {
-            padding: 1mm 2.5mm;
-            border: 1px solid #c8d7e8;
-            border-radius: 10mm;
-            background: #fff;
-            color: #1f5a9a;
-            font-size: 7pt;
-            font-weight: 700;
-            letter-spacing: 0.06em;
-        }
-
-        .title-row {
-            gap: 4mm;
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 16pt;
-            line-height: 1.1;
-            font-weight: 700;
-        }
-
-        .receipt-meta {
-            gap: 4mm;
-            font-size: 8pt;
-            white-space: nowrap;
-        }
-
-        .meta-item {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5mm;
-        }
-
-        .meta-label,
-        .field-label {
-            color: #63758a;
-            font-size: 6.5pt;
-            font-weight: 700;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-        }
-
-        .meta-value {
-            color: #17212b;
-            font-size: 8.5pt;
-            font-weight: 700;
-        }
-
-        .fields-grid {
-            display: grid;
-            grid-template-columns: 1.6fr 1fr;
-            gap: 2mm;
-        }
-
-        .field {
-            min-width: 0;
-            min-height: 11mm;
-            padding: 1.5mm 2mm;
-            border: 1px solid #dce4ec;
-            border-radius: 1.5mm;
-            background: #fff;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            gap: 1mm;
-        }
-
-        .field-value {
-            min-width: 0;
-            color: #17212b;
-            font-size: 9pt;
-            font-weight: 600;
-            line-height: 1.25;
-            overflow-wrap: anywhere;
-        }
-
-        .amount-words {
-            grid-column: 1 / -1;
-            min-height: 13mm;
-        }
-
-        .payment-title {
-            margin: 0 0 1.5mm;
-            color: #526170;
-            font-size: 7pt;
-            font-weight: 700;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-        }
-
-        .payment-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5mm;
-        }
-
-        .payment-grid .field {
-            min-height: 10mm;
-        }
-
-        .amount-strip {
-            min-height: 14mm;
-            padding: 2mm 3mm;
-            border: 1px solid #c8d7e8;
-            border-left: 3px solid #1f5a9a;
-            border-radius: 1.5mm;
-            background: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .amount-caption {
-            color: #63758a;
-            font-size: 8pt;
-            font-weight: 700;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-        }
-
-        .amount-value {
-            font-size: 15pt;
-            font-weight: 700;
-            white-space: nowrap;
-        }
-
-        .signature-row {
-            gap: 8mm;
-            margin-top: auto;
-            padding: 0 1mm;
-        }
-
-        .signature {
+        .report-header .header-center {
             flex: 1;
-            padding-top: 7mm;
-            border-bottom: 1px solid #758392;
-            color: #687787;
-            font-size: 7pt;
-            text-align: center;
+        }
+        .report-header .company-name {
+            font-size: 22px; font-weight: 700; color: #111827; letter-spacing: .2px;
+            margin: 0 0 4px;
+        }
+        .report-header .company-meta { font-size: 12px; color: #4b5563; line-height: 1.55; }
+
+        .report-title {
+            font-size: 20px; font-weight: 700; color: #1e1d1d; text-align: left;
+            margin: 6px 0 0; white-space: nowrap;
+        }
+        .report-title-sub { font-size: 11px; color: #6b7280; text-align: right; margin-top: 4px; }
+
+        /* ---------- receipt meta strip ---------- */
+        .receipt-meta {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0;
+            border: 1px solid #d1d5db;
+            border-radius: 3px;
+            margin: 10px 0 14px;
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
 
-        .receipt-footer {
-            min-height: 5mm;
-            padding-top: 1mm;
-            border-top: 1px solid #e1e7ec;
-            color: #63758a;
-            font-size: 7pt;
+        .receipt-meta .meta-item {
+            padding: 7px 10px;
+            border-right: 1px solid #e5e7eb;
+            border-bottom: 1px solid #e5e7eb;
+            min-height: 42px;
         }
+        .receipt-meta .meta-item:nth-child(4n) { border-right: none; }
+        .receipt-meta .meta-item:nth-last-child(-n + 4) { border-bottom: none; }
 
-        .cut-line {
-            height: 7mm;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #687787;
-            font-size: 7pt;
-            letter-spacing: 0.08em;
+        .receipt-meta .meta-label {
+            display: block;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: .5px;
             text-transform: uppercase;
+            color: #6b7280;
+            margin-bottom: 3px;
+        }
+        .receipt-meta .meta-value {
+            display: block;
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #111827;
+            line-height: 1.35;
+            word-break: break-word;
         }
 
-        .cut-line::before {
-            position: absolute;
-            top: 50%;
-            right: 0;
-            left: 0;
-            border-top: 1px dashed #9aa9ba;
-            content: "";
+        /* ---------- table ---------- */
+        .report-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+        .report-table th {
+            text-align: left;
+            font-weight: 700;
+            padding: 6px 4px;
+            border-bottom: 1.5px solid #6b7280;
+            color: #111827;
+            white-space: nowrap;
+            background-color: #f9fafb;
+        }
+        .report-table td {
+            padding: 5px 4px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+            color: #000000;
+        }
+        .report-table tbody tr:nth-child(even) td { background: #f8fafc; }
+        .report-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+        .report-table .ctr { text-align: center; }
+        .report-table .strong { font-weight: 700; color: #111827; }
+
+        /* group header (invoice section) */
+        .report-table .group-header td {
+            color: #2d2d2d; font-weight: 700; font-size: 11px;
+            padding: 8px 7px;
+        }
+        /* subtotal for one section */
+        .report-table .subtotal-row td {
+            background: #e5e7eb; font-weight: 600; color: #111827;
+        }
+        .report-table .total-row td {
+            background: rgb(45 45 45 / 0.24) !important; font-weight: 700; color: #000;
+            border-top: 2px solid #1a1a1a;
         }
 
-        .cut-line span {
-            z-index: 1;
-            padding: 0 3mm;
-            background: #fff;
+        /* ---------- amount in words + paid figure ---------- */
+        .receipt-amount {
+            display: flex;
+            justify-content: space-between;
+            align-items: stretch;
+            border: 1px solid #d1d5db;
+            border-left: 4px solid #1f1f1f;
+            margin-top: 12px;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+        .receipt-amount .words {
+            flex: 1;
+            padding: 9px 12px;
+        }
+        .receipt-amount .words .label,
+        .receipt-amount .paid .label {
+            display: block;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            color: #6b7280;
+            margin-bottom: 3px;
+        }
+        .receipt-amount .words .value {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #111827;
+            line-height: 1.45;
+        }
+        .receipt-amount .paid {
+            flex: 0 0 auto;
+            text-align: right;
+            padding: 9px 14px;
+            border-left: 1px solid #d1d5db;
+            background: #f9fafb;
+            min-width: 190px;
+        }
+        .receipt-amount .paid .value {
+            font-size: 17px;
+            font-weight: 800;
+            color: #000000;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
         }
 
-        @media screen {
-            body {
-                padding: 8mm;
-                background: #fff;
-            }
-
-            .sheet {
-                max-width: 190mm;
-                margin: 0 auto;
-                padding: 5mm;
-                background: #fff;
-                box-shadow: none;
-            }
+        /* ---------- GL distribution ---------- */
+        .gl-block { margin-top: 16px; page-break-inside: avoid; break-inside: avoid; }
+        .gl-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: #111827;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-bottom: 5px;
         }
 
-        @media print {
-            .sheet {
-                width: 100%;
-            }
-
-            .receipt-copy,
-            .cut-line {
-                break-inside: avoid;
-                page-break-inside: avoid;
-            }
+        /* ---------- signatures ---------- */
+        .sign-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-top: 34px;
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
+        .sign-grid .sign-block { text-align: center; }
+        .sign-grid .sign-line { height: 34px; border-bottom: 1px solid #9ca3af; margin-bottom: 5px; }
+        .sign-grid .sign-role { font-size: 10.5px; font-weight: 700; color: #111827; }
+        .sign-grid .sign-hint { font-size: 9px; color: #6b7280; margin-top: 2px; }
+
+        /* ---------- repeating footer ---------- */
+        .report-footer {
+            display: flex; justify-content: space-between; align-items: center;
+            border-top: 1px solid #d1d5db; margin-top: 16px; padding-top: 10px;
+            font-size: 11px; color: #6b7280;
+        }
+        .report-footer .page-no { font-weight: 600; color: #374151; }
     </style>
 </head>
+<body>
+<main class="report-sheet">
 
-<body id="pdf-viewer">
-<div class="sheet">
-    <section class="receipt-copy">
-        <div class="receipt-header">
-            <div class="topline">
-                <span class="brand">TopazAccounting Pro · Accounts Receivable</span>
-                <span class="copy-label">Customer Copy</span>
-            </div>
-
-            <div class="title-row">
-                <h1>Payment Receipt</h1>
-                <div class="receipt-meta">
-                    <div class="meta-item">
-                        <span class="meta-label">Receipt No.</span>
-                        <span class="meta-value">{{receiptNo}}</span>
-                    </div>
-                    <div class="meta-item">
-                        <span class="meta-label">Date</span>
-                        <span class="meta-value">{{CurrentDate}}</span>
-                    </div>
-                </div>
+    <!-- Repeats on every page, pinned to the top -->
+    <header class="report-header">
+        <img class="logo" src="{{companyLogo}}" alt="Company Logo" onerror="this.style.visibility='hidden'" />
+        <div class="header-center">
+            <p class="company-name">{{companyName}}</p>
+            <div class="company-meta">
+                <div>{{primaryPhoneNo}} | {{address}} | {{email}}</div>
             </div>
         </div>
+    </header>
 
-        <div class="fields-grid">
-            <div class="field">
-                <span class="field-label">Received from</span>
-                <span class="field-value">{{customerName}}</span>
-            </div>
+    <p class="report-title">{{reportTitle}}</p>
 
-            <div class="field">
-                <span class="field-label">Invoice No.</span>
-                <span class="field-value">{{invoiceNo}}</span>
-            </div>
-
-            <div class="field amount-words">
-                <span class="field-label">Amount in words</span>
-                <span class="field-value">{{amountInWords}}</span>
-            </div>
-
-            <div class="field amount-words">
-                <span class="field-label">Payment for</span>
-                <span class="field-value">Invoice payment</span>
-            </div>
+    <!-- Payment / supplier meta -->
+    <section class="receipt-meta">
+        <div class="meta-item">
+            <span class="meta-label">Paid To (Supplier)</span>
+            <span class="meta-value">{{supplierName}}</span>
+        </div>
+        <div class="meta-item">
+            <span class="meta-label">Batch / Voucher No</span>
+            <span class="meta-value">{{batchNumber}}</span>
+        </div>
+        <div class="meta-item">
+            <span class="meta-label">Payment Date</span>
+            <span class="meta-value">{{paymentDate}}</span>
+        </div>
+        <div class="meta-item">
+            <span class="meta-label">Mode of Payment</span>
+            <span class="meta-value">{{modeOfPayment}}</span>
         </div>
 
-        <section>
-            <h2 class="payment-title">Payment details</h2>
-            <div class="payment-grid">
-                <div class="field">
-                    <span class="field-label">Mode of payment</span>
-                    <span class="field-value">{{modeOfPayment}}</span>
-                </div>
-
-                <div class="field">
-                    <span class="field-label">Cheque No.</span>
-                    <span class="field-value">{{chequeNo}}</span>
-                </div>
-
-                <div class="field">
-                    <span class="field-label">Bank</span>
-                    <span class="field-value">{{bankName}}</span>
-                </div>
-
-                <div class="field">
-                    <span class="field-label">Branch</span>
-                    <span class="field-value">{{bankBranch}}</span>
-                </div>
-            </div>
-        </section>
-
-        <div class="amount-strip">
-            <span class="amount-caption">Amount paid</span>
-            <span class="amount-value">{{currencyCode}}{{paidAmount}}</span>
+        <div class="meta-item">
+            <span class="meta-label">Cheque / Ref No</span>
+            <span class="meta-value">{{chequeNo}}</span>
         </div>
-
-        <div class="signature-row">
-            <div class="signature">Received by</div>
-            <div class="signature">Customer signature</div>
+        <div class="meta-item">
+            <span class="meta-label">Bank</span>
+            <span class="meta-value">{{bankName}}</span>
         </div>
-
-        <div class="receipt-footer">
-            <span>Thank you for your payment.</span>
-            <span>TopazAccounting Pro</span>
+        <div class="meta-item">
+            <span class="meta-label">Bank Branch</span>
+            <span class="meta-value">{{bankBranch}}</span>
+        </div>
+        <div class="meta-item">
+            <span class="meta-label">Currency / Rate</span>
+            <span class="meta-value">{{currencyName}} ({{currencyCode}}) @ {{payRate}}</span>
         </div>
     </section>
 
-    <div class="cut-line" aria-hidden="true">
-        <span>✂ Cut here</span>
-    </div>
+    <!-- Invoices settled by this payment (one row per invoice, injected) -->
+    <table class="report-table">
+        <thead>
+        <tr>
+            <th style="width: 34px;" class="ctr">#</th>
+            <th>Invoice No</th>
+            <th class="ctr">Invoice Date</th>
+            <th class="ctr">Invoice Type</th>
+            <th class="num">Rate</th>
+            <th class="num">Invoice Amount</th>
+            <th class="num">Amount Applied</th>
+        </tr>
+        </thead>
+        <tbody>{{RowsHtml}}</tbody>
+    </table>
 
-    <section class="receipt-copy">
-        <div class="receipt-header">
-            <div class="topline">
-                <span class="brand">TopazAccounting Pro · Accounts Receivable</span>
-                <span class="copy-label">Office Copy</span>
-            </div>
-
-            <div class="title-row">
-                <h1>Payment Receipt</h1>
-                <div class="receipt-meta">
-                    <div class="meta-item">
-                        <span class="meta-label">Receipt No.</span>
-                        <span class="meta-value">{{receiptNo}}</span>
-                    </div>
-                    <div class="meta-item">
-                        <span class="meta-label">Date</span>
-                        <span class="meta-value">{{CurrentDate}}</span>
-                    </div>
-                </div>
-            </div>
+    <!-- Amount in words + total paid -->
+    <section class="receipt-amount">
+        <div class="words">
+            <span class="label">Amount in Words</span>
+            <span class="value">{{amountInWords}}</span>
         </div>
-
-        <div class="fields-grid">
-            <div class="field">
-                <span class="field-label">Received from</span>
-                <span class="field-value">{{customerName}}</span>
-            </div>
-
-            <div class="field">
-                <span class="field-label">Invoice No.</span>
-                <span class="field-value">{{invoiceNo}}</span>
-            </div>
-
-            <div class="field amount-words">
-                <span class="field-label">Amount in words</span>
-                <span class="field-value">{{amountInWords}}</span>
-            </div>
-
-            <div class="field amount-words">
-                <span class="field-label">Payment for</span>
-                <span class="field-value">Invoice payment</span>
-            </div>
-        </div>
-
-        <section>
-            <h2 class="payment-title">Payment details</h2>
-            <div class="payment-grid">
-                <div class="field">
-                    <span class="field-label">Mode of payment</span>
-                    <span class="field-value">{{modeOfPayment}}</span>
-                </div>
-
-                <div class="field">
-                    <span class="field-label">Cheque No.</span>
-                    <span class="field-value">{{chequeNo}}</span>
-                </div>
-
-                <div class="field">
-                    <span class="field-label">Bank</span>
-                    <span class="field-value">{{bankName}}</span>
-                </div>
-
-                <div class="field">
-                    <span class="field-label">Branch</span>
-                    <span class="field-value">{{bankBranch}}</span>
-                </div>
-            </div>
-        </section>
-
-        <div class="amount-strip">
-            <span class="amount-caption">Amount paid</span>
-            <span class="amount-value">{{currencyCode}}{{paidAmount}}</span>
-        </div>
-
-        <div class="signature-row">
-            <div class="signature">Received by</div>
-            <div class="signature">Customer signature</div>
-        </div>
-
-        <div class="receipt-footer">
-            <span>Thank you for your payment.</span>
-            <span>TopazAccounting Pro</span>
+        <div class="paid">
+            <span class="label">Total Amount Paid</span>
+            <span class="value">{{currencyCode}} {{TotalAmountPaid}}</span>
         </div>
     </section>
-</div>
-</body>
+
+    <!-- GL distribution -->
+    <section class="gl-block">
+        <div class="gl-title">Accounting Distribution</div>
+        <table class="report-table">
+            <thead>
+            <tr>
+                <th style="width: 70px;" class="ctr">Entry</th>
+                <th>GL Account</th>
+                <th class="num" style="width: 140px;">Debit</th>
+                <th class="num" style="width: 140px;">Credit</th>
+            </tr>
+            </thead>
+            <tbody>{{GlRowsHtml}}</tbody>
+        </table>
+    </section>
+
+    <!-- Signatures -->
+    <section class="sign-grid">
+        <div class="sign-block">
+            <div class="sign-line"></div>
+            <div class="sign-role">Prepared By</div>
+            <div class="sign-hint">Name / Signature / Date</div>
+        </div>
+        <div class="sign-block">
+            <div class="sign-line"></div>
+            <div class="sign-role">Approved By</div>
+            <div class="sign-hint">Name / Signature / Date</div>
+        </div>
+        <div class="sign-block">
+            <div class="sign-line"></div>
+            <div class="sign-role">Received By (Supplier)</div>
+            <div class="sign-hint">Name / Signature / Date</div>
+        </div>
+    </section>
+
+    <!-- Repeats on every page, pinned to the bottom -->
+    <footer class="report-footer">
+        <div class="report-title-sub">Generated {{CurrentDate}}</div>
+        <span>TopazAccounting Pro (AP)</span>
+        <span class="page-no">Page {{PageNumber}} of {{PageBreakCount}}</span>
+    </footer>
+
+</main>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5b61de25a05287f',t:'MTc5NDgyODEzNA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5b61de25a05287f',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

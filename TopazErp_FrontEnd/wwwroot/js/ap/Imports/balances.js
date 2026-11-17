@@ -1,8 +1,9 @@
 const API_URLS = {
     suppliers: '/SharedResource/GetSuppliers',
     currencies: '/SharedResource/GetCurrencies',
+    organizationalUnits: '/SharedResource/GetCostCenters/',
     existingBalances: '/Ap/GetApBalancesReport?status=all',
-    createOpeningBalance: '/Ap//CreateOpeningBalance'
+    createOpeningBalance: '/Ap/CreateOpeningBalance'
 };
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000';
@@ -28,7 +29,15 @@ const app = Vue.createApp({
                 currencyrate: 'currencyRate',
                 exchangerate: 'currencyRate',
                 amount: 'amount',
-                balance: 'amount'
+                balance: 'amount',
+                ou: 'ouName',
+                ouname: 'ouName',
+                costcenter: 'ouName',
+                costcentername: 'ouName',
+                oucostcenter: 'ouName',
+                organizationalunit: 'ouName',
+                organizationalunitname: 'ouName',
+                orgunit: 'ouName'
             }
         };
     },
@@ -182,6 +191,9 @@ const app = Vue.createApp({
                 'data',
                 'suppliers',
                 'currencies',
+                'costCenters',
+                'organizationalUnits',
+                'units',
                 'balances',
                 'openingBalances',
                 'apOpeningBalances'
@@ -195,6 +207,11 @@ const app = Vue.createApp({
 
             if (raw.data && typeof raw.data === 'object') {
                 return this.unwrapList(raw.data);
+            }
+
+            if (typeof raw === 'object') {
+                const firstArray = Object.values(raw).find(v => Array.isArray(v));
+                if (firstArray) return firstArray;
             }
 
             return [];
@@ -220,6 +237,141 @@ const app = Vue.createApp({
 
         normalizeName(value) {
             return this.toText(value).toLocaleLowerCase();
+        },
+
+        normalizeOuPath(value) {
+            return this.toText(value)
+                .split('/')
+                .map(part => part.trim())
+                .filter(Boolean)
+                .join(' / ')
+                .toLocaleLowerCase();
+        },
+
+        buildOuLookups(rawUnits) {
+            const byId = new Map();
+
+            rawUnits.forEach(unit => {
+                const id = this.getField(unit, 'id');
+                if (id) {
+                    byId.set(String(id).toLowerCase(), unit);
+                }
+            });
+
+            const getPath = unit => {
+                const names = [];
+                const visited = new Set();
+                let current = unit;
+                let depth = 0;
+
+                while (current && depth < 20) {
+                    const currentId = this.getField(current, 'id');
+                    if (currentId) {
+                        visited.add(String(currentId).toLowerCase());
+                    }
+
+                    const unitName = this.toText(
+                        this.getField(current, 'name')
+                    );
+
+                    if (unitName) {
+                        names.unshift(unitName);
+                    }
+
+                    const parentId = this.getField(current, 'parentId');
+                    const parentKey = parentId
+                        ? String(parentId).toLowerCase()
+                        : '';
+
+                    if (
+                        !parentKey ||
+                        parentKey === EMPTY_GUID ||
+                        !byId.has(parentKey) ||
+                        visited.has(parentKey)
+                    ) {
+                        break;
+                    }
+
+                    current = byId.get(parentKey);
+                    depth++;
+                }
+
+                return names.join(' / ');
+            };
+
+            const byPath = new Map();
+            const byName = new Map();
+
+            rawUnits.forEach(unit => {
+                const id = this.getField(unit, 'id');
+                const originalName = this.toText(
+                    this.getField(unit, 'name')
+                );
+
+                if (!id || !originalName) return;
+
+                const path = getPath(unit);
+                const entry = {
+                    id,
+                    originalName,
+                    path
+                };
+
+                const normalizedPath = this.normalizeOuPath(path);
+                if (normalizedPath && !byPath.has(normalizedPath)) {
+                    byPath.set(normalizedPath, entry);
+                }
+
+                const normalizedName = this.normalizeName(originalName);
+                if (normalizedName) {
+                    if (!byName.has(normalizedName)) {
+                        byName.set(normalizedName, []);
+                    }
+                    byName.get(normalizedName).push(entry);
+                }
+            });
+
+            return { byPath, byName };
+        },
+
+        resolveOu(ouName, ouLookups) {
+            const text = this.toText(ouName);
+
+            // Optional: leave empty to save ouId as EMPTY_GUID.
+            if (!text) {
+                return { ou: null, error: '' };
+            }
+
+            const pathMatch = ouLookups.byPath.get(
+                this.normalizeOuPath(text)
+            );
+
+            if (pathMatch) {
+                return { ou: pathMatch, error: '' };
+            }
+
+            const nameMatches =
+                ouLookups.byName.get(this.normalizeName(text)) || [];
+
+            if (nameMatches.length === 1) {
+                return { ou: nameMatches[0], error: '' };
+            }
+
+            if (nameMatches.length > 1) {
+                const paths = nameMatches
+                    .map(match => `"${match.path}"`)
+                    .join(', ');
+
+                return {
+                    ou: null,
+                    error: `Multiple OUs match "${text}". Use the full path (${paths}).`
+                };
+            }
+
+            return {
+                ou: null,
+                error: `No matching OU / Cost Center "${text}" was found.`
+            };
         },
 
         makeBalanceKey(supplierId, currencyId) {
@@ -310,6 +462,7 @@ const app = Vue.createApp({
                 currencyName: '',
                 currencyRate: 0,
                 amount: 0,
+                ouName: '',
                 imported: false,
                 importError: '',
                 errors: []
@@ -330,6 +483,7 @@ const app = Vue.createApp({
 
             row.supplier = this.toText(found.supplier?.value);
             row.currencyName = this.toText(found.currencyName?.value);
+            row.ouName = this.toText(found.ouName?.value);
 
             if (!row.supplier) {
                 row.errors.push('Supplier is required.');
@@ -411,29 +565,50 @@ const app = Vue.createApp({
 
             try {
                 // Fetch fresh data before checking duplicates.
-                const [suppliers, currencies, existingBalances] =
-                    await Promise.all([
-                        this.fetchList(API_URLS.suppliers),
-                        this.fetchList(API_URLS.currencies),
-                        this.fetchList(API_URLS.existingBalances)
-                    ]);
+                const [
+                    suppliers,
+                    currencies,
+                    organizationalUnits,
+                    existingBalances
+                ] = await Promise.all([
+                    this.fetchList(API_URLS.suppliers),
+                    this.fetchList(API_URLS.currencies),
+                    this.fetchList(API_URLS.organizationalUnits),
+                    this.fetchList(API_URLS.existingBalances)
+                ]);
 
+                // Build supplier lookup using all suppliers (not only active).
                 const supplierByName = new Map();
 
                 suppliers.forEach(supplier => {
-                    const status = this.normalizeName(
-                        this.getField(supplier, 'statusName') ||
-                        this.getField(supplier, 'status')
-                    );
-
-                    // Only active suppliers may receive an opening balance.
-                    if (status !== 'active') return;
-
                     const name = this.normalizeName(
                         this.getField(supplier, 'name')
                     );
 
-                    if (name) supplierByName.set(name, supplier);
+                    if (!name) return;
+
+                    const existing = supplierByName.get(name);
+                    if (!existing) {
+                        supplierByName.set(name, supplier);
+                        return;
+                    }
+
+                    // If duplicate names exist, prefer an active record.
+                    const existingStatus = this.normalizeName(
+                        this.getField(existing, 'statusName') ||
+                        this.getField(existing, 'status')
+                    );
+                    const currentStatus = this.normalizeName(
+                        this.getField(supplier, 'statusName') ||
+                        this.getField(supplier, 'status')
+                    );
+
+                    if (
+                        existingStatus !== 'active' &&
+                        currentStatus === 'active'
+                    ) {
+                        supplierByName.set(name, supplier);
+                    }
                 });
 
                 const currencyByName = new Map();
@@ -446,6 +621,9 @@ const app = Vue.createApp({
                     if (name) currencyByName.set(name, currency);
                 });
 
+                // Build OU / Cost Center lookup (supports both full hierarchy path and leaf name).
+                const ouLookups = this.buildOuLookups(organizationalUnits);
+
                 const existingKeys = new Set();
 
                 existingBalances.forEach(balance => {
@@ -456,18 +634,20 @@ const app = Vue.createApp({
                     if (key) existingKeys.add(key);
                 });
 
-                // Resolve each preview row to supplier and currency IDs.
+                // Resolve each preview row to supplier, currency, and optional OU IDs.
                 const preparedRows = this.previewData.map(row => {
                     if (row.imported) {
                         return {
                             row,
                             supplier: null,
                             currency: null,
+                            ou: null,
                             key: ''
                         };
                     }
 
                     row.importError = '';
+                    const rowErrors = [];
 
                     const supplier = supplierByName.get(
                         this.normalizeName(row.supplier)
@@ -481,15 +661,16 @@ const app = Vue.createApp({
                         const missing = [];
 
                         if (!supplier) {
-                            missing.push(`active supplier "${row.supplier}"`);
+                            missing.push(`supplier "${row.supplier}"`);
                         }
 
                         if (!currency) {
                             missing.push(`currency "${row.currencyName}"`);
                         }
 
-                        row.importError =
-                            `No matching ${missing.join(' and ')} was found.`;
+                        rowErrors.push(
+                            `No matching ${missing.join(' and ')} was found.`
+                        );
                     }
 
                     const supplierId = this.getField(supplier, 'id');
@@ -500,14 +681,29 @@ const app = Vue.createApp({
                         currency &&
                         (!supplierId || !currencyId)
                     ) {
-                        row.importError =
-                            'The matched supplier or currency is missing its ID.';
+                        rowErrors.push(
+                            'The matched supplier or currency is missing its ID.'
+                        );
+                    }
+
+                    const { ou, error: ouError } = this.resolveOu(
+                        row.ouName,
+                        ouLookups
+                    );
+
+                    if (ouError) {
+                        rowErrors.push(ouError);
+                    }
+
+                    if (rowErrors.length > 0) {
+                        row.importError = rowErrors.join(' ');
                     }
 
                     return {
                         row,
                         supplier,
                         currency,
+                        ou,
                         key: this.makeBalanceKey(supplierId, currencyId)
                     };
                 });
@@ -559,7 +755,7 @@ const app = Vue.createApp({
                 let failedCount = 0;
 
                 for (const item of preparedRows) {
-                    const { row, supplier, currency, key } = item;
+                    const { row, supplier, currency, ou, key } = item;
 
                     if (row.imported) continue;
 
@@ -585,8 +781,8 @@ const app = Vue.createApp({
                         transactionDate: row.transactionDate,
                         amount: row.amount,
 
-                        ouId: EMPTY_GUID,
-                        ouName: 'N/A',
+                        ouId: ou?.id || EMPTY_GUID,
+                        ouName: ou ? ou.originalName : 'N/A',
                         isPosted: false
                     };
 

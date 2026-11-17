@@ -3,6 +3,8 @@
 
     const pad = (value) => String(value).padStart(2, '0');
 
+    const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
     // Convert dates to YYYY-MM-DD without Moment.
     const isoDate = (date) => {
         if (date === null || date === undefined || date === '') return '';
@@ -63,6 +65,36 @@
         return local.toISOString().slice(0, 10);
     };
 
+    // YYYY-MM-DD (or any supported input) -> 16-Nov-2026, matching the API's own style.
+    const displayDate = (value) => {
+        const iso = isoDate(value);
+
+        if (!iso) return '';
+
+        const [y, m, d] = iso.split('-');
+
+        return `${d}-${MONTHS_SHORT[Number(m) - 1]}-${y}`;
+    };
+
+    // Case-insensitive field reader: read(row, 'chequeNo') also finds 'ChequeNo'.
+    const read = (row, ...keys) => {
+        if (!row) return '';
+
+        for (const key of keys) {
+            if (row[key] !== undefined && row[key] !== null && row[key] !== '') {
+                return row[key];
+            }
+
+            const pascal = key.charAt(0).toUpperCase() + key.slice(1);
+
+            if (row[pascal] !== undefined && row[pascal] !== null && row[pascal] !== '') {
+                return row[pascal];
+            }
+        }
+
+        return '';
+    };
+
     const app = Vue.createApp({
         data() {
             return {
@@ -104,11 +136,11 @@
         },
 
         methods: {
-            // report header
-            async getReportHeader() {
-                let title = 'AP Payments';
+            // report header — pass a title override so the receipt gets its own heading.
+            async getReportHeader(titleOverride) {
+                let title = titleOverride || 'AP Payments';
 
-                if (this.subReportType === 'date-report') {
+                if (!titleOverride && this.subReportType === 'date-report') {
                     title = `AP Payments from ${this.startDate} to ${this.endDate}`;
                 }
 
@@ -117,6 +149,17 @@
 
                 this.reportHeader = response.data?.result || [];
                 return this.reportHeader;
+            },
+
+            // Fetches the header and always returns a single usable object.
+            async getReportHeaderData(title) {
+                try {
+                    const header = await this.getReportHeader(title);
+                    return Array.isArray(header) && header.length ? header[0] : {};
+                } catch (e) {
+                    console.warn('Report header not loaded:', e);
+                    return {};
+                }
             },
 
             unwrapList(response) {
@@ -195,19 +238,18 @@
             },
 
             getReportData() {
-                let url = '/Ap/GetApPaymentsReport';
-
-                this.reportPath = this.reportPathConfig.invoicePaymentSummaryReportPath;
-
                 if (this.reportType !== 'Invoice') {
                     this.toastHandler('warning', 'Please select a valid report type.');
                     return;
                 }
 
+                let url = '/Ap/GetApPaymentsReport';
+
+                this.reportPath = this.reportPathConfig.invoicePaymentSummaryReportPath;
+
                 switch (this.subReportType) {
                     case 'summary-report':
                         this.reportPath = this.reportPathConfig.invoicePaymentSummaryReportPath;
-
                         url = '/Ap/GetApPaymentsReport';
                         break;
 
@@ -218,7 +260,6 @@
                         }
 
                         this.reportPath = this.reportPathConfig.invoicePaymentSupplierReport;
-
                         url = `/Ap/GetApPaymentsBySupplier?SupplierId=${encodeURIComponent(this.supplierId)}`;
                         break;
 
@@ -234,7 +275,6 @@
                         }
 
                         this.reportPath = this.reportPathConfig.invoicePaymentByDateReportPath;
-
                         url = `/Ap/GetApPaymentsByDate?StartDate=${encodeURIComponent(this.startDate)}&EndDate=${encodeURIComponent(this.endDate)}`;
                         break;
 
@@ -245,7 +285,6 @@
                         }
 
                         this.reportPath = this.reportPathConfig.invoicePaymentReceiptReportPath;
-
                         url = `/Ap/GetApPaymentReceipts?id=${encodeURIComponent(this.paymentId)}`;
                         break;
 
@@ -261,43 +300,48 @@
                         const result = response.data?.result;
                         this.reportData = result;
 
-                        if (this.subReportType === 'batchNumber') {
-                            const list = Array.isArray(result) ? result : [result];
+                        const rows = (Array.isArray(result) ? result : [result]).filter(
+                            (d) => d && typeof d === 'object' && Object.keys(d).length > 0
+                        );
 
-                            this.receiptList = list
-                                .filter((d) => d && typeof d === 'object' && Object.keys(d).length > 0)
-                                .map((d) => this.toReceiptData(d));
+                        if (this.subReportType === 'batchNumber') {
+                            this.summaryData = null;
+
+                            if (!rows.length) {
+                                this.receiptList = [];
+                                this.showReceipt = false;
+                                this.toastHandler('warning', 'No receipt data found for this payment.');
+                                return;
+                            }
+
+                            // The receipt needs the company header, so fetch it for this
+                            // report type too — the summary branch already does.
+                            const headerData = await this.getReportHeaderData('Supplier Payment Receipt');
+
+                            this.receiptList = this.groupReceiptRows(rows)
+                                .map((group, index) => this.toReceiptData(group, headerData, index))
+                                .filter(Boolean);
 
                             this.showReceipt = this.receiptList.length > 0;
-                            this.summaryData = null;
 
                             if (!this.showReceipt) {
                                 this.toastHandler('warning', 'No receipt data found for this payment.');
                             }
-                        } else {
-                            this.showReceipt = false;
-                            this.receiptList = [];
 
-                            let headerData = {};
-                            try {
-                                const header = await this.getReportHeader();
-                                headerData = Array.isArray(header) && header.length ? header[0] : {};
-                            } catch (e) {
-                                console.warn('Report header not loaded:', e);
-                            }
-
-                            const rows = (Array.isArray(result) ? result : [result]).filter(
-                                (d) => d && typeof d === 'object' && Object.keys(d).length > 0
-                            );
-
-                            if (!rows.length) {
-                                this.summaryData = null;
-                                this.toastHandler('warning', 'No payment data found.');
-                                return;
-                            }
-
-                            this.summaryData = this.toSummaryData(rows, headerData);
+                            return;
                         }
+
+                        this.showReceipt = false;
+                        this.receiptList = [];
+
+                        if (!rows.length) {
+                            this.summaryData = null;
+                            this.toastHandler('warning', 'No payment data found.');
+                            return;
+                        }
+
+                        const headerData = await this.getReportHeaderData();
+                        this.summaryData = this.toSummaryData(rows, headerData);
                     })
                     .catch((err) => {
                         console.error('Error loading report:', err);
@@ -308,31 +352,160 @@
                     });
             },
 
-            toReceiptData(d) {
-                const get = (...keys) => {
-                    for (const k of keys) {
-                        if (d && d[k] !== undefined && d[k] !== null && d[k] !== '') return d[k];
-                    }
-                    return '';
-                };
+            // One payment (batch) can settle several invoices, so split the rows into
+            // one receipt per batch + supplier + currency + payment date.
+            groupReceiptRows(rows) {
+                const groups = new Map();
 
-                const amount = parseFloat(get('paidAmount', 'PaidAmount', 'amount', 'Amount')) || 0;
-                const currencyCode = get('currencyCode', 'CurrencyCode') || 'GH₵';
+                rows.forEach((row) => {
+                    const key = [
+                        read(row, 'batchNumber') || '',
+                        read(row, 'supplierName', 'vendorName', 'customerName') || '',
+                        read(row, 'currencyCode') || '',
+                        read(row, 'paymentDate') || '',
+                    ].join('|');
+
+                    if (!groups.has(key)) {
+                        groups.set(key, []);
+                    }
+
+                    groups.get(key).push(row);
+                });
+
+                return [...groups.values()];
+            },
+
+            toReceiptData(rows, headerData = {}, index = 0) {
+                const list = (Array.isArray(rows) ? rows : [rows]).filter(
+                    (r) => r && typeof r === 'object' && Object.keys(r).length > 0
+                );
+
+                if (!list.length) return null;
+
+                const first = list[0];
+
+                const currencyCode = read(first, 'currencyCode') || 'GH₵';
+                const currencyName = read(first, 'currencyName') || '';
+                const batchNumber = read(first, 'batchNumber') || '';
+
+                const totalInvoiceAmount = list.reduce(
+                    (total, r) => total + (Number(read(r, 'totalInvoiceAmount')) || 0),
+                    0
+                );
+
+                const totalApplied = list.reduce(
+                    (total, r) => total + (Number(read(r, 'amountToApply')) || 0),
+                    0
+                );
+
+                const amountToPay = Number(read(first, 'amountToPay')) || totalApplied;
+                const outstandingCreditMemo = Number(read(first, 'outstandingCreditMemo')) || 0;
+                const rate = Number(read(first, 'rate')) || 0;
+                const payRate = Number(read(first, 'payRate')) || rate || 1;
+                const chequeNo = read(first, 'chequeNo', 'chequeNumber') || '—';
+
+                // ---- invoice rows + totals (built here, injected via {{RowsHtml}}) ----
+                const invoiceRows = list.map((r, i) => {
+                    const rowRate = Number(read(r, 'rate')) || rate;
+                    const applied = Number(read(r, 'amountToApply')) || 0;
+                    const invoiced = Number(read(r, 'totalInvoiceAmount')) || 0;
+
+                    return `<tr>` +
+                        `<td class="ctr">${i + 1}</td>` +
+                        `<td class="strong">${read(r, 'invoiceNumber') || ''}</td>` +
+                        `<td class="ctr">${displayDate(read(r, 'invoiceDate'))}</td>` +
+                        `<td class="ctr">${read(r, 'invoiceType') || ''}</td>` +
+                        `<td class="num">${rowRate.toFixed(4)}</td>` +
+                        `<td class="num">${currencyCode} ${this.formatAmount(invoiced)}</td>` +
+                        `<td class="num strong">${currencyCode} ${this.formatAmount(applied)}</td>` +
+                        `</tr>`;
+                }).join('');
+
+                const RowsHtml = invoiceRows +
+                    `<tr class="subtotal-row">` +
+                    `<td colspan="5" class="num">Total</td>` +
+                    `<td class="num">${currencyCode} ${this.formatAmount(totalInvoiceAmount)}</td>` +
+                    `<td class="num">${currencyCode} ${this.formatAmount(totalApplied)}</td>` +
+                    `</tr>` +
+                    `<tr class="total-row">` +
+                    `<td colspan="6" class="num">Net Payment Amount</td>` +
+                    `<td class="num">${currencyCode} ${this.formatAmount(amountToPay)}</td>` +
+                    `</tr>`;
+
+                // ---- GL distribution (built here, injected via {{GlRowsHtml}}) ----
+                const debitGl = read(first, 'debitGl') || '';
+                const creditGl = read(first, 'creditGl') || '';
+
+                const GlRowsHtml =
+                    `<tr>` +
+                    `<td class="ctr">Debit</td>` +
+                    `<td>${debitGl}</td>` +
+                    `<td class="num">${currencyCode} ${this.formatAmount(amountToPay)}</td>` +
+                    `<td class="num">&mdash;</td>` +
+                    `</tr>` +
+                    `<tr>` +
+                    `<td class="ctr">Credit</td>` +
+                    `<td>${creditGl}</td>` +
+                    `<td class="num">&mdash;</td>` +
+                    `<td class="num">${currencyCode} ${this.formatAmount(amountToPay)}</td>` +
+                    `</tr>`;
+
+                // ---- company header (raw base64 -> data URI) ----
+                // Falls back to a transparent pixel so a missing logo renders nothing
+                // instead of a broken image.
+                const rawLogo = headerData.companyLogo || '';
+                const companyLogo = !rawLogo
+                    ? 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+                    : (rawLogo.startsWith('data:') ? rawLogo : 'data:image/jpeg;base64,' + rawLogo);
+
+                const supplierName = read(first, 'supplierName', 'vendorName', 'customerName') || '';
+
+                // The API's amountInWords ends with the batch memo
+                // "... to be applied to the following invoice(s): " — not wanted on a receipt.
+                const amountInWords =
+                    this.cleanAmountInWords(read(first, 'amountInWords')) ||
+                    this.amountInWords(amountToPay, currencyCode);
 
                 return {
-                    receiptNo: get('receiptNo', 'ReceiptNo', 'receiptNumber', 'ReceiptNumber') || '—',
-                    CurrentDate: isoDate(get('paymentDate', 'PaymentDate', 'currentDate', 'CurrentDate', 'date', 'Date')),
-                    // AP: the payee is a supplier. Keep customer* as a fallback
-                    // so a payload that still uses the AR field names works.
-                    supplierName: get('supplierName', 'SupplierName', 'vendorName', 'VendorName', 'customerName', 'CustomerName'),
-                    invoiceNo: get('invoiceNo', 'InvoiceNo'),
-                    amountInWords: get('amountInWords', 'AmountInWords') || this.amountInWords(amount, currencyCode),
-                    modeOfPayment: get('modeOfPayment', 'ModeOfPayment'),
-                    chequeNo: get('chequeNo', 'ChequeNo') || '—',
-                    bankName: get('bankName', 'BankName'),
-                    bankBranch: get('bankBranch', 'BankBranch', 'branch', 'Branch'),
+                    // stable key for v-for
+                    id: `receipt-${index}-${batchNumber}-${supplierName}`,
+
+                    // header / footer
+                    companyLogo,
+                    companyName: headerData.companyName || '',
+                    primaryPhoneNo: headerData.primaryPhoneNo || '',
+                    address: headerData.address || '',
+                    email: headerData.email || '',
+                    reportTitle: headerData.reportTitle || 'Supplier Payment Receipt',
+                    CurrentDate: displayDate(new Date()),
+                    PageNumber: 1,
+                    PageBreakCount: 1,
+
+                    // payment meta
+                    receiptNo: batchNumber || '—',
+                    supplierName,
+                    batchNumber,
+                    paymentDate: displayDate(read(first, 'paymentDate')),
+                    modeOfPayment: read(first, 'modeOfPayment') || '',
+                    chequeNo,
+                    bankName: read(first, 'bankName') || '',
+                    bankBranch: read(first, 'bankBranch', 'branch') || '',
+                    currencyName,
                     currencyCode,
-                    paidAmount: this.formatAmount(amount),
+                    payRate: payRate.toFixed(4),
+
+                    // body
+                    RowsHtml,
+                    GlRowsHtml,
+                    RowCount: list.length,
+                    TotalInvoiceAmount: this.formatAmount(totalInvoiceAmount),
+                    TotalApplied: this.formatAmount(totalApplied),
+                    outstandingCreditMemo: this.formatAmount(outstandingCreditMemo),
+                    amountToPay: this.formatAmount(amountToPay),
+                    TotalAmountPaid: this.formatAmount(amountToPay),
+                    debitGl,
+                    creditGl,
+                    amountInWords,
                 };
             },
 
@@ -434,6 +607,27 @@
                 };
             },
 
+            // Strips the API's batch memo ("… to be applied to the following invoice(s):")
+            // so the receipt shows just the amount in words.
+            cleanAmountInWords(value) {
+                let text = String(value || '').replace(/\s+/g, ' ').trim();
+
+                if (!text) return '';
+
+                text = text
+                    .replace(/[,;:\-\s]*to be applied to the following invoices?\(?s?\)?\s*[:.]?\s*$/i, '')
+                    .replace(/[\s:,;\-]+$/, '')
+                    .trim();
+
+                if (!text) return '';
+
+                if (!/\bonly$/i.test(text)) {
+                    text += ' Only';
+                }
+
+                return text;
+            },
+
             // amount-in-words fallback (used only if the API doesn't send it)
             numberToWords(n) {
                 const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
@@ -457,8 +651,34 @@
             },
 
             amountInWords(amount, currencyCode) {
-                const names = { 'GH₵': 'Ghana Cedis', 'GHS': 'Ghana Cedis', '$': 'Dollars', '£': 'Pounds', '€': 'Euros' };
-                return this.numberToWords(amount) + (names[currencyCode] ? ' ' + names[currencyCode] : '') + ' Only';
+                const names = {
+                    'GH₵': ['Ghana Cedi', 'Pesewa'],
+                    'GHS': ['Ghana Cedi', 'Pesewa'],
+                    '$': ['Dollar', 'Cent'],
+                    '£': ['Pound', 'Pence'],
+                    '€': ['Euro', 'Cent'],
+                };
+
+                const value = Math.abs(Number(amount) || 0);
+                const whole = Math.floor(value);
+                const cents = Math.round((value - whole) * 100);
+                const [major, minor] = names[currencyCode] || ['', ''];
+
+                let text = this.numberToWords(whole);
+
+                if (major) {
+                    text += ' ' + major + (whole === 1 ? '' : 's');
+                }
+
+                if (cents > 0) {
+                    text += ' and ' + this.numberToWords(cents);
+
+                    if (minor) {
+                        text += ' ' + minor + (cents === 1 ? '' : 's');
+                    }
+                }
+
+                return text + ' Only';
             },
 
             toastHandler(type, message = 'An unexpected error occurred.') {
@@ -480,7 +700,7 @@
         },
 
         mounted() {
-            this.reportApiBaseUrl = reportApiBaseUrl;
+            this.reportApiBaseUrl = typeof reportApiBaseUrl !== 'undefined' ? reportApiBaseUrl : '';
 
             this.getSuppliers();
             this.getPayments();

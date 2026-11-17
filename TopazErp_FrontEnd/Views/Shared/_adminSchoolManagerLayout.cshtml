@@ -1,0 +1,1120 @@
+@{
+var title = ViewData["Title"] as string ?? "TopazERP";
+}
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@title - TopazErp_FrontEnd</title>
+    <link rel="icon" type="image/png" href="/app-assets/images/topazLogo.png" />
+    <script>
+        /* options for wwwroot/js/shell.js — no menu data here, the menu is markup */
+        window.__SHELL__ = {
+            breakpoint: 1024,          // below this width the sidebar becomes a drawer
+            railWidth: 72, minWidth: 210, maxWidth: 420,
+            storagePrefix: 'shell'     // localStorage keys: shell:collapsed, shell:w, shell:theme
+        };
+    </script>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50:'#eff6ff', 100:'#dbeafe', 200:'#bfdbfe', 300:'#93c5fd', 400:'#60a5fa',
+                            500:'#3b82f6', 600:'#2563eb', 700:'#1d4ed8', 800:'#1e40af', 900:'#1e3a8a', 950:'#172554'
+                        }
+                    },
+                    fontFamily: { sans: ['Inter','ui-sans-serif','system-ui','-apple-system','Segoe UI','Roboto','sans-serif'] },
+                    boxShadow: { card: '0 1px 2px 0 rgb(0 0 0 / 0.04), 0 8px 24px -12px rgb(15 23 42 / 0.18)' }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="~/css/input.css" asp-append-version="true" />
+    <script src="~/libs/jquery/jquery.js" asp-append-version="true"></script>
+
+
+    <environment names="Development">
+        <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    </environment>
+
+    <environment names="Production">
+        <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    </environment>
+    <link rel="stylesheet" href="~/css/data-table.css" asp-append-version="true" />
+    <script src="~/js/components/dataTable.js" asp-append-version="true"></script>
+    <script src="~/js/components/select-input.js" asp-append-version="true"></script>
+    <script src="~/js/components/pdf-viewer.js" asp-append-version="true"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/line-awesome@1.3.0/dist/line-awesome/css/line-awesome.min.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="~/css/SchoolManager/shell.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/card.css" asp-append-version="true" />
+    @*PDF*@
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+
+    @await RenderSectionAsync("Styles", required: false)
+
+    <!-- Report Viewer component script-->
+    <script src="~/libs/jquery/jquery.js" asp-append-version="true"></script>
+
+    <!-- Syncfusion EJ1 / Essential JavaScript -->
+    <script src="~/ejassets/scripts/jsrender.min.js"></script>
+    <script src="~/ejassets/scripts/ej.web.all.min.js"></script>
+    <link href="~/ejassets/ejthemes/office-365/ej.web.all.min.css" rel="stylesheet" />
+
+    <!-- Bold Reports Viewer -->
+    <script src="~/js/bold.report-viewer.min.js"></script>
+
+    @*excel*@
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    @*pdf*@
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <script>
+        // Application root path.
+        // Supports applications hosted under an IIS virtual directory.
+        var abp = abp || {};
+        abp.appPath = '@Url.Content("~/")';
+
+        var reportApiBaseUrl = 'http://108.181.191.134:78/api/ReportApi';
+    </script>
+    <link href="~/ejassets/ejthemes/office-365/ej.web.all.min.css" rel="stylesheet" />
+
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+</head>
+
+<body class="h-full min-h-full bg-grey-50 font-sans text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-200">
+
+@* ══════════════════════════════ SIDEBAR ══════════════════════════════ *@
+<aside class="app-sidebar" id="appSidebar" aria-label="Main navigation">
+
+    <div class="sidebar-brand">
+        <div class="sidebar-brand-link">
+            <span class="sidebar-logo"> <img class="brand-logo" alt="" src="/app-assets/images/topazLogo.png"></span>
+            <span class="sidebar-brand-text">
+                <span class="sidebar-brand-name flex items-center gap-1.5 font-bold tracking-tight text-slate-900 dark:text-white">
+                    Topaz ERP
+                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">SM</span>
+                </span>
+                <span class="sidebar-brand-sub text-xs text-slate-500 dark:text-slate-400">School Manager</span>
+            </span>
+        </div>
+        <button type="button" class="sidebar-icon-btn" data-action="collapse" title="Collapse sidebar (Ctrl+B)" aria-label="Collapse sidebar">
+            <i class="bi bi-chevron-double-left" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="sidebar-icon-btn sidebar-close" data-action="close-drawer" aria-label="Close navigation">
+            <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
+    </div>
+
+    @* ───────────────────────── THE MENU ─────────────────────────
+           Add a link:  <li class="nav-item">
+                            <a class="menu-link" asp-area="" asp-controller="Home" asp-action="Index">
+                              <i class="bi bi-speedometer2"></i><span class="menu-title">Dashboard</span>
+                            </a>
+                        </li>
+
+           Add a submenu: wrap the parent in li.nav-item.has-sub (link href="#")
+                          and put <ul class="menu-content"> right after the <a>.
+        *@
+    <nav class="app-nav" id="appNav" aria-label="Main menu">
+        <ul class="nav-menu" data-menu-level="0">
+            <li class="nav-item">
+                <a class="menu-link" asp-area="" asp-controller="Dashboard" asp-action="SchoolManager"><i class="bi bi-speedometer2" aria-hidden="true"></i>
+                    <span class="menu-title">Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="SchoolProfile">
+                    <i class="bi bi-house-door"></i>
+                    <span class="menu-title">School Profile</span>
+                </a>
+            </li>
+            <!-- General Setups -->
+            @*<li class="nav-section"><span class="menu-title">General</span></li>*@
+            <li class="nav-section">
+                <span class="menu-title">Setups</span>
+            </li>
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-share"></i>
+                    <span class="menu-title">General Setups</span>
+                </a>
+                <ul class="menu-content">
+                    
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="Currencies">
+                            <i class="bi bi-currency-exchange"></i>
+                            <span class="menu-title">Currencies</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="BanksBranches">
+                            <i class="bi bi-bank"></i>
+                            <span class="menu-title">Banks &amp; Branches</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="SystemNumbers">
+                            <i class="bi bi-hash"></i>
+                            <span class="menu-title">System Numbers</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="Nationalities">
+                            <i class="bi bi-map"></i>
+                            <span class="menu-title">Nationalities</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="CountriesCities">
+                            <i class="bi bi-geo"></i>
+                            <span class="menu-title">Countries/Cities</span>
+                        </a>
+                    </li>
+
+                </ul>
+
+
+            </li>
+        
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-mortarboard"></i>
+                    <span class="menu-title">School Setups</span>
+                </a>
+                <ul class="menu-content">
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="Streams">
+                            <i class="bi bi-diagram-3"></i>
+                            <span class="menu-title">Stream</span>
+                        </a>
+                    </li>
+                
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="AcademicYears">
+                            <i class="bi bi-calendar-range"></i>
+                            <span class="menu-title">Academic Years</span>
+                        </a>
+                    </li>
+                
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="Terms">
+                            <i class="bi bi-calendar-event"></i>
+                            <span class="menu-title">Terms</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="LevelClasses">
+                            <i class="bi bi-diagram-2"></i>
+                            <span class="menu-title">Levels & Classes</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ConductCutOffs">
+                            <i class="bi bi-sliders"></i>
+                            <span class="menu-title">Conduct Cut-Offs</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="DisciplinaryActions">
+                            <i class="bi bi-shield-exclamation"></i>
+                            <span class="menu-title">Disciplinary Actions</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="DistanceUnits">
+                            <i class="bi bi-rulers"></i>
+                            <span class="menu-title">Distance Units</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="Languages">
+                            <i class="bi bi-translate"></i>
+                            <span class="menu-title">Languages</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="Offences">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <span class="menu-title">Offences</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="PaymentMethods">
+                            <i class="bi bi-credit-card"></i>
+                            <span class="menu-title">Payment Methods</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="NurseryGradings">
+                            <i class="bi bi-award"></i>
+                            <span class="menu-title">Nursery Gradings</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="PerformanceAreas">
+                            <i class="bi bi-bar-chart-line"></i>
+                            <span class="menu-title">Performance Areas</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="PtaPositions">
+                            <i class="bi bi-people"></i>
+                            <span class="menu-title">PTA Positions</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ParentProfessions">
+                            <i class="bi bi-briefcase"></i>
+                            <span class="menu-title">Parent Professions</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="Healths">
+                            <i class="bi bi-heart-pulse"></i>
+                            <span class="menu-title">Healths</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="FeesDescriptions">
+                            <i class="bi bi-receipt"></i>
+                            <span class="menu-title">Fees Descriptions</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="TransportationUnits">
+                            <i class="bi bi-bus-front"></i>
+                            <span class="menu-title">Transportation Units</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="Locations">
+                            <i class="bi bi-geo-alt"></i>
+                            <span class="menu-title">Locations</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="TransportationLocations">
+                            <i class="bi bi-signpost-split"></i>
+                            <span class="menu-title">Transportation Locations</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="DistanceGroups">
+                            <i class="bi bi-map"></i>
+                            <span class="menu-title">Distance Groups</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="TerminalSubjects">
+                            <i class="bi bi-journal-check"></i>
+                            <span class="menu-title">Terminal Subjects</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="SchoolGroups">
+                            <i class="bi bi-building"></i>
+                            <span class="menu-title">School Groups</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="SupplementaryItems">
+                            <i class="bi bi-bag-plus"></i>
+                            <span class="menu-title">Supplementary Items</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="Subjects">
+                            <i class="bi bi-book"></i>
+                            <span class="menu-title">Subjects</span>
+                        </a>
+                    </li>
+                
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="Hostels">
+                            <i class="bi bi-house-door"></i>
+                            <span class="menu-title">Hostels</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ClassRooms">
+                            <i class="bi bi-door-open"></i>
+                            <span class="menu-title">Class Rooms</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="BoardingItems">
+                            <i class="bi bi-box-seam"></i>
+                            <span class="menu-title">Boarding Items</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            @* School management *@
+            <li class="nav-section">
+                <span class="menu-title">School Management</span>
+            </li>
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-list-columns"></i>
+                    <span class="menu-title">Data Entries</span>
+                </a>
+
+                <ul class="menu-content">
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="AssignSubjects">
+                            <i class="bi bi-journal-plus"></i>
+                            <span class="menu-title">Assign Subjects</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="AwardsAndPrizes">
+                            <i class="bi bi-trophy"></i>
+                            <span class="menu-title">Awards and Prizes</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ClassLevelPercentages">
+                            <i class="bi bi-percent"></i>
+                            <span class="menu-title">Class Level Percentages</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="DisciplinaryActionEntries">
+                            <i class="bi bi-shield-exclamation"></i>
+                            <span class="menu-title">Disciplinary Action Entries</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="Excursions">
+                            <i class="bi bi-bus-front"></i>
+                            <span class="menu-title">Excursions</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="MidTermRemarks">
+                            <i class="bi bi-chat-square-text"></i>
+                            <span class="menu-title">Mid-Term Remarks</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ParentSetups">
+                            <i class="bi bi-person-lines-fill"></i>
+                            <span class="menu-title">Parent Setups</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="PtaExecutives">
+                            <i class="bi bi-people"></i>
+                            <span class="menu-title">PTA Executives</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="StaffSetups">
+                            <i class="bi bi-briefcase"></i>
+                            <span class="menu-title">Staff Setups</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="StudentSetups">
+                            <i class="bi bi-person-badge"></i>
+                            <span class="menu-title">Student Setups</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="SubjectRemarks">
+                            <i class="bi bi-chat-left-text"></i>
+                            <span class="menu-title">Subject Remarks</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="TimeTables">
+                            <i class="bi bi-calendar-week"></i>
+                            <span class="menu-title">Timetables</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="YearEndProcedure">
+                            <i class="bi bi-calendar-check"></i>
+                            <span class="menu-title">Year-End Procedure</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            @*imports*@
+        
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-cloud-upload"></i>
+                    <span class="menu-title">Imports</span>
+                </a>
+
+                <ul class="menu-content">
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ImportOpeningBalances">
+                            <i class="bi bi-wallet2"></i>
+                            <span class="menu-title">Opening Balances</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ImportParents">
+                            <i class="bi bi-people"></i>
+                            <span class="menu-title">Parents</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ImportResults">
+                            <i class="bi bi-clipboard-data"></i>
+                            <span class="menu-title">Results</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ImportStudentEvaluations">
+                            <i class="bi bi-clipboard-check"></i>
+                            <span class="menu-title">Student Evaluations</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ImportStudents">
+                            <i class="bi bi-person-plus"></i>
+                            <span class="menu-title">Students</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ImportTeacherRemarks">
+                            <i class="bi bi-chat-square-text"></i>
+                            <span class="menu-title">Teacher Remarks</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            @* Results and Promotions *@
+        
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-mortarboard"></i>
+                    <span class="menu-title">Promotions & Results</span>
+                </a>
+
+                <ul class="menu-content">
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ResultEntryPeriod">
+                            <i class="bi bi-calendar-range"></i>
+                            <span class="menu-title">Result Entry Period</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="Results">
+                            <i class="bi bi-clipboard-data"></i>
+                            <span class="menu-title">Results</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="StudentEvaluations">
+                            <i class="bi bi-clipboard-check"></i>
+                            <span class="menu-title">Student Evaluations</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            @* Billing and Payments *@
+    
+            <li class="nav-item has-sub">
+                <a href="#" class="menu-link">
+                    <i class="bi bi-cash-stack"></i>
+                    <span class="menu-title">Billing & Payments</span>
+                </a>
+
+                <ul class="menu-content">
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="BillFooters">
+                            <i class="bi bi-file-text"></i>
+                            <span class="menu-title">Bill Footers</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="Bills">
+                            <i class="bi bi-receipt"></i>
+                            <span class="menu-title">Bills</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="CreditMemos">
+                            <i class="bi bi-file-earmark-minus"></i>
+                            <span class="menu-title">Credit Memos</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="FeesSetups">
+                            <i class="bi bi-gear"></i>
+                            <span class="menu-title">Fees Setups</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="GlAccounts">
+                            <i class="bi bi-journal-text"></i>
+                            <span class="menu-title">GL Accounts</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="OpeningBalances">
+                            <i class="bi bi-wallet2"></i>
+                            <span class="menu-title">Opening Balances</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="Payments">
+                            <i class="bi bi-credit-card"></i>
+                            <span class="menu-title">Payments</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="PostToGl">
+                            <i class="bi bi-journal-arrow-up"></i>
+                            <span class="menu-title">Post to GL</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            
+          
+@* reports *@
+<li class="nav-section">
+    <span class="menu-title">Students & Class Reports</span>
+</li>
+            <li class="nav-item has-sub">
+            <a href="#" class="menu-link">
+                <i class="bi bi-people-fill"></i>
+                <span class="menu-title">Reports</span>
+            </a>
+            <ul class="menu-content">
+            @* Student & Staff Reports *@
+<li class="nav-item has-sub">
+    <a href="#" class="menu-link">
+        <i class="bi bi-people-fill"></i>
+        <span class="menu-title">Students & Staffs</span>
+    </a>
+    <ul class="menu-content">
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="StudentReports">
+                <i class="bi bi-person-lines-fill"></i>
+                <span class="menu-title">Students</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="StaffReports">
+                <i class="bi bi-person-badge"></i>
+                <span class="menu-title">Staffs</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="PtaReports">
+                <i class="bi bi-people"></i>
+                <span class="menu-title">PTA</span>
+            </a>
+        </li>
+    </ul>
+</li>
+
+@* Academic Reports *@
+<li class="nav-item has-sub">
+    <a href="#" class="menu-link">
+        <i class="bi bi-mortarboard"></i>
+        <span class="menu-title">Academic Reports</span>
+    </a>
+    <ul class="menu-content">
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="TimeTableReports">
+                <i class="bi bi-clock-history"></i>
+                <span class="menu-title">Time Tables</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="SubjectsReports">
+                <i class="bi bi-book"></i>
+                <span class="menu-title">Subjects</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ExcursionReports">
+                <i class="bi bi-bus-front"></i>
+                <span class="menu-title">Excursions</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="PrizeAndAwardsReports">
+                <i class="bi bi-trophy"></i>
+                <span class="menu-title">Prize & Awards</span>
+            </a>
+        </li>
+    </ul>
+</li>
+
+@* Results & Performance Reports *@
+<li class="nav-item has-sub">
+    <a href="#" class="menu-link">
+        <i class="bi bi-graph-up"></i>
+        <span class="menu-title">Results & Performance Reports</span>
+    </a>
+    <ul class="menu-content">
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ResultsReports">
+                <i class="bi bi-bar-chart"></i>
+                <span class="menu-title">Results</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ContinuousAssessments">
+                <i class="bi bi-clipboard-check"></i>
+                <span class="menu-title">Continuous Assessments</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ResultsBySubject">
+                <i class="bi bi-bar-chart-line"></i>
+                <span class="menu-title">Results By Subject</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="TerminalReports">
+                <i class="bi bi-journal-check"></i>
+                <span class="menu-title">Terminal Reports</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="MidTermReports">
+                <i class="bi bi-card-text"></i>
+                <span class="menu-title">Mid-Term Reports</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="Transcript">
+                <i class="bi bi-file-earmark-text"></i>
+                <span class="menu-title">Transcripts</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="GraphReports">
+                <i class="bi bi-pie-chart"></i>
+                <span class="menu-title">Graph Reports</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="CumulativeAverage">
+                <i class="bi bi-calculator"></i>
+                <span class="menu-title">Cumulative Average</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="CanceledResults">
+                <i class="bi bi-slash-circle"></i>
+                <span class="menu-title">Canceled Results</span>
+            </a>
+        </li>
+    </ul>
+</li>
+
+@* Billing Reports *@
+<li class="nav-item has-sub">
+    <a href="#" class="menu-link">
+        <i class="bi bi-receipt"></i>
+        <span class="menu-title">Billing Reports</span>
+    </a>
+    <ul class="menu-content">
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="BillsReports">
+                <i class="bi bi-receipt-cutoff"></i>
+                <span class="menu-title">Bills</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="PaymentReports">
+                <i class="bi bi-credit-card"></i>
+                <span class="menu-title">Payments</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="BillsAndPayments">
+                <i class="bi bi-arrow-left-right"></i>
+                <span class="menu-title">Bills & Payments</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="CreditMemoReports">
+                <i class="bi bi-receipt"></i>
+                <span class="menu-title">Credit Memos</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ItemizedFees">
+                <i class="bi bi-list-ul"></i>
+                <span class="menu-title">Itemized Fees</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="BillSetupsReports">
+                <i class="bi bi-gear"></i>
+                <span class="menu-title">Bill Setups</span>
+            </a>
+        </li>
+    
+    </ul>
+</li>
+
+@* Balances & Accounts Reports *@
+<li class="nav-item has-sub">
+    <a href="#" class="menu-link">
+        <i class="bi bi-wallet2"></i>
+        <span class="menu-title">Balances & Accounts Reports</span>
+    </a>
+    <ul class="menu-content">
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="GlTransaction">
+                <i class="bi bi-file-ruled"></i>
+                <span class="menu-title">GL Transactions</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="Statements">
+                <i class="bi bi-file-earmark-bar-graph"></i>
+                <span class="menu-title">Statements</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="StudentBalances">
+                <i class="bi bi-wallet2"></i>
+                <span class="menu-title">Student Balances</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="BalanceReports">
+                <i class="bi bi-wallet"></i>
+                <span class="menu-title">Opening Balances</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="CashierDailyReports">
+                <i class="bi bi-cash-stack"></i>
+                <span class="menu-title">Cashier Daily Summaries</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="AccountStatusReports">
+                <i class="bi bi-person-check"></i>
+                <span class="menu-title">Student Account Status</span>
+            </a>
+        </li>
+    </ul>
+</li>
+            </ul>
+            </li>
+
+
+
+        </ul>
+    </nav>
+
+    @* signed-in user + rail expand button *@
+    <div class="sidebar-foot">
+        <div class="sidebar-user">
+            <span class="sidebar-avatar" id="initials"></span>
+            <span class="sidebar-user-text">
+                    <span class="sidebar-user-name" id="name"></span>
+                </span>
+            <form class="sidebar-signout" asp-area="" asp-controller="Home" asp-action="Index" onsubmit="return false">
+                <button type="submit" class="sidebar-icon-btn" title="Sign out"><i class="bi bi-box-arrow-right" aria-hidden="true"></i></button>
+            </form>
+        </div>
+        <button type="button" class="sidebar-icon-btn sidebar-expand" data-action="expand" title="Expand sidebar (Ctrl+B)">
+            <i class="bi bi-chevron-double-right" aria-hidden="true"></i>
+        </button>
+    </div>
+
+    <span class="sidebar-resizer" data-action="resize" role="separator" aria-orientation="vertical"
+          title="Drag to resize · double-click to reset"></span>
+</aside>
+
+<div class="sidebar-backdrop" data-action="backdrop" hidden></div>
+
+@* ══════════════════════════════ HEADER ══════════════════════════════ *@
+<header class="app-topbar dark:bg-sky-950" id="appTopbar" style="background-color: #0f172a">
+    <button type="button" class="topbar-btn" data-action="toggle-sidebar" aria-label="Toggle navigation" aria-haspopup="true">
+        <i class="bi bi-list" aria-hidden="true"></i>
+    </button>
+
+    <div class="hidden sm:flex items-center gap-2 pl-1">
+        <span class="inline-flex items-center gap-2 rounded-full border border-blue-600/20 bg-blue-500/10 px-3 py-1.5 text-xs font-medium text-blue-600">
+            <span class="relative flex h-2 w-2">
+                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-600/60"></span>
+                <span class="relative inline-flex h-2 w-2 rounded-full bg-blue-600"></span>
+            </span>
+            School Manager - <span id="academicYearName">Set Academic Year</span>
+        </span>
+    
+    </div>
+
+
+    <div class="topbar-search" data-search-wrap >
+
+        <input type="search" id="topbarSearch" data-search-input autocomplete="off" placeholder="Search anything…" aria-label="Search" style="width: 300px"/>
+
+        <div class="dropdown-panel search-results" id="searchResults" hidden></div>
+    </div>
+    <!-- Quick Action: Run Ar -->
+    @*<div class="dropdown hidden md:block" data-dropdown="quickaction">
+        <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-sm transition-all focus:outline-none" data-toggle aria-haspopup="menu">
+            <i class="bi bi-plus-circle font-bold"></i>
+            <span>New Batch</span>
+            <i class="bi bi-chevron-down text-[10px] opacity-75"></i>
+        </button>
+        <div class="dropdown-panel w-56 p-1.5 shadow-2xl rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900" role="menu">
+            <div class="px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-800">
+                Quick Transactions
+            </div>
+            <ul class="py-1 text-xs">
+                <li>
+                    <a asp-area="" asp-controller="Ar" asp-action="Invoices" class="flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:text-blue-600">
+                        <i class="bi bi-list text-blue-500 text-sm"></i>
+                        <span>Create New Invoice</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a asp-area="" asp-controller="Ar" asp-action="Payments" class="flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:text-blue-600">
+                        <i class="bi bi-cash text-emerald-500 text-sm"></i>
+                        <span>Add Invoice Payment</span>
+                    </a>
+                </li>
+                <li>
+                    <a asp-area="" asp-controller="Ar" asp-action="CreditMemos" class="flex items-center gap-2 px-2.5 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:text-blue-600">
+                        <i class="bi bi-receipt text-indigo-500 text-sm"></i>
+                        <span>Create Credit Memo</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>*@
+
+    <div class="topbar-actions">
+        <button type="button" class="topbar-btn md:hidden" data-action="mobile-search" aria-label="Search">
+            <i class="bi bi-search" aria-hidden="true"></i>
+        </button>
+
+        <!-- ERP Module Hub Switcher -->
+        <div class="dropdown" data-dropdown="moduleswitcher">
+            <button type="button"
+                    class="topbar-btn hover:bg-slate-800 text-slate-300"
+                    data-toggle
+                    title="Topaz ERP Modules"
+                    aria-label="Switch modules"
+                    aria-haspopup="menu">
+                <i class="bi bi-grid-3x3-gap-fill text-lg" aria-hidden="true"></i>
+            </button>
+
+            <div class="dropdown-panel w-72 rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900" role="menu">
+                <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+                    <div>
+                        <p class="text-sm font-semibold text-slate-900 dark:text-white">ERP Applications</p>
+                        <p class="text-[11px] text-slate-400">Switch workspace</p>
+                    </div>
+
+                    <a asp-area="" asp-controller="Manage" asp-action="Modules" class="text-xs font-medium text-emerald-600 hover:underline">
+                        All Modules
+                    </a>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 p-3">
+                    <a href="/Dashboard/SchoolManger"
+                       class="flex items-center gap-2 rounded-xl p-3 ring-1 bg-blue-100 border-blue-500 transition hover:bg-blue-300 dark:hover:bg-slate-800 dark:bg-slate-700">
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-200 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                            <i class="bi bi-cash-stack text-lg"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-xs font-semibold text-slate-900 dark:text-white">School Manager</p>
+                            <p class="text-[10px] text-blue-600 dark:text-blue-400">Active</p>
+                        </div>
+                    </a>
+                    <a href="/Dashboard/GeneralLedger"
+                       class="flex items-center gap-2 rounded-xl p-3 transition hover:bg-slate-100 dark:hover:bg-slate-800">
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+                            <i class="bi bi-journal-text text-lg"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-xs font-semibold text-slate-900 dark:text-white">General Ledger</p>
+                            <p class="text-[10px] text-slate-400">Accounts &amp; Transactions</p>
+                        </div>
+                    </a>
+
+                    <a href="/Dashboard/Payroll"
+                       class="flex items-center gap-2 rounded-xl p-3 transition hover:bg-slate-100 dark:hover:bg-slate-800">
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+                            <i class="bi bi-people text-lg"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-xs font-semibold text-slate-900 dark:text-white">Payroll</p>
+                            <p class="text-[10px] text-slate-400">HR &amp; Salaries</p>
+                        </div>
+                    </a>
+
+                    <a href="/Dashboard/Ap"
+                       class="flex items-center gap-2 rounded-xl p-3 transition hover:bg-rose-500/15">
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300">
+                            <i class="bi bi-receipt text-lg"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-xs font-semibold text-slate-900 dark:text-white">Payables</p>
+                            <p class="text-[10px] text-slate-400">Invoicing &amp; Raising Vouchers</p>
+                        </div>
+                    </a>
+
+                    
+                    
+
+                </div>
+            </div>
+        </div>
+
+        <button type="button" class="topbar-btn" data-action="theme" title="Dark mode" aria-label="Toggle dark mode">
+            <i class="bi bi-moon-stars" data-theme-icon aria-hidden="true"></i>
+        </button>
+
+
+
+        <span class="topbar-divider"></span>
+
+
+        @* Hello Admin *@
+        <div class="dropdown" data-dropdown="user">
+            <button type="button" class="topbar-user" data-toggle aria-haspopup="menu">
+                <span class="topbar-avatar" id="userInitials"></span>
+                <span class="topbar-user-text">
+                        <span class="hello">Hello,</span>
+                        <span  class="name " id="userFullName"> Loading user...</span>
+                       
+                    </span>
+                <i class="bi bi-chevron-down topbar-caret" aria-hidden="true"></i>
+            </button>
+            <div class="dropdown-panel dropdown-panel-user" role="menu">
+                <div class="dropdown-head user-head">
+                    <span class="topbar-avatar lg" id="userInitialsLg"></span>
+                    <span class="user-head-text">
+                            <span class="name" id="userFullNameLg"></span>
+                            <span class="email" id="userEmail"></span>
+                            <span class="role" id="userRole"></span>
+                        </span>
+                </div>
+                <ul class="dropdown-menu-list">
+                    <li><a asp-area="" asp-controller="Manage" asp-action="Profile"><i class="bi bi-person-circle"></i>My Profile</a></li>
+                    <li><a asp-area="" asp-controller="Manage" asp-action="Users"><i class="bi bi-sliders"></i>Manage Users</a></li>
+                    <li><a asp-area="" asp-controller="Manage" asp-action="UpdatePassword"><i class="bi bi-key"></i>Update Password</a></li>
+                    @*<li><a asp-area="" asp-controller="Manage" asp-action="Modules"><i class="bi bi-gear"></i>Modules</a></li>*@
+                    <li><a href="#"><i class="bi bi-question-circle"></i>Help &amp; Support</a></li>
+                </ul>
+                <div class="dropdown-foot signout">
+                    <a asp-area="" asp-controller="Account" asp-action="Login" >
+                        <button ><i class="bi bi-box-arrow-right"></i>Sign out</button>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="topbar-mobile-search" id="topbarMobileSearch" hidden>
+        <input type="search" id="topbarSearchMobile" data-search-input autocomplete="off" placeholder="Search anything…" aria-label="Search" />
+        <div class="dropdown-panel search-results" id="searchResultsMobile" hidden></div>
+    </div>
+</header>
+
+@* ══════════════════════════════ PAGE ══════════════════════════════ *@
+<main role="main" class="page-main">
+    <div class="page-container">
+        @RenderBody()
+    </div>
+
+</main>
+
+<footer class="page-footer">
+    <div class="page-container page-footer-inner">
+        <span>&copy; @DateTime.Now.Year - Topaz, All rights reserved.</span>
+        <a href="#">Privacy</a>
+    </div>
+</footer>
+
+<script src="~/js/account/user.js" asp-append-version="true"></script>
+<script src="~/js/app-shell.js" asp-append-version="true"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+<script src="~/js/components/card.js" asp-append-version="true"></script>
+<script>
+    async function getCurrentAcademicYear() {
+        const container = document.getElementById('academicYearName');
+
+        if (!container) return;
+
+        try {
+            const response = await fetch('/SchoolManager/GetCurrentAcademicYear');
+
+            if (!response.ok) {
+                throw new Error('Failed to retrieve current academic year.');
+            }
+
+            const data = await response.json();
+
+            container.textContent = data.result?.academicYearName || 'Set Academic Year';
+
+        } catch (error) {
+            console.error('Academic Year Error:', error);
+            container.textContent = 'Set Academic Year';
+        }
+    }
+
+    getCurrentAcademicYear();
+</script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

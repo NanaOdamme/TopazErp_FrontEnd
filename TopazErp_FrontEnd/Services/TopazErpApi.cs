@@ -6740,4 +6740,641 @@ public async Task<ApGlTransactionResponse> GetApGlTransaction(
 
     return new ApGlTransactionResponse();
 }
+
+//School Manager
+//academic years
+ public async Task<AcademicYearResponse> GetAcademicYears()
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}AcademicYear/ListAll";
+        
+        
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<AcademicYearResponse>(json);
+        }
+
+        return new AcademicYearResponse { };
+    }
+    
+    public async Task<BaseApiResponse> CreateAcademicYear(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}AcademicYear/Create";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);  
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+    
+    public async Task<BaseApiResponse> UpdateAcademicYear(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}AcademicYear/Update";
+
+        var request = new HttpRequestMessage(HttpMethod.Put, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);  
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+    
+    public async Task<BaseApiResponse> DeleteAcademicYear(Guid id)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}AcademicYear/Delete?id={id}";
+        
+        using var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        using var response = await _httpClient.SendAsync(request);
+        var responseData = await response.Content.ReadAsStringAsync();
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"AcademicYear deletion failed ({(int)response.StatusCode}): {responseData}");
+        }
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+               ?? throw new InvalidOperationException(
+                   "The AcademicYear Delete API returned an empty or invalid response.");
+    }
+    public async Task<CurrentAcademicYearResponse> GetCurrentAcademicYear()
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+
+        string url = $"{_apiBaseUrl}SchoolProfile/GetCurrentAcademicYear";
+
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<CurrentAcademicYearResponse>(json);
+        }
+
+        return new CurrentAcademicYearResponse();
+    }
+    public async Task<AcademicYearTermResponse> GetAcademicYearTerms()
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}AcademicYear/ListAllAcademicTerms";
+        
+        
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<AcademicYearTermResponse>(json);
+        }
+
+        return new AcademicYearTermResponse { };
+    }
+    
+    public async Task<BaseApiResponse> CreateAcademicYearTerm(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}AcademicYear/CreateAcademicYearTerm";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);  
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+    
+    public async Task<BaseApiResponse> UpdateAcademicYearTerm(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}AcademicYear/UpdateAcademicYearTerm";
+
+        var request = new HttpRequestMessage(HttpMethod.Put, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);  
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+    
+    public async Task<BaseApiResponse> DeleteAcademicYearTerm(Guid id)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}AcademicYear/DeleteAcademicYearTerm?id={id}";
+        
+        using var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        using var response = await _httpClient.SendAsync(request);
+        var responseData = await response.Content.ReadAsStringAsync();
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"AcademicYearTerm deletion failed ({(int)response.StatusCode}): {responseData}");
+        }
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+               ?? throw new InvalidOperationException(
+                   "The AcademicYearTerm Delete API returned an empty or invalid response.");
+    }
+    public async Task<AcademicYearTermDetailResponse> AcademicYearTermDetails()
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}AcademicYear/ListAllAcademicTermDetails";
+        
+        
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<AcademicYearTermDetailResponse>(json);
+        }
+
+        return new AcademicYearTermDetailResponse { };
+    }
+    
+    public async Task<BaseApiResponse> CreateAcademicYearTermDetail(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}AcademicYear/CreateAcademicYearTermDetail";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);  
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+    
+    public async Task<BaseApiResponse> UpdateAcademicYearTermDetail(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}AcademicYear/UpdateAcademicYearTermDetail";
+
+        var request = new HttpRequestMessage(HttpMethod.Put, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);  
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+    
+    public async Task<BaseApiResponse> DeleteAcademicYearTermDetail(Guid id)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}AcademicYear/DeleteAcademicYearTermDetail?id={id}";
+        using var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        using var response = await _httpClient.SendAsync(request);
+        var responseData = await response.Content.ReadAsStringAsync();
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"AcademicYearTermDetail deletion failed ({(int)response.StatusCode}): {responseData}");
+        }
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+               ?? throw new InvalidOperationException(
+                   "The AcademicYearTermDetail Delete API returned an empty or invalid response.");
+    }
+    //streams
+     public async Task<SmSimpleInputResponse> GetStreams()
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}ClassesAndStreams/ListAllStreams";
+        
+        
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<SmSimpleInputResponse>(json);
+        }
+
+        return new SmSimpleInputResponse { };
+    }
+    
+    public async Task<BaseApiResponse> CreateStream(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}ClassesAndStreams/CreateStream";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);  
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+
+    
+
+    public async Task<BaseApiResponse> UpdateStream(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}ClassesAndStreams/UpdateStream";
+
+        var request = new HttpRequestMessage(HttpMethod.Put, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);  
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        return new BaseApiResponse { };
+    }
+    
+    public async Task<BaseApiResponse> DeleteStream(Guid id)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}ClassesAndStreams/DeleteStream?id={id}";
+        using var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        using var response = await _httpClient.SendAsync(request);
+        var responseData = await response.Content.ReadAsStringAsync();
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"stream deletion failed ({(int)response.StatusCode}): {responseData}");
+        }
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+               ?? throw new InvalidOperationException(
+                   "The stream Delete API returned an empty or invalid response.");
+    }
+    //classes
+    // Classes
+public async Task<SmSimpleInputResponse> GetClasses()
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ClassesAndStreams/ListAllClasses";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+
+        return JsonConvert.DeserializeObject<SmSimpleInputResponse>(json);
+    }
+
+    return new SmSimpleInputResponse { };
+}
+
+public async Task<BaseApiResponse> CreateClass(object dto)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ClassesAndStreams/CreateClass";
+
+    var request = new HttpRequestMessage(HttpMethod.Post, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+    request.Content = JsonContent.Create(dto);
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string responseData = await response.Content.ReadAsStringAsync();
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+    }
+
+    return new BaseApiResponse { };
+}
+
+public async Task<BaseApiResponse> UpdateClass(object dto)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ClassesAndStreams/UpdateClass";
+
+    var request = new HttpRequestMessage(HttpMethod.Put, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+    request.Content = JsonContent.Create(dto);
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string responseData = await response.Content.ReadAsStringAsync();
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+    }
+
+    return new BaseApiResponse { };
+}
+
+public async Task<BaseApiResponse> DeleteClass(Guid id)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}ClassesAndStreams/DeleteClass?id={id}";
+
+    using var request = new HttpRequestMessage(HttpMethod.Delete, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    using var response = await _httpClient.SendAsync(request);
+
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"Class deletion failed ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+           ?? throw new InvalidOperationException(
+               "The class Delete API returned an empty or invalid response.");
+}
+
+// Level Classes
+public async Task<LevelResponse> GetLevels()
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}LevelAndClass/ListAllLevels";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+
+        return JsonConvert.DeserializeObject<LevelResponse>(json);
+    }
+
+    return new LevelResponse { };
+}
+
+public async Task<BaseApiResponse> CreateLevel(object dto)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}LevelAndClass/CreateLevel";
+
+    var request = new HttpRequestMessage(HttpMethod.Post, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+    request.Content = JsonContent.Create(dto);
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string responseData = await response.Content.ReadAsStringAsync();
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+    }
+
+    return new BaseApiResponse { };
+}
+
+public async Task<BaseApiResponse> UpdateLevel(object dto)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}LevelAndClass/UpdateLevel";
+
+    var request = new HttpRequestMessage(HttpMethod.Put, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+    request.Content = JsonContent.Create(dto);
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string responseData = await response.Content.ReadAsStringAsync();
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+    }
+
+    return new BaseApiResponse { };
+}
+
+public async Task<BaseApiResponse> DeleteLevel(Guid id)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}LevelAndClass/DeleteLevel?id={id}";
+
+    using var request = new HttpRequestMessage(HttpMethod.Delete, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    using var response = await _httpClient.SendAsync(request);
+
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"Level class deletion failed ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+           ?? throw new InvalidOperationException(
+               "The level class Delete API returned an empty or invalid response.");
+}
+    
+public async Task<LevelClassResponse> GetLevelClasses()
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}LevelAndClass/ListAllLevelClasses";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string json = await response.Content.ReadAsStringAsync();
+
+        return JsonConvert.DeserializeObject<LevelClassResponse>(json);
+    }
+
+    return new LevelClassResponse { };
+}
+
+public async Task<BaseApiResponse> CreateLevelClass(object dto)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}LevelAndClass/CreateLevelClass";
+
+    var request = new HttpRequestMessage(HttpMethod.Post, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+    request.Content = JsonContent.Create(dto);
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string responseData = await response.Content.ReadAsStringAsync();
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+    }
+
+    return new BaseApiResponse { };
+}
+
+public async Task<BaseApiResponse> UpdateLevelClass(object dto)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}LevelAndClass/UpdateLevelClass";
+
+    var request = new HttpRequestMessage(HttpMethod.Put, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+    request.Content = JsonContent.Create(dto);
+
+    var response = await _httpClient.SendAsync(request);
+
+    if (response.IsSuccessStatusCode)
+    {
+        string responseData = await response.Content.ReadAsStringAsync();
+
+        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+    }
+
+    return new BaseApiResponse { };
+}
+
+public async Task<BaseApiResponse> DeleteLevelClass(Guid id)
+{
+    var authToken = _claimsHelper.GetAuthToken();
+
+    string url = $"{_apiBaseUrl}LevelAndClass/DeleteLevelClass?id={id}";
+
+    using var request = new HttpRequestMessage(HttpMethod.Delete, url);
+    request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+    using var response = await _httpClient.SendAsync(request);
+
+    var responseData = await response.Content.ReadAsStringAsync();
+
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new HttpRequestException(
+            $"Level class deletion failed ({(int)response.StatusCode}): {responseData}");
+    }
+
+    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
+           ?? throw new InvalidOperationException(
+               "The level class Delete API returned an empty or invalid response.");
+}
 }

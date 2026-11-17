@@ -33,9 +33,10 @@
                 item-label-plural="credit memos"
                 :page-size="10"
                 :selectable="true"
+                :row-disabled="isInvoiceDebit"
                 @@create="onCreate"
                 @@update="onUpdate"
-                @@delete="onDelete">
+                @@delete="onDelete" :loading="isShimmerLoading">
             </data-grid>
              <div id="apply" class="my-5">
                     <p class="my-4 text-blue-500">Apply Credit Memo to Invoice</p>

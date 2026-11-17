@@ -114,6 +114,7 @@
                 emailPassword: '',
                 portNumber: 0,
                 isSSLEnabled: false,
+                
 
                 companyLogoBase64: '',
                 coverPhotoBase64: '',
@@ -243,9 +244,9 @@
                     this.address = p.address ?? '';
                     this.firstMonthOfFiscalYear = asNumber(p.firstMonthOfFiscalYear, 1);
                     this.defaultCurrenyId = p.defaultCurrenyId ?? '';
-                    this.isTaxLeviesInclusive = Boolean(p.isTaxLeviesInclusive);
-                    this.approveInvoiceBeforePayment = Boolean(p.approveInvoiceBeforePayment);
-                    this.enforceOu = Boolean(p.enforceOu);
+                    this.isTaxLeviesInclusive = p.isTaxLeviesInclusive;
+                    this.approveInvoiceBeforePayment = p.approveInvoiceBeforePayment;
+                    this.enforceOu = p.enforceOu;
 
                     this.senderId = p.senderId ?? '';
                     this.clientId = p.clientId ?? '';
@@ -254,28 +255,28 @@
                     this.employerSocialSecurityNo = p.employerSocialSecurityNo ?? '';
                     this.socialSecurityFundEmployerRate = p.socialSecurityFundEmployerRate ?? null;
                     this.socialSecurityFundEmployeeRate = p.socialSecurityFundEmployeeRate ?? null;
-                    this.paySocialSecurityFund = Boolean(p.paySocialSecurityFund);
+                    this.paySocialSecurityFund = p.paySocialSecurityFund;
 
                     this.providentFundEmployeeRate = p.providentFundEmployeeRate ?? null;
                     this.providentFundEmployerRate = p.providentFundEmployerRate ?? null;
-                    this.providentFundTreatAsSocialSecurityFund = Boolean(p.providentFundTreatAsSocialSecurityFund);
-                    this.payProvidentFund = Boolean(p.payProvidentFund);
-                    this.providentFundTaxEmployerPortion = Boolean(p.providentFundTaxEmployerPortion);
+                    this.providentFundTreatAsSocialSecurityFund = p.providentFundTreatAsSocialSecurityFund;
+                    this.payProvidentFund = p.payProvidentFund;
+                    this.providentFundTaxEmployerPortion = p.providentFundTaxEmployerPortion;
 
                     this.secondProvidentEmployeeRate = p.secondProvidentEmployeeRate ?? null;
                     this.secondProvidentEmployerRate = p.secondProvidentEmployerRate ?? null;
-                    this.paySecondProvidentOrOthers = Boolean(p.paySecondProvidentOrOthers);
-                    this.treatSecondProvidentAsSSF = Boolean(p.treatSecondProvidentAsSSF);
-                    this.secondProvidentTaxEmployerPortion = Boolean(p.secondProvidentTaxEmployerPortion);
+                    this.paySecondProvidentOrOthers = p.paySecondProvidentOrOthers;
+                    this.treatSecondProvidentAsSSF = p.treatSecondProvidentAsSSF;
+                    this.secondProvidentTaxEmployerPortion = p.secondProvidentTaxEmployerPortion;
 
-                    this.overtimePercentageOnBasicSalary = Boolean(p.overtimePercentageOnBasicSalary);
-                    this.overtimePercentageOnDailyWage = Boolean(p.overtimePercentageOnDailyWage);
+                    this.overtimePercentageOnBasicSalary = p.overtimePercentageOnBasicSalary;
+                    this.overtimePercentageOnDailyWage = p.overtimePercentageOnDailyWage;
 
                     this.mailHostName = p.mailHostName ?? '';
                     this.primaryEmailAddress = p.primaryEmailAddress ?? '';
                     this.emailPassword = p.emailPassword ?? '';
                     this.portNumber = asNumber(p.portNumber, 0);
-                    this.isSSLEnabled = Boolean(p.isSSLEnabled);
+                    this.isSSLEnabled = p.isSSLEnabled;
 
                     this.companyLogoBase64 = p.companyLogo
                         ? (String(p.companyLogo).startsWith('data:')
@@ -401,27 +402,27 @@
                         employerSocialSecurityNo: this.employerSocialSecurityNo,
                         socialSecurityFundEmployerRate: asNumber(this.socialSecurityFundEmployerRate),
                         socialSecurityFundEmployeeRate: asNumber(this.socialSecurityFundEmployeeRate),
-                        paySocialSecurityFund: Boolean(this.paySocialSecurityFund),
+                        paySocialSecurityFund: this.paySocialSecurityFund,
                         providentFundEmployeeRate: asNumber(this.providentFundEmployeeRate),
                         providentFundEmployerRate: asNumber(this.providentFundEmployerRate),
-                        providentFundTreatAsSocialSecurityFund: Boolean(this.providentFundTreatAsSocialSecurityFund),
-                        payProvidentFund: Boolean(this.payProvidentFund),
-                        providentFundTaxEmployerPortion: Boolean(this.providentFundTaxEmployerPortion),
+                        providentFundTreatAsSocialSecurityFund: this.providentFundTreatAsSocialSecurityFund,
+                        payProvidentFund: this.payProvidentFund,
+                        providentFundTaxEmployerPortion: this.providentFundTaxEmployerPortion,
                         secondProvidentEmployeeRate: asNumber(this.secondProvidentEmployeeRate),
                         secondProvidentEmployerRate: asNumber(this.secondProvidentEmployerRate),
-                        paySecondProvidentOrOthers: Boolean(this.paySecondProvidentOrOthers),
-                        treatSecondProvidentAsSSF: Boolean(this.treatSecondProvidentAsSSF),
-                        secondProvidentTaxEmployerPortion: Boolean(this.secondProvidentTaxEmployerPortion),
-                        overtimePercentageOnBasicSalary: Boolean(this.overtimePercentageOnBasicSalary),
-                        overtimePercentageOnDailyWage: Boolean(this.overtimePercentageOnDailyWage),
+                        paySecondProvidentOrOthers: this.paySecondProvidentOrOthers,
+                        treatSecondProvidentAsSSF: this.treatSecondProvidentAsSSF,
+                        secondProvidentTaxEmployerPortion: this.secondProvidentTaxEmployerPortion,
+                        overtimePercentageOnBasicSalary: this.overtimePercentageOnBasicSalary,
+                        overtimePercentageOnDailyWage: this.overtimePercentageOnDailyWage,
                         mailHostName: asText(this.mailHostName).trim(),
                         primaryEmailAddress: asText(this.primaryEmailAddress).trim(),
                         emailPassword: this.emailPassword,
                         portNumber: asNumber(this.portNumber, 0),
-                        isSSLEnabled: Boolean(this.isSSLEnabled),
+                        isSSLEnabled: this.isSSLEnabled,
                         defaultCurrenyId: this.defaultCurrenyId || this.emptyGuid,
-                        isTaxLeviesInclusive: Boolean(this.isTaxLeviesInclusive),
-                        approveInvoiceBeforePayment: Boolean(this.approveInvoiceBeforePayment),
+                        isTaxLeviesInclusive: this.isTaxLeviesInclusive,
+                        approveInvoiceBeforePayment: this.approveInvoiceBeforePayment,
                         companyLogoBase64: this.companyLogoBase64
                             ? String(this.companyLogoBase64).split(',')[1]
                             : null,
@@ -431,7 +432,7 @@
                         enforceOu: Boolean(this.enforceOu)
                     };
 
-                    const isUpdate = Boolean(this.companyProfileId);
+                    const isUpdate = this.companyProfileId;
                     const url = isUpdate
                         ? ENDPOINTS.updateBusinessProfile
                         : ENDPOINTS.createBusinessProfile;

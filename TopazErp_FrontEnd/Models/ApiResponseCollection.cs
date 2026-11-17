@@ -470,3 +470,360 @@ public class ArQuotationPdfResponse : BaseApiResponseModel
     [JsonProperty("result")]
     public QuotationData Result { get; set; }
 }
+
+//SchoolManager
+public class SmSimpleInputResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<SimpleSmInputs> Result { get; set; }
+}
+public class AcademicYearResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<AcademicYear> Result { get; set; }
+}
+public class CurrentAcademicYearResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public CurrentAcademicYear Result { get; set; }
+}
+public class AcademicYearTermResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<AcademicYearTerm> Result { get; set; }
+}
+public class AcademicYearTermDetailResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<AcademicYearTermDetail> Result { get; set; }
+}
+public class AssessmentRemarkHeaderResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<AssessmentRemarkHeader> Result { get; set; }
+}
+public class AssignedSubjectResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<AssignedSubject> Result { get; set; }
+}
+public class AttendanceResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<Attendance> Result { get; set; }
+}
+public class BehavioralAssessmentResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<BehavioralAssessment> Result { get; set; }
+}
+public class BillResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<Bill> Result { get; set; }
+}
+public class BillFooterResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<BillFooter> Result { get; set; }
+}
+public class BoardingFeeResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<BoardingFee> Result { get; set; }
+}
+public class CategoryPercentageResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<CategoryPercentage> Result { get; set; }
+}
+public class ClassAssignmentResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ClassAssignment> Result { get; set; }
+}
+public class ClassLevelPercentageResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ClassLevelPercentage> Result { get; set; }
+}
+public class ClassPromotionResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ClassPromotion> Result { get; set; }
+}
+public class ConductCutOfResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ConductCutOf> Result { get; set; }
+}
+public class CumulativeAttendanceResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<CumulativeAttendance> Result { get; set; }
+}
+public class DistanceGroupResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<DistanceGroup> Result { get; set; }
+}
+public class DistanceUnitResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<DistanceUnit> Result { get; set; }
+}
+public class ExcursionResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<Excursion> Result { get; set; }
+}
+public class FeesDescriptionResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<FeesDescription> Result { get; set; }
+}
+public class FeeSetUpResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<FeeSetUp> Result { get; set; }
+}
+public class HostelResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<Hostel> Result { get; set; }
+}
+public class LevelResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<Level> Result { get; set; }
+}
+public class LevelClassResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<LevelClass> Result { get; set; }
+}
+public class MidTermAssessmentResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<MidTermAssessment> Result { get; set; }
+}
+public class PerformanceSkillResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<PerformanceSkill> Result { get; set; }
+}
+public class PreClassStudentPromotionResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<PreClassStudentPromotion> Result { get; set; }
+}
+public class PrizeAwardedResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<PrizeAwarded> Result { get; set; }
+}
+public class RegisteredClassResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<RegisteredClass> Result { get; set; }
+}
+public class RemarksByTeacherResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<RemarksByTeacher> Result { get; set; }
+}
+public class RepeatedStudentResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<RepeatedStudent> Result { get; set; }
+}
+public class ResultPeriodResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<ResultPeriod> Result { get; set; }
+}
+public class SchBillAccountResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<SchBillAccount> Result { get; set; }
+}
+public class SchCreditMemoResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<SchCreditMemo> Result { get; set; }
+}
+public class SchCreditMemoAccountResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<SchCreditMemoAccount> Result { get; set; }
+}
+public class SchoolGroupResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<SchoolGroup> Result { get; set; }
+}
+public class SchoolGroupPositionResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<SchoolGroupPosition> Result { get; set; }
+}
+public class SchoolProfileResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<SchoolProfile> Result { get; set; }
+}
+public class SchPaymentResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<SchPayment> Result { get; set; }
+}
+public class SchPaymentAccountResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<SchPaymentAccount> Result { get; set; }
+}
+public class StaffBioResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<StaffBio> Result { get; set; }
+}
+public class StaffPastEmploymentResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<StaffPastEmployment> Result { get; set; }
+}
+public class StaffPastPositionResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<StaffPastPosition> Result { get; set; }
+}
+public class StaffQualificationResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<StaffQualification> Result { get; set; }
+}
+public class StaffRelationshipResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<StaffRelationship> Result { get; set; }
+}
+public class StatusChangeResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<StatusChange> Result { get; set; }
+}
+public class StContactRelationshipResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<StContactRelationship> Result { get; set; }
+}
+public class StudentAllergyResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<StudentAllergy> Result { get; set; }
+}
+public class StudentBillInfoResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<StudentBillInfo> Result { get; set; }
+}
+public class StudentDisabilityResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<StudentDisability> Result { get; set; }
+}
+public class StudentDisciplinaryActionResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<StudentDisciplinaryAction> Result { get; set; }
+}
+public class StudentImmunizationResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<StudentImmunization> Result { get; set; }
+}
+public class StudentInfoResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<StudentInfo> Result { get; set; }
+}
+public class StudentMedicalResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<StudentMedical> Result { get; set; }
+}
+public class StudentOpeningBalanceResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<StudentOpeningBalance> Result { get; set; }
+}
+public class StudentPerformanceSkillResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<StudentPerformanceSkill> Result { get; set; }
+}
+public class StudentPositionResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<StudentPosition> Result { get; set; }
+}
+public class StudentPromotionResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<StudentPromotion> Result { get; set; }
+}
+public class SubjectResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<Subject> Result { get; set; }
+}
+public class SubjectRemarkResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<SubjectRemark> Result { get; set; }
+}
+public class SupplementaryItemResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<SupplementaryItem> Result { get; set; }
+}
+public class TeacherClassResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<TeacherClass> Result { get; set; }
+}
+public class TeacherSubjectResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<TeacherSubject> Result { get; set; }
+}
+public class TerminalSubjectResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<TerminalSubject> Result { get; set; }
+}
+public class TerminalSubSubjectResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<TerminalSubSubject> Result { get; set; }
+}
+public class TimeTableResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<TimeTable> Result { get; set; }
+}
+public class TransportationBillResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<TransportationBill> Result { get; set; }
+}
+public class TransportationLocationResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<TransportationLocation> Result { get; set; }
+}
+public class TransportationUnitResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<TransportationUnit> Result { get; set; }
+}

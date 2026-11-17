@@ -1,7 +1,7 @@
-
 const API_URLS = {
     customers: '/SharedResource/GetCustomers',
     currencies: '/SharedResource/GetCurrencies',
+    organizationalUnits: '/SharedResource/GetCostCenters/',
     existingBalances: '/Ar/GetBalancesReport?status=all',
     createOpeningBalance: '/Ar/CreateOpeningBalance'
 };
@@ -16,8 +16,6 @@ const app = Vue.createApp({
             isLoading: false,
             currentPage: 1,
             pageSize: 10,
-
-            // Normalized Excel header -> preview row property
             columnMap: {
                 customer: 'customer',
                 customername: 'customer',
@@ -29,7 +27,15 @@ const app = Vue.createApp({
                 currencyrate: 'currencyRate',
                 exchangerate: 'currencyRate',
                 amount: 'amount',
-                balance: 'amount'
+                balance: 'amount',
+                ou: 'ouName',
+                ouname: 'ouName',
+                costcenter: 'ouName',
+                costcentername: 'ouName',
+                oucostcenter: 'ouName',
+                organizationalunit: 'ouName',
+                organizationalunitname: 'ouName',
+                orgunit: 'ouName'
             }
         };
     },
@@ -40,20 +46,16 @@ const app = Vue.createApp({
                 row => row.errors && row.errors.length > 0
             );
         },
-
         pendingRows() {
             return this.previewData.some(row => !row.imported);
         },
-
         paginatedData() {
             const start = (this.currentPage - 1) * this.pageSize;
             return this.previewData.slice(start, start + this.pageSize);
         },
-
         totalPages() {
             return Math.ceil(this.previewData.length / this.pageSize);
         },
-
         paginationPages() {
             const total = this.totalPages;
             const current = this.currentPage;
@@ -63,11 +65,8 @@ const app = Vue.createApp({
             let last;
 
             for (let i = 1; i <= total; i++) {
-                if (
-                    i === 1 ||
-                    i === total ||
-                    (i >= current - delta && i <= current + delta)
-                ) {
+                if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) 
+                {
                     range.push(i);
                 }
             }
@@ -189,6 +188,9 @@ const app = Vue.createApp({
                 'data',
                 'customers',
                 'currencies',
+                'costCenters',
+                'organizationalUnits',
+                'units',
                 'balances',
                 'openingBalances',
                 'arOpeningBalances'
@@ -202,6 +204,11 @@ const app = Vue.createApp({
 
             if (raw.data && typeof raw.data === 'object') {
                 return this.unwrapList(raw.data);
+            }
+
+            if (typeof raw === 'object') {
+                const firstArray = Object.values(raw).find(v => Array.isArray(v));
+                if (firstArray) return firstArray;
             }
 
             return [];
@@ -231,6 +238,141 @@ const app = Vue.createApp({
 
         normalizeName(value) {
             return this.toText(value).toLocaleLowerCase();
+        },
+
+        normalizeOuPath(value) {
+            return this.toText(value)
+                .split('/')
+                .map(part => part.trim())
+                .filter(Boolean)
+                .join(' / ')
+                .toLocaleLowerCase();
+        },
+
+        buildOuLookups(rawUnits) {
+            const byId = new Map();
+
+            rawUnits.forEach(unit => {
+                const id = this.getField(unit, 'id');
+                if (id) {
+                    byId.set(String(id).toLowerCase(), unit);
+                }
+            });
+
+            const getPath = unit => {
+                const names = [];
+                const visited = new Set();
+                let current = unit;
+                let depth = 0;
+
+                while (current && depth < 20) {
+                    const currentId = this.getField(current, 'id');
+                    if (currentId) {
+                        visited.add(String(currentId).toLowerCase());
+                    }
+
+                    const unitName = this.toText(
+                        this.getField(current, 'name')
+                    );
+
+                    if (unitName) {
+                        names.unshift(unitName);
+                    }
+
+                    const parentId = this.getField(current, 'parentId');
+                    const parentKey = parentId
+                        ? String(parentId).toLowerCase()
+                        : '';
+
+                    if (
+                        !parentKey ||
+                        parentKey === EMPTY_GUID ||
+                        !byId.has(parentKey) ||
+                        visited.has(parentKey)
+                    ) {
+                        break;
+                    }
+
+                    current = byId.get(parentKey);
+                    depth++;
+                }
+
+                return names.join(' / ');
+            };
+
+            const byPath = new Map();
+            const byName = new Map();
+
+            rawUnits.forEach(unit => {
+                const id = this.getField(unit, 'id');
+                const originalName = this.toText(
+                    this.getField(unit, 'name')
+                );
+
+                if (!id || !originalName) return;
+
+                const path = getPath(unit);
+                const entry = {
+                    id,
+                    originalName,
+                    path
+                };
+
+                const normalizedPath = this.normalizeOuPath(path);
+                if (normalizedPath && !byPath.has(normalizedPath)) {
+                    byPath.set(normalizedPath, entry);
+                }
+
+                const normalizedName = this.normalizeName(originalName);
+                if (normalizedName) {
+                    if (!byName.has(normalizedName)) {
+                        byName.set(normalizedName, []);
+                    }
+                    byName.get(normalizedName).push(entry);
+                }
+            });
+
+            return { byPath, byName };
+        },
+
+        resolveOu(ouName, ouLookups) {
+            const text = this.toText(ouName);
+
+            // Optional: leave empty to save ouId as EMPTY_GUID.
+            if (!text) {
+                return { ou: null, error: '' };
+            }
+
+            const pathMatch = ouLookups.byPath.get(
+                this.normalizeOuPath(text)
+            );
+
+            if (pathMatch) {
+                return { ou: pathMatch, error: '' };
+            }
+
+            const nameMatches =
+                ouLookups.byName.get(this.normalizeName(text)) || [];
+
+            if (nameMatches.length === 1) {
+                return { ou: nameMatches[0], error: '' };
+            }
+
+            if (nameMatches.length > 1) {
+                const paths = nameMatches
+                    .map(match => `"${match.path}"`)
+                    .join(', ');
+
+                return {
+                    ou: null,
+                    error: `Multiple OUs match "${text}". Use the full path (${paths}).`
+                };
+            }
+
+            return {
+                ou: null,
+                error: `No matching OU / Cost Center "${text}" was found.`
+            };
         },
 
         makeBalanceKey(customerId, currencyId) {
@@ -323,6 +465,7 @@ const app = Vue.createApp({
                 currencyName: '',
                 currencyRate: 0,
                 amount: 0,
+                ouName: '',
                 imported: false,
                 importError: '',
                 errors: []
@@ -344,6 +487,7 @@ const app = Vue.createApp({
 
             row.customer = this.toText(found.customer?.value);
             row.currencyName = this.toText(found.currencyName?.value);
+            row.ouName = this.toText(found.ouName?.value);
 
             if (!row.customer) {
                 row.errors.push('Customer is required.');
@@ -427,29 +571,48 @@ const app = Vue.createApp({
 
             try {
                 // Fetch fresh data before checking duplicates.
-                const [customers, currencies, existingBalances] =
-                    await Promise.all([
-                        this.fetchList(API_URLS.customers),
-                        this.fetchList(API_URLS.currencies),
-                        this.fetchList(API_URLS.existingBalances)
-                    ]);
+                const [
+                    customers,
+                    currencies,
+                    organizationalUnits,
+                    existingBalances
+                ] = await Promise.all([
+                    this.fetchList(API_URLS.customers),
+                    this.fetchList(API_URLS.currencies),
+                    this.fetchList(API_URLS.organizationalUnits),
+                    this.fetchList(API_URLS.existingBalances)
+                ]);
 
-                // Build customer lookup using active customers only.
+                // Build customer lookup using all customers (not only active).
                 const customerByName = new Map();
 
                 customers.forEach(customer => {
-                    const status = this.normalizeName(
-                        this.getField(customer, 'statusName') ||
-                        this.getField(customer, 'status')
-                    );
-
-                    if (status !== 'active') return;
-
                     const name = this.normalizeName(
                         this.getField(customer, 'name')
                     );
 
-                    if (name) {
+                    if (!name) return;
+
+                    const existing = customerByName.get(name);
+                    if (!existing) {
+                        customerByName.set(name, customer);
+                        return;
+                    }
+
+                    // If duplicate names exist, prefer an active record.
+                    const existingStatus = this.normalizeName(
+                        this.getField(existing, 'statusName') ||
+                        this.getField(existing, 'status')
+                    );
+                    const currentStatus = this.normalizeName(
+                        this.getField(customer, 'statusName') ||
+                        this.getField(customer, 'status')
+                    );
+
+                    if (
+                        existingStatus !== 'active' &&
+                        currentStatus === 'active'
+                    ) {
                         customerByName.set(name, customer);
                     }
                 });
@@ -467,7 +630,9 @@ const app = Vue.createApp({
                     }
                 });
 
-                // Existing customer + currency opening balances.
+              
+                const ouLookups = this.buildOuLookups(organizationalUnits);
+                
                 const existingKeys = new Set();
 
                 existingBalances.forEach(balance => {
@@ -482,18 +647,20 @@ const app = Vue.createApp({
                     if (key) existingKeys.add(key);
                 });
 
-                // Resolve each preview row to customer and currency IDs.
+                // Resolve each preview row to customer, currency, and optional OU IDs.
                 const preparedRows = this.previewData.map(row => {
                     if (row.imported) {
                         return {
                             row,
                             customer: null,
                             currency: null,
+                            ou: null,
                             key: ''
                         };
                     }
 
                     row.importError = '';
+                    const rowErrors = [];
 
                     const customer = customerByName.get(
                         this.normalizeName(row.customer)
@@ -507,9 +674,7 @@ const app = Vue.createApp({
                         const missing = [];
 
                         if (!customer) {
-                            missing.push(
-                                `active customer "${row.customer}"`
-                            );
+                            missing.push(`customer "${row.customer}"`);
                         }
 
                         if (!currency) {
@@ -518,8 +683,9 @@ const app = Vue.createApp({
                             );
                         }
 
-                        row.importError =
-                            `No matching ${missing.join(' and ')} was found.`;
+                        rowErrors.push(
+                            `No matching ${missing.join(' and ')} was found.`
+                        );
                     }
 
                     const customerId = this.getField(customer, 'id');
@@ -530,14 +696,29 @@ const app = Vue.createApp({
                         currency &&
                         (!customerId || !currencyId)
                     ) {
-                        row.importError =
-                            'The matched customer or currency is missing its ID.';
+                        rowErrors.push(
+                            'The matched customer or currency is missing its ID.'
+                        );
+                    }
+
+                    const { ou, error: ouError } = this.resolveOu(
+                        row.ouName,
+                        ouLookups
+                    );
+
+                    if (ouError) {
+                        rowErrors.push(ouError);
+                    }
+
+                    if (rowErrors.length > 0) {
+                        row.importError = rowErrors.join(' ');
                     }
 
                     return {
                         row,
                         customer,
                         currency,
+                        ou,
                         key: this.makeBalanceKey(
                             customerId,
                             currencyId
@@ -592,7 +773,7 @@ const app = Vue.createApp({
                 let failedCount = 0;
 
                 for (const item of preparedRows) {
-                    const { row, customer, currency, key } = item;
+                    const { row, customer, currency, ou, key } = item;
 
                     if (row.imported) continue;
 
@@ -623,8 +804,8 @@ const app = Vue.createApp({
                         transactionDate: row.transactionDate,
                         amount: row.amount,
 
-                        ouId: EMPTY_GUID,
-                        ouName: 'N/A',
+                        ouId: ou?.id || EMPTY_GUID,
+                        ouName: ou ? ou.originalName : 'N/A',
                         isPosted: false
                     };
 
@@ -685,16 +866,8 @@ const app = Vue.createApp({
                 }
 
             } catch (error) {
-                console.error(
-                    'Opening balance import error:',
-                    error
-                );
-
-                this.toastHandler(
-                    'error',
-                    error.message || 'Unable to import opening balances.'
-                );
-
+                console.error('Opening balance import error:', error);
+                this.toastHandler('error', error.message || 'Unable to import opening balances.');
             } finally {
                 this.isLoading = false;
             }

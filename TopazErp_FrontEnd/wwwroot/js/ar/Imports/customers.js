@@ -22,7 +22,11 @@ const app = Vue.createApp({
 
             currentPage: 1,
             pageSize: 10,
-
+            statusList: [
+                { id: 'a3b4c2f9-8e4d-4e79-b6b9-2d8c6b80b5fc', name: 'Active' },
+                { id: '6d1d2b1e-6c5e-4f31-9c3d-945d7f6e2a34', name: 'Inactive' },
+                { id: 'f28e71d1-63c9-4070-b7cb-2e5ce2cbe4a1', name: 'Dormant' }
+            ],
             columnMap: {
                 name: 'name',
                 customername: 'name',
@@ -47,7 +51,7 @@ const app = Vue.createApp({
                 vatnumber: 'vatNumber',
                 status: 'status',
                 contactperson: 'contactPerson',
-                contactpersonphoneno: 'contactPersonPhoneNo',
+                contactpersonphoneno: 'contactPersonPhone',
                 contactpersonemail: 'contactPersonEmail',
                 taxoffice: 'taxOffice'
             }
@@ -120,9 +124,9 @@ const app = Vue.createApp({
                     axios.get(LOOKUP_URLS.customerGroups)
                 ]);
 
-                this.currencies = this.unwrapList(currencyResponse.data);
-                this.accounts = this.unwrapList(accountResponse.data);
-                this.customerGroups = this.unwrapList(groupResponse.data);
+                this.currencies = this.unwrapList(currencyResponse.data.result);
+                this.accounts = this.unwrapList(accountResponse.data.result);
+                this.customerGroups = this.unwrapList(groupResponse.data.result);
 
                 this.lookupsReady = true;
 
@@ -276,7 +280,7 @@ const app = Vue.createApp({
                 vatNumber: '',
                 status: '',
                 contactPerson: '',
-                contactPersonPhoneNo: '',
+                contactPersonPhone: '',
                 contactPersonEmail: '',
                 taxOffice: '',
                 errors: []
@@ -453,6 +457,7 @@ const app = Vue.createApp({
                 row.vatAccountName,
                 'VAT account'
             );
+            
 
             if (!currency || !this.lookupId(currency)) {
                 errors.push(`Currency "${row.currencyName}" was not found.`);
@@ -463,7 +468,16 @@ const app = Vue.createApp({
                     `Customer group "${row.customerGroupName}" was not found.`
                 );
             }
-
+            const status = this.findByName(
+                this.statusList,
+                row.status,
+                ['name', 'statusName']
+            );
+            if (!status || !this.lookupId(status)) {
+                errors.push(
+                    `status "${row.status}" was not found.`
+                );
+            }
             if (errors.length > 0) {
                 return { payload: null, errors };
             }
@@ -478,7 +492,7 @@ const app = Vue.createApp({
                         customerGroup.groupName ||
                         customerGroup.name,
 
-                    statusId: row.status,
+                    statusId: this.lookupId(status),
                     statusName: row.status,
                     balance: row.balance,
 
@@ -509,7 +523,7 @@ const app = Vue.createApp({
                     address: row.address,
 
                     contactPerson: row.contactPerson,
-                    contactPersonPhone: row.contactPersonPhoneNo,
+                    contactPersonPhone: row.contactPersonPhone,
                     contactPersonEmail: row.contactPersonEmail,
 
                     vatNumber: row.vatNumber,

@@ -1,0 +1,46 @@
+@{
+    ViewBag.Title = "Streams";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>School Manager - Main Setups</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Streams</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="page-title">
+                <h2 class="text-2xl font-semibold text-gray-800">
+                    Streams
+                </h2>
+            </div>
+        </div>
+    </div>
+    <div class="card" data-card-title="Streams">
+        <div id="app">
+            <data-grid
+                title="Streams"
+                :columns="columns"
+                :data="streamList"
+                :theme="theme"
+                row-id="id"
+                label-key="name"
+                item-label="Stream"
+                item-label-plural="Stream"
+                add-label="Add Stream"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                @@create="onCreate"
+                @@update="onUpdate"
+                @@delete="onDelete"
+            ></data-grid>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/school-manager/streams.js" asp-append-version="true"></script>
