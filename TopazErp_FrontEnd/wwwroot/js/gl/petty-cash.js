@@ -1,19 +1,20 @@
 /**
- * General Ledger - Petty Cash Transactions LISTING (Vue 3)
- * List-only page; entry/edit lives on /GeneralLedger/CreatePettyCash
+ * General Ledger - Petty Cash Listings (Vue 3)
+ * Modern implementation matching Topaz ERP Design System
+ * Directory Listings View
  */
 const app = Vue.createApp({
     data() {
         return {
             theme: '#0645e7',
+            isLoading: false,
             isShimmerLoading: false,
 
-            // Loaded data
             pettyCashList: [],
-            recipientList: [],
+            accountsList: [],
             pettyCashAccounts: [],
 
-            // Listing filters
+            // Filter state
             filterParams: {
                 startDate: '',
                 endDate: '',
@@ -40,8 +41,8 @@ const app = Vue.createApp({
             return this.pettyCashList.reduce((sum, b) => sum + ((b.details && b.details.length) || 0), 0);
         },
 
-        recipientsCount() {
-            return this.recipientList.length;
+        pettyCashAccountsCount() {
+            return this.pettyCashAccounts.length;
         },
 
         filteredPettyCashList() {
@@ -75,12 +76,16 @@ const app = Vue.createApp({
                     key: 'batchNo',
                     label: 'Batch #',
                     type: 'text',
-                    width: 130,
+                    width: 140,
                     searchable: true,
                     sortable: true,
                     render: (v, row) => {
                         const val = v || '—';
-                        return `<a href="/GeneralLedger/CreatePettyCash?id=${row.id}" class="inline-flex items-center px-2.5 py-0.5 rounded font-mono text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800" title="Click to view/edit transaction batch">${val}</a>`;
+                        const id = row?.id;
+                        if (id) {
+                            return `<a href="/GeneralLedger/CreatePettyCash?id=${encodeURIComponent(id)}" class="inline-flex items-center px-2.5 py-1 rounded font-mono text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800" title="Click to view/edit transaction batch">Batch #${val}</a>`;
+                        }
+                        return `<span class="inline-flex items-center px-2.5 py-1 rounded font-mono text-xs font-bold bg-slate-100 text-slate-700">${val}</span>`;
                     }
                 },
                 {
@@ -194,6 +199,57 @@ const app = Vue.createApp({
             this.getPettyCashList();
         },
 
+        async getPettyCashList() {
+            this.isShimmerLoading = true;
+            try {
+                const resp = await axios.get('/GeneralLedger/GetPettyCashTransactions?pageNo=1&pageSize=1000');
+                const raw = resp.data;
+                let list = [];
+                if (Array.isArray(raw)) {
+                    list = raw;
+                } else if (raw?.result && Array.isArray(raw.result)) {
+                    list = raw.result;
+                } else if (raw?.result?.items && Array.isArray(raw.result.items)) {
+                    list = raw.result.items;
+                } else if (raw?.result?.data && Array.isArray(raw.result.data)) {
+                    list = raw.result.data;
+                } else if (raw?.data && Array.isArray(raw.data)) {
+                    list = raw.data;
+                }
+
+                this.pettyCashList = list;
+            } catch (err) {
+                console.error('Error fetching petty cash transactions:', err);
+                this.toast('error', 'Unable to load petty cash transactions.');
+            } finally {
+                this.isShimmerLoading = false;
+            }
+        },
+
+        async getAccounts() {
+            try {
+                const resp = await axios.get('/GeneralLedger/GetAccountDetails?pageNo=1&pageSize=5555&isActive=true');
+                const raw = resp.data?.result || resp.data;
+                const list = Array.isArray(raw) ? raw : (raw?.items || raw?.data || []);
+                this.accountsList = list.map(a => ({
+                    id: a.id,
+                    accountNo: a.accountNo || a.accountNumber || '',
+                    accountName: a.accountName || a.name || '',
+                    accountIdentifier: a.accountIdentifier || `${a.accountNo || a.accountNumber || ''} - ${a.accountName || a.name || ''}`,
+                    accountHeadName: a.accountHeadName || a.category || ''
+                })).sort((a, b) => String(a.accountNo ?? '').localeCompare(String(b.accountNo ?? '')));
+
+                this.pettyCashAccounts = this.accountsList.filter(a =>
+                    (a.accountName && a.accountName.toLowerCase().includes('petty cash')) ||
+                    (a.accountName && a.accountName.toLowerCase().includes('cash')) ||
+                    String(a.accountNo).startsWith('12') ||
+                    String(a.accountNo).startsWith('10')
+                );
+            } catch (err) {
+                console.warn('Accounts fetch failed:', err);
+            }
+        },
+
         onGridOpenForm(e) {
             const targetRow = e?.row || (e?.rows && e.rows[0]) || e;
             if (targetRow && targetRow.id) {
@@ -239,55 +295,6 @@ const app = Vue.createApp({
             }
         },
 
-        async getPettyCashList() {
-            this.isShimmerLoading = true;
-            try {
-                const resp = await axios.get('/GeneralLedger/GetPettyCashTransactions?pageNo=1&pageSize=1000');
-                const raw = resp.data;
-                let list = [];
-                if (Array.isArray(raw)) {
-                    list = raw;
-                } else if (raw?.result && Array.isArray(raw.result)) {
-                    list = raw.result;
-                } else if (raw?.result?.items && Array.isArray(raw.result.items)) {
-                    list = raw.result.items;
-                } else if (raw?.result?.data && Array.isArray(raw.result.data)) {
-                    list = raw.result.data;
-                } else if (raw?.data && Array.isArray(raw.data)) {
-                    list = raw.data;
-                }
-
-                this.pettyCashList = list;
-
-                // Derive the petty cash account filter options from loaded batches
-                const seen = new Map();
-                this.pettyCashList.forEach(b => {
-                    if (b.pettyCashAccountId && !seen.has(String(b.pettyCashAccountId))) {
-                        seen.set(String(b.pettyCashAccountId), {
-                            id: b.pettyCashAccountId,
-                            accountIdentifier: b.pettyCashAccountName || 'Petty Cash'
-                        });
-                    }
-                });
-                this.pettyCashAccounts = Array.from(seen.values());
-            } catch (err) {
-                console.error('Error fetching petty cash transactions:', err);
-                this.toast('error', 'Unable to load petty cash transactions.');
-            } finally {
-                this.isShimmerLoading = false;
-            }
-        },
-
-        async getRecipients() {
-            try {
-                const resp = await axios.get('/GeneralLedger/GetPettyCashRecipients?pageNo=1&pageSize=1000');
-                const raw = resp.data?.result || resp.data;
-                this.recipientList = Array.isArray(raw) ? raw : (raw?.items || raw?.data || []);
-            } catch (err) {
-                console.warn('Recipients fetch failed:', err);
-            }
-        },
-
         toast(type, message) {
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
@@ -311,11 +318,11 @@ const app = Vue.createApp({
         this.isShimmerLoading = true;
         try {
             await Promise.allSettled([
-                this.getRecipients(),
+                this.getAccounts(),
                 this.getPettyCashList()
             ]);
         } catch (err) {
-            console.error('Initialization error in Petty Cash listing page:', err);
+            console.error('Initialization error in Petty Cash directory:', err);
         } finally {
             this.isShimmerLoading = false;
         }

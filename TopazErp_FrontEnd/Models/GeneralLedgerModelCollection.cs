@@ -196,8 +196,6 @@ public class DefaultGLNumbers : AuditedEntity<Guid>
 }
 
 
-
-
 public class BudgetDetail
 {
     public Guid Id { get; set; }
@@ -210,103 +208,151 @@ public class BudgetDetail
 
 public class Voucher: AuditedEntity<Guid>
 {
-    public string BatchNo { get; set; }
+    public Guid SupplierId { get; set; }
     
-    public string BatchDescription { get; set; }
-
-    public DateTime? PaymentDate { get; set; }
-
-    public Guid BankAccountId { get; set; }
-
-    public string BankAccountName { get; set; }
-
-    public Guid BankId { get; set; }
-    public string BankName { get; set; }
-
-    public string ChequeNo { get; set; }
+    public string SupplierName { get; set; } 
+    
+    public Guid EmployeeId { get; set; }
+    
+    public string EmployeeName { get; set; }
+    
+    public Guid CustomerId { get; set; }
+    
+    public string CustomerName { get; set; }
+    
+    public string VoucherType { get; set; } = "supplier";
     
     public DateTime VoucherEntryDate { get; set; }
     
-    public string ModeOfPayment { get; set; }
-
+    public Guid BankAccountId { get; set; }
+    
+    public string BankAccountName { get; set; } = string.Empty;
+    
+    public string BankGlAccountName { get; set; } = string.Empty;
+    
+    public Guid BankId { get; set; }
+    
+    public string BankName { get; set; } = string.Empty;
+    
     public Guid CurrencyId { get; set; }
-
-    public string CurrencyName { get; set; }
-
-    public string CurrencyCode { get; set; }
-
-    public decimal BuyRate { get; set; }
-
-    public decimal BaseAmount { get; set; }
-
-    public bool HasCommunicationServiceTax { get; set; }
-
-    public decimal CommunicationServiceTaxRate { get; set; }
-
-    public bool HasCovidTax { get; set; }
-
-    public decimal CovidTaxRate { get; set; }
-
-    public bool HasWithHolding { get; set; }
-
-    public bool HasGetFundLevy { get; set; }
-
-    public decimal GetFundLevyRate { get; set; }
-
-    public bool HasNationalHealthInsuranceLevy { get; set; }
-
-    public decimal NationalHealthInsuranceLevyRate { get; set; }
-
-    public bool HasVat { get; set; }
-
-    public decimal VatRate { get; set; }
-    public decimal TotalVatAmount { get; set; }
-    public bool HasVatWithhold { get; set; }
-
-    public decimal WithHoldingVatPercentage { get; set; }
-    public decimal GrossAmount { get; set; } //as total on view
-    public decimal TotalWithheld { get; set; }
-    public decimal TotalRetained { get; set; }
-    public decimal NetAmount { get; set; }
-    public decimal TotalVatWithheld { get; set; }
-
-    public string TaxType { get; set; }
-    public Guid VatWithHoldingAccountId { get; set; }
-    public string VatWithHoldingAccountName { get; set; }
-    public Guid WithHoldingAccountId { get; set; }
-    public string WithHoldingAccountName { get; set; }
-    public decimal VatWithHoldAmount { get; set; }
-    public decimal WithHoldingRate { get; set; }
-    public Guid CustomerId { get; set; }
-    public string CustomerName { get; set; }
-    public Guid SupplierId { get; set; }
-    public string SupplierName { get; set; }
-    public Guid EmployeeId { get; set; }
-    public string EmployeeName { get; set; }
-    public bool Posted { get; set; }
-    public bool IsPayment { get; set; }
+    
+    public string CurrencyName { get; set; } = string.Empty;
+    
+    public string CurrencyCode { get; set; } = string.Empty;
+    
+    public decimal CurrencyRate { get; set; }
+    
     public bool IsMultiCurrency { get; set; }
+    
+    public string ModePayment { get; set; }
+    
+    public DateTime PaymentDate { get; set; }
+    
+    public string BatchNo { get; set; } = string.Empty;
+    
+    public string ChequeNo { get; set; } = string.Empty;
+    
     public bool IsPosted { get; set; }
-
+    
+    public decimal GrossAmount { get; set; }
+    
+    public decimal NetAmount { get; set; }
+    
     public List<GlVoucherDetail> Details { get; set; }
+    
+    public WithholdingSettings WithholdingSettings { get; set; }
+    
+    public List<VoucherRetentionDto> Retentions { get; set; }
+    
+    public ProposedJournalEntry ProposedJournalEntries { get; set; }
     
 }
 
+
 public class GlVoucherDetail
 {
-    
-    public Guid Id { get; set; }
-    public Guid DebitAccountId { get; set; }
-    public string DebitAccountName { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
     public bool WithHold { get; set; }
+    public string InvoiceNo { get; set; } = string.Empty;
+    public string ReferenceNo { get; set; } = string.Empty;
+    public Guid AccountId { get; set; }
+    public string DebitAccountName { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public decimal LocalDebitAmount { get; set; }
+    public decimal ForeignDebitAmount { get; set; }
     public Guid OuId { get; set; }
-    public string OuName { get; set; }
-    public decimal Amount { get; set; } // debit amount
-    public decimal ForeignDebitAmount { get; set; } // debit amount
-    public string ReferenceNo { get; set; }
-    public string Description { get; set; }
-    public string InvoiceNo { get; set; }
+    public string OuName { get; set; } = string.Empty;
     public bool HasImprest { get; set; }
+}
+
+ 
+public class WithholdingSettings
+{
+    public bool HasWithHolding { get; set; }
+    public decimal WithHoldingRate { get; set; }
+    public string TaxType { get; set; } = string.Empty;
+    public Guid WithHoldingAccountId { get; set; }
+    public string WithHoldingAccountName { get; set; } = string.Empty;
+    public Guid VatWithHoldingAccountId { get; set; }
+    public string VatWithHoldingAccountName { get; set; } = string.Empty;
+    public decimal TotalVatAmount { get; set; }
+    public decimal BaseAmount { get; set; }
+    public List<VoucherTaxFlagItem> TaxFlags { get; set; } = new();
+    public VoucherSummaryBreakdown Summary { get; set; } = new();
+}
+
+public class VoucherTaxFlagItem
+{
+    public string Key { get; set; }
+    public string Label { get; set; }
+    public bool Enabled { get; set; }
+    public decimal Rate { get; set; }
+    public decimal Amount { get; set; }
+}
+
+public class VoucherSummaryBreakdown
+{
+    public decimal GrossAmount { get; set; }
+    public decimal TotalWithheld { get; set; }
+    public decimal TotalRetained { get; set; }
+    public decimal TotalVatWithheld { get; set; }
+    public decimal NetAmount { get; set; }
+}
+
+public class VoucherRetentionDto
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Description { get; set; }
+    public Guid VoucherHeaderId { get; set; }
+    public Guid CreditAccountId { get; set; }
+    public string CreditAccountName { get; set; }
+    public bool IsPercentage { get; set; }
+    public decimal Amount { get; set; }
+    public decimal TotalAmount { get; set; }
+}
+
+
+public class ProposedJournalEntry
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public List<Guid> DetailIds { get; set; } = new();
+    public bool IsBalanced { get; set; }
+    public decimal TotalDebit { get; set; }
+    public decimal TotalCredit { get; set; }
+    public List<ProposedJournalEntryLine> Lines { get; set; } = new();
+}
+ 
+public class ProposedJournalEntryLine
+{
+    public Guid AccountId { get; set; }
+    public string AccountDisplay { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public decimal DebitAmount { get; set; }
+    public decimal CreditAmount { get; set; }
+    public Guid OuId { get; set; }
+    public string OuName { get; set; } = string.Empty;
+    public string ReferenceNumber { get; set; } = string.Empty;
+    public string ChequeNo { get; set; } = string.Empty;
 }
 
 public class JournalListFilterDto

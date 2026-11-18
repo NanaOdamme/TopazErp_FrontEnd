@@ -3259,6 +3259,18 @@
       <_ContentIncludedByDefault Remove="wwwroot\ejassets\ejthemes\bootstrap-theme\images\rotator-icon.png" />
       <_ContentIncludedByDefault Remove="wwwroot\ejassets\ejthemes\bootstrap-theme\images\slider-tick.png" />
       <_ContentIncludedByDefault Remove="wwwroot\ejassets\ejthemes\bootstrap-theme\images\waitingpopup.gif" />
+      <_ContentIncludedByDefault Remove="wwwroot\PdfEngine\windows\77.0.3865.90.manifest" />
+      <_ContentIncludedByDefault Remove="wwwroot\PdfEngine\windows\chrome.dll" />
+      <_ContentIncludedByDefault Remove="wwwroot\PdfEngine\windows\chrome.exe" />
+      <_ContentIncludedByDefault Remove="wwwroot\PdfEngine\windows\chrome_100_percent.pak" />
+      <_ContentIncludedByDefault Remove="wwwroot\PdfEngine\windows\chrome_200_percent.pak" />
+      <_ContentIncludedByDefault Remove="wwwroot\PdfEngine\windows\chrome_child.dll" />
+      <_ContentIncludedByDefault Remove="wwwroot\PdfEngine\windows\chrome_elf.dll" />
+      <_ContentIncludedByDefault Remove="wwwroot\PdfEngine\windows\icudtl.dat" />
+      <_ContentIncludedByDefault Remove="wwwroot\PdfEngine\windows\locales\en-US.pak" />
+      <_ContentIncludedByDefault Remove="wwwroot\PdfEngine\windows\natives_blob.bin" />
+      <_ContentIncludedByDefault Remove="wwwroot\PdfEngine\windows\resources.pak" />
+      <_ContentIncludedByDefault Remove="wwwroot\PdfEngine\windows\v8_context_snapshot.bin" />
     </ItemGroup>
 
 </Project>

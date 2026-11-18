@@ -18,6 +18,8 @@ createApp({
         const chequeNo      = ref('');
         const taxType       = ref('');
         const withHoldingRate = ref(0);
+        const lastWithHoldingRate = ref(5.00);
+        const lastEnabledTaxKeys = ref(['getfl', 'vat', 'vatWh', 'nhil']);
         const withHoldingAccountId    = ref('');
         const vatWithHoldingAccountId = ref('');
         const hasWithHolding = ref(false);
@@ -25,6 +27,7 @@ createApp({
         const voucherId       = ref('');
         const isEditMode      = ref(false);
         const isRecordCreated = ref(false);
+        const showSaveMenu    = ref(false);
         const proposedJournalHeaderId  = ref('');
         const proposedJournalDetailIdList = ref([]);
 
@@ -74,6 +77,20 @@ createApp({
             return isRecordCreated.value ? 'Create New' : 'Save';
         });
 
+        const currencyCode = computed(() => {
+            const c = currencyList.value.find(x => x.id === currencyId.value);
+            return c?.currencyCode || 'GHS';
+        });
+
+        const currencySymbol = computed(() => {
+            const code = currencyCode.value;
+            if (!code || code === 'GHS') return 'GH¢';
+            if (code === 'USD') return '$';
+            if (code === 'EUR') return '€';
+            if (code === 'GBP') return '£';
+            return code + ' ';
+        });
+
         // ── Helpers ───────────────────────────────────────────────────
         function uuid() {
             return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
@@ -87,11 +104,27 @@ createApp({
             return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n ?? 0);
         }
 
+        function formatAccountDisplay(account) {
+            if (!account) return '--';
+            if (account.accountNo && account.accountName) {
+                return `${account.accountNo} — ${account.accountName}`;
+            }
+            if (account.accountIdentifier) {
+                return account.accountIdentifier.replace(' - ', ' — ');
+            }
+            return account.accountName || '--';
+        }
+
         function toastHandler(type, message = 'An unexpected error occurred.') {
-            toastr.options = { closeButton: true, progressBar: true, showMethod: 'fadeIn', hideMethod: 'fadeOut', timeOut: 10000 };
-            if (type === 'warning') toastr.warning('', message);
-            else if (type === 'error') toastr.error('', message);
-            else toastr.success('', message);
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'success',
+                title: message,
+                showConfirmButton: false,
+                timer: 4000,
+                timerProgressBar: true,
+            });
         }
 
         function parseCostCenterHierachy(dataArr) {
@@ -136,9 +169,13 @@ createApp({
             const getfl = getTaxFlag('getfl');
             const vat   = getTaxFlag('vat');
             const vatWh = getTaxFlag('vatWh');
+            const cst   = getTaxFlag('cst');
+            const covid = getTaxFlag('covid');
             const nhilRate  = nhil  ? parseFloat(nhil.rate  || 0) : 0;
             const getflRate = getfl ? parseFloat(getfl.rate || 0) : 0;
             const vatRate   = vat   ? parseFloat(vat.rate   || 0) : 0;
+            const cstRate   = cst   ? parseFloat(cst.rate   || 0) : 0;
+            const covidRate = covid ? parseFloat(covid.rate || 0) : 0;
             const withholdingRate    = parseFloat(withHoldingRate.value || 0);
             const withHoldingVatRate = vatWh ? parseFloat(vatWh.rate || 0) : 0;
 
@@ -146,7 +183,7 @@ createApp({
             let nhilAmount = 0, getflAmount = 0, vatAmount = 0, withHeldAmount = 0, vatWithHeldAmount = 0;
 
             if (withHold) {
-                const totalRate = nhilRate + getflRate + vatRate;
+                const totalRate = nhilRate + getflRate + vatRate + cstRate + covidRate;
                 baseAmount = totalRate > 0 ? grossAmount / (1 + totalRate / 100) : grossAmount;
                 nhilAmount  = nhil  && nhil.enabled  ? (nhilRate  / 100) * baseAmount : 0;
                 getflAmount = getfl && getfl.enabled ? (getflRate / 100) * baseAmount : 0;
@@ -177,6 +214,8 @@ createApp({
             totalDebit.value             = 0;
             amountWithoutTaxes.value     = 0;
 
+            let netBeforeRetention = 0;
+
             voucherList.value.forEach(tx => {
                 const debitAmount = parseFloat(tx.localDebitAmount || tx.debitAmount || 0);
                 totalDebit.value += debitAmount;
@@ -184,12 +223,22 @@ createApp({
                 totalVatAmount.value         += bd.vatAmount;
                 totalWithHeldAmount.value    += bd.withHeldAmount;
                 totalVatWithHeldAmount.value += bd.vatWithHeldAmount || 0;
-                totalNetAmount.value         += bd.netAmount;
+                netBeforeRetention           += bd.netAmount;
                 amountWithoutTaxes.value     += bd.amountWithoutTaxes;
             });
 
+            // Recompute percentage retentions from Net Amount
+            retentionsList.value.forEach(r => {
+                const amt = parseFloat(r.amount || 0);
+                if (r.IsPercentage) {
+                    r.totalAmount = roundNumber((amt / 100) * netBeforeRetention);
+                } else {
+                    r.totalAmount = roundNumber(amt);
+                }
+            });
+
             totalRetentionCredit.value = retentionsList.value.reduce((s, r) => s + parseFloat(r.totalAmount || 0), 0);
-            totalNetAmount.value      -= parseFloat(totalRetentionCredit.value || 0);
+            totalNetAmount.value       = netBeforeRetention - parseFloat(totalRetentionCredit.value || 0);
             amountWithoutTaxes.value  -= parseFloat(totalRetentionCredit.value || 0);
 
             totalDebit.value             = roundNumber(totalDebit.value);
@@ -356,45 +405,114 @@ createApp({
 
         async function loadVoucherDetails() {
             try {
-                const res = await axios.get('/LedgerDataEntry/GetVoucherDetails?id=' + voucherId.value);
-                const data = res.data.voucherInfo;
-                proposedJournalHeaderId.value     = res.data.proposedJournalHeader.id;
-                proposedJournalDetailIdList.value  = res.data.proposedJournalDetails.map(a => a.id);
-                employeeId.value    = data.employeeId;
-                bankAccountId.value = data.bankAccountId;
-                currencyId.value    = data.currencyId;
-                withHoldingAccountId.value    = data.withHoldingAccountId;
-                vatWithHoldingAccountId.value = data.vatWithHoldingAccountId;
-                modePayment.value   = data.modeOfPayment;
-                voucherEntryDate.value = moment(data.voucherEntryDate).format('YYYY-MM-DD');
-                paymentDate.value   = moment(data.paymentDate).format('YYYY-MM-DD');
-                batchNo.value       = data.batchNo;
-                chequeNo.value      = data.chequeNo;
-                taxType.value       = data.taxType;
-                hasWithHolding.value  = data.hasWithHolding;
-                withHoldingRate.value = data.withHoldingRate;
+                let res;
+                try {
+                    res = await axios.get('/GeneralLedger/GetVoucherDetails?id=' + voucherId.value);
+                } catch {
+                    res = await axios.get('/LedgerDataEntry/GetVoucherDetails?id=' + voucherId.value);
+                }
 
-                const setFlag = (key, enabled, rate) => { const f = getTaxFlag(key); if (f) { f.enabled = enabled; f.rate = rate || f.defaultRate; } };
-                setFlag('getfl', data.hasGetFundLevy, data.getFundLevyRate);
-                setFlag('vat',   data.hasVat, data.vatRate);
-                setFlag('vatWh', data.hasVatWithhold, data.withHoldingVatPercentage);
-                setFlag('nhil',  data.hasNationalHealthInsuranceLevy, data.nationalHealthInsuranceLevyRate);
-                setFlag('cst',   data.hasCommunicationServiceTax, data.communicationServiceTaxRate);
-                setFlag('covid', data.hasCovidTax, data.covidTaxRate);
+                // Decompose the revised Voucher model (result or direct object)
+                const v = res.data?.result || res.data?.voucherInfo || res.data;
+                if (!v) return;
 
-                voucherList.value = (data.details || []).map(v => ({
-                    ...v, localDebitAmount: v.amount, foreignDebitAmount: v.foreignDebitAmount || 0,
-                    accountId: v.debitAccountId ? v.debitAccountId.toLowerCase() : '',
-                    description: v.description || '', id: v.id || uuid(), hasImprest: v.hasImprest || false,
+                // ── 1. Root Voucher Header Fields ─────────────────────────────
+                if (v.id && v.id !== emptyGuid) voucherId.value = v.id;
+                if (v.employeeId && v.employeeId !== emptyGuid) employeeId.value = v.employeeId;
+                bankAccountId.value = v.bankAccountId || '';
+                currencyId.value = v.currencyId || '';
+                currencyRate.value = v.currencyRate != null ? v.currencyRate : null;
+                isMultiCurrency.value = Boolean(v.isMultiCurrency);
+                modePayment.value = v.modePayment || v.modeOfPayment || 'Cash';
+                voucherEntryDate.value = v.voucherEntryDate ? moment(v.voucherEntryDate).format('YYYY-MM-DD') : moment().format('YYYY-MM-DD');
+                paymentDate.value = v.paymentDate ? moment(v.paymentDate).format('YYYY-MM-DD') : moment().format('YYYY-MM-DD');
+                batchNo.value = v.batchNo || '';
+                chequeNo.value = v.chequeNo || '';
+
+                // ── 2. Details (Transaction Lines) ───────────────────────────
+                const lineItems = v.details || v.lines || [];
+                voucherList.value = lineItems.map(d => ({
+                    id: d.id || uuid(),
+                    withHold: Boolean(d.withHold !== undefined ? d.withHold : d.isWithHeld),
+                    invoiceNo: d.invoiceNo || '',
+                    referenceNo: d.referenceNo || '',
+                    accountId: d.accountId ? String(d.accountId).toLowerCase() : (d.debitAccountId ? String(d.debitAccountId).toLowerCase() : ''),
+                    debitAccountName: d.debitAccountName || '',
+                    description: d.description || '',
+                    localDebitAmount: parseFloat(d.localDebitAmount != null ? d.localDebitAmount : (d.amount || d.debitAmount || 0)),
+                    foreignDebitAmount: parseFloat(d.foreignDebitAmount || 0),
+                    ouId: d.ouId ? String(d.ouId).toLowerCase() : emptyGuid,
+                    ouName: d.ouName || '--',
+                    hasImprest: Boolean(d.hasImprest),
                 }));
 
-                retentionsList.value = (data.retensions || []).map(r => ({
-                    ...r, accountId: r.accountId ? r.accountId.toLowerCase() : '',
-                    amount: r.amount || 0, totalAmount: r.totalAmount || 0, id: r.id || uuid(),
+                // ── 3. Withholding Settings & Tax Flags ───────────────────────
+                const wh = v.withholdingSettings || {};
+                hasWithHolding.value = Boolean(wh.hasWithHolding != null ? wh.hasWithHolding : v.hasWithHolding);
+                withHoldingRate.value = parseFloat(wh.withHoldingRate != null ? wh.withHoldingRate : (v.withHoldingRate || 0));
+                taxType.value = wh.taxType != null ? wh.taxType : (v.taxType || '');
+                withHoldingAccountId.value = (wh.withHoldingAccountId || v.withHoldingAccountId)
+                    ? String(wh.withHoldingAccountId || v.withHoldingAccountId).toLowerCase() : '';
+                vatWithHoldingAccountId.value = (wh.vatWithHoldingAccountId || v.vatWithHoldingAccountId)
+                    ? String(wh.vatWithHoldingAccountId || v.vatWithHoldingAccountId).toLowerCase() : '';
+
+                if (Array.isArray(wh.taxFlags) && wh.taxFlags.length) {
+                    wh.taxFlags.forEach(tf => {
+                        const f = getTaxFlag(tf.key);
+                        if (f) {
+                            f.enabled = Boolean(tf.enabled);
+                            f.rate = tf.rate != null ? parseFloat(tf.rate) : f.defaultRate;
+                        }
+                    });
+                    const activeFlags = taxFlags.filter(f => f.enabled).map(f => f.key);
+                    if (activeFlags.length > 0) lastEnabledTaxKeys.value = activeFlags;
+                } else {
+                    const setFlag = (key, enabled, rate) => {
+                        const f = getTaxFlag(key);
+                        if (f) { f.enabled = enabled; f.rate = rate || f.defaultRate; }
+                    };
+                    setFlag('getfl', v.hasGetFundLevy, v.getFundLevyRate);
+                    setFlag('vat', v.hasVat, v.vatRate);
+                    setFlag('vatWh', v.hasVatWithhold, v.withHoldingVatPercentage);
+                    setFlag('nhil', v.hasNationalHealthInsuranceLevy, v.nationalHealthInsuranceLevyRate);
+                    setFlag('cst', v.hasCommunicationServiceTax, v.communicationServiceTaxRate);
+                    setFlag('covid', v.hasCovidTax, v.covidTaxRate);
+                    const activeFlags = taxFlags.filter(f => f.enabled).map(f => f.key);
+                    if (activeFlags.length > 0) lastEnabledTaxKeys.value = activeFlags;
+                }
+
+                if (withHoldingRate.value > 0) {
+                    lastWithHoldingRate.value = withHoldingRate.value;
+                }
+
+                // ── 4. Retentions ────────────────────────────────────────────
+                const retentionItems = v.retentions || v.retensions || [];
+                retentionsList.value = retentionItems.map(r => ({
+                    id: r.id || uuid(),
+                    description: r.description || '',
+                    accountId: r.creditAccountId ? String(r.creditAccountId).toLowerCase() : (r.accountId ? String(r.accountId).toLowerCase() : ''),
+                    creditAccountName: r.creditAccountName || '',
+                    amount: parseFloat(r.amount || 0),
+                    IsPercentage: Boolean(r.isPercentage != null ? r.isPercentage : r.IsPercentage),
+                    totalAmount: parseFloat(r.totalAmount || 0),
                 }));
+
+                // ── 5. Proposed Journal Entry ────────────────────────────────
+                const pj = v.proposedJournalEntries || v.proposedJournalEntry || res.data?.proposedJournalHeader;
+                if (pj) {
+                    proposedJournalHeaderId.value = pj.id || pj.headerId || '';
+                    if (Array.isArray(pj.detailIds)) {
+                        proposedJournalDetailIdList.value = pj.detailIds;
+                    } else if (Array.isArray(res.data?.proposedJournalDetails)) {
+                        proposedJournalDetailIdList.value = res.data.proposedJournalDetails.map(a => a.id);
+                    }
+                }
 
                 reComputeVoucherSummary();
-            } catch { toastHandler('error', 'Unable to load voucher details.'); }
+            } catch (err) {
+                console.error('loadVoucherDetails error:', err);
+                toastHandler('error', 'Unable to load voucher details.');
+            }
         }
 
         // ── Row management ────────────────────────────────────────────
@@ -403,10 +521,63 @@ createApp({
             reComputeVoucherSummary();
         }
 
-        function removeVoucherRow(idx) { voucherList.value.splice(idx, 1); reComputeVoucherSummary(); }
+        function removeVoucherRow(idx) {
+            voucherList.value.splice(idx, 1);
+            onWithHoldChange();
+        }
 
         function onWithHoldChange() {
-            hasWithHolding.value = voucherList.value.some(v => v.withHold);
+            const anyWithHold = voucherList.value.some(v => v.withHold);
+
+            if (!anyWithHold) {
+                // If any withholding components were previously active, save them before clearing
+                if (hasWithHolding.value || withHoldingRate.value > 0 || taxFlags.some(f => f.enabled)) {
+                    if (withHoldingRate.value > 0) {
+                        lastWithHoldingRate.value = parseFloat(withHoldingRate.value);
+                    }
+                    const activeKeys = taxFlags.filter(f => f.enabled).map(f => f.key);
+                    if (activeKeys.length > 0) {
+                        lastEnabledTaxKeys.value = activeKeys;
+                    }
+                }
+
+                // Reset tax rates to zero and uncheck all tax components
+                hasWithHolding.value = false;
+                withHoldingRate.value = 0;
+                taxFlags.forEach(f => {
+                    f.enabled = false;
+                    f.rate = 0;
+                });
+            } else {
+                // At least one row has withholding checked
+                if (!hasWithHolding.value || (!withHoldingRate.value && !taxFlags.some(f => f.enabled))) {
+                    // Do the vice versa: check tax components and restore default tax rates
+                    hasWithHolding.value = true;
+                    withHoldingRate.value = lastWithHoldingRate.value || 5.00;
+
+                    const keysToEnable = (lastEnabledTaxKeys.value && lastEnabledTaxKeys.value.length > 0)
+                        ? lastEnabledTaxKeys.value
+                        : ['getfl', 'vat', 'vatWh', 'nhil'];
+
+                    taxFlags.forEach(f => {
+                        if (keysToEnable.includes(f.key)) {
+                            f.enabled = true;
+                            if (f.key === 'vatWh') {
+                                f.rate = withHoldingVatPercentage.value || f.defaultRate || 7.00;
+                            } else {
+                                f.rate = f.defaultRate;
+                            }
+                        } else {
+                            f.enabled = false;
+                            f.rate = 0;
+                        }
+                    });
+                } else {
+                    hasWithHolding.value = true;
+                }
+            }
+
+            // Always recompute the taxes
             reComputeVoucherSummary();
         }
 
@@ -418,12 +589,127 @@ createApp({
         function removeRetentionRow(idx) { retentionsList.value.splice(idx, 1); reComputeVoucherSummary(); }
 
         function onRetentionAmountChange(row) {
-            const amount = parseFloat(row.amount || 0);
-            row.totalAmount = row.IsPercentage ? (amount / 100) * totalDebit.value : amount;
             reComputeVoucherSummary();
         }
 
         // ── Journal ───────────────────────────────────────────────────
+        const proposedJournalEntries = computed(() => {
+            const lines = [];
+
+            // 1. Debit lines from voucher rows (Expense/Employee accounts)
+            voucherList.value.forEach(v => {
+                const debitAccountInfo = accountsList.value.find(x => x.id === v.accountId);
+                const debitAmount = parseFloat(v.localDebitAmount || v.debitAmount || 0);
+                const ouInfo = costCenterHierachyList.value.find(x => x.id === v.ouId);
+                if (v.accountId || debitAmount > 0) {
+                    lines.push({
+                        accountId: v.accountId || emptyGuid,
+                        accountDisplay: formatAccountDisplay(debitAccountInfo),
+                        description: v.description || 'Employee payment',
+                        debitAmount,
+                        creditAmount: 0,
+                        ouId: v.ouId || emptyGuid,
+                        ouName: ouInfo ? ouInfo.name : (v.ouName || '--'),
+                        referenceNumber: v.referenceNo || batchNo.value || '',
+                        chequeNo: chequeNo.value || '',
+                    });
+                }
+            });
+
+            // 2. Bank / Cash line (Credit net amount)
+            const netAmount = parseFloat(totalNetAmount.value || 0);
+            const bankAccountInfo = accountsList.value.find(x => x.id === bankAccountId.value);
+            const firstOuId = voucherList.value.length ? (voucherList.value[0].ouId || emptyGuid) : emptyGuid;
+            const firstOuInfo = costCenterHierachyList.value.find(x => x.id === firstOuId);
+            const firstOuName = firstOuInfo ? firstOuInfo.name : '--';
+            const firstRef  = voucherList.value.length ? (voucherList.value[0].referenceNo || batchNo.value) : batchNo.value;
+
+            if (bankAccountId.value || netAmount > 0) {
+                lines.push({
+                    accountId: bankAccountId.value || emptyGuid,
+                    accountDisplay: formatAccountDisplay(bankAccountInfo),
+                    description: 'Net payment from bank / cash',
+                    debitAmount: 0,
+                    creditAmount: netAmount,
+                    ouId: firstOuId,
+                    ouName: firstOuName,
+                    referenceNumber: firstRef,
+                    chequeNo: chequeNo.value || '',
+                });
+            }
+
+            // 3. Income Withholding Tax (Credit)
+            const wh = parseFloat(totalWithHeldAmount.value || 0);
+            if (wh > 0 && withHoldingAccountId.value) {
+                const withHoldingAccountInfo = accountsList.value.find(x => x.id === withHoldingAccountId.value);
+                const rateVal = parseFloat(withHoldingRate.value || 0);
+                lines.push({
+                    accountId: withHoldingAccountId.value || emptyGuid,
+                    accountDisplay: formatAccountDisplay(withHoldingAccountInfo),
+                    description: `Income withholding · ${rateVal}%`,
+                    debitAmount: 0,
+                    creditAmount: wh,
+                    ouId: firstOuId,
+                    ouName: firstOuName,
+                    referenceNumber: firstRef,
+                    chequeNo: chequeNo.value || '',
+                });
+            }
+
+            // 4. VAT Withholding Tax (Credit)
+            const vatWh = parseFloat(totalVatWithHeldAmount.value || 0);
+            if (vatWh > 0 && vatWithHoldingAccountId.value) {
+                const vatWithHoldingAccountInfo = accountsList.value.find(x => x.id === vatWithHoldingAccountId.value);
+                const vatWhF = getTaxFlag('vatWh');
+                const rateVal = vatWhF ? vatWhF.rate : (withHoldingVatPercentage.value || 7);
+                lines.push({
+                    accountId: vatWithHoldingAccountId.value || emptyGuid,
+                    accountDisplay: formatAccountDisplay(vatWithHoldingAccountInfo),
+                    description: `VAT withholding · ${rateVal}%`,
+                    debitAmount: 0,
+                    creditAmount: vatWh,
+                    ouId: firstOuId,
+                    ouName: firstOuName,
+                    referenceNumber: firstRef,
+                    chequeNo: chequeNo.value || '',
+                });
+            }
+
+            // 5. Custom Retentions (Credit)
+            retentionsList.value.forEach(r => {
+                const rAmt = parseFloat(r.totalAmount || 0);
+                if (rAmt > 0 && r.accountId) {
+                    const rAccInfo = accountsList.value.find(x => x.id === r.accountId);
+                    lines.push({
+                        accountId: r.accountId || emptyGuid,
+                        accountDisplay: formatAccountDisplay(rAccInfo),
+                        description: r.description ? (r.IsPercentage ? `${r.description} · ${r.amount}%` : r.description) : (r.IsPercentage ? `Retention · ${r.amount}%` : 'Retention'),
+                        debitAmount: 0,
+                        creditAmount: rAmt,
+                        ouId: firstOuId,
+                        ouName: firstOuName,
+                        referenceNumber: firstRef,
+                        chequeNo: chequeNo.value || '',
+                    });
+                }
+            });
+
+            return lines;
+        });
+
+        const proposedJournalTotals = computed(() => {
+            let debit = 0;
+            let credit = 0;
+            proposedJournalEntries.value.forEach(row => {
+                debit += parseFloat(row.debitAmount || 0);
+                credit += parseFloat(row.creditAmount || 0);
+            });
+            debit = roundNumber(debit);
+            credit = roundNumber(credit);
+            const isBalanced = Math.abs(debit - credit) < 0.009;
+            return { debit, credit, isBalanced };
+        });
+
         function rebuildJournalEntryList() {
             const currencyInfo           = currencyList.value.find(x => x.id === currencyId.value);
             const bankAccountInfo        = accountsList.value.find(x => x.id === bankAccountId.value);
@@ -476,19 +762,33 @@ createApp({
             rebuildJournalEntryList();
             const vatWhAmt = parseFloat(totalVatWithHeldAmount.value || 0);
             const whAmt    = parseFloat(totalWithHeldAmount.value    || 0);
+            const retAmt   = parseFloat(totalRetentionCredit.value   || 0);
+            const payload  = {
+                batchNumber: batchNo.value,
+                batchDate: voucherEntryDate.value,
+                isTemporary: true,
+                totalCredit: totalNetAmount.value + vatWhAmt + whAmt + retAmt,
+                totalDebit: totalDebit.value,
+                id: voucherId.value,
+                journalDetails: journalEntryList.value
+            };
             try {
-                await axios.post('/GeneralLedger/SaveJournal', { batchNumber: batchNo.value, batchDate: voucherEntryDate.value, isTemporary: true, totalCredit: totalNetAmount.value + vatWhAmt + whAmt, totalDebit: totalDebit.value, id: voucherId.value, journalDetails: journalEntryList.value });
+                await axios.post('/GeneralLedger/SaveJournal', payload);
                 journalEntryList.value = [];
                 isLoading.value = false;
                 if (voucherId.value) {
-                    axios.get('/LedgerDataEntry/GetVoucherDetails?id=' + voucherId.value).then(res => {
-                        if (res.data && res.data.proposedJournalHeader) {
-                            proposedJournalHeaderId.value = res.data.proposedJournalHeader.id;
-                            proposedJournalDetailIdList.value = (res.data.proposedJournalDetails || []).map(a => a.id);
+                    axios.get('/GeneralLedger/GetVoucherDetails?id=' + voucherId.value).then(res => {
+                        const pj = res.data?.result?.proposedJournalEntries || res.data?.proposedJournalHeader;
+                        if (pj) {
+                            proposedJournalHeaderId.value = pj.id;
+                            proposedJournalDetailIdList.value = pj.detailIds || (res.data.proposedJournalDetails || []).map(a => a.id);
                         }
                     }).catch(() => {});
                 }
-            } catch { isLoading.value = false; toastHandler('error', 'Unable to create journal.'); }
+            } catch {
+                isLoading.value = false;
+                toastHandler('error', 'Unable to create journal.');
+            }
         }
 
         // ── Save ──────────────────────────────────────────────────────
@@ -501,94 +801,183 @@ createApp({
             return !Object.values(errors).some(Boolean);
         }
 
-        async function saveVoucher() {
-            if (isRecordCreated.value) { createNewVoucher(); return; }
-            if (!validate()) { toastHandler('warning', 'Please fill in all required fields.'); return; }
-            if (!voucherList.value.length) { toastHandler('warning', 'Payment voucher has no transactions.'); return; }
-
-            isLoading.value = true;
+        /**
+         * Builds the payload matching the revised C# Voucher model in GeneralLedgerModelCollection.cs.
+         * Contains root header properties and the decomposed child cards:
+         *   - details:                List<GlVoucherDetail> (Transaction Lines)
+         *   - withholdingSettings:    WithholdingSettings (WH inputs, tax flags, summary)
+         *   - retentions:             List<VoucherRetentionDto> (Retentions)
+         *   - proposedJournalEntries: ProposedJournalEntry (Proposed Journal lines, balance, totals)
+         */
+        function buildVoucherPayload() {
+            rebuildJournalEntryList();
 
             const employeeInfo           = employeeList.value.find(a => a.id === employeeId.value);
             const bankAccountInfo        = accountsList.value.find(a => a.id === bankAccountId.value);
             const withHoldingAccountInfo = accountsList.value.find(a => a.id === withHoldingAccountId.value);
             const vatWithHoldingAccountInfo = accountsList.value.find(a => a.id === vatWithHoldingAccountId.value);
             const currencyInfo           = currencyList.value.find(a => a.id === currencyId.value);
-            const vatWhF  = getTaxFlag('vatWh');
-            const getflF  = getTaxFlag('getfl');
-            const vatF    = getTaxFlag('vat');
-            const nhilF   = getTaxFlag('nhil');
-            const cstF    = getTaxFlag('cst');
-            const covidF  = getTaxFlag('covid');
 
-            voucherList.value.forEach(v => {
-                v.debitAccountId = v.accountId;
-                v.debitAmount    = parseFloat(v.localDebitAmount || 0);
-                v.foreignDebitAmount = parseFloat(v.foreignDebitAmount || 0);
-                v.amount         = parseFloat(v.localDebitAmount || 0);
-                v.isWithHeld     = v.withHold;
-                if (!v.id) v.id = uuid();
+            // 1. Details (List<GlVoucherDetail>)
+            const details = voucherList.value.map(v => {
                 const debitAccountInfo = accountsList.value.find(a => a.id === v.accountId);
-                v.debitAccountName = debitAccountInfo ? debitAccountInfo.accountIdentifier : '';
-                v.ouId = v.ouId ? v.ouId : emptyGuid;
-                const ouInfo = costCenterHierachyList.value.find(a => a.id === v.ouId);
-                v.ouName = ouInfo ? ouInfo.name : '--';
+                const ouInfo = costCenterHierachyList.value.find(x => x.id === v.ouId);
+                return {
+                    id:                 (v.id && v.id !== emptyGuid) ? v.id : uuid(),
+                    withHold:           Boolean(v.withHold),
+                    invoiceNo:          v.invoiceNo || '',
+                    referenceNo:        v.referenceNo || '',
+                    accountId:          v.accountId,
+                    debitAccountName:   debitAccountInfo ? debitAccountInfo.accountIdentifier : (v.debitAccountName || ''),
+                    description:        v.description || '',
+                    localDebitAmount:   parseFloat(v.localDebitAmount || 0),
+                    foreignDebitAmount: parseFloat(v.foreignDebitAmount || 0),
+                    ouId:               v.ouId ? v.ouId : emptyGuid,
+                    ouName:             ouInfo ? ouInfo.name : (v.ouName || '--'),
+                    hasImprest:         Boolean(v.hasImprest),
+                };
             });
 
-            retentionsList.value.forEach(v => {
-                v.creditAccountId = v.accountId;
-                const creditAccountInfo = accountsList.value.find(a => a.id === v.accountId);
-                v.creditAccountName = creditAccountInfo ? creditAccountInfo.accountIdentifier : '';
-            });
-
-            const payload = {
-                employeeId:    employeeId.value,
-                employeeName:  employeeInfo ? employeeInfo.employeeName : '',
-                supplierId:    emptyGuid, supplierName: '',
-                customerId:    emptyGuid, customerName: '',
-                voucherEntryDate: voucherEntryDate.value,
-                batchNo: batchNo.value, chequeNo: chequeNo.value,
-                currencyId: currencyId.value,
-                currencyName: currencyInfo ? currencyInfo.currencyName : '',
-                currencyCode: currencyInfo ? currencyInfo.currencyCode : '',
-                buyRate: currencyInfo ? currencyInfo.buyRate : '',
-                sellRate: currencyInfo ? currencyInfo.sellRate : '',
-                bankAccountId: bankAccountId.value,
-                bankAccountName: bankAccountInfo ? bankAccountInfo.accountIdentifier : '',
-                bankId: emptyGuid, bankName: '',
-                paymentDate: paymentDate.value, modePayment: modePayment.value,
-                paymentAmount: parseFloat(totalCredit.value),
-                bankGlAccountName: bankAccountInfo ? bankAccountInfo.accountName : '',
-                hasWithHolding: hasWithHolding.value,
-                withHoldingRate: parseFloat(withHoldingRate.value),
-                withHoldingAccountId:    withHoldingAccountId.value    || emptyGuid,
-                withHoldingAccountName:  withHoldingAccountInfo ? withHoldingAccountInfo.accountIdentifier : '',
-                vatWithHoldingAccountId: vatWithHoldingAccountId.value || emptyGuid,
+            // 2. Withholding Settings & Summary (WithholdingSettings)
+            const withholdingSettings = {
+                hasWithHolding:            Boolean(hasWithHolding.value),
+                withHoldingRate:           parseFloat(withHoldingRate.value || 0),
+                taxType:                   taxType.value || '',
+                withHoldingAccountId:      withHoldingAccountId.value || emptyGuid,
+                withHoldingAccountName:    withHoldingAccountInfo ? withHoldingAccountInfo.accountIdentifier : '',
+                vatWithHoldingAccountId:   vatWithHoldingAccountId.value || emptyGuid,
                 vatWithHoldingAccountName: vatWithHoldingAccountInfo ? vatWithHoldingAccountInfo.accountIdentifier : '',
-                taxType: taxType.value,
-                hasGetFundLevy: getflF ? getflF.enabled : false, getFundLevyRate: getflF ? getflF.rate : 0,
-                hasNationalHealthInsuranceLevy: nhilF ? nhilF.enabled : false, nationalHealthInsuranceLevyRate: nhilF ? nhilF.rate : 0,
-                hasCommunicationServiceTax: cstF ? cstF.enabled : false, communicationServiceTaxRate: cstF ? cstF.rate : 0,
-                hasVat: vatF ? vatF.enabled : false, vatRate: vatF ? vatF.rate : 0,
-                hasCovidTax: covidF ? covidF.enabled : false, covidTaxRate: covidF ? covidF.rate : 0,
-                hasVatWithhold: vatWhF ? vatWhF.enabled : false, withHoldingVatPercentage: vatWhF ? vatWhF.rate : 0,
-                grossAmount: parseFloat(totalDebit.value), netAmount: parseFloat(totalNetAmount.value),
-                totalRetained: parseFloat(totalRetentionCredit.value), totalWithheld: parseFloat(totalWithHeldAmount.value),
-                totalVatWithheld: parseFloat(totalVatWithHeldAmount.value), totalVatAmount: parseFloat(totalVatAmount.value),
-                baseAmount: parseFloat(amountWithoutTaxes.value),
-                isPayment: true, isMultiCurrency: isMultiCurrency.value,
-                proposedJournalHeaderId: proposedJournalHeaderId.value,
-                proposedJournalDetailIdList: proposedJournalDetailIdList.value,
-                id: voucherId.value, details: voucherList.value, retensions: retentionsList.value,
+                totalVatAmount:            parseFloat(totalVatAmount.value || 0),
+                baseAmount:                parseFloat(amountWithoutTaxes.value || 0),
+                taxFlags: taxFlags.map(t => {
+                    const gross = parseFloat(totalDebit.value || 0);
+                    const amt = t.enabled && t.rate ? parseFloat(((gross * t.rate) / 100).toFixed(4)) : 0;
+                    return {
+                        key:     t.key,
+                        label:   t.label,
+                        enabled: Boolean(t.enabled),
+                        rate:    parseFloat(t.rate || 0),
+                        amount:  amt,
+                    };
+                }),
+                summary: {
+                    grossAmount:      parseFloat(totalDebit.value || 0),
+                    totalWithheld:    parseFloat(totalWithHeldAmount.value || 0),
+                    totalRetained:    parseFloat(totalRetentionCredit.value || 0),
+                    totalVatWithheld: parseFloat(totalVatWithHeldAmount.value || 0),
+                    netAmount:        parseFloat(totalNetAmount.value || 0),
+                },
             };
 
-            const endpoint = isEditMode.value ? '/GeneralLedger/UpdateVoucher' : '/GeneralLedger/CreateVoucher';
+            // 3. Retentions (List<VoucherRetentionDto>)
+            const retentions = retentionsList.value.map(r => {
+                const creditAccountInfo = accountsList.value.find(a => a.id === r.accountId);
+                return {
+                    id:                (r.id && r.id !== emptyGuid) ? r.id : uuid(),
+                    description:       r.description || '',
+                    voucherHeaderId:   voucherId.value || emptyGuid,
+                    creditAccountId:   r.accountId,
+                    creditAccountName: creditAccountInfo ? creditAccountInfo.accountIdentifier : (r.creditAccountName || ''),
+                    amount:            parseFloat(r.amount || 0),
+                    isPercentage:      Boolean(r.IsPercentage),
+                    totalAmount:       parseFloat(r.totalAmount || 0),
+                };
+            });
+
+            // 4. Proposed Journal Entry (ProposedJournalEntry)
+            const proposedJournalEntriesObj = {
+                id:          (proposedJournalHeaderId.value && proposedJournalHeaderId.value !== emptyGuid) ? proposedJournalHeaderId.value : uuid(),
+                detailIds:   proposedJournalDetailIdList.value || [],
+                isBalanced:  Boolean(proposedJournalTotals.value.isBalanced),
+                totalDebit:  parseFloat(proposedJournalTotals.value.debit || 0),
+                totalCredit: parseFloat(proposedJournalTotals.value.credit || 0),
+                lines: proposedJournalEntries.value.map(l => ({
+                    accountId:       l.accountId || emptyGuid,
+                    accountDisplay:  l.accountDisplay || '',
+                    description:     l.description || '',
+                    debitAmount:     parseFloat(l.debitAmount || 0),
+                    creditAmount:    parseFloat(l.creditAmount || 0),
+                    ouId:            l.ouId || emptyGuid,
+                    ouName:          l.ouName || '',
+                    referenceNumber: l.referenceNumber || '',
+                    chequeNo:        l.chequeNo || '',
+                })),
+            };
+
+            // Root Voucher matching C# class Voucher
+            return {
+                id:               voucherId.value || emptyGuid,
+                supplierId:       emptyGuid,
+                supplierName:     '',
+                employeeId:       employeeId.value || emptyGuid,
+                employeeName:     employeeInfo ? employeeInfo.employeeName : '',
+                customerId:       emptyGuid,
+                customerName:     '',
+                voucherType:      'employee',
+                voucherEntryDate: voucherEntryDate.value,
+                bankAccountId:    bankAccountId.value || emptyGuid,
+                bankAccountName:  bankAccountInfo ? bankAccountInfo.accountIdentifier : '',
+                bankGlAccountName: bankAccountInfo ? bankAccountInfo.accountName : '',
+                bankId:           emptyGuid,
+                bankName:         '',
+                currencyId:       currencyId.value,
+                currencyName:     currencyInfo ? currencyInfo.currencyName : '',
+                currencyCode:     currencyInfo ? currencyInfo.currencyCode : '',
+                currencyRate:     currencyRate.value != null ? parseFloat(currencyRate.value) : 1,
+                isMultiCurrency:  Boolean(isMultiCurrency.value),
+                modePayment:      modePayment.value,
+                paymentDate:      paymentDate.value,
+                batchNo:          batchNo.value,
+                chequeNo:         modePayment.value === 'Cheque' ? chequeNo.value : '',
+                isPosted:         false,
+                grossAmount:      parseFloat(totalDebit.value || 0),
+                netAmount:        parseFloat(totalNetAmount.value || 0),
+
+                details,
+                withholdingSettings,
+                retentions,
+                proposedJournalEntries: proposedJournalEntriesObj,
+            };
+        }
+
+        async function saveVoucher(andPreview = false) {
+            showSaveMenu.value = false;
+            if (isRecordCreated.value && !andPreview) { createNewVoucher(); return; }
+            if (!validate()) { toastHandler('warning', 'Please fill in all required fields.'); return; }
+            if (!voucherList.value.length) { toastHandler('warning', 'Payment voucher has no transactions.'); return; }
+
+            isLoading.value = true;
+
+            const payload = buildVoucherPayload();
+            const endpoint = isEditMode.value ? `/GeneralLedger/UpdateVoucher?id=${voucherId.value}` : '/GeneralLedger/CreateVoucher';
+
             try {
-                const res = await axios.post(endpoint, payload);
-                if (res.data && res.data.id) { voucherId.value = res.data.id; isRecordCreated.value = true; }
-                toastHandler('', `Employee Payment voucher ${isEditMode.value ? 'updated' : 'saved'}.`);
-                saveJournal();
-            } catch {
+                let res;
+                try {
+                    res = await axios.post(endpoint, payload);
+                } catch (apiErr) {
+                    const legacyEndpoint = isEditMode.value ? `/LedgerDataEntry/UpdateVoucher?id=${voucherId.value}` : '/LedgerDataEntry/CreateVoucher';
+                    res = await axios.post(legacyEndpoint, payload);
+                }
+
+                const createdId = res.data?.id || res.data?.result?.id || voucherId.value;
+                if (createdId && createdId !== emptyGuid) {
+                    voucherId.value = createdId;
+                    isRecordCreated.value = true;
+                }
+                toastHandler('success', `Employee Payment voucher ${isEditMode.value ? 'updated' : 'saved'}.`);
+                await saveJournal();
+
+                if (andPreview && createdId) {
+                    window.open('/LedgerDataEntry/PaymentVoucherPreview?id=' + createdId, '_blank');
+                }
+
+                setTimeout(() => {
+                    window.location.href = '/GeneralLedger/Vouchers?tab=employee';
+                }, 1200);
+            } catch (err) {
                 isLoading.value = false;
+                console.error('Save voucher error:', err);
                 toastHandler('error', `Unable to ${isEditMode.value ? 'update' : 'create'} employee payment voucher.`);
             }
         }
@@ -627,12 +1016,24 @@ createApp({
             else { currencyRate.value = null; isMultiCurrency.value = false; }
         });
 
-        watch(withHoldingRate, () => reComputeVoucherSummary());
+        watch(withHoldingRate, (newVal) => {
+            const val = parseFloat(newVal);
+            if (val > 0) {
+                lastWithHoldingRate.value = val;
+            }
+            reComputeVoucherSummary();
+        });
 
         // ── Lifecycle ─────────────────────────────────────────────────
         onMounted(async () => {
-            if (typeof window.voucherId !== 'undefined' && window.voucherId && window.voucherId !== '00000000-0000-0000-0000-000000000000') {
-                voucherId.value = window.voucherId;
+            const urlParams = new URLSearchParams(window.location.search);
+            const queryId = urlParams.get('id');
+            const targetId = (typeof window.voucherId !== 'undefined' && window.voucherId && window.voucherId !== '00000000-0000-0000-0000-000000000000')
+                ? window.voucherId
+                : (queryId && queryId !== '00000000-0000-0000-0000-000000000000' ? queryId : '');
+
+            if (targetId) {
+                voucherId.value = targetId;
                 isEditMode.value = true;
             }
             if (typeof window.withHoldingVatPercentage !== 'undefined') {
@@ -645,18 +1046,25 @@ createApp({
 
             if (isEditMode.value) await loadVoucherDetails();
             else addVoucherRow();
+
+            document.addEventListener('click', (e) => {
+                const wrapper = document.getElementById('saveMenuWrapper');
+                if (wrapper && !wrapper.contains(e.target)) {
+                    showSaveMenu.value = false;
+                }
+            });
         });
 
         return {
             isLoading, employeeId, voucherEntryDate, paymentDate, bankAccountId,
             currencyId, currencyRate, isMultiCurrency, modePayment, batchNo, chequeNo,
             taxType, withHoldingRate, withHoldingAccountId, vatWithHoldingAccountId,
-            hasWithHolding, voucherId, isEditMode, isRecordCreated,
+            hasWithHolding, voucherId, isEditMode, isRecordCreated, showSaveMenu,
             employeeList, accountsList, currencyList, costCenterHierachyList,
             voucherList, retentionsList, errors, taxFlags,
             totalVatAmount, totalWithHeldAmount, totalVatWithHeldAmount,
             totalRetentionCredit, totalCredit, totalDebit, totalNetAmount, amountWithoutTaxes,
-            saveButtonText,
+            saveButtonText, currencyCode, currencySymbol, proposedJournalEntries, proposedJournalTotals,
             saveVoucher, previewVoucher, addVoucherRow, removeVoucherRow,
             onWithHoldChange, addRetentionRow, removeRetentionRow, onRetentionAmountChange,
             onTaxFlagChange, reComputeVoucherSummary, fmtNum,

@@ -225,6 +225,7 @@ public interface ITopazErpApi
     //chart of account detail
     
     Task<CoaDetailResponse> GetAccountDetails(int pageNo, int pageSize, string query, bool isActive);
+    Task<CoaDetailResponse> GetBankGlAccounts();
     Task<CoaDetailResponse> CheckAccountNo(string accountNo);
     Task<CoaDetailResponse> GetLocalAccounts();
     Task<BaseApiResponse> CreateAccountDetail(object dto);
@@ -277,8 +278,9 @@ public interface ITopazErpApi
     
     //vouchers
     Task<VoucherResponse> GetVouchers(DateTime startDate, DateTime endDate, string voucherType);
+    Task<VoucherDetailResponse> GetVoucherDetails(Guid id);
     Task<BaseApiResponse> CreateVoucher(object dto);
-    Task<BaseApiResponse> UpdateVoucher(object dto);
+    Task<BaseApiResponse> UpdateVoucher(object dto, Guid? id = null);
     Task<BaseApiResponse> DeleteVoucher(Guid id);
     Task<BaseApiResponse> PostVoucher(Guid id);
     

@@ -103,6 +103,13 @@ public class VoucherResponse: BaseApiResponseModel
     
 }
 
+public class VoucherDetailResponse: BaseApiResponseModel
+{
+    [JsonProperty("result")]  
+    public Voucher Result { get; set; }
+}
+
+
 public class AuditLogResponse : BaseApiResponseModel
 {
     [JsonProperty("result")]

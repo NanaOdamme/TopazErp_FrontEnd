@@ -19,9 +19,12 @@ const app = Vue.createApp({
             supplierSearch: '',
 
             statusList: [
-                { id: 'Active', name: 'Active' },
-                { id: 'Inactive', name: 'Inactive' },
-                { id: 'Pending', name: 'Pending' }
+                { id: 1, name: 'Active' },
+                { id: 2, name: 'Inactive' },
+                { id: 3, name: 'Pending' },
+                { id: 4, name: 'Suspended' },
+                { id: 5, name: 'Archived' },
+                { id: 6, name: 'Dormant' }
             ],
 
             defaultGlSetup: {

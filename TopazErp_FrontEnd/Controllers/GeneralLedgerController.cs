@@ -1,4 +1,4 @@
-using System.Dynamic;
+
 using Microsoft.AspNetCore.Mvc;
 using TopazErp_FrontEnd.Models;
 using TopazErp_FrontEnd.Services;
@@ -54,6 +54,13 @@ public class GeneralLedgerController : Controller
     {
         return View();
     }
+    
+    public IActionResult Reports()
+    {
+        return View();
+    }
+    
+    
 
     [HttpGet]
     public IActionResult CreateCustomer([FromQuery] Guid? id = null)
@@ -132,19 +139,49 @@ public class GeneralLedgerController : Controller
         return View();
     }
 
-    public IActionResult SupplierPaymentVoucher()
+    public IActionResult SupplierPaymentVoucher(Guid? id = null)
     {
+        if (id.HasValue && id.Value != Guid.Empty)
+        {
+            ViewBag.VoucherId = id.Value;
+        }
         return View();
     }
 
-    public IActionResult EmployeePaymentVoucher()
+    public IActionResult SupplierPaymentVoucherEdit(Guid id)
     {
+        ViewBag.VoucherId = id;
+        return View("SupplierPaymentVoucher");
+    }
+
+    public IActionResult EmployeePaymentVoucher(Guid? id = null)
+    {
+        if (id.HasValue && id.Value != Guid.Empty)
+        {
+            ViewBag.VoucherId = id.Value;
+        }
         return View();
     }
 
-    public IActionResult CustomerReceiptVoucher()
+    public IActionResult EmployeePaymentVoucherEdit(Guid id)
     {
+        ViewBag.VoucherId = id;
+        return View("EmployeePaymentVoucher");
+    }
+
+    public IActionResult CustomerReceiptVoucher(Guid? id = null)
+    {
+        if (id.HasValue && id.Value != Guid.Empty)
+        {
+            ViewBag.VoucherId = id.Value;
+        }
         return View();
+    }
+
+    public IActionResult CustomerReceiptVoucherEdit(Guid id)
+    {
+        ViewBag.VoucherId = id;
+        return View("CustomerReceiptVoucher");
     }
     
     public IActionResult ImprestCategories()
@@ -198,8 +235,7 @@ public class GeneralLedgerController : Controller
 
         var voucherBatchSystemNumber = systemNumbers?.Result?.FirstOrDefault(s =>
             !string.IsNullOrEmpty(s.Key) &&
-            (s.Key.Contains("voucher", StringComparison.OrdinalIgnoreCase) ||
-             s.Key.Contains("pv", StringComparison.OrdinalIgnoreCase)))
+            (s.Key.Contains("gl-voucher-batch-id", StringComparison.OrdinalIgnoreCase)) )
             ?? systemNumbers?.Result?.FirstOrDefault();
 
         return Json(new
@@ -260,7 +296,7 @@ public class GeneralLedgerController : Controller
         object VoucherStat(VoucherResponse? r) => new
         {
             count = r?.Result?.Count ?? 0,
-            value = r?.Result?.Sum(v => v.BaseAmount) ?? 0m
+            value = r?.Result?.Sum(v => v.WithholdingSettings.BaseAmount) ?? 0m
         };
 
         return Json(new
@@ -363,6 +399,12 @@ public class GeneralLedgerController : Controller
     public async Task<IActionResult> GetAccountDetails([FromQuery]int pageNo = 1, [FromQuery]int pageSize = 2000, [FromQuery]string query = null, [FromQuery]bool isActive = true)
     {
         var results = await _topazErpApi.GetAccountDetails(pageNo, pageSize, query, isActive);
+        return Json(results);
+    }
+    
+    public async Task<IActionResult> GetBankGlAccounts()
+    {
+        var results = await _topazErpApi.GetBankGlAccounts();
         return Json(results);
     }
     
@@ -688,10 +730,25 @@ public class GeneralLedgerController : Controller
         return Json(new { success = true });
     }
     
+    // company profile (used by preview pages)
+    [HttpGet]
+    public async Task<IActionResult> GetBusinessProfile()
+    {
+        var result = await _topazErpApi.GetBusinessProfile();
+        return Json(result);
+    }
+
     // vouchers
     public async Task<IActionResult> GetVoucherData([FromQuery] DateTime startDate, DateTime endDate, string voucherType)
     {
         var results = await _topazErpApi.GetVouchers(startDate, endDate, voucherType);
+        return Json(results);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetVoucherDetails([FromQuery] Guid id)
+    {
+        var results = await _topazErpApi.GetVoucherDetails(id);
         return Json(results);
     }
     
@@ -701,9 +758,11 @@ public class GeneralLedgerController : Controller
         return Json(results);
     }
 
-    public async Task<IActionResult> UpdateVoucher([FromBody] object dto)
+    [HttpPost]
+    [HttpPut]
+    public async Task<IActionResult> UpdateVoucher([FromBody] object dto, [FromQuery] Guid? id = null)
     {
-        var results = await _topazErpApi.UpdateVoucher(dto);
+        var results = await _topazErpApi.UpdateVoucher(dto, id);
         return Json(results);
     }
     

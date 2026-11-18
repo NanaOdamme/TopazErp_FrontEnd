@@ -88,6 +88,20 @@
     <script src="~/js/components/dataTable.js" asp-append-version="true"></script>
     <script src="~/js/components/select-input.js" asp-append-version="true"></script>
 
+    <!-- Client-side Report Viewer (BusinessDesk) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        if (window.pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc =
+                'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.20/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.20/vfs_fonts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+    <script src="~/js/gl/voucher-report.js" asp-append-version="true"></script>
+    <script src="~/js/components/report-viewer.js" asp-append-version="true"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
@@ -293,12 +307,14 @@
                             <span class="menu-title">Currencies</span>
                         </a>
                     </li>
+                    
                     <li class="nav-item">
                         <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="BanksBranches">
                             <i class="bi bi-bank" aria-hidden="true"></i>
                             <span class="menu-title">Banks &amp; Branches</span>
                         </a>
                     </li>
+                    
                     <li class="nav-item">
                         <a class="menu-link" asp-area="" asp-controller="GeneralLedger" asp-action="Suppliers">
                             <i class="bi bi-truck" aria-hidden="true"></i>
@@ -440,49 +456,11 @@
                 </ul>
             </li>
             
-            <li class="nav-item has-sub">
-                <a href="#" class="menu-link">
-                    <i class="bi bi-bar-chart-line" aria-hidden="true"></i>
-                    <span class="menu-title"> Reports</span>
+            <li class="nav-item">
+                <a class="menu-link" asp-controller="GeneralLedger" asp-action="Reports">
+                    <i class="bi bi-receipt-cutoff" aria-hidden="true"></i>
+                    <span class="menu-title">Reports</span>
                 </a>
-                <ul class="menu-content">
-                    <li class="nav-item">
-                        <a class="menu-link" href="#" onclick="return false;">
-                            <i class="bi bi-scale" aria-hidden="true"></i>
-                            <span class="menu-title">Trial Balance</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="menu-link" href="#" onclick="return false;">
-                            <i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i>
-                            <span class="menu-title">Balance Sheet</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="menu-link" href="#" onclick="return false;">
-                            <i class="bi bi-graph-up" aria-hidden="true"></i>
-                            <span class="menu-title">Profit &amp; Loss (P&amp;L)</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="menu-link" href="#" onclick="return false;">
-                            <i class="bi bi-journal-richtext" aria-hidden="true"></i>
-                            <span class="menu-title">General Ledger Summary</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="menu-link" href="#" onclick="return false;">  
-                            <i class="bi bi-activity" aria-hidden="true"></i>
-                            <span class="menu-title">Cash Flow Statement</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="Manage" asp-action="AuditTrail">
-                            <i class="bi bi-shield-lock" aria-hidden="true"></i>
-                            <span class="menu-title">Audit Trail &amp; Logs</span>
-                        </a>
-                    </li>
-                </ul>
             </li>
 
         </ul>

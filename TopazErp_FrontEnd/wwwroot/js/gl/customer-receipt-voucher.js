@@ -4,6 +4,7 @@ createApp({
     setup() {
         // ── State ────────────────────────────────────────────────────
         const isLoading = ref(false);
+        const showSaveMenu = ref(false);
         const emptyGuid = '00000000-0000-0000-0000-000000000000';
 
         const customerId      = ref('');
@@ -53,6 +54,20 @@ createApp({
             return isRecordCreated.value ? 'Create New' : 'Save';
         });
 
+        const currencyCode = computed(() => {
+            const c = currencyList.value.find(x => x.id === currencyId.value);
+            return c?.currencyCode || 'GHS';
+        });
+
+        const currencySymbol = computed(() => {
+            const code = currencyCode.value;
+            if (!code || code === 'GHS') return 'GH¢';
+            if (code === 'USD') return '$';
+            if (code === 'EUR') return '€';
+            if (code === 'GBP') return '£';
+            return code + ' ';
+        });
+
         // ── Helpers ───────────────────────────────────────────────────
         function uuid() {
             return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
@@ -66,11 +81,27 @@ createApp({
             return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n ?? 0);
         }
 
+        function formatAccountDisplay(account) {
+            if (!account) return '--';
+            if (account.accountNo && account.accountName) {
+                return `${account.accountNo} — ${account.accountName}`;
+            }
+            if (account.accountIdentifier) {
+                return account.accountIdentifier.replace(' - ', ' — ');
+            }
+            return account.accountName || '--';
+        }
+
         function toastHandler(type, message = 'An unexpected error occurred.') {
-            toastr.options = { closeButton: true, progressBar: true, showMethod: 'fadeIn', hideMethod: 'fadeOut', timeOut: 10000 };
-            if (type === 'warning') toastr.warning('', message);
-            else if (type === 'error') toastr.error('', message);
-            else toastr.success('', message);
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'success',
+                title: message,
+                showConfirmButton: false,
+                timer: 4000,
+                timerProgressBar: true,
+            });
         }
 
         function parseCostCenterHierachy(dataArr) {
@@ -137,88 +168,148 @@ createApp({
         // ── API calls ─────────────────────────────────────────────────
         async function initReceiptVoucher() {
             try {
-                const res = await axios.get('/LedgerDataEntry/InitSupplierPvEntry');
-                res.data.accounts.forEach(v => { v.accountIdentifier = `${v.accountNo} - ${v.accountName}`; });
-                accountsList.value = res.data.accounts;
-                costCenterHierachyList.value = parseCostCenterHierachy(res.data.costCenters);
+                let res;
+                try {
+                    res = await axios.get('/GeneralLedger/InitSupplierPvEntry');
+                } catch {
+                    res = await axios.get('/LedgerDataEntry/InitSupplierPvEntry');
+                }
+                const data = res.data?.result || res.data;
+                const rawAccounts = data.accounts?.data || data.accounts || [];
+                rawAccounts.forEach(v => { v.accountIdentifier = `${v.accountNo} - ${v.accountName}`; });
+                accountsList.value = rawAccounts;
+                const rawCostCenters = data.costCenters?.data || data.costCenters || [];
+                costCenterHierachyList.value = parseCostCenterHierachy(rawCostCenters);
 
-                if (res.data.voucherBatchSystemNumber) {
-                    batchNo.value = `${res.data.voucherBatchSystemNumber.prefix}${res.data.voucherBatchSystemNumber.lastNo}${res.data.voucherBatchSystemNumber.suffix}`;
+                if (data.voucherBatchSystemNumber && !batchNo.value) {
+                    const sn = data.voucherBatchSystemNumber;
+                    batchNo.value = `${sn.prefix || ''}${sn.lastNo || ''}${sn.suffix || ''}`;
                 }
 
-                const defaultBankId = res.data.defaultGlNumbers ? res.data.defaultGlNumbers.accountsReceivableBankAccountId : '';
-                if (defaultBankId) {
+                const defaultBankId = data.defaultGlNumbers ? (data.defaultGlNumbers.accountsReceivableBankAccountId || data.defaultGlNumbers.accountReceivableBankAccountId) : '';
+                if (defaultBankId && !bankAccountId.value) {
                     bankAccountId.value = defaultBankId;
                     const accountInfo = accountsList.value.find(a => a.id === defaultBankId);
                     if (accountInfo && accountInfo.currencyId) currencyId.value = accountInfo.currencyId;
                 }
-            } catch {
+            } catch (err) {
+                console.error('Init receipt voucher error:', err);
                 toastHandler('error', 'Voucher initialization failed.');
             }
         }
 
         async function getCustomers() {
             try {
-                const res = await axios.get('/SharedResource/GetCustomers');
-                customerList.value = res.data;
+                const res = await axios.get('/SharedResource/GetCustomers?pageNo=1&pageSize=500');
+                const raw = res.data?.result?.items
+                    || res.data?.result?.data
+                    || res.data?.result
+                    || res.data?.data
+                    || (Array.isArray(res.data) ? res.data : []);
+                customerList.value = raw;
             } catch {
-                toastHandler('error', 'Unable to retrieve customers.');
+                try {
+                    const res2 = await axios.get('/SharedResource/GetCustomers');
+                    customerList.value = res2.data?.result || res2.data || [];
+                } catch {
+                    toastHandler('error', 'Unable to retrieve customers.');
+                }
             }
         }
 
         async function getBanks() {
             try {
-                const res = await axios.get('/SharedResource/GetBanks');
-                bankList.value = res.data;
+                const res = await axios.get('/SharedResource/GetBanks?pageNo=1&pageSize=1000');
+                const raw = res.data?.result?.data
+                    || res.data?.result
+                    || res.data?.data
+                    || (Array.isArray(res.data) ? res.data : []);
+                bankList.value = raw;
             } catch {
-                toastHandler('error', 'Unable to retrieve banks.');
+                try {
+                    const res2 = await axios.get('/SharedResource/GetBanks');
+                    bankList.value = res2.data?.result || res2.data || [];
+                } catch {
+                    toastHandler('error', 'Unable to retrieve banks.');
+                }
             }
         }
 
         async function getCurrencies() {
             try {
-                const res = await axios.get('/SharedResource/GetCurrencys');
-                currencyList.value = res.data;
+                const res = await axios.get('/SharedResource/GetCurrencies?pageNo=1&pageSize=100');
+                const raw = res.data?.result?.data
+                    || res.data?.result
+                    || res.data?.data
+                    || (Array.isArray(res.data) ? res.data : []);
+                currencyList.value = raw;
             } catch {
-                toastHandler('error', 'Unable to retrieve currencies.');
+                try {
+                    const res2 = await axios.get('/SharedResource/GetCurrencys');
+                    currencyList.value = res2.data?.result || res2.data || [];
+                } catch {
+                    toastHandler('error', 'Unable to retrieve currencies.');
+                }
             }
         }
 
         async function loadVoucherDetails() {
             try {
-                const res = await axios.get('/LedgerDataEntry/GetVoucherDetails?id=' + voucherId.value);
-                const data = res.data.voucherInfo;
-                if (res.data.proposedJournalHeader) {
-                    proposedJournalHeaderId.value = res.data.proposedJournalHeader.id;
-                }
-                if (res.data.proposedJournalDetails) {
-                    proposedJournalDetailIdList.value = res.data.proposedJournalDetails.map(a => a.id);
+                let res;
+                try {
+                    res = await axios.get('/GeneralLedger/GetVoucherDetails?id=' + voucherId.value);
+                } catch {
+                    res = await axios.get('/LedgerDataEntry/GetVoucherDetails?id=' + voucherId.value);
                 }
 
-                customerId.value = data.customerId;
-                bankAccountId.value = data.bankAccountId;
-                currencyId.value = data.currencyId;
-                bankId.value = data.bankId || '';
-                modePayment.value = data.modeOfPayment || 'Cash';
-                voucherEntryDate.value = data.voucherEntryDate ? moment(data.voucherEntryDate).format('YYYY-MM-DD') : moment().format('YYYY-MM-DD');
-                paymentDate.value = data.paymentDate ? moment(data.paymentDate).format('YYYY-MM-DD') : moment().format('YYYY-MM-DD');
-                batchNo.value = data.batchNo || '';
-                chequeNo.value = data.chequeNo || '';
+                // Decompose the revised Voucher model (result or direct object)
+                const v = res.data?.result || res.data?.voucherInfo || res.data;
+                if (!v) return;
 
-                voucherList.value = (data.details || []).map(v => ({
-                    id: v.id || uuid(),
+                // ── 1. Root Voucher Header Fields ─────────────────────────────
+                if (v.id && v.id !== emptyGuid) voucherId.value = v.id;
+                if (v.customerId && v.customerId !== emptyGuid) customerId.value = v.customerId;
+                bankAccountId.value = v.bankAccountId || '';
+                currencyId.value = v.currencyId || '';
+                currencyRate.value = v.currencyRate != null ? v.currencyRate : null;
+                isMultiCurrency.value = Boolean(v.isMultiCurrency);
+                bankId.value = (v.bankId && v.bankId !== emptyGuid) ? v.bankId : '';
+                modePayment.value = v.modePayment || v.modeOfPayment || 'Cash';
+                voucherEntryDate.value = v.voucherEntryDate ? moment(v.voucherEntryDate).format('YYYY-MM-DD') : moment().format('YYYY-MM-DD');
+                paymentDate.value = v.paymentDate ? moment(v.paymentDate).format('YYYY-MM-DD') : moment().format('YYYY-MM-DD');
+                batchNo.value = v.batchNo || '';
+                chequeNo.value = v.chequeNo || '';
+
+                // ── 2. Details (Transaction Lines) ───────────────────────────
+                const lineItems = v.details || v.lines || [];
+                voucherList.value = lineItems.map(d => ({
+                    id: d.id || uuid(),
                     withHold: false,
-                    invoiceNo: v.invoiceNo || '',
-                    referenceNo: v.referenceNo || '',
-                    accountId: v.debitAccountId ? v.debitAccountId.toLowerCase() : (v.accountId || ''),
-                    description: v.description || '',
-                    localDebitAmount: v.amount || v.debitAmount || 0,
-                    foreignDebitAmount: v.foreignDebitAmount || 0,
-                    ouId: v.ouId || '',
+                    invoiceNo: d.invoiceNo || '',
+                    referenceNo: d.referenceNo || '',
+                    accountId: d.accountId ? String(d.accountId).toLowerCase() : (d.debitAccountId ? String(d.debitAccountId).toLowerCase() : ''),
+                    debitAccountName: d.debitAccountName || '',
+                    description: d.description || '',
+                    localDebitAmount: parseFloat(d.localDebitAmount != null ? d.localDebitAmount : (d.amount || d.debitAmount || 0)),
+                    foreignDebitAmount: parseFloat(d.foreignDebitAmount || 0),
+                    ouId: d.ouId ? String(d.ouId).toLowerCase() : emptyGuid,
+                    ouName: d.ouName || '--',
                 }));
 
+                // ── 3. Proposed Journal Entry ────────────────────────────────
+                const pj = v.proposedJournalEntries || v.proposedJournalEntry || res.data?.proposedJournalHeader;
+                if (pj) {
+                    proposedJournalHeaderId.value = pj.id || pj.headerId || '';
+                    if (Array.isArray(pj.detailIds)) {
+                        proposedJournalDetailIdList.value = pj.detailIds;
+                    } else if (Array.isArray(res.data?.proposedJournalDetails)) {
+                        proposedJournalDetailIdList.value = res.data.proposedJournalDetails.map(a => a.id);
+                    }
+                }
+
                 computeTotal();
-            } catch {
+            } catch (err) {
+                console.error('loadVoucherDetails error:', err);
                 toastHandler('error', 'Unable to load voucher details.');
             }
         }
@@ -300,6 +391,88 @@ createApp({
             journalEntryList.value = journalLines;
         }
 
+        // ── Proposed Journal Entries (live preview) ──────────────────
+        const proposedJournalEntries = computed(() => {
+            const lines = [];
+            const totalAmount = voucherList.value.reduce(
+                (sum, v) => sum + parseFloat(v.localDebitAmount || v.debitAmount || 0), 0
+            );
+
+            const firstOuId = voucherList.value.length ? (voucherList.value[0].ouId || emptyGuid) : emptyGuid;
+            const firstOuInfo = costCenterHierachyList.value.find(x => x.id === firstOuId);
+            const firstOuName = firstOuInfo ? firstOuInfo.name : '--';
+            const firstRef  = voucherList.value.length ? (voucherList.value[0].referenceNo || batchNo.value) : batchNo.value;
+
+            // 1. DEBIT: Bank / Cash GL (money received in)
+            const bankAccountInfo = accountsList.value.find(x => x.id === bankAccountId.value);
+            if (bankAccountId.value || totalAmount > 0) {
+                lines.push({
+                    accountId: bankAccountId.value || emptyGuid,
+                    accountDisplay: formatAccountDisplay(bankAccountInfo),
+                    description: 'Cash / bank received',
+                    debitAmount: totalAmount,
+                    creditAmount: 0,
+                    ouId: firstOuId,
+                    ouName: firstOuName,
+                    referenceNumber: firstRef,
+                    chequeNo: chequeNo.value || '',
+                });
+            }
+
+            // 2. CREDIT: AR / Customer GL lines
+            if (voucherList.value.length === 1) {
+                const v = voucherList.value[0];
+                const arAccInfo = v.accountId ? accountsList.value.find(x => x.id === v.accountId) : null;
+                const rowAmt = parseFloat(v.localDebitAmount || v.debitAmount || 0);
+                const ouInfo = costCenterHierachyList.value.find(x => x.id === v.ouId);
+                lines.push({
+                    accountId: v.accountId || emptyGuid,
+                    accountDisplay: formatAccountDisplay(arAccInfo),
+                    description: v.description || 'Customer receipt',
+                    debitAmount: 0,
+                    creditAmount: rowAmt,
+                    ouId: v.ouId || emptyGuid,
+                    ouName: ouInfo ? ouInfo.name : '--',
+                    referenceNumber: v.referenceNo || firstRef,
+                    chequeNo: chequeNo.value || '',
+                });
+            } else {
+                voucherList.value.forEach(v => {
+                    const arAccInfo = v.accountId ? accountsList.value.find(x => x.id === v.accountId) : null;
+                    const rowAmt = parseFloat(v.localDebitAmount || v.debitAmount || 0);
+                    const ouInfo = costCenterHierachyList.value.find(x => x.id === v.ouId);
+                    if (v.accountId || rowAmt > 0) {
+                        lines.push({
+                            accountId: v.accountId || emptyGuid,
+                            accountDisplay: formatAccountDisplay(arAccInfo),
+                            description: v.description || 'Customer receipt',
+                            debitAmount: 0,
+                            creditAmount: rowAmt,
+                            ouId: v.ouId || emptyGuid,
+                            ouName: ouInfo ? ouInfo.name : '--',
+                            referenceNumber: v.referenceNo || firstRef,
+                            chequeNo: chequeNo.value || '',
+                        });
+                    }
+                });
+            }
+
+            return lines;
+        });
+
+        const proposedJournalTotals = computed(() => {
+            let debit = 0;
+            let credit = 0;
+            proposedJournalEntries.value.forEach(row => {
+                debit += parseFloat(row.debitAmount || 0);
+                credit += parseFloat(row.creditAmount || 0);
+            });
+            debit = roundNumber(debit);
+            credit = roundNumber(credit);
+            const isBalanced = Math.abs(debit - credit) < 0.009;
+            return { debit, credit, isBalanced };
+        });
+
         async function saveJournal() {
             rebuildJournalEntryList();
             const totalAmount = voucherList.value.reduce(
@@ -317,16 +490,21 @@ createApp({
             };
 
             try {
-                await axios.post('/LedgerDataEntry/CreateJournal', payload);
+                try {
+                    await axios.post('/GeneralLedger/SaveJournal', payload);
+                } catch {
+                    await axios.post('/LedgerDataEntry/CreateJournal', payload);
+                }
                 journalEntryList.value = [];
                 isLoading.value = false;
 
                 if (voucherId.value) {
                     try {
-                        const res = await axios.get('/LedgerDataEntry/GetVoucherDetails?id=' + voucherId.value);
-                        if (res.data && res.data.proposedJournalHeader) {
-                            proposedJournalHeaderId.value = res.data.proposedJournalHeader.id;
-                            proposedJournalDetailIdList.value = (res.data.proposedJournalDetails || []).map(a => a.id);
+                        const res = await axios.get('/GeneralLedger/GetVoucherDetails?id=' + voucherId.value);
+                        const pj = res.data?.result?.proposedJournalEntries || res.data?.proposedJournalHeader;
+                        if (pj) {
+                            proposedJournalHeaderId.value = pj.id;
+                            proposedJournalDetailIdList.value = pj.detailIds || (res.data.proposedJournalDetails || []).map(a => a.id);
                         }
                     } catch {}
                 }
@@ -336,9 +514,126 @@ createApp({
             }
         }
 
+        /**
+         * Builds the payload matching the revised C# Voucher model in GeneralLedgerModelCollection.cs.
+         * Contains root header properties and the decomposed child cards:
+         *   - details:                List<GlVoucherDetail> (Transaction Lines)
+         *   - withholdingSettings:    WithholdingSettings (clean/zeroed for receipt)
+         *   - retentions:             List<VoucherRetentionDto> (empty list)
+         *   - proposedJournalEntries: ProposedJournalEntry (Proposed Journal lines, balance, totals)
+         */
+        function buildVoucherPayload() {
+            rebuildJournalEntryList();
+
+            const customerInfo    = customerList.value.find(a => a.id === customerId.value);
+            const bankAccountInfo = accountsList.value.find(a => a.id === bankAccountId.value);
+            const bankInfo        = bankList.value.find(a => a.id === bankId.value);
+            const currencyInfo    = currencyList.value.find(a => a.id === currencyId.value);
+
+            // 1. Details (List<GlVoucherDetail>)
+            const details = voucherList.value.map(v => {
+                const debitAccountInfo = accountsList.value.find(a => a.id === v.accountId);
+                const ouInfo = costCenterHierachyList.value.find(x => x.id === v.ouId);
+                return {
+                    id:                 (v.id && v.id !== emptyGuid) ? v.id : uuid(),
+                    withHold:           false,
+                    invoiceNo:          v.invoiceNo || '',
+                    referenceNo:        v.referenceNo || '',
+                    accountId:          v.accountId,
+                    debitAccountName:   debitAccountInfo ? debitAccountInfo.accountIdentifier : (v.debitAccountName || ''),
+                    description:        v.description || '',
+                    localDebitAmount:   parseFloat(v.localDebitAmount || 0),
+                    foreignDebitAmount: parseFloat(v.foreignDebitAmount || 0),
+                    ouId:               v.ouId ? v.ouId : emptyGuid,
+                    ouName:             ouInfo ? ouInfo.name : (v.ouName || '--'),
+                    hasImprest:         false,
+                };
+            });
+
+            // 2. Withholding Settings & Summary (WithholdingSettings - zeroed for Customer Receipt)
+            const withholdingSettings = {
+                hasWithHolding:            false,
+                withHoldingRate:           0,
+                taxType:                   '',
+                withHoldingAccountId:      emptyGuid,
+                withHoldingAccountName:    '',
+                vatWithHoldingAccountId:   emptyGuid,
+                vatWithHoldingAccountName: '',
+                totalVatAmount:            0,
+                baseAmount:                0,
+                taxFlags:                  [],
+                summary: {
+                    grossAmount:      parseFloat(totalDebit.value || 0),
+                    totalWithheld:    0,
+                    totalRetained:    0,
+                    totalVatWithheld: 0,
+                    netAmount:        parseFloat(totalNetAmount.value || 0),
+                },
+            };
+
+            // 3. Retentions (empty for Customer Receipt)
+            const retentions = [];
+
+            // 4. Proposed Journal Entry (ProposedJournalEntry)
+            const proposedJournalEntriesObj = {
+                id:          (proposedJournalHeaderId.value && proposedJournalHeaderId.value !== emptyGuid) ? proposedJournalHeaderId.value : uuid(),
+                detailIds:   proposedJournalDetailIdList.value || [],
+                isBalanced:  Boolean(proposedJournalTotals.value.isBalanced),
+                totalDebit:  parseFloat(proposedJournalTotals.value.debit || 0),
+                totalCredit: parseFloat(proposedJournalTotals.value.credit || 0),
+                lines: proposedJournalEntries.value.map(l => ({
+                    accountId:       l.accountId || emptyGuid,
+                    accountDisplay:  l.accountDisplay || '',
+                    description:     l.description || '',
+                    debitAmount:     parseFloat(l.debitAmount || 0),
+                    creditAmount:    parseFloat(l.creditAmount || 0),
+                    ouId:            l.ouId || emptyGuid,
+                    ouName:          l.ouName || '',
+                    referenceNumber: l.referenceNumber || '',
+                    chequeNo:        l.chequeNo || '',
+                })),
+            };
+
+            // Root Voucher matching C# class Voucher
+            return {
+                id:               voucherId.value || emptyGuid,
+                supplierId:       emptyGuid,
+                supplierName:     '',
+                employeeId:       emptyGuid,
+                employeeName:     '',
+                customerId:       customerId.value || emptyGuid,
+                customerName:     customerInfo ? customerInfo.name : '',
+                voucherType:      'customer',
+                voucherEntryDate: voucherEntryDate.value,
+                bankAccountId:    bankAccountId.value || emptyGuid,
+                bankAccountName:  bankAccountInfo ? bankAccountInfo.accountIdentifier : '',
+                bankGlAccountName: bankAccountInfo ? bankAccountInfo.accountName : '',
+                bankId:           bankId.value || emptyGuid,
+                bankName:         bankInfo ? bankInfo.name : '',
+                currencyId:       currencyId.value,
+                currencyName:     currencyInfo ? currencyInfo.currencyName : '',
+                currencyCode:     currencyInfo ? currencyInfo.currencyCode : '',
+                currencyRate:     currencyRate.value != null ? parseFloat(currencyRate.value) : 1,
+                isMultiCurrency:  Boolean(isMultiCurrency.value),
+                modePayment:      modePayment.value,
+                paymentDate:      paymentDate.value || voucherEntryDate.value,
+                batchNo:          batchNo.value,
+                chequeNo:         modePayment.value === 'Cheque' ? chequeNo.value : '',
+                isPosted:         false,
+                grossAmount:      parseFloat(totalDebit.value || 0),
+                netAmount:        parseFloat(totalNetAmount.value || 0),
+
+                details,
+                withholdingSettings,
+                retentions,
+                proposedJournalEntries: proposedJournalEntriesObj,
+            };
+        }
+
         // ── Save Voucher ──────────────────────────────────────────────
-        async function saveVoucher() {
-            if (isRecordCreated.value) {
+        async function saveVoucher(andPreview = false) {
+            showSaveMenu.value = false;
+            if (isRecordCreated.value && !andPreview) {
                 createNewVoucher();
                 return;
             }
@@ -367,107 +662,36 @@ createApp({
 
             isLoading.value = true;
 
-            const customerInfo = customerList.value.find(a => a.id === customerId.value);
-            const bankAccountInfo = accountsList.value.find(a => a.id === bankAccountId.value);
-            const bankInfo = bankList.value.find(a => a.id === bankId.value);
-            const currencyInfo = currencyList.value.find(a => a.id === currencyId.value);
-
-            const payload = {
-                supplierId: emptyGuid,
-                supplierName: '',
-                customerId: customerId.value,
-                customerName: customerInfo ? customerInfo.name : '',
-                employeeId: emptyGuid,
-                employeeName: '',
-                voucherEntryDate: voucherEntryDate.value,
-                batchNo: batchNo.value,
-                chequeNo: chequeNo.value,
-
-                currencyId: currencyId.value,
-                currencyName: currencyInfo ? currencyInfo.currencyName : '',
-                currencyCode: currencyInfo ? currencyInfo.currencyCode : '',
-                buyRate: currencyInfo ? currencyInfo.buyRate : '',
-                sellRate: currencyInfo ? currencyInfo.sellRate : '',
-
-                bankAccountId: bankAccountId.value,
-                bankAccountName: bankAccountInfo ? bankAccountInfo.accountIdentifier : '',
-                bankId: bankId.value || emptyGuid,
-                bankName: bankInfo ? bankInfo.name : '',
-
-                paymentDate: paymentDate.value || voucherEntryDate.value,
-                modePayment: modePayment.value,
-                paymentAmount: parseFloat(totalCredit.value || 0),
-
-                bankGlAccountName: bankAccountInfo ? bankAccountInfo.accountName : '',
-
-                hasWithHolding: false,
-                withHoldingRate: 0,
-                withHoldingAccountId: emptyGuid,
-                withHoldingAccountName: '',
-                vatWithHoldingAccountId: emptyGuid,
-                vatWithHoldingAccountName: '',
-
-                taxType: '',
-                hasGetFundLevy: false,
-                getFundLevyRate: 0,
-                hasNationalHealthInsuranceLevy: false,
-                nationalHealthInsuranceLevyRate: 0,
-                hasCommunicationServiceTax: false,
-                communicationServiceTaxRate: 0,
-                hasVat: false,
-                vatRate: 0,
-                hasCovidTax: false,
-                covidTaxRate: 0,
-                hasVatWithhold: false,
-                withHoldingVatPercentage: withHoldingVatPercentage.value || 7,
-
-                grossAmount: parseFloat(totalDebit.value || 0),
-                netAmount: parseFloat(totalNetAmount.value || 0),
-                totalRetained: 0,
-                totalWithheld: 0,
-                totalVatWithheld: 0,
-                totalVatAmount: 0,
-                baseAmount: 0,
-                isPayment: true,
-                isMultiCurrency: isMultiCurrency.value,
-                proposedJournalHeaderId: proposedJournalHeaderId.value,
-                proposedJournalDetailIdList: proposedJournalDetailIdList.value,
-            };
-
-            if (isEditMode.value) {
-                payload.id = voucherId.value;
-            }
-
-            voucherList.value.forEach(v => {
-                v.debitAccountId = v.accountId;
-                v.debitAmount = parseFloat(v.localDebitAmount || 0);
-                v.foreignDebitAmount = parseFloat(v.foreignDebitAmount || 0);
-                v.amount = parseFloat(v.localDebitAmount || 0);
-                v.isWithHeld = false;
-                if (!v.id) v.id = uuid();
-
-                const debitAccountInfo = accountsList.value.find(a => a.id === v.accountId);
-                v.debitAccountName = debitAccountInfo ? debitAccountInfo.accountIdentifier : '';
-                v.ouId = v.ouId || emptyGuid;
-                const ouInfo = costCenterHierachyList.value.find(a => a.id === v.ouId);
-                v.ouName = ouInfo ? ouInfo.name : '--';
-            });
-
-            payload.details = voucherList.value;
-            payload.retensions = [];
-
-            const saveEndpoint = isEditMode.value ? '/LedgerDataEntry/UpdateVoucher' : '/LedgerDataEntry/CreateVoucher';
+            const payload = buildVoucherPayload();
+            const endpoint = isEditMode.value ? `/GeneralLedger/UpdateVoucher?id=${voucherId.value}` : '/GeneralLedger/CreateVoucher';
 
             try {
-                const response = await axios.post(saveEndpoint, payload);
-                if (response.data && response.data.id) {
-                    voucherId.value = response.data.id;
+                let response;
+                try {
+                    response = await axios.post(endpoint, payload);
+                } catch {
+                    const legacyEndpoint = isEditMode.value ? `/LedgerDataEntry/UpdateVoucher?id=${voucherId.value}` : '/LedgerDataEntry/CreateVoucher';
+                    response = await axios.post(legacyEndpoint, payload);
+                }
+
+                const createdId = response.data?.id || response.data?.result?.id || voucherId.value;
+                if (createdId && createdId !== emptyGuid) {
+                    voucherId.value = createdId;
                     isRecordCreated.value = true;
                 }
-                toastHandler('', `Customer Receipt voucher ${isEditMode.value ? 'updated' : 'saved'}.`);
+                toastHandler('success', `Customer Receipt voucher ${isEditMode.value ? 'updated' : 'saved'}.`);
                 await saveJournal();
-            } catch {
+
+                if (andPreview && createdId) {
+                    window.open('/LedgerDataEntry/ReceiptVoucherPreview?id=' + createdId, '_blank');
+                }
+
+                setTimeout(() => {
+                    window.location.href = '/GeneralLedger/Vouchers?tab=customer';
+                }, 1000);
+            } catch (err) {
                 isLoading.value = false;
+                console.error('Save voucher error:', err);
                 toastHandler('error', `Unable to ${isEditMode.value ? 'update' : 'create'} customer receipt voucher.`);
             }
         }
@@ -520,7 +744,7 @@ createApp({
             axios.post('/LedgerDataEntry/PostVouchers', { ids: [voucherId.value] })
                 .then(() => {
                     toastHandler('success', 'Voucher posted successfully.');
-                    setTimeout(() => { window.location.href = '/GeneralLedger/Vouchers'; }, 1500);
+                    setTimeout(() => { window.location.href = '/GeneralLedger/Vouchers?tab=customer'; }, 1500);
                 }).catch(() => {
                     isLoading.value = false;
                     toastHandler('error', 'Unable to post voucher.');
@@ -537,7 +761,7 @@ createApp({
             isLoading.value = true;
             axios.get('/LedgerDataEntry/DelVoucher?id=' + voucherId.value).then(() => {
                 toastHandler('success', 'Voucher deleted successfully.');
-                setTimeout(() => { window.location.href = '/GeneralLedger/Vouchers'; }, 1500);
+                setTimeout(() => { window.location.href = '/GeneralLedger/Vouchers?tab=customer'; }, 1500);
             }).catch(() => {
                 isLoading.value = false;
                 toastHandler('error', 'Unable to delete voucher.');
@@ -571,8 +795,14 @@ createApp({
 
         // ── Lifecycle ─────────────────────────────────────────────────
         onMounted(async () => {
-            if (typeof window.voucherId !== 'undefined' && window.voucherId && window.voucherId !== '00000000-0000-0000-0000-000000000000') {
-                voucherId.value = window.voucherId;
+            const urlParams = new URLSearchParams(window.location.search);
+            const queryId = urlParams.get('id');
+            const targetId = (typeof window.voucherId !== 'undefined' && window.voucherId && window.voucherId !== '00000000-0000-0000-0000-000000000000')
+                ? window.voucherId
+                : (queryId && queryId !== '00000000-0000-0000-0000-000000000000' ? queryId : '');
+
+            if (targetId) {
+                voucherId.value = targetId;
                 isEditMode.value = true;
             }
             if (typeof window.withHoldingVatPercentage !== 'undefined') {
@@ -586,6 +816,13 @@ createApp({
                 initReceiptVoucher()
             ]);
 
+            document.addEventListener('click', (e) => {
+                const wrapper = document.getElementById('saveMenuWrapper');
+                if (wrapper && !wrapper.contains(e.target)) {
+                    showSaveMenu.value = false;
+                }
+            });
+
             if (isEditMode.value) {
                 await loadVoucherDetails();
             } else {
@@ -594,13 +831,13 @@ createApp({
         });
 
         return {
-            isLoading, customerId, voucherEntryDate, paymentDate, bankAccountId,
+            isLoading, showSaveMenu, customerId, voucherEntryDate, paymentDate, bankAccountId,
             currencyId, currencyRate, isMultiCurrency, modePayment, batchNo, chequeNo,
             voucherId, isEditMode, isRecordCreated,
             customerList, accountsList, currencyList, costCenterHierachyList,
             voucherList, errors,
             totalCredit, totalDebit, totalNetAmount,
-            saveButtonText,
+            saveButtonText, currencyCode, currencySymbol, proposedJournalEntries, proposedJournalTotals,
             saveVoucher, previewVoucher, addVoucherRow, removeVoucherRow,
             computeTotal, onForeignAmountChange, postVoucher, deleteVoucher, fmtNum,
         };

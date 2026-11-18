@@ -144,6 +144,12 @@ const app = Vue.createApp({
             this.activeTab = key;
             this.selectedIds = [];
 
+            if (window.history.replaceState) {
+                const url = new URL(window.location);
+                url.searchParams.set('tab', key);
+                window.history.replaceState({}, '', url);
+            }
+
             if (!this.loadedTabs.has(key)) {
                 this.loadActiveTab();
             }
@@ -172,11 +178,11 @@ const app = Vue.createApp({
                 try {
                     response = await axios.get(`/GeneralLedger/GetVoucherData?${params}`);
                 } catch {
-                    response = await axios.get(`/GeneralLedger/GetVoucherData?${params}`);
+                    response = await axios.get(`/LedgerDataEntry/GetVoucherData?${params}`);
                 }
 
                 const raw = this._extractList(response);
-                this.supplierList = raw.map(v => this._mapVoucher(v));
+                this.supplierList = raw.map(v => this._mapVoucher(v, 'supplier'));
                 this._updateTabCount('supplier', this.supplierList.length);
                 this.loadedTabs.add('supplier');
             } catch (err) {
@@ -204,7 +210,7 @@ const app = Vue.createApp({
                 }
 
                 const raw = this._extractList(response);
-                this.employeeList = raw.map(v => this._mapVoucher(v));
+                this.employeeList = raw.map(v => this._mapVoucher(v, 'employee'));
                 this._updateTabCount('employee', this.employeeList.length);
                 this.loadedTabs.add('employee');
             } catch (err) {
@@ -232,7 +238,7 @@ const app = Vue.createApp({
                 }
 
                 const raw = this._extractList(response);
-                this.customerList = raw.map(v => this._mapVoucher(v));
+                this.customerList = raw.map(v => this._mapVoucher(v, 'customer'));
                 this._updateTabCount('customer', this.customerList.length);
                 this.loadedTabs.add('customer');
             } catch (err) {
@@ -249,40 +255,131 @@ const app = Vue.createApp({
 
         _extractList(response) {
             const res = response?.data;
-            return res?.result?.data || res?.result || res?.data || (Array.isArray(res) ? res : []);
+            if (!res) return [];
+            if (Array.isArray(res)) return res;
+            if (Array.isArray(res.result)) return res.result;
+            if (Array.isArray(res.result?.data)) return res.result.data;
+            if (Array.isArray(res.result?.items)) return res.result.items;
+            if (Array.isArray(res.data)) return res.data;
+            if (Array.isArray(res.data?.items)) return res.data.items;
+            return [];
         },
 
-        _mapVoucher(v) {
-            const getflNhil =
-                ((v.getFundLevyRate / 100) * v.baseAmount || 0) +
-                ((v.nationalHealthInsuranceLevyRate / 100) * v.baseAmount || 0);
+        _mapVoucher(v, tabKey = '') {
+            const type = v.voucherType || tabKey || this.activeTab;
 
-            const lines = (v.proposedJournalEntries || []).map(l => ({
-                id:              l.id || '',
-                batchNumber:     l.batchNumber || v.batchNumber || '',
-                referenceNumber: l.referenceNumber || '',
-                accountName:     l.accountName || '',
-                description:     l.description || '',
-                debitAmount:     parseFloat(l.debitAmount || 0),
-                creditAmount:    parseFloat(l.creditAmount || 0),
-                ouName:          l.ouName || '',
-                chequeNo:        l.chequeNo || '',
-            }));
+            // 1. Recipient display based on voucher type
+            let recipient = '—';
+            if (type === 'supplier') {
+                recipient = v.supplierName || v.recipient || '—';
+            } else if (type === 'employee') {
+                recipient = v.employeeName || v.recipient || '—';
+            } else if (type === 'customer') {
+                recipient = v.customerName || v.recipient || '—';
+            } else {
+                recipient = v.supplierName || v.employeeName || v.customerName || v.recipient || '—';
+            }
+
+            const batchNumber = v.batchNo || v.batchNumber || '—';
+            const wh = v.withholdingSettings || {};
+            const summary = wh.summary || {};
+            const baseAmount = parseFloat(wh.baseAmount != null ? wh.baseAmount : (v.baseAmount || 0));
+
+            // 2. Compute GETFL + NHIL from taxFlags or legacy rate fields
+            let getflNhil = 0;
+            if (Array.isArray(wh.taxFlags) && wh.taxFlags.length) {
+                wh.taxFlags.forEach(t => {
+                    if ((t.key === 'getfl' || t.key === 'nhil') && t.enabled) {
+                        const amt = (t.amount != null && parseFloat(t.amount) > 0)
+                            ? parseFloat(t.amount)
+                            : ((parseFloat(t.rate || 0) / 100) * baseAmount);
+                        getflNhil += amt;
+                    }
+                });
+            } else {
+                const getflRate = parseFloat(v.getFundLevyRate || 0);
+                const nhilRate  = parseFloat(v.nationalHealthInsuranceLevyRate || 0);
+                getflNhil = ((getflRate / 100) * baseAmount) + ((nhilRate / 100) * baseAmount);
+            }
+
+            // 3. Compute VAT Amount
+            let totalVatAmount = parseFloat(wh.totalVatAmount != null ? wh.totalVatAmount : (v.totalVatAmount || 0));
+            if (!totalVatAmount && Array.isArray(wh.taxFlags)) {
+                const vatFlag = wh.taxFlags.find(t => t.key === 'vat' && t.enabled);
+                if (vatFlag) {
+                    totalVatAmount = (vatFlag.amount != null && parseFloat(vatFlag.amount) > 0)
+                        ? parseFloat(vatFlag.amount)
+                        : ((parseFloat(vatFlag.rate || 0) / 100) * baseAmount);
+                }
+            }
+
+            // 4. Withheld, VAT Withheld, Gross, Net
+            const totalWithheld = parseFloat(
+                summary.totalWithheld != null ? summary.totalWithheld : (v.totalWithheld || 0)
+            );
+            const totalVatWithheld = parseFloat(
+                summary.totalVatWithheld != null ? summary.totalVatWithheld : (v.totalVatWithheld || 0)
+            );
+            const grossAmount = parseFloat(
+                v.grossAmount != null ? v.grossAmount : (summary.grossAmount || 0)
+            );
+            const netAmount = parseFloat(
+                v.netAmount != null ? v.netAmount : (summary.netAmount || 0)
+            );
+
+            // 5. Proposed journal entries for child grid
+            const rawLines = Array.isArray(v.proposedJournalEntries)
+                ? v.proposedJournalEntries
+                : (v.proposedJournalEntries?.lines || v.proposedJournalEntry?.lines || v.lines || []);
+
+            let lines = [];
+            if (rawLines.length > 0) {
+                lines = rawLines.map((l, idx) => ({
+                    id:              l.id || `${v.id || 'pj'}_${idx}`,
+                    batchNumber:     l.batchNumber || batchNumber || '',
+                    referenceNumber: l.referenceNumber || '',
+                    accountName:     l.accountDisplay || l.accountName || '',
+                    description:     l.description || '',
+                    debitAmount:     parseFloat(l.debitAmount || 0),
+                    creditAmount:    parseFloat(l.creditAmount || 0),
+                    ouName:          l.ouName || '--',
+                    chequeNo:        l.chequeNo || v.chequeNo || '',
+                }));
+            } else if (Array.isArray(v.details) && v.details.length > 0) {
+                lines = v.details.map((d, idx) => ({
+                    id:              d.id || `${v.id || 'det'}_${idx}`,
+                    batchNumber:     batchNumber || '',
+                    referenceNumber: d.referenceNo || '',
+                    accountName:     d.debitAccountName || '',
+                    description:     d.description || '',
+                    debitAmount:     parseFloat(d.localDebitAmount != null ? d.localDebitAmount : (d.amount || 0)),
+                    creditAmount:    0,
+                    ouName:          d.ouName || '--',
+                    chequeNo:        v.chequeNo || '',
+                }));
+            }
 
             return {
                 id:               v.id,
-                recipient:        v.recipient || '—',
-                batchNumber:      v.batchNumber || '—',
+                voucherType:      type,
+                recipient:        recipient,
+                supplierName:     v.supplierName || recipient,
+                employeeName:     v.employeeName || recipient,
+                customerName:     v.customerName || recipient,
+                batchNumber:      batchNumber,
+                batchNo:          batchNumber,
                 voucherEntryDate: v.voucherEntryDate ? String(v.voucherEntryDate).split('T')[0] : '',
-                currencyName:     v.currencyName || '—',
-                grossAmount:      parseFloat(v.grossAmount || 0),
-                baseAmount:       parseFloat(v.baseAmount  || 0),
+                paymentDate:      v.paymentDate ? String(v.paymentDate).split('T')[0] : '',
+                currencyName:     v.currencyCode || v.currencyName || 'GHS',
+                currencyCode:     v.currencyCode || 'GHS',
+                grossAmount:      grossAmount,
+                baseAmount:       baseAmount,
                 getflNhil:        parseFloat(getflNhil.toFixed(4)),
-                totalVatAmount:   parseFloat(v.totalVatAmount   || 0),
-                totalWithheld:    parseFloat(v.totalWithheld    || 0),
-                totalVatWithheld: parseFloat(v.totalVatWithheld || 0),
-                netAmount:        parseFloat(v.netAmount || 0),
-                isPosted:         Boolean(v.isPosted || v.IsPosted),
+                totalVatAmount:   totalVatAmount,
+                totalWithheld:    totalWithheld,
+                totalVatWithheld: totalVatWithheld,
+                netAmount:        netAmount,
+                isPosted:         Boolean(v.isPosted != null ? v.isPosted : v.IsPosted),
                 proposedJournalEntries: lines,
             };
         },
@@ -420,6 +517,25 @@ const app = Vue.createApp({
            DataGrid Event Handlers
         ══════════════════════════════════════════════════════ */
 
+        onOpenForm(event) {
+            const row = event?.row || event;
+            if (!row || !row.id) return;
+
+            // Close data-grid internal form modal if it tried to open
+            if (event?.grid && typeof event.grid.closeForm === 'function') {
+                event.grid.closeForm();
+            }
+
+            const id = encodeURIComponent(row.id);
+            if (this.activeTab === 'supplier') {
+                window.location.href = `/GeneralLedger/SupplierPaymentVoucherEdit?id=${id}`;
+            } else if (this.activeTab === 'employee') {
+                window.location.href = `/GeneralLedger/EmployeePaymentVoucherEdit?id=${id}`;
+            } else if (this.activeTab === 'customer') {
+                window.location.href = `/GeneralLedger/CustomerReceiptVoucherEdit?id=${id}`;
+            }
+        },
+
         async onDelete(event) {
             const rows = event?.rows || (event?.row ? [event.row] : []);
             if (!rows || rows.length === 0) return;
@@ -467,8 +583,16 @@ const app = Vue.createApp({
     },
 
     created() {
-        // Load default tab on mount
-        this.getSupplierVouchers();
+        // Read tab query parameter (e.g. ?tab=supplier | ?tab=employee | ?tab=customer) or hash
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab') || (window.location.hash ? window.location.hash.replace('#', '') : '');
+        const validTabs = ['supplier', 'employee', 'customer'];
+        if (tabParam && validTabs.includes(tabParam.toLowerCase())) {
+            this.activeTab = tabParam.toLowerCase();
+        }
+
+        // Load active tab on mount
+        this.loadActiveTab();
 
         // Close the create-menu dropdown when clicking outside
         document.addEventListener('click', (e) => {
