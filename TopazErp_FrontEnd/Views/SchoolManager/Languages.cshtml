@@ -20,7 +20,24 @@
     </div>
     <div class="card" data-card-title="Languages">
         <div id="app">
-
+            <data-grid
+                title="Languages"
+                :columns="columns"
+                :data="languages"
+                :theme="theme"
+                row-id="id"
+                label-key="name"
+                item-label="Language"
+                item-label-plural="Languages"
+                :page-size="10"
+                :selectable="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                :allow-add="false"
+                :allow-edit="false"
+                :allow-delete="false"
+            ></data-grid>
         </div>
     </div>
 </div>
+<script src="~/js/shared/vue3/languages.js" asp-append-version="true"></script>

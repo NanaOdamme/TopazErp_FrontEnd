@@ -8,15 +8,14 @@
         schoolProfile: '/SchoolManager/GetSchoolProfile',
         createSchoolProfile: '/SchoolManager/CreateSchoolProfile',
         updateSchoolProfile: '/SchoolManager/UpdateSchoolProfile',
-        // Shared profile (fallback source if the school profile action is missing)
         businessProfile: '/SharedResource/GetBusinessProfile',
-        // Lookups
         countries: '/jsonDataSample/countries.json',
-        countryStates: '/SharedResource/GetCountryStates',
-        cities: '/SharedResource/GetCities',
+        countryStates: '/jsonDataSample/regions.json',
+        cities: '/jsonDataSample/cities.json',
         currencies: '/SharedResource/GetCurrencies',
         academicYears: '/SchoolManager/GetAcademicYears',
         terms: '/jsonDataSample/terms.json',
+        updateAcademicYear: '/SchoolManager/UpdateAcademicYear',
     };
 
     const sameId = (a, b) =>
@@ -133,7 +132,10 @@
                 cityList: [],
                 currencyList: [],
                 academicYearList: [],
-                termList: []
+                termList: [],
+                allCountryStates: [],
+                allCities: [],
+                tenantId: null,
             };
         },
 
@@ -206,6 +208,45 @@
         },
 
         methods: {
+            getCountryCode(country) {
+                return country?.countryCode
+                    || country?.iso2
+                    || country?.isoCode
+                    || country?.alpha2
+                    || country?.code
+                    || country?.countryIsoCode
+                    || '';
+            },
+
+            getCountryName(country) {
+                return country?.name
+                    || country?.countryName
+                    || country?.displayName
+                    || '';
+            },
+
+            selectedCountry() {
+                return this.countryList.find((country) => sameId(
+                    country.id ?? country.countryId,
+                    this.countryId
+                ));
+            },
+
+            matchesSelectedCountry(item, country) {
+                if (!country || !item) return false;
+
+                const selectedCode = this.getCountryCode(country);
+                const selectedName = this.getCountryName(country);
+
+                if (selectedCode && item.countryCode) {
+                    return String(item.countryCode).toLowerCase()
+                        === String(selectedCode).toLowerCase();
+                }
+
+                return Boolean(selectedName && item.countryName
+                    && String(item.countryName).trim().toLowerCase()
+                    === String(selectedName).trim().toLowerCase());
+            },
             // ================================================================
             // TOAST / HELPERS
             // ================================================================
@@ -293,7 +334,7 @@
                 this.isHydrating = true;
 
                 this.id = p.id || '';
-
+                this.tenantId = p.tenantId || null;
                 this.schoolName = p.schoolName ?? p.companyName ?? '';
                 this.countryName = p.countryName ?? '';
                 this.cityName = p.cityName ?? '';
@@ -495,7 +536,10 @@
                         ? ENDPOINTS.updateSchoolProfile
                         : ENDPOINTS.createSchoolProfile;
 
-                    if (isUpdate) payload.id = this.id;
+                    if (isUpdate){
+                        payload.id = this.id;
+                        payload.tenantId = this.tenantId;
+                    } 
 
                     const response = await axios.post(url, payload);
                     const body = response.data || {};
@@ -507,7 +551,7 @@
 
                     const newId = body.result?.id || body.id;
                     if (newId) this.id = newId;
-
+                    await this.syncActiveAcademicYear(payload.currentAcademicYearId);
                     this.toastHandler('success', body.message || 'Saved successfully.');
                     await this.getSchoolProfile();
                 } catch (error) {
@@ -529,15 +573,22 @@
             // ================================================================
             async getCountries() {
                 try {
-                    const response = await axios.get(`${ENDPOINTS.countries}?v=${new Date().getTime()}`);
-                    this.countryList = asList(response.data);
+                    const response = await axios.get(
+                        `${ENDPOINTS.countries}?v=${new Date().getTime()}`
+                    );
+
+                    this.countryList = unwrapList(response.data).map((country) => ({
+                        ...country,
+                        id: country.id ?? country.countryId,
+                        name: this.getCountryName(country),
+                        countryCode: this.getCountryCode(country)
+                    }));
                 } catch (error) {
                     console.error('Get countries error:', error);
                     this.countryList = [];
                     this.toastHandler('error', 'Unable to get countries.');
                 }
             },
-
             async getCountryStates(countryId) {
                 if (!countryId) {
                     this.countryStateList = [];
@@ -545,31 +596,53 @@
                 }
 
                 try {
-                    const url = `${ENDPOINTS.countryStates}?countryId=${encodeURIComponent(countryId)}`;
-                    const response = await axios.get(url);
+                    if (!this.allCountryStates.length) {
+                        const response = await axios.get(ENDPOINTS.countryStates);
+                        this.allCountryStates = unwrapList(response.data);
+                    }
 
-                    this.countryStateList = unwrapList(response.data).filter((state) =>
-                        !state.countryId || sameId(state.countryId, countryId)
+                    const country = this.countryList.find((item) =>
+                        sameId(item.id, countryId)
                     );
+
+                    this.countryStateList = this.allCountryStates
+                        .filter((state) => this.matchesSelectedCountry(state, country))
+                        .sort((a, b) => a.name.localeCompare(b.name));
                 } catch (error) {
                     console.warn('Country states not available:', error);
                     this.countryStateList = [];
                 }
             },
 
-            async getCities(countryStateId) {
-                if (!countryStateId) {
+            async getCities(countryId, countryStateId = '') {
+                if (!countryId) {
                     this.cityList = [];
                     return;
                 }
 
                 try {
-                    const url = `${ENDPOINTS.cities}?countryStateId=${encodeURIComponent(countryStateId)}`;
-                    const response = await axios.get(url);
+                    if (!this.allCities.length) {
+                        const response = await axios.get(ENDPOINTS.cities);
+                        this.allCities = unwrapList(response.data);
+                    }
 
-                    this.cityList = unwrapList(response.data).filter((city) =>
-                        !city.countryStateId || sameId(city.countryStateId, countryStateId)
+                    const country = this.countryList.find((item) =>
+                        sameId(item.id, countryId)
                     );
+
+                    const selectedState = this.countryStateList.find((state) =>
+                        sameId(state.id, countryStateId)
+                    );
+
+                    this.cityList = this.allCities
+                        .filter((city) => this.matchesSelectedCountry(city, country))
+                        .filter((city) => {
+                            // If the selected region and city both have GeoNames admin codes,
+                            // restrict the list to cities in that region.
+                            if (!selectedState?.adminCode || !city.admin1) return true;
+                            return sameId(city.admin1, selectedState.adminCode);
+                        })
+                        .sort((a, b) => a.name.localeCompare(b.name));
                 } catch (error) {
                     console.warn('Cities not available:', error);
                     this.cityList = [];
@@ -600,7 +673,57 @@
                     this.academicYearList = [];
                 }
             },
+            async syncActiveAcademicYear(selectedId) {
+                if (!selectedId || sameId(selectedId, EMPTY_GUID)) {
+                    throw new Error('Please select an academic year.');
+                }
 
+                // Read fresh records, including their existing tenantId values.
+                const response = await axios.get(ENDPOINTS.academicYears);
+                const years = unwrapList(response.data);
+
+                const selectedYear = years.find((year) => sameId(year.id, selectedId));
+
+                if (!selectedYear) {
+                    throw new Error('The selected academic year was not found.');
+                }
+
+                if (selectedYear.tenantId === undefined) {
+                    throw new Error('The selected academic year has no tenantId.');
+                }
+
+                // Deactivate other active years, then activate the selected year.
+                const yearsToUpdate = [
+                    ...years.filter(
+                        (year) => !sameId(year.id, selectedId) && year.isActive === true
+                    ).map((year) => ({ year, isActive: false })),
+                    ...(selectedYear.isActive === true
+                        ? []
+                        : [{ year: selectedYear, isActive: true }])
+                ];
+
+                for (const { year, isActive } of yearsToUpdate) {
+                    if (year.tenantId === undefined) {
+                        throw new Error(`Academic year ${year.id} has no tenantId.`);
+                    }
+
+                    const result = await axios.post(ENDPOINTS.updateAcademicYear, {
+                        ...year,
+                        id: year.id,
+                        tenantId: year.tenantId,
+                        isActive
+                    });
+
+                    const body = result.data || {};
+
+                    if (
+                        body.success === false ||
+                        (body.code !== undefined && body.code !== 200 && body.success !== true)
+                    ) {
+                        throw new Error(body.message || 'Unable to update the academic year.');
+                    }
+                }
+            },
             async getTerms() {
                 try {
                     const response = await axios.get(ENDPOINTS.terms);
@@ -617,13 +740,14 @@
         },
 
         watch: {
-            // Country -> states -> cities cascade.
             countryId(value, oldValue) {
                 if (this.isHydrating || sameId(value, oldValue)) return;
 
                 this.countryStateId = '';
                 this.cityId = '';
+                this.countryStateList = [];
                 this.cityList = [];
+
                 this.getCountryStates(value);
             },
 
@@ -631,9 +755,8 @@
                 if (this.isHydrating || sameId(value, oldValue)) return;
 
                 this.cityId = '';
-                this.getCities(value);
+                this.getCities(this.countryId, value);
             },
-
             // Keep the selected term inside the selected academic year.
             currentAcademicYearId() {
                 if (this.isHydrating || !this.currentTermId) return;
@@ -657,7 +780,7 @@
             // Cascades depend on the saved ids, so they run after the profile loads.
             await Promise.all([
                 this.getCountryStates(this.countryId),
-                this.getCities(this.countryStateId)
+                this.getCities(this.countryId, this.countryStateId)
             ]);
 
             this.isShimmerLoading = false;

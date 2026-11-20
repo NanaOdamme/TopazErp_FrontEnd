@@ -20,7 +20,26 @@
     </div>
     <div class="card" data-card-title="Nursery Grading">
         <div id="app">
-
+            <data-grid
+                title="Nursery Gradings"
+                :columns="columns"
+                :data="nurseryGradingList"
+                :theme="theme"
+                row-id="id"
+                label-key="name"
+                item-label="Nursery Grading"
+                item-label-plural="Nursery Gradings"
+                add-label="Add Nursery Grading"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                @@create="onCreate"
+                @@update="onUpdate"
+                @@delete="onDelete"
+            ></data-grid>
         </div>
     </div>
 </div>
+<script src="~/js/school-manager/nursery-grading.js" asp-append-version="true"></script>

@@ -248,6 +248,8 @@ public class ClassAssignment : AuditedEntity<Guid>
     [System.ComponentModel.DataAnnotations.Schema.Column(TypeName = "jsonb")]
     public List<AssignmentImport> Details { get; set; }
     public int TenantId { get; set; }
+    public DateTime CanceledDate { get; set; }
+    public string CanceledBy { get; set; }
 }
 public class ClassLevelPercentage : AuditedEntity<Guid>
 {
@@ -1118,4 +1120,17 @@ public class TransportationUnit : AuditedEntity<Guid>
 {
     public string UnitName { get; set; }
     public int TenantId { get; set; }
+}
+
+public class ExistingBill
+{
+    public Guid AcademicYearId { get; set; }
+    public Guid TermId { get; set; }
+    public int BillTypeId { get; set; }
+    public int BillingScopeId { get; set; }
+
+    public Guid ClassId { get; set; }
+    public Guid LevelId { get; set; }
+
+    public Guid? FeeItemId { get; set; }
 }

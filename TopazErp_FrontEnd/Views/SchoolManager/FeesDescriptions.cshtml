@@ -13,14 +13,33 @@
         <div class="flex items-center gap-3">
             <div class="page-title">
                 <h2 class="text-2xl font-semibold text-gray-800">
-                    Fees Descriptions
+                    Fee Items
                 </h2>
             </div>
         </div>
     </div>
-    <div class="card" data-card-title="Fees Descriptions">
+    <div class="card" data-card-title="Fee Items">
         <div id="app">
-
+            <data-grid
+                title="Fees Descriptions"
+                :columns="columns"
+                :data="feesDescriptionList"
+                :theme="theme"
+                row-id="id"
+                label-key="description"
+                item-label="Fees Description"
+                item-label-plural="Fees Descriptions"
+                add-label="Add Fees Description"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                @@create="onCreate"
+                @@update="onUpdate"
+                @@delete="onDelete"
+            ></data-grid>
         </div>
     </div>
 </div>
+<script src="~/js/school-manager/fees-descriptions.js" asp-append-version="true"></script>

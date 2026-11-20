@@ -20,7 +20,28 @@
     </div>
     <div class="card" data-card-title="Distance Units">
         <div id="app">
-
+            <data-grid
+                title="Distance Units"
+                :columns="columns"
+                :data="distanceUnits"
+                :theme="theme"
+                row-id="id"
+                label-key="name"
+                item-label="Distance Units"
+                item-label-plural="Distance Units"
+                add-label="Add Distance Units"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+            
+                :allow-add="false"
+                :allow-edit="false"
+                :allow-delete="false"
+            ></data-grid>
         </div>
     </div>
 </div>
+
+<script src="~/js/school-manager/distance-units.js" asp-append-version="true"></script>

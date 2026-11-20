@@ -1,66 +1,44 @@
 ﻿@{
-    ViewBag.Title = "Countries & Nationalities";
-    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+ViewBag.Title = "Nationalities";
+Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
 }
-<style>
-    .b {
-        border-radius: 15px;
-        border: 0.5px solid #e3e3e3;
-    }
-</style>
-<div class="app-content content">
-    <div class="content-wrapper">
-        <div class="content-header row">
-            <div class="content-header-left col-md-6 col-12 mb-2">
-                <h3 class="content-header-title"> Countries &amp; Nationalities </h3>
-                <div class="row breadcrumbs-top">
-                    <div class="breadcrumb-wrapper col-12">
-                        <ol class="breadcrumb">
-                            <li class="breadcrumb-item">
-                                <a href="../Dashboard/Ap" class="text-info"><i class="la la-home"></i> Home</a>
-                            </li>
-                            <li class="breadcrumb-item">
-                                <a class="text-info" href="#"> Shared Resources </a>
-                            </li>
-                            <li class="breadcrumb-item active">
-                                Countries &amp; Nationalities
-                            </li>
-                        </ol>
-                    </div>
-                </div>
-            </div>
-
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>School Manager - General Setups</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Nationalities</span>
         </div>
-        <div class="content-body">
-            <!-- Basic Tables start -->
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 my-2">
-                <div class="col-12">
-                    <div class="card b">
-                        <div class="card-header">
-                            <h4 class="card-title"> Countries &amp; Nationalities </h4>
-                            <a class="heading-elements-toggle"><i class="la la-ellipsis-v font-medium-3"></i></a>
-                            <div class="heading-elements">
-                                <ul class="list-inline mb-0">
-                                    <li><a data-action="expand"><i class="ft-maximize"></i></a></li>
-                                    <li><a data-action="close"><i class="ft-x"></i></a></li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="card-content collapse show">
-                            <div class="card-body" id="app">
 
-
-                                <div id="dataTable"></div>
-
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
+        <div class="flex items-center gap-3">
+            <div class="page-title">
+                <h2 class="text-2xl font-semibold text-gray-800">
+                    Nationalities
+                </h2>
             </div>
-
+        </div>
+    </div>
+    <div class="card" data-card-title="Nationalities">
+        <div id="app">
+            <data-grid
+                title="Nationalities"
+                :columns="columns"
+                :data="countries"
+                :theme="theme"
+                row-id="id"
+                label-key="name"
+                item-label="Nationalities"
+                item-label-plural="Nationalities"
+                :page-size="10"
+                :selectable="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                :allow-add="false"
+                :allow-edit="false"
+                :allow-delete="false"
+                density="compact"
+            ></data-grid>
         </div>
     </div>
 </div>
-
 <script src="~/js/shared/vue3/nationalities.js" asp-append-version="true"></script>

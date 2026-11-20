@@ -23,8 +23,29 @@
     <div class="card" data-card-title="Countries & Cities">
         <div id="app">
          
-          
+            <data-grid
+                title="Countries & Cities"
+                :columns="columns"
+                :data="countries"
+                :child="regionCol"
+                :theme="theme"
+                row-id="id"
+                label-key="name"
+                item-label="City"
+                item-label-plural="Countries & Cities"
+                add-label="Add City"
+                :page-size="100"
+                :selectable="false"
+                :actions="false"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                :allow-add="false"
+                :allow-edit="false"
+                :allow-delete="false"
+                @*group-header="countryName"*@
+            ></data-grid>
         </div>
        
     </div>
 </div>
+<script src="~/js/school-manager/cities.js" asp-append-version="true"></script>

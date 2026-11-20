@@ -1,659 +1,134 @@
-﻿const app = Vue.createApp({
-    data() {
-        return {
-            current: new Date(new Date().setDate(1)),
-            weekdays: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
-            monthNames: [
-                'January', 'February', 'March', 'April', 'May', 'June',
-                'July', 'August', 'September', 'October', 'November', 'December'
-            ],
-            eventDates: new Set(),
+﻿(() => {
+    'use strict';
+    const API = {
+        students: '/SchoolManager/GetStudentBios',
+        staff: '/SchoolManager/GetStaffBios',
+        results: '/SchoolManager/GetResults',
+        payments: '/SchoolManager/GetSchPayments',
+        subjects: '/SchoolManager/GetSubjects',
+        classes: '/SchoolManager/GetRegisteredClasses',
+        currencies: '/SharedResource/GetCurrencies',
+        levelClasses: '/SchoolManager/GetLevelClasses/'
+    };
+    const EMPTY_GUID = '00000000-0000-0000-0000-000000000000';
+    const COLORS = ['#1d4ed8', '#0891b2', '#059669', '#d97706', '#7c3aed', '#64748b'];
+    const TYPES = ['ClassAssignment', 'ClassTest', 'HomeWork', 'Project', 'Exam'];
 
-            selectedEvents: [],
-            showEventCard: false,
-            eventCardStyle: {},
-            summaryCards: [
-                {
-                    title: 'Total Students',
-                    value: 0,
-                    icon: 'la-user',
-                    color: 'linear-gradient(90deg,rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgba(72,145,240,1))'
-                },
-                {
-                    title: 'Total Teachers',
-                    value: 0,
-                    icon: 'la-chalkboard-teacher',
-                    color: 'linear-gradient(90deg,rgba(72,145,240,1) 0%, rgba(68,68,156,1) 59%, rgba(10,99,112,1) 100%)'
-                },
-                {
-                    title: 'All Classes',
-                    value: 0,
-                    icon: 'la-school',
-                    color: 'linear-gradient(90deg,rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgba(72,145,240,1))'
-                },
-                {
-                    title: 'All Subjects',
-                    value: 0,
-                    icon: 'la-book',
-                    color: 'linear-gradient(90deg,rgba(72,145,240,1) 0%, rgba(68,68,156,1) 59%, rgba(10,99,112,1) 100%)'
-                }
-            ],
-            selectedClass: '',
-            subjects: [],
-            assignedSubjects: [],
-            classes: [],
-            registeredClasses: [],
-            students: [],
-            teachers: [],
-            academicYears: [],
-            academicYearId: '',
-            termId: '',
-            mainClasses: [],
-            streams: [],
-            terms: [],
-            classDropdown: [],
-            currentDate: new Date(),
-            academicYerTerms: [],
-            classLevelPercentages: [],
-            allAssignments: [],
-            financeDashboard: {
-                currencyCode: '',
-                billsRaised: 0,
-                paymentsReceived: 0,
-                outstandingDebt: 0,
-                collectionRate: 0,
-                todaysCollections: 0,
-                monthlyCollections: 0,
+    Vue.createApp({
+        data() { return { students: [], staff: [], results: [], payments: [], subjects: [], classes: [], currencies: [], levelClasses: [], loadIssues: [], isLoading: false, lastUpdated: null, chartReady: false }; },
+        computed: {
+            cards() {
+                const metric = (label, key, caption, icon, gradient) => ({ label, caption, icon, gradient, value: this.isLoading ? '…' : this.hasIssue(label) ? '—' : this.formatCount(this[key].length) });
+                return [
+                    metric('Students', 'students', 'All student records', 'bi-people', 'linear-gradient(to right,#1e3a8a,#2563eb)'),
+                    metric('Staff', 'staff', 'All staff records', 'bi-person-badge', 'linear-gradient(to right,#6366f1,#8b5cf6)'),
+                    metric('Classes', 'classes', 'Registered class records', 'bi-building', 'linear-gradient(to right,#8b5cf6,#d946ef)'),
+                    metric('Subjects', 'subjects', 'Available subject records', 'bi-book', 'linear-gradient(to right,#10b981,#14b8a6)'),
+                    metric('Results', 'results', 'All assessment records', 'bi-clipboard-check', 'linear-gradient(to right,#f59e0b,#f97316)')
+                ];
             },
-            studentDebtors: [],
-            events:[],
-        }
-},
-
-     async mounted() {
-         this.loadAllAssignments();
-         this.loadAcademicYears();
-         await this.loadAcademicYearTerms();
-         await this.loadAcademicYearTermEvents();
-         await this.loadAssignedSubjects();
-         await this.loadStudents();
-         await this.loadLevelClasses();
-         await this.loadTerms();
-         await this.loadClasses();
-         await this.loadStreams();  
-         await  this.loadSubjects();
-         await this.loadTeachers();
-         await this.loadClassLevelPercentages();
-         await this.loadDropdowns();
-         await this.getFinanceDashboard();
-         await this.getStudentDebtors();
-         
-     },
-    computed: {
-        filteredSubjects() {
-            if (!this.selectedClass || !this.termId) return [];
-
-            // Filter assigned subjects for selected class, academic year, and term
-            const assignedForClass = this.assignedSubjects
-                .filter(
-                    s => s.classId === this.selectedClass &&
-                        s.academicYearId === this.academicYearId &&
-                        s.termId === this.termId
-                );
-
-            const subjectsList = [];
-            assignedForClass.forEach(asg => {
-                asg.details.forEach(detail => {
-                    const subject = this.subjects.find(sub => sub.id === detail.subjectId);
-                    if (subject) {
-                        const studentCount = this.students.filter(
-                            st => st.classId === asg.classId && st.academicYearId === this.academicYearId
-                        ).length;
-
-                        subjectsList.push({
-                            id: detail.id,
-                            subjectId: detail.subjectId,
-                            name: subject.name,
-                            isCore: subject.isCore,
-                            isBestSubject: subject.isBestSubject,
-                            students: studentCount,
-                        });
-                    }
-                });
-            });
-            return subjectsList;
+            community() {
+                const make = (label, rows, field, issue, color) => {
+                    const count = rows.filter(row => this.bool(row, field)).length;
+                    const unavailable = this.isLoading || this.hasIssue(issue);
+                    return { label, color, percent: !unavailable && rows.length ? 100 * count / rows.length : 0, text: unavailable ? '—' : `${this.formatCount(count)} of ${this.formatCount(rows.length)}` };
+                };
+                return [make('Pre-class students', this.students, 'isPreClassStudent', 'Students', '#1d4ed8'), make('Teachers', this.staff, 'isTeacher', 'Staff', '#10b981'), make('Boarders', this.students, 'isBoarder', 'Students', '#0ea5e9'), make('Alumni', this.students, 'isAlumni', 'Students', '#f59e0b')];
+            },
+            activeResults() { return this.results.filter(row => !this.bool(row, 'isCanceled')); },
+            activePayments() { return this.payments.filter(row => !this.bool(row, 'isCanceled')); },
+            assessmentTypes() {
+                const norm = x => String(x || '').replace(/[\s_-]/g, '').toLowerCase();
+                const items = TYPES.map((type, i) => ({ label: this.typeLabel(type), count: this.activeResults.filter(row => norm(this.value(row, 'type')) === norm(type)).length, color: COLORS[i] }));
+                const other = this.activeResults.filter(row => !TYPES.some(type => norm(type) === norm(this.value(row, 'type')))).length;
+                if (other) items.push({ label: 'Other / unknown', count: other, color: COLORS[5] });
+                const max = Math.max(1, ...items.map(x => x.count));
+                return items.map(item => ({ ...item, width: 100 * item.count / max }));
+            },
+            paymentGroups() {
+                const groups = new Map();
+                this.activePayments.forEach(row => { const id = this.currencyId(row); const group = groups.get(id) || { id, total: 0, count: 0 }; group.total += this.number(this.value(row, 'amountToPaid')); group.count++; groups.set(id, group); });
+                return [...groups.values()].map(group => ({ ...group, name: this.currencyName(group.id) })).sort((a, b) => b.count - a.count);
+            },
+            recentStudents() { return this.sortRecent(this.students, 'admissionDate').slice(0, 7); },
+            recentResults() { return this.sortRecent(this.activeResults, 'assignedDate').slice(0, 6); },
+            recentPayments() { return this.sortRecent(this.activePayments, 'paymentDate').slice(0, 8); },
+            currencyLookup() { const map = new Map(); this.currencies.forEach(row => { const id = this.value(row, 'id') ?? this.value(row, 'currencyId'); const name = this.value(row, 'currencyName') || this.value(row, 'name'); if (id && name) map.set(String(id).toLowerCase(), String(name)); }); return map; },
+            classLookup() { const map = new Map(); this.levelClasses.forEach(row => { const id = this.value(row, 'id') ?? this.value(row, 'classId'); const name = this.value(row, 'className') || this.value(row, 'name'); if (id && name) map.set(String(id).toLowerCase(), String(name)); }); return map; },
+            studentLookup() { const map = new Map(); this.students.forEach(s => { const id = this.value(s, 'id'); if (id) map.set(String(id).toLowerCase(), this.fullName(s)); }); return map; },
+            lastUpdatedLabel() { return this.lastUpdated ? this.lastUpdated.toLocaleTimeString() : '—'; },
+            admissionChart() {
+                const buckets = new Map();
+                this.students.forEach(row => { const d = this.parseDate(this.value(row, 'admissionDate')); if (!d) return; const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; buckets.set(key, (buckets.get(key) || 0) + 1); });
+                const keys = [...buckets.keys()].sort();
+                if (!keys.length) return { points: [], line: '', area: '', ticks: [] };
+                const [y, m] = keys[keys.length - 1].split('-').map(Number);
+                const last = new Date(y, m - 1, 1); const firstKey = keys[0]; const series = [];
+                for (let i = 11; i >= 0; i--) { const date = new Date(last.getFullYear(), last.getMonth() - i, 1); const key = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`; if (key < firstKey) continue; series.push({ key, label: date.toLocaleDateString(undefined, { month: 'short', year: '2-digit' }), count: buckets.get(key) || 0 }); }
+                const max = Math.max(1, ...series.map(x => x.count));
+                const points = series.map((p, i) => ({ ...p, x: series.length === 1 ? 497.5 : 55 + i * 885 / (series.length - 1), y: 230 - p.count / max * 205 }));
+                const line = points.map((p, i) => `${i ? 'L' : 'M'} ${p.x} ${p.y}`).join(' ');
+                const area = points.length > 1 ? `${line} L ${points[points.length - 1].x} 230 L ${points[0].x} 230 Z` : '';
+                const tickIntervals = Math.min(max, 4);
+                const ticks = Array.from({ length: tickIntervals + 1 }, (_, i) => { const value = Math.round(i * max / tickIntervals); return { value, y: 230 - value / max * 205 }; });
+                return { points, line, area, ticks };
+            }
         },
-
-        assigned() {
-            return this.filteredSubjects.length;
-        },
-        subjectPerformance() {
-            if (!this.selectedClass || !this.termId || !this.academicYearId) return [];
-
-            // Filter assignments for the selected class, term, and academic year
-            const assignmentsForClass = this.allAssignments.filter(a =>
-                a.classId === this.selectedClass &&
-                a.termId === this.termId &&
-                a.academicYearId === this.academicYearId &&
-                !a.isCanceled
-            );
-
-            // Map by subject
-            const performance = {};
-
-            assignmentsForClass.forEach(assignment => {
-                const subjectId = assignment.subjectId;
-                if (!performance[subjectId]) {
-                    const subject = this.subjects.find(s => s.id === subjectId);
-                    performance[subjectId] = {
-                        subjectId,
-                        name: subject ? subject.abbreviation : 'Unknown',
-                        totalMarks: 0,
-                        totalStudents: 0,
-                        averageMark: 0,
-                        highestMark: 0,
-                        lowestMark: null
-                    };
+        methods: {
+            value(row, key) { if (!row) return undefined; return row[key] ?? row[key.charAt(0).toUpperCase() + key.slice(1)]; },
+            bool(row, key) { const v = this.value(row, key); return v === true || v === 1 || (typeof v === 'string' && v.toLowerCase() === 'true'); },
+            number(v) { const n = Number(String(v ?? '').replace(/,/g, '')); return Number.isFinite(n) ? n : 0; },
+            formatCount(v) { return Math.round(this.number(v)).toLocaleString(); },
+            formatAmount(v) { return this.number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
+            fullName(row) { return ['firstName', 'otherName', 'lastName'].map(key => this.value(row, key)).filter(Boolean).join(' ') || '—'; },
+            currencyId(row) { const id = this.value(row, 'currencyId'); return !id || String(id).toLowerCase() === EMPTY_GUID ? 'Unspecified' : String(id); },
+            currencyName(id) { return this.currencyLookup.get(String(id).toLowerCase()) || id; },
+            className(row) { const name = this.value(row, 'className'); if (name) return name; const id = this.value(row, 'classId'); return (id && this.classLookup.get(String(id).toLowerCase())) || (id && String(id).toLowerCase() !== EMPTY_GUID ? String(id) : '—'); },
+            studentName(row) { const id = this.value(row, 'studentId'); return (id && this.studentLookup.get(String(id).toLowerCase())) || (id && String(id).toLowerCase() !== EMPTY_GUID ? String(id) : '—'); },
+            typeLabel(value) { return ({ classassignment: 'Class Assignment', classtest: 'Class Test', homework: 'Homework', project: 'Project', exam: 'Exam' })[String(value || '').replace(/[\s_-]/g, '').toLowerCase()] || String(value || 'Unknown'); },
+            parseDate(value) {
+                if (!value) return null;
+                const text = String(value); let date;
+                const dotnet = text.match(/\/Date\((-?\d+)(?:[+-]\d+)?\)\//);
+                if (dotnet) date = new Date(Number(dotnet[1]));
+                else if (/^\d{4}-\d{2}-\d{2}/.test(text)) { const [y,m,d] = text.slice(0,10).split('-').map(Number); date = new Date(y, m-1, d); if (date.getFullYear() !== y || date.getMonth() !== m-1 || date.getDate() !== d) return null; }
+                else date = new Date(value);
+                return !Number.isFinite(date.getTime()) || date.getFullYear() <= 1 ? null : date;
+            },
+            formatDate(value) { const d = this.parseDate(value); return d ? d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) : '—'; },
+            sortRecent(rows, key) { return rows.slice().sort((a,b) => (this.parseDate(this.value(b,key))?.getTime() || 0) - (this.parseDate(this.value(a,key))?.getTime() || 0)); },
+            hasIssue(label) { return this.loadIssues.includes(label); },
+            rowsFrom(raw) {
+                if (Array.isArray(raw)) return raw;
+                if (!raw || typeof raw !== 'object') throw new Error('Unexpected response format');
+                if (raw.success === false || raw.Success === false || raw.error || raw.Error) throw new Error('API reported an error');
+                for (const key of ['result', 'items', 'data', 'records', 'studentBios', 'staffBios', 'results', 'payments', 'subjects', 'registeredClasses', 'currencies', 'levelClasses', 'classes']) {
+                    const nested = this.value(raw, key);
+                    if (nested !== undefined && nested !== null) return this.rowsFrom(nested);
                 }
-
-                assignment.details.forEach(detail => {
-                    const marks = detail.marks || 0;
-                    performance[subjectId].totalMarks += marks;
-                    performance[subjectId].totalStudents += 1;
-                    performance[subjectId].highestMark = Math.max(performance[subjectId].highestMark, marks);
-                    performance[subjectId].lowestMark = performance[subjectId].lowestMark === null
-                        ? marks
-                        : Math.min(performance[subjectId].lowestMark, marks);
-                });
-            });
-
-            // Calculate average marks
-            return Object.values(performance).map(p => {
-                p.averageMark = p.totalStudents > 0 ? (p.totalMarks / p.totalStudents).toFixed(2) : 0;
-                return p;
-            });
-        },
-        monthTitle() {
-            return `${this.monthNames[this.current.getMonth()]} ${this.current.getFullYear()}`;
-        },
-        calendarCells() {
-            const year = this.current.getFullYear();
-            const month = this.current.getMonth();
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const daysInPrevMonth = new Date(year, month, 0).getDate();
-            const today = new Date();
-
-            const cells = [];
-
-            for (let i = firstDay - 1; i >= 0; i--) {
-                cells.push({ day: daysInPrevMonth - i, inMonth: false, isToday: false, hasEvent: false });
-            }
-
-            for (let d = 1; d <= daysInMonth; d++) {
-                cells.push({
-                    day: d,
-                    inMonth: true,
-                    isToday: d === today.getDate() && month === today.getMonth() && year === today.getFullYear(),
-                    hasEvent: this.eventDates.has(`${year}-${month + 1}-${d}`),
-                    date: new Date(year, month, d)
-                });
-            }
-
-            const remaining = (7 - (cells.length % 7)) % 7;
-            for (let d = 1; d <= remaining; d++) {
-                cells.push({ day: d, inMonth: false, isToday: false, hasEvent: false });
-            }
-
-            return cells;
-        }
-    },
-   
-    methods: {
-        formatMoney(value) {
-            return Number(value || 0).toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-        },
-        prevMonth() {
-            const d = new Date(this.current);
-            d.setMonth(d.getMonth() - 1);
-            this.current = d;
-            this.$emit('month-change', d);
-        },
-        nextMonth() {
-            const d = new Date(this.current);
-            d.setMonth(d.getMonth() + 1);
-            this.current = d;
-            this.$emit('month-change', d);
-        },
-        formatDate(date) {
-            const d = new Date(date);
-
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, "0");
-            const day = String(d.getDate()).padStart(2, "0");
-
-            return `${y}-${m}-${day}`;
-        },
-
-        showEventPopup(cell, event) {
-
-            if (!cell.inMonth || !cell.hasEvent) {
-                this.showEventCard = false;
-                return;
-            }
-
-            const clicked = new Date(cell.date);
-            clicked.setHours(0, 0, 0, 0);
-
-            const clickedTime = clicked.getTime();
-
-            this.selectedEvents = this.events.filter(e => {
-
-                const start = new Date(e.startDate);
-                start.setHours(0, 0, 0, 0);
-
-                const end = new Date(e.endDate);
-                end.setHours(23, 59, 59, 999);
-
-                return clickedTime >= start.getTime() &&
-                    clickedTime <= end.getTime();
-            });
-
-            if (!this.selectedEvents.length) {
-                this.showEventCard = false;
-                return;
-            }
-
-            const rect = event.target.getBoundingClientRect();
-            
-
-            this.showEventCard = true;
-        },
-
-        hideEventPopup() {
-            this.showEventCard = false;
-        },
-        loadAllAssignments() {
-            axios.get('/SmReports/GetAllResults', {}).then(res => {
-                this.allAssignments = res.data || [];
-
-            });
-        },
-        loadDropdowns() {
-            this.updateSummaryCards();
-        },
-        async loadAcademicYears() {
-            try {
-                const response = await axios.get('/SmMainSetups/ListAllAcademicYears');
-
-                this.academicYears = response.data;
-
-                const activeYear = this.academicYears.find(y => y.isActive === true);
-
-                this.academicYearId = activeYear ? activeYear.id : '';
-
-            } catch (error) {
-                console.error("Error loading academic years:", error);
+                throw new Error('Response does not contain a recognized list');
+            },
+            async fetchRows(url) {
+                const response = await fetch(url, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return this.rowsFrom(await response.json());
+            },
+            async loadDashboard() {
+                if (this.isLoading) return;
+                this.isLoading = true; this.chartReady = false;
+                const sources = [['students','Students'], ['staff','Staff'], ['results','Results'], ['payments','Payments'], ['subjects','Subjects'], ['classes','Classes'], ['currencies','Currencies'], ['levelClasses','Class names']];
+                try {
+                    const outcomes = await Promise.all(sources.map(async ([key, label]) => {
+                        try { return { key, label, rows: await this.fetchRows(API[key]) }; }
+                        catch (error) { console.error(`${label} loading error:`, error); return { key, label, error }; }
+                    }));
+                    this.loadIssues = outcomes.filter(x => x.error).map(x => x.label);
+                    outcomes.forEach(x => { this[x.key] = x.error ? [] : x.rows; });
+                    this.lastUpdated = new Date();
+                    this.$nextTick(() => requestAnimationFrame(() => { this.chartReady = true; }));
+                } finally { this.isLoading = false; }
             }
         },
-
-
-        async loadAcademicYearTerms() {
-            try {
-                const response = await axios.get('/SmMainSetups/ListAllAcademicYearTerms/');
-
-                this.academicYerTerms = response.data;
-
-                const currentTerm = this.academicYerTerms.find(term => {
-
-                    const startDate = new Date(term.startDate);
-                    const endDate = new Date(term.endDate);
-
-                    return startDate <= this.currentDate &&
-                        this.currentDate <= endDate &&
-                        term.academicYearId === this.academicYearId;
-                });
-
-
-                this.termId = currentTerm ? currentTerm.termId : '';
-
-            } catch (error) {
-                console.error("Error loading academic year terms:", error);
-            }
-        },
-        async loadAcademicYearTermEvents() {
-            try {
-                const response = await axios.get('/SmMainSetups/ListAllAcademicYearTermDetails/');
-
-                const currentTerm = this.academicYerTerms.find(term => {
-
-                    const startDate = new Date(term.startDate);
-                    const endDate = new Date(term.endDate);
-
-                    return startDate <= this.currentDate &&
-                        this.currentDate <= endDate &&
-                        term.academicYearId === this.academicYearId;
-                });
-
-                this.termId = currentTerm ? currentTerm.termId : '';
-                
-                this.events = response.data.filter(e => e.academicYearTermId === currentTerm.id);
-                // Create dates with events
-                this.eventDates.clear();
-
-                this.events.forEach(event => {
-
-                    let current = new Date(event.startDate);
-                    const end = new Date(event.endDate);
-
-                    while (current <= end) {
-
-                        this.eventDates.add(
-                            `${current.getFullYear()}-${current.getMonth()+1}-${current.getDate()}`
-                        );
-
-                        current.setDate(current.getDate() + 1);
-                    }
-
-                });
-
-            } catch (error) {
-                console.error(error);
-            }
-        },
-
-
-        async loadLevelClasses() {
-            try {
-                const response = await axios.get('/SmMainSetups/ListAllLevelClasses/');
-                this.registeredClasses = response.data;
-
-            } catch (error) {
-                console.error("Error loading level classes:", error);
-            }
-        },
-
-
-        async loadTerms() {
-            try {
-                const response = await axios.get(`/jsonDataSample/terms.json?v=${new Date().getTime()}`);
-                this.terms = response.data;
-
-            } catch (error) {
-                console.error("Error loading terms:", error);
-            }
-        },
-
-
-        async loadAssignedSubjects() {
-            try {
-                const response = await axios.get('/SmDataEntry/GetAllAssignedSubjects/');
-
-                this.assignedSubjects = response.data.filter(
-                    x => x.academicYearId === this.academicYearId
-                );
-
-            } catch (error) {
-                console.error("Error loading assigned subjects:", error);
-            }
-        },
-
-
-        async loadClasses() {
-            try {
-                const response = await axios.get('/SmMainSetups/ListAllClasses/');
-                this.classes = response.data;
-
-            } catch (error) {
-                console.error("Error loading classes:", error);
-            }
-        },
-
-
-        async loadStreams() {
-            try {
-                const response = await axios.get('/SmMainSetups/ListAllStreams/');
-                this.streams = response.data;
-
-            } catch (error) {
-                console.error("Error loading streams:", error);
-            }
-        },
-
-
-        async loadSubjects() {
-            try {
-                const response = await axios.get('/SmMainSetups/ListAllSubjects/');
-                this.subjects = response.data;
-
-            } catch (error) {
-                console.error("Error loading subjects:", error);
-            }
-        },
-
-
-        async loadStudents() {
-            try {
-                const response = await axios.get('/SmStudentSetups/ListAllStudents/');
-
-                this.students = response.data.filter(
-                    x => x.academicYearId === this.academicYearId
-                );
-
-            } catch (error) {
-                console.error("Error loading students:", error);
-            }
-        },
-
-
-        async loadTeachers() {
-            try {
-                const response = await axios.get('/SmStaffSetups/ListAllStaffBios/');
-
-                this.teachers = response.data.filter(
-                    x => x.isTeacher === true
-                );
-
-            } catch (error) {
-                console.error("Error loading teachers:", error);
-            }
-        },
-
-
-        async loadClassLevelPercentages() {
-            try {
-                const response = await axios.get('/SmDataEntry/GetAllClassLevelPercentages/');
-
-                this.classLevelPercentages = response.data;
-
-            } catch (error) {
-                console.error("Error loading class level percentages:", error);
-            }
-        },
-        getMainClassName(classId) {
-            return this.classes.find(c => c.id === classId)?.name || '';
-        },
-        getStreamName(streamId) {
-            return this.streams.find(s => s.id === streamId)?.name || '';
-        },
-        updateSummaryCards() {
-            this.classDropdown = this.registeredClasses.map(c => ({
-                id: c.id,
-                name: `${this.getMainClassName(c.classId)} ${this.getStreamName(c.streamId)}`.trim()
-            }));
-            this.classDropdown.sort((a, b) => a.name.localeCompare(b.name));
-
-            // Auto-select first class
-            if(this.classDropdown.length > 0) {
-                this.selectedClass = this.classDropdown[0].id;
-            }
-
-            this.animateValue(0, this.students.length, 0);
-            this.animateValue(1, this.teachers.length, 0);
-            this.animateValue(2, this.registeredClasses.length, 0);
-            this.animateValue(3, this.subjects.length, 0);
-        },
-
-        animateValue(index, end, start) {
-            let current = start;
-
-            let interval = setInterval(() => {
-
-                current += Math.ceil(end / 20);
-
-                if (current >= end) {
-                    current = end;
-                    clearInterval(interval);
-                }
-
-                this.summaryCards[index].value = current;
-
-            }, 30);
-        },
-
-        renderSubjectChart() {
-            const ctx = document.getElementById('subjectChart').getContext('2d');
-
-            const labels = this.subjectPerformance.map(s => s.name);
-            const avgMarks = this.subjectPerformance.map(s => parseFloat(s.averageMark));
-            const highestMarks = this.subjectPerformance.map(s => s.highestMark);
-            const lowestMarks = this.subjectPerformance.map(s => s.lowestMark);
-
-            if (this.subjectChart) {
-                this.subjectChart.destroy();
-            }
-
-            this.subjectChart = new Chart(ctx, {
-                type: 'line', // ✅ switch to line chart
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Average Mark',
-                            data: avgMarks,
-                            borderColor: 'rgb(76 70 255)',
-                            backgroundColor: 'rgb(51 85 255 / 0.2)',
-                            fill: true,           // fill area under the line
-                            tension: 0.4,         // smooth curve
-                            pointRadius: 5,
-                            pointHoverRadius: 7,
-                        },
-                        {
-                            label: 'Highest Mark',
-                            data: highestMarks,
-                            borderColor: 'rgb(1 241 219)',
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            fill: true,
-                            tension: 0.3,
-                            borderDash: [5, 5],   // dashed line
-                            pointRadius: 4,
-                        },
-                        {
-                            label: 'Lowest Mark',
-                            data: lowestMarks,
-                            borderColor: 'rgb(255 15 66)',
-                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                            fill: true,
-                            tension: 0.3,
-                            borderDash: [5, 5],
-                            pointRadius: 4,
-                        },
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        title: {
-                            display: true,
-                            text: 'Subject Performance Analysis'
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                        }
-                    },
-                    interaction: {
-                        mode: 'nearest',
-                        axis: 'x',
-                        intersect: false
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            title: {
-                                display: true,
-                                text: 'Marks'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Subjects'
-                            }
-                        }
-                    }
-                }
-            });
-        },
-
-        async getFinanceDashboard() {
-            try {
-                const response = await axios.get('/Dashboard/GetSchFinanceDashboard/');
-
-                this.financeDashboard = response.data;
-
-            } catch (error) {
-                console.error("Error loading finance dashboard:", error);
-
-                this.toastHandler(
-                    'error',
-                    'Unable to load finance dashboard data.'
-                );
-            }
-        },
-        getInitials(name) {
-
-            if(!name) return '';
-
-            let parts = name.split(' ');
-
-            return parts.length > 1
-                ? parts[0][0] + parts[1][0]
-                : parts[0][0];
-        },
-        async getStudentDebtors() {
-            try {
-                const response = await axios.get(`/Dashboard/GetStudentDebtors?classId=${this.selectedClass}`);
-                this.studentDebtors = response.data;
-            } catch (error) {
-                console.error("Error loading debtors", error);
-
-                this.toastHandler(
-                    'error',
-                    'Unable to load debtors'
-                );
-            }
-        },
-
-    },
-    watch: {
-        selectedClass() {
-            this.renderSubjectChart();
-            this.getStudentDebtors();
-        },
-        allAssignments() {
-            this.renderSubjectChart();
-        },
-        termId() {
-            this.renderSubjectChart();
-        }
-    },
-});
-app.mount('#app');
+        mounted() { this.loadDashboard(); }
+    }).mount('#schoolDashboard');
+})();

@@ -20,7 +20,24 @@
     </div>
     <div class="card" data-card-title="Transportation Units">
         <div id="app">
-
+            <data-grid
+                title="Transport Units"
+                :columns="columns"
+                :data="units"
+                :theme="theme"
+                row-id="id"
+                label-key="name"
+                item-label="Units"
+                item-label-plural="Units"
+                :page-size="10"
+                :selectable="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                :allow-add="false"
+                :allow-edit="false"
+                :allow-delete="false"
+            ></data-grid>
         </div>
     </div>
 </div>
+<script src="~/js/school-manager/transport-units.js" asp-append-version="true"></script>

@@ -20,7 +20,26 @@
     </div>
     <div class="card" data-card-title="Subjects">
         <div id="app">
-
+            <data-grid
+                title="Subjects"
+                :columns="columns"
+                :data="subjectList"
+                :theme="theme"
+                row-id="id"
+                label-key="name"
+                item-label="Subject"
+                item-label-plural="Subjects"
+                add-label="Add Subject"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                @@create="onCreate"
+                @@update="onUpdate"
+                @@delete="onDelete"
+            ></data-grid>
         </div>
     </div>
 </div>
+<script src="~/js/school-manager/subjects.js" asp-append-version="true"></script>

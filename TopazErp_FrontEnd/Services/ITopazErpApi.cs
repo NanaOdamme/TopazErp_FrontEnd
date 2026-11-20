@@ -473,5 +473,459 @@ public interface ITopazErpApi
     Task<BaseApiResponse> CreateLevelClass(object dto);
     Task<BaseApiResponse> UpdateLevelClass(object dto);
     Task<BaseApiResponse> DeleteLevelClass(Guid id);
+    //CutOff
+    Task<ConductCutOfResponse> GetCutOffs();
+    Task<BaseApiResponse> CreateCutOff(object dto);
+    Task<BaseApiResponse> UpdateCutOff(object dto);
+    Task<BaseApiResponse> DeleteCutOff(Guid id);
+    //DisciplinaryAction
+    Task<DisciplinaryActionResponse> GetDisciplinaryActions();
+    Task<BaseApiResponse> CreateDisciplinaryAction(object dto);
+    Task<BaseApiResponse> UpdateDisciplinaryAction(object dto);
+    Task<BaseApiResponse> DeleteDisciplinaryAction(Guid id);
+    
+    Task<StudentDisciplinaryActionResponse> GetStDisciplinaryActions();
+    Task<BaseApiResponse> CreateStDisciplinaryAction(object dto);
+    Task<BaseApiResponse> UpdateStDisciplinaryAction(object dto);
+    Task<BaseApiResponse> DeleteStDisciplinaryAction(Guid id);
+    
+    //Offence
+    Task<SmSimpleInputResponse> GetOffences();
+    Task<BaseApiResponse> CreateOffence(object dto);
+    Task<BaseApiResponse> UpdateOffence(object dto);
+    Task<BaseApiResponse> DeleteOffence(Guid id);
+    // NurseryGrading
+    Task<SmSimpleInputResponse> GetNurseryGradings();
+    Task<BaseApiResponse> CreateNurseryGrading(object dto);
+    Task<BaseApiResponse> UpdateNurseryGrading(object dto);
+    Task<BaseApiResponse> DeleteNurseryGrading(Guid id);
+    //PerformanceArea
+    Task<SmSimpleInputResponse> GetPerformanceAreas();
+    Task<BaseApiResponse> CreatePerformanceArea(object dto);
+    Task<BaseApiResponse> UpdatePerformanceArea(object dto);
+    Task<BaseApiResponse> DeletePerformanceArea(Guid id);
+  
+    Task<PerformanceSkillResponse> GetPerformanceSkills();
+    Task<BaseApiResponse> CreatePerformanceSkill(object dto);
+    Task<BaseApiResponse> UpdatePerformanceSkill(object dto);
+    Task<BaseApiResponse> DeletePerformanceSkill(Guid id);
+    
+    Task<StudentPerformanceSkillResponse> GetStPerformanceSkills();
+    Task<BaseApiResponse> CreateStPerformanceSkill(object dto);
+    Task<BaseApiResponse> UpdateStPerformanceSkill(object dto);
+    Task<BaseApiResponse> DeleteStPerformanceSkill(Guid id);
+    
+    //Assignments
+    Task<ClassAssignmentResponse> GetResults();
+    Task<BaseApiResponse> CreateResult(object dto);
+    Task<BaseApiResponse> UpdateResult(object dto);
+    Task<BaseApiResponse> DeleteResult(Guid id);
+    
+    Task<ResultPeriodResponse> GetResultPeriods();
+    Task<BaseApiResponse> CreateResultPeriod(object dto);
+    Task<BaseApiResponse> UpdateResultPeriod(object dto);
+    Task<BaseApiResponse> DeleteResultPeriod(Guid id);
+    
+    //AssignedSubject
+    Task<AssignedSubjectResponse> GetAssignedSubjects();
+    Task<BaseApiResponse> CreateAssignedSubject(object dto);
+    Task<BaseApiResponse> UpdateAssignedSubject(object dto);
+    Task<BaseApiResponse> DeleteAssignedSubject(Guid id);
+    
+    //AwardAndPrize
+     Task<SmSimpleInputResponse> GetAwardTypes();
+     Task<BaseApiResponse> CreateAwardType(object dto);
+     Task<BaseApiResponse> UpdateAwardType(object dto);
+     Task<BaseApiResponse> DeleteAwardType(Guid id);
+     
+     Task<SmSimpleInputResponse> GetPrizeTypes();
+     Task<BaseApiResponse> CreatePrizeType(object dto);
+     Task<BaseApiResponse> UpdatePrizeType(object dto);
+     Task<BaseApiResponse> DeletePrizeType(Guid id);
+     
+     Task<PrizeAwardedResponse> GetPrizeAwards();
+     Task<BaseApiResponse> CreatePrizeAward(object dto);
+     Task<BaseApiResponse> UpdatePrizeAward(object dto);
+     Task<BaseApiResponse> DeletePrizeAward(Guid id);
+     
+     //BehavioralAssessment
+     Task<BehavioralAssessmentResponse> GetBehavioralAssessments();
+     Task<BaseApiResponse> CreateBehavioralAssessment(object dto);
+     Task<BaseApiResponse> UpdateBehavioralAssessment(object dto);
+     Task<BaseApiResponse> DeleteBehavioralAssessment(Guid id);
+     
+     //BillFooter
+     Task<BillFooterResponse> GetBillFooters();
+     Task<BaseApiResponse> CreateBillFooter(object dto);
+     Task<BaseApiResponse> UpdateBillFooter(object dto);
+     Task<BaseApiResponse> DeleteBillFooter(Guid id);
+     
+     //CategoryPercentage
+     Task<CategoryPercentageResponse> GetCategoryPercentages();
+     Task<BaseApiResponse> CreateCategoryPercentage(object dto);
+     Task<BaseApiResponse> UpdateCategoryPercentage(object dto);
+     Task<BaseApiResponse> DeleteCategoryPercentage(Guid id);
+     
+     //Certificate
+     Task<SmSimpleInputResponse> GetCertificates();
+     Task<BaseApiResponse> CreateCertificate(object dto);
+     Task<BaseApiResponse> UpdateCertificate(object dto);
+     Task<BaseApiResponse> DeleteCertificate(Guid id);
+     
+     //ChangeStudentStatus
+     Task<BaseApiResponse> CreateStudentStatus(object dto);
+     Task<BaseApiResponse> UpdateStudentStatus(object dto);
+     
+     //Attendance
+     Task<AttendanceResponse> GetAttendances();
+     Task<BaseApiResponse> CreateAttendance(object dto);
+     Task<BaseApiResponse> UpdateAttendance(object dto);
+     Task<BaseApiResponse> DeleteAttendance(Guid id);
+     
+     Task<CumulativeAttendanceResponse> GetCumulativeAttendances();
+     Task<BaseApiResponse> CreateCumulativeAttendance(object dto);
+     Task<BaseApiResponse> UpdateCumulativeAttendance(object dto);
+     Task<BaseApiResponse> DeleteCumulativeAttendance(Guid id);
+     
+     //ClassLevelPercentage
+     Task<ClassLevelPercentageResponse> GetClassLevelPercentages();
+     Task<BaseApiResponse> CreateClassLevelPercentage(object dto);
+     Task<BaseApiResponse> UpdateClassLevelPercentage(object dto);
+     Task<BaseApiResponse> DeleteClassLevelPercentage(Guid id);
+     
+     //ClassPromotion
+     Task<ClassPromotionResponse> GetClassPromotions();
+     Task<BaseApiResponse> CreateClassPromotion(object dto);
+     Task<BaseApiResponse> UpdateClassPromotion(object dto);
+     
+     //ClassRoom
+     Task<SmSimpleInputResponse> GetClassRooms();
+     Task<BaseApiResponse> CreateClassRoom(object dto);
+     Task<BaseApiResponse> UpdateClassRoom(object dto);
+     Task<BaseApiResponse> DeleteClassRoom(Guid id);
+     
+     //SmCreditMemo
+     Task<SchCreditMemoResponse> GetSchCreditMemos();
+     Task<BaseApiResponse> CreateSchCreditMemo(object dto);
+     Task<BaseApiResponse> UpdateSchCreditMemo(object dto);
+     Task<BaseApiResponse> CancelSchCreditMemo(List<Guid> memoIds);
+     
+     //DistanceGroup
+     Task<DistanceGroupResponse> GetDistanceGroups();
+     Task<BaseApiResponse> CreateDistanceGroup(object dto);
+     Task<BaseApiResponse> UpdateDistanceGroup(object dto);
+     Task<BaseApiResponse> DeleteDistanceGroup(Guid id);
+     
+     //Excursion
+     Task<ExcursionResponse> GetExcursions();
+     Task<BaseApiResponse> CreateExcursion(object dto);
+     Task<BaseApiResponse> UpdateExcursion(object dto);
+     Task<BaseApiResponse> DeleteExcursion(Guid id);
+     
+     //FeesDescription
+     Task<FeesDescriptionResponse> GetFeesDescriptions();
+     Task<BaseApiResponse> CreateFeesDescription(object dto);
+     Task<BaseApiResponse> UpdateFeesDescription(object dto);
+     Task<BaseApiResponse> DeleteFeesDescription(Guid id);
+     
+     //FeeSetUp
+     Task<FeeSetUpResponse> GetFees();
+     Task<BaseApiResponse> CreateFee(object dto);
+     Task<BaseApiResponse> UpdateFee(object dto);
+     Task<BaseApiResponse> DeleteFee(Guid id);
+     
+     Task<SmSimpleInputResponse> GetBoardingItems();
+     Task<BaseApiResponse> CreateBoardingItem(object dto);
+     Task<BaseApiResponse> UpdateBoardingItem(object dto);
+     Task<BaseApiResponse> DeleteBoardingItem(Guid id);
+     
+     Task<BoardingFeeResponse> GetBoardingFees();
+     Task<BaseApiResponse> CreateBoardingFee(object dto);
+     Task<BaseApiResponse> UpdateBoardingFee(object dto);
+     Task<BaseApiResponse> DeleteBoardingFee(Guid id);
+     
+     //Health
+     Task<SmSimpleInputResponse> GetHealths();
+     Task<BaseApiResponse> CreateHealth(object dto);
+     Task<BaseApiResponse> UpdateHealth(object dto);
+     Task<BaseApiResponse> DeleteHealth(Guid id);
+     
+     //Hostel
+     Task<HostelResponse> GetHostels();
+     Task<BaseApiResponse> CreateHostel(object dto);
+     Task<BaseApiResponse> UpdateHostel(object dto);
+     Task<BaseApiResponse> DeleteHostel(Guid id);
+      
+     //House
+     Task<SmSimpleInputResponse> GetHouses();
+     Task<BaseApiResponse> CreateHouse(object dto);
+     Task<BaseApiResponse> UpdateHouse(object dto);
+     Task<BaseApiResponse> DeleteHouse(Guid id);
+     
+     //Location
+     Task<SmSimpleInputResponse> GetLocations();
+     Task<BaseApiResponse> CreateLocation(object dto);
+     Task<BaseApiResponse> UpdateLocation(object dto);
+     Task<BaseApiResponse> DeleteLocation(Guid id);
+     
+     //MidTermAssessment
+     Task<AssessmentRemarkHeaderResponse> GetAssessmentRemarkHeaders();
+     Task<BaseApiResponse> CreateAssessmentRemarkHeader(object dto);
+     Task<BaseApiResponse> UpdateAssessmentRemarkHeader(object dto);
+     Task<BaseApiResponse> DeleteAssessmentRemarkHeader(Guid id);
+     
+     Task<MidTermAssessmentResponse> GetMidTermAssessments();
+     Task<BaseApiResponse> CreateMidTermAssessment(object dto);
+     Task<BaseApiResponse> UpdateMidTermAssessment(object dto);
+     Task<BaseApiResponse> DeleteMidTermAssessment(Guid id);
+     
+     //SmOpeningBalance
+     Task<StudentOpeningBalanceResponse> GetSmOpeningBalances();
+     Task<BaseApiResponse> CreateSmOpeningBalance(object dto);
+     Task<BaseApiResponse> UpdateSmOpeningBalance(object dto);
+     Task<BaseApiResponse> DeleteSmOpeningBalance(Guid id);
+     Task<BaseApiResponse> PostSmOpeningBalance(List<Guid> balanceIds);
+     
+     //ParentProfession
+     Task<SmSimpleInputResponse> GetParentProfessions();
+     Task<BaseApiResponse> CreateParentProfession(object dto);
+     Task<BaseApiResponse> UpdateParentProfession(object dto);
+     Task<BaseApiResponse> DeleteParentProfession(Guid id);
+     
+     //SmPayment
+     Task<SchPaymentResponse> GetSchPayments();
+     Task<BaseApiResponse> CreateSchPayment(object dto);
+     Task<BaseApiResponse> UpdateSchPayment(object dto);
+     Task<BaseApiResponse> ProcessSchPayments(List<Guid> paymentIds);
+     Task<BaseApiResponse> CancelSchPayments(List<Guid> paymentIds);
+     
+     //PostToGl
+     Task<BaseApiResponse> PostBills(List<Guid> billIds);
+     Task<BaseApiResponse> PostSchPayments(List<Guid> billIds);
+     Task<BaseApiResponse> PostSchCreditMemos(List<Guid> memoIds);
+     
+     //ProcessBill
+     Task<BillResponse> GetBills();
+     Task<StudentBillInfoResponse> GetStudentBills();
+     Task<BaseApiResponse> CreateBill(object dto);
+     Task<BaseApiResponse> UpdateBill(object dto);
+     Task<BaseApiResponse> ProcessBills(object dto);
+     Task<BaseApiResponse> CancelStudentBills(object dto);
+     Task<ExistingBillResponse> GetExistingBill();
+     
+     //PtaExecutive
+     Task<PtaExecutiveResponse> GetPtaExecutives();
+     Task<BaseApiResponse> CreatePtaExecutive(object dto);
+     Task<BaseApiResponse> UpdatePtaExecutive(object dto);
+     Task<BaseApiResponse> DeletePtaExecutive(Guid id);
+     
+     //PtaPosition
+     Task<SmSimpleInputResponse> GetPtaPositions();
+     Task<BaseApiResponse> CreatePtaPosition(object dto);
+     Task<BaseApiResponse> UpdatePtaPosition(object dto);
+     Task<BaseApiResponse> DeletePtaPosition(Guid id);
+     
+     //RegisterClass
+     Task<RegisteredClassResponse> GetRegisteredClasses();
+     Task<BaseApiResponse> CreateRegisteredClass(object dto);
+     Task<BaseApiResponse> UpdateRegisteredClass(object dto);
+     Task<BaseApiResponse> DeleteRegisteredClass(Guid id);
+     
+     //RemarkByTeacher
+     Task<RemarksByTeacherResponse> GetRemarksByTeachers();
+     Task<BaseApiResponse> CreateRemarksByTeacher(object dto);
+     Task<BaseApiResponse> UpdateRemarksByTeacher(object dto);
+     
+     //SchGlAccounts
+     Task<SchBillAccountResponse> GetSchBillAccounts();
+     Task<BaseApiResponse> CreateSchBillAccount(object dto);
+     Task<BaseApiResponse> UpdateSchBillAccount(object dto);
+     Task<BaseApiResponse> DeleteSchBillAccount(Guid id);
+     
+     Task<SchPaymentAccountResponse> GetSchPaymentAccounts();
+     Task<BaseApiResponse> CreateSchPaymentAccount(object dto);
+     Task<BaseApiResponse> UpdateSchPaymentAccount(object dto);
+     Task<BaseApiResponse> DeleteSchPaymentAccount(Guid id);
+     
+     Task<SchCreditMemoAccountResponse> GetSchCreditMemoAccounts();
+     Task<BaseApiResponse> CreateSchCreditMemoAccount(object dto);
+     Task<BaseApiResponse> UpdateSchCreditMemoAccount(object dto);
+     Task<BaseApiResponse> DeleteSchCreditMemoAccount(Guid id);
+     
+     //SchoolGroup
+     Task<SchoolGroupResponse> GetSchoolGroups();
+     Task<BaseApiResponse> CreateSchoolGroup(object dto);
+     Task<BaseApiResponse> UpdateSchoolGroup(object dto);
+     Task<BaseApiResponse> DeleteSchoolGroup(Guid id);
+     
+     //SchoolProfile
+     Task<SchoolProfileResponse> GetSchoolProfile();
+     Task<BaseApiResponse> CreateSchoolProfile(object dto);
+     Task<BaseApiResponse> UpdateSchoolProfile(object dto);
+    
+     //StaffBio
+     Task<StaffBioResponse> GetStaffBios();
+     Task<BaseApiResponse> CreateStaffBio(object dto);
+     Task<BaseApiResponse> UpdateStaffBio(object dto);
+     Task<BaseApiResponse> DeleteStaffBio(Guid id);
+     
+     //StaffDesignation
+     Task<SmSimpleInputResponse> GetStaffDesignations();
+     Task<BaseApiResponse> CreateStaffDesignation(object dto);
+     Task<BaseApiResponse> UpdateStaffDesignation(object dto);
+     Task<BaseApiResponse> DeleteStaffDesignation(Guid id);
+     
+     //StaffGrade
+     Task<SmSimpleInputResponse> GetStaffGrades();
+     Task<BaseApiResponse> CreateStaffGrade(object dto);
+     Task<BaseApiResponse> UpdateStaffGrade(object dto);
+     Task<BaseApiResponse> DeleteStaffGrade(Guid id);
+     
+     //StaffPastEmployment
+     Task<StaffPastEmploymentResponse> GetStaffPastEmployments();
+     Task<BaseApiResponse> CreateStaffPastEmployment(object dto);
+     Task<BaseApiResponse> UpdateStaffPastEmployment(object dto);
+     Task<BaseApiResponse> DeleteStaffPastEmployment(Guid id);
+     
+     //StaffPastPosition
+     Task<StaffPastPositionResponse> GetStaffPastPositions();
+     Task<BaseApiResponse> CreateStaffPastPosition(object dto);
+     Task<BaseApiResponse> UpdateStaffPastPosition(object dto);
+     Task<BaseApiResponse> DeleteStaffPastPosition(Guid id);
+     
+     //StaffQualification
+     Task<StaffQualificationResponse> GetStaffQualifications();
+     Task<BaseApiResponse> CreateStaffQualification(object dto);
+     Task<BaseApiResponse> UpdateStaffQualification(object dto);
+     Task<BaseApiResponse> DeleteStaffQualification(Guid id);
+     
+     //StaffRelationship
+     Task<StaffRelationshipResponse> GetStaffRelationships();
+     Task<BaseApiResponse> CreateStaffRelationship(object dto);
+     Task<BaseApiResponse> UpdateStaffRelationship(object dto);
+     Task<BaseApiResponse> DeleteStaffRelationship(Guid id);
+     
+     //StContactRelationship
+     Task<StContactRelationshipResponse> GetStContactRelationships();
+     Task<BaseApiResponse> CreateStContactRelationship(object dto);
+     Task<BaseApiResponse> UpdateStContactRelationship(object dto);
+     Task<BaseApiResponse> DeleteStContactRelationship(Guid id);
+     
+     //StudentAllergy
+     Task<SmSimpleInputResponse> GetAllergyTypes();
+     Task<BaseApiResponse> CreateAllergyType(object dto);
+     Task<BaseApiResponse> UpdateAllergyType(object dto);
+     Task<BaseApiResponse> DeleteAllergyType(Guid id);
+     
+     Task<StudentAllergyResponse> GetStudentAllergies(Guid studentId);
+     Task<BaseApiResponse> CreateStudentAllergy(object dto);
+     Task<BaseApiResponse> UpdateStudentAllergy(object dto);
+     Task<BaseApiResponse> DeleteStudentAllergy(Guid id);
+     
+     //StudentBio
+     Task<StudentInfoResponse> GetStudentBios();
+     Task<BaseApiResponse> CreateStudentBio(object dto);
+     Task<BaseApiResponse> UpdateStudentBio(object dto);
+     Task<BaseApiResponse> DeleteStudentBio(Guid id);
+     
+     //StudentDisability
+     Task<SmSimpleInputResponse> GetDisabilityTypes();
+     Task<BaseApiResponse> CreateDisabilityType(object dto);
+     Task<BaseApiResponse> UpdateDisabilityType(object dto);
+     Task<BaseApiResponse> DeleteDisabilityType(Guid id);
+     
+     Task<StudentDisabilityResponse> GetStudentDisabilities(Guid studentId);
+     Task<BaseApiResponse> CreateStudentDisability(object dto);
+     Task<BaseApiResponse> UpdateStudentDisability(object dto);
+     Task<BaseApiResponse> DeleteStudentDisability(Guid id);
+     
+     //StudentImmunization
+     Task<SmSimpleInputResponse> GetImmunizationTypes();
+     Task<BaseApiResponse> CreateImmunizationType(object dto);
+     Task<BaseApiResponse> UpdateImmunizationType(object dto);
+     Task<BaseApiResponse> DeleteImmunizationType(Guid id);
+     
+     Task<StudentImmunizationResponse> GetStudentImmunizations(Guid studentId);
+     Task<BaseApiResponse> CreateStudentImmunization(object dto);
+     Task<BaseApiResponse> UpdateStudentImmunization(object dto);
+     Task<BaseApiResponse> DeleteStudentImmunization(Guid id);
+     
+     //StudentMedical
+     Task<StudentMedicalResponse> GetStudentMedicals(Guid studentId);
+     Task<BaseApiResponse> CreateStudentMedical(object dto);
+     Task<BaseApiResponse> UpdateStudentMedical(object dto);
+     Task<BaseApiResponse> DeleteStudentMedical(Guid id);
+     
+     //StudentPosition
+      Task<SmSimpleInputResponse> GetPositionTypes();
+      Task<BaseApiResponse> CreatePositionType(object dto);
+      Task<BaseApiResponse> UpdatePositionType(object dto);
+      Task<BaseApiResponse> DeletePositionType(Guid id);
+          
+     Task<StudentPositionResponse> GetStudentPositions(Guid studentId);
+     Task<BaseApiResponse> CreateStudentPosition(object dto);
+     Task<BaseApiResponse> UpdateStudentPosition(object dto);
+     Task<BaseApiResponse> DeleteStudentPosition(Guid id);
+     Task<StudentPositionResponse> GetStudentPositions();
+     
+     //StudentPromotion
+     Task<StudentPromotionResponse> GetStudentPromotions();
+     Task<BaseApiResponse> CreateStudentPromotion(object dto);
+     Task<BaseApiResponse> UpdateStudentPromotion(object dto);
+     
+     Task<PreClassStudentPromotionResponse> GetPreClassStudentPromotions();
+     Task<BaseApiResponse> CreatePreClassStudentPromotion(object dto);
+     Task<BaseApiResponse> UpdatePreClassStudentPromotion(object dto);
+     
+     //SubjectRemark
+      Task<SubjectRemarkResponse> GetSubjectRemarks();
+      Task<BaseApiResponse> CreateSubjectRemark(object dto);
+      Task<BaseApiResponse> UpdateSubjectRemark(object dto);
+      Task<BaseApiResponse> DeleteSubjectRemark(Guid id);
+     
+     //Subject
+     Task<SubjectResponse> GetSubjects();
+     Task<BaseApiResponse> CreateSubject(object dto);
+     Task<BaseApiResponse> UpdateSubject(object dto);
+     Task<BaseApiResponse> DeleteSubject(Guid id);
+     
+     //SupplementaryItem
+     Task<SupplementaryItemResponse> GetSupplementaryItems();
+     Task<BaseApiResponse> CreateSupplementaryItem(object dto);
+     Task<BaseApiResponse> UpdateSupplementaryItem(object dto);
+     Task<BaseApiResponse> DeleteSupplementaryItem(Guid id);
+     
+     //TeacherClass
+     Task<TeacherClassResponse> GetTeacherClasses();
+     Task<BaseApiResponse> CreatTeacherClass(object dto);
+     Task<BaseApiResponse> UpdateTeacherClass(object dto);
+     Task<BaseApiResponse> DeleteTeacherClass(Guid id);
+     
+     //TeacherSubject
+     Task<TeacherSubjectResponse> GetTeacherSubjects();
+     Task<BaseApiResponse> CreateTeacherSubject(object dto);
+     Task<BaseApiResponse> UpdateTeacherSubject(object dto);
+     Task<BaseApiResponse> DeleteTeacherSubject(Guid id);
+          
+     //TimeTable
+     Task<TimeTableResponse> GetTimeTables();
+     Task<BaseApiResponse> CreateTimeTable(object dto);
+     Task<BaseApiResponse> UpdateTimeTable(object dto);
+     Task<BaseApiResponse> DeleteTimeTable(Guid id);  
+     
+     // TransportationLocation
+     Task<TransportationLocationResponse> GetTransportationLocations();
+     Task<BaseApiResponse> CreateTransportationLocation(object dto);
+     Task<BaseApiResponse> UpdateTransportationLocation(object dto);
+     Task<BaseApiResponse> DeleteTransportationLocation(Guid id);       
+          
+     //TransportationUnit     
+     Task<TransportationUnitResponse> GetTransportationUnits();
+     Task<BaseApiResponse> CreatTransportationUnit(object dto);
+     Task<BaseApiResponse> UpdateTransportationUnit(object dto);
+     Task<BaseApiResponse> DeleteTransportationUnit(Guid id);     
+     
+          
+          
 }
     

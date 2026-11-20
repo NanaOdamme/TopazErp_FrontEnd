@@ -23,8 +23,27 @@
     <div class="card" data-card-title="Class Rooms">
         <div id="app">
          
-          
+            <data-grid
+                title="Class Rooms"
+                :columns="classRoomColumns"
+                :data="classRoomList"
+                :theme="theme"
+                row-id="id"
+                label-key="name"
+                item-label="Class Room"
+                item-label-plural="Class Rooms"
+                add-label="Add Class Room"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                @@create="onCreateClassRoom"
+                @@update="onUpdateClassRoom"
+                @@delete="onDeleteClassRoom"
+            ></data-grid>
         </div>
        
     </div>
 </div>
+<script src="~/js/school-manager/boardingItems-classrooms.js" asp-append-version="true"></script>

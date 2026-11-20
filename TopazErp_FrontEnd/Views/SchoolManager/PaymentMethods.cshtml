@@ -20,7 +20,24 @@
     </div>
     <div class="card" data-card-title="Payment Methods">
         <div id="app">
-
+            <data-grid
+                title="Payment Methods"
+                :columns="columns"
+                :data="paymentMethods"
+                :theme="theme"
+                row-id="id"
+                label-key="name"
+                item-label="Payment Methods"
+                item-label-plural="Payment Methods"
+                :page-size="10"
+                :selectable="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                :allow-add="false"
+                :allow-edit="false"
+                :allow-delete="false"
+            ></data-grid>
         </div>
     </div>
 </div>
+<script src="~/js/school-manager/payment-methods.js" asp-append-version="true"></script>

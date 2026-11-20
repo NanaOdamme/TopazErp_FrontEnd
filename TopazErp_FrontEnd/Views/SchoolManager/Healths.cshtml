@@ -20,7 +20,27 @@
     </div>
     <div class="card" data-card-title="Health">
         <div id="app">
-
+            <data-grid
+                title="Healths"
+                :columns="healthColumns"
+                :data="healthList"
+                :theme="theme"
+                row-id="id"
+                label-key="name"
+                item-label="Health"
+                item-label-plural="Healths"
+                add-label="Add Health"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                density="compact"
+                @@create="onCreateHealth"
+                @@update="onUpdateHealth"
+                @@delete="onDeleteHealth"
+            ></data-grid>
         </div>
     </div>
 </div>
+<script src="~/js/school-manager/healths-locations-houses.js" asp-append-version="true"></script>

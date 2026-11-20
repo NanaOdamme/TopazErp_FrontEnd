@@ -20,7 +20,26 @@
     </div>
     <div class="card" data-card-title="Distance Groups">
         <div id="app">
-
+            <data-grid
+                title="Distance Groups"
+                :columns="distanceGroupColumns"
+                :data="distanceGroupList"
+                :theme="theme"
+                row-id="id"
+                label-key="description"
+                item-label="Distance Group"
+                item-label-plural="Distance Groups"
+                add-label="Add Distance Group"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                @@create="onCreateDistanceGroup"
+                @@update="onUpdateDistanceGroup"
+                @@delete="onDeleteDistanceGroup"
+            ></data-grid>
         </div>
     </div>
 </div>
+<script src="~/js/school-manager/distance-school-groups.js" asp-append-version="true"></script>

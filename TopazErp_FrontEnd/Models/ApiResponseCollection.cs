@@ -567,6 +567,11 @@ public class DistanceGroupResponse : BaseApiResponseModel
     [JsonProperty("result")]
     public List<DistanceGroup> Result { get; set; }
 }
+public class DisciplinaryActionResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<DisciplinaryAction> Result { get; set; }
+}
 public class DistanceUnitResponse : BaseApiResponseModel
 {
     [JsonProperty("result")]
@@ -670,7 +675,7 @@ public class SchoolGroupPositionResponse : BaseApiResponseModel
 public class SchoolProfileResponse : BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public List<SchoolProfile> Result { get; set; }
+    public SchoolProfile Result { get; set; }
 }
 public class SchPaymentResponse : BaseApiResponseModel
 {
@@ -826,4 +831,14 @@ public class TransportationUnitResponse : BaseApiResponseModel
 {
     [JsonProperty("result")]
     public List<TransportationUnit> Result { get; set; }
+}
+public class ExistingBillResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public ExistingBill Result { get; set; }
+}
+public class PtaExecutiveResponse : BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public List<PtaExecutive> Result { get; set; }
 }

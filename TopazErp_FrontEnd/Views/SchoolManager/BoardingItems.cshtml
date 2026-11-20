@@ -22,9 +22,28 @@
     </div>
     <div class="card" data-card-title="Boarding Items">
         <div id="app">
-         
+            <data-grid
+                title="Boarding Items"
+                :columns="boardingItemColumns"
+                :data="boardingItemList"
+                :theme="theme"
+                row-id="id"
+                label-key="name"
+                item-label="Boarding Item"
+                item-label-plural="Boarding Items"
+                add-label="Add Boarding Item"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                @@create="onCreateBoardingItem"
+                @@update="onUpdateBoardingItem"
+                @@delete="onDeleteBoardingItem"
+            ></data-grid>
           
         </div>
        
     </div>
 </div>
+<script src="~/js/school-manager/boardingItems-classrooms.js" asp-append-version="true"></script>

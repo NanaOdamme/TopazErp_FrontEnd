@@ -20,7 +20,26 @@
     </div>
     <div class="card" data-card-title="Supplementary Items">
         <div id="app">
-
+            <data-grid
+                title="Supplementary Items"
+                :columns="columns"
+                :data="supplementaryItemList"
+                :theme="theme"
+                row-id="id"
+                label-key="name"
+                item-label="Supplementary Item"
+                item-label-plural="Supplementary Items"
+                add-label="Add Supplementary Item"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                @@create="onCreate"
+                @@update="onUpdate"
+                @@delete="onDelete"
+            ></data-grid>
         </div>
     </div>
 </div>
+<script src="~/js/school-manager/supplementary-items.js" asp-append-version="true"></script>

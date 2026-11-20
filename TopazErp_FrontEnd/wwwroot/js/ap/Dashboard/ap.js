@@ -1,14 +1,3 @@
-/*
- * AP Dashboard
- * ------------------------------------------------------------------
- * This file owns DATA ONLY. Every row, bar, slice and cell that is
- * painted on screen is declared in Views/Ap/Dashboard.cshtml (Vue
- * in-DOM templates). The app below just exposes values + a few
- * geometry helpers that the markup loops over.
- *
- * Endpoints / payload field names are untouched — only GetVouchers
- * was added to the list.
- */
 (function () {
     'use strict';
 

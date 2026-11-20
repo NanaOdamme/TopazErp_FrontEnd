@@ -22,9 +22,29 @@
     </div>
     <div class="card" data-card-title="Disciplinary Actions">
         <div id="app">
-         
+            <data-grid
+                title="Disciplinary Actions"
+                :columns="columns"
+                :data="disciplinaryActionList"
+                :theme="theme"
+                row-id="id"
+                label-key="actionDescription"
+                item-label="Disciplinary Action"
+                item-label-plural="Disciplinary Actions"
+                add-label="Add Disciplinary Action"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                @@create="onCreate"
+                @@update="onUpdate"
+                @@delete="onDelete"
+            ></data-grid>
           
         </div>
        
     </div>
 </div>
+
+<script src="~/js/school-manager/disciplinary-actions.js" asp-append-version="true"></script>

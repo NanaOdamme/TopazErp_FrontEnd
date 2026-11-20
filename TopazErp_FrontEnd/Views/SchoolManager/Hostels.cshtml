@@ -20,7 +20,28 @@
     </div>
     <div class="card" data-card-title="Hostels">
         <div id="app">
-
+            <data-grid
+                title="Hostels"
+                :columns="hostelColumns"
+                :data="hostelList"
+                :child="hostelDetailCol"
+                :theme="theme"
+                row-id="id"
+                label-key="name"
+                item-label="Hostel"
+                item-label-plural="Hostels"
+                add-label="Add Hostel"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                density="compact"
+                @@create="onCreate"
+                @@update="onUpdate"
+                @@delete="onDelete"
+            ></data-grid>
         </div>
     </div>
 </div>
+<script src="~/js/school-manager/hostel.js"></script>

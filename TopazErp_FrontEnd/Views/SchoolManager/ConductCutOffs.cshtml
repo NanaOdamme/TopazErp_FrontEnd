@@ -22,9 +22,29 @@
     </div>
     <div class="card" data-card-title="Conduct Cut-Offs">
         <div id="app">
-         
+            <data-grid
+                title="Cut Offs"
+                :columns="columns"
+                :data="cutOffList"
+                :theme="theme"
+                row-id="id"
+                label-key="cutOfMark"
+                item-label="Cut Off"
+                item-label-plural="Cut Offs"
+                add-label="Add Cut Off"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                @@create="onCreate"
+                @@update="onUpdate"
+                @@delete="onDelete"
+            ></data-grid>
           
         </div>
        
     </div>
 </div>
+
+<script src="~/js/school-manager/cut-offs.js" asp-append-version="true"></script>

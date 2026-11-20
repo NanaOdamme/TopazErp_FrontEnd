@@ -20,7 +20,27 @@
     </div>
     <div class="card" data-card-title="Parent Professions">
         <div id="app">
-
+            <data-grid
+                title="Parent Professions"
+                :columns="parentProfessionColumns"
+                :data="parentProfessionList"
+                :theme="theme"
+                row-id="id"
+                label-key="name"
+                item-label="Parent Profession"
+                item-label-plural="Parent Professions"
+                add-label="Add Parent Profession"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                @@create="onCreateParentProfession"
+                @@update="onUpdateParentProfession"
+                @@delete="onDeleteParentProfession"
+            ></data-grid>
         </div>
     </div>
 </div>
+
+<script src="~/js/school-manager/pta-positions.js" asp-append-version="true"></script>

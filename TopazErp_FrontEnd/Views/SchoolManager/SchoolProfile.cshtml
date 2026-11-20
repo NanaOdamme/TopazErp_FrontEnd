@@ -267,14 +267,18 @@
                     </div>
 
                     <div>
-                        <label for="faxNo" class="label mb-1.5 block text-sm font-semibold text-gray-700">
-                            Fax Number
+                        <label for="address" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                            Address: <span class="text-red-500">*</span>
                         </label>
-                        <input id="faxNo"
-                               v-model.trim="faxNo"
+                        <input id="address"
+                               v-model.trim="address"
                                type="text"
-                               placeholder="Enter fax number"
+                               required
+                               placeholder="Enter school address"
                                class="input-control" />
+                        <p v-if="errors.address" class="mt-1 text-xs font-medium text-red-600">
+                            {{ errors.address }}
+                        </p>
                     </div>
 
                     <div>
@@ -303,20 +307,7 @@
                                class="input-control" />
                     </div>
 
-                    <div class="sm:col-span-2 lg:col-span-4">
-                        <label for="address" class="label mb-1.5 block text-sm font-semibold text-gray-700">
-                            Address: <span class="text-red-500">*</span>
-                        </label>
-                        <input id="address"
-                               v-model.trim="address"
-                               type="text"
-                               required
-                               placeholder="Enter school address"
-                               class="input-control" />
-                        <p v-if="errors.address" class="mt-1 text-xs font-medium text-red-600">
-                            {{ errors.address }}
-                        </p>
-                    </div>
+                
                 </div>
 
                 <hr class="my-6 border-slate-100 dark:border-slate-800" />
@@ -840,4 +831,4 @@
     </div>
 </div>
 
-<script src="~/js/school-manager/setups/school-profile.js" asp-append-version="true"></script>
+<script src="~/js/school-manager/school-profile.js" asp-append-version="true"></script>

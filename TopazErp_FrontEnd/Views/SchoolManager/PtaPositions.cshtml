@@ -20,7 +20,27 @@
     </div>
     <div class="card" data-card-title="PTA Positions">
         <div id="app">
-
+            <data-grid
+                title="PTA Positions"
+                :columns="ptaPositionColumns"
+                :data="ptaPositionList"
+                :theme="theme"
+                row-id="id"
+                label-key="name"
+                item-label="PTA Position"
+                item-label-plural="PTA Positions"
+                add-label="Add PTA Position"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                density="compact"
+                @@create="onCreatePtaPosition"
+                @@update="onUpdatePtaPosition"
+                @@delete="onDeletePtaPosition"
+            ></data-grid>
         </div>
     </div>
 </div>
+<script src="~/js/school-manager/pta-positions.js" asp-append-version="true"></script>
