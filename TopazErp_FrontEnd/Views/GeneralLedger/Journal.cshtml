@@ -124,14 +124,6 @@
 
             <!-- Middle: Quick Filters (Dates, Status, Currency) -->
             <div class="flex flex-wrap items-center gap-3">
-                <!-- Date Presets -->
-                <div class="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5 text-xs font-medium text-gray-600">
-                    <button type="button" @@click="setQuickDate('month')" class="rounded-md px-2.5 py-1.5 hover:bg-white transition hover:shadow-xs">This Month</button>
-                    <button type="button" @@click="setQuickDate('3months')" class="rounded-md px-2.5 py-1.5 hover:bg-white transition hover:shadow-xs">3 Months</button>
-                    <button type="button" @@click="setQuickDate('year')" class="rounded-md px-2.5 py-1.5 hover:bg-white transition hover:shadow-xs">This Year</button>
-                    <button type="button" @@click="setQuickDate('all')" class="rounded-md px-2.5 py-1.5 hover:bg-white transition hover:shadow-xs">All Time</button>
-                </div>
-
                 <!-- Status Filter -->
                 <select v-model="postingStatus"
                         @@change="getJournalTransactions"
@@ -150,12 +142,98 @@
                     <option value="multi">Multi-Currency</option>
                 </select>
 
+                <!-- Date Range Opt-in Toggle Button -->
+                <button type="button"
+                        @@click="toggleDateFilter"
+                        :class="useDateFilter ? 'bg-blue-50 text-blue-700 border-blue-300 font-semibold ring-1 ring-blue-300/50' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'"
+                        class="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition shadow-xs">
+                    <i class="bi bi-calendar3" :class="useDateFilter ? 'text-blue-600' : 'text-gray-400'"></i>
+                    <span>Date Filter:</span>
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                          :class="useDateFilter ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'">
+                        {{ useDateFilter ? 'Active' : 'Off' }}
+                    </span>
+                </button>
+
                 <!-- Refresh / Reset -->
                 <button type="button"
                         @@click="resetFilters"
                         title="Reset all filters"
                         class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white p-2 text-gray-600 hover:bg-gray-50 transition">
                     <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ── Date Range Controls Section ────────────────────────────── -->
+        <div class="mt-3 pt-3 border-t border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+            <!-- Left: Opt-in Checkbox + Presets -->
+            <div class="flex flex-wrap items-center gap-2.5">
+                <label class="inline-flex items-center gap-2 cursor-pointer select-none text-gray-700 font-medium mr-1">
+                    <input type="checkbox"
+                           v-model="useDateFilter"
+                           @@change="onDateToggleChange"
+                           class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer">
+                    <span>Filter by Date Range</span>
+                </label>
+
+                <!-- Date Presets -->
+                <div class="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5 text-xs font-medium text-gray-600">
+                    <button type="button"
+                            @@click="setQuickDate('today')"
+                            :class="useDateFilter && activeDatePreset === 'today' ? 'bg-white text-blue-600 shadow-xs font-semibold' : 'hover:bg-white text-gray-600'"
+                            class="rounded-md px-2.5 py-1 transition">Today</button>
+                    <button type="button"
+                            @@click="setQuickDate('month')"
+                            :class="useDateFilter && activeDatePreset === 'month' ? 'bg-white text-blue-600 shadow-xs font-semibold' : 'hover:bg-white text-gray-600'"
+                            class="rounded-md px-2.5 py-1 transition">This Month</button>
+                    <button type="button"
+                            @@click="setQuickDate('3months')"
+                            :class="useDateFilter && activeDatePreset === '3months' ? 'bg-white text-blue-600 shadow-xs font-semibold' : 'hover:bg-white text-gray-600'"
+                            class="rounded-md px-2.5 py-1 transition">3 Months</button>
+                    <button type="button"
+                            @@click="setQuickDate('year')"
+                            :class="useDateFilter && activeDatePreset === 'year' ? 'bg-white text-blue-600 shadow-xs font-semibold' : 'hover:bg-white text-gray-600'"
+                            class="rounded-md px-2.5 py-1 transition">This Year</button>
+                    <button type="button"
+                            @@click="disableDateFilter"
+                            :class="!useDateFilter ? 'bg-white text-blue-600 shadow-xs font-semibold' : 'hover:bg-white text-gray-600'"
+                            class="rounded-md px-2.5 py-1 transition">All Time</button>
+                </div>
+            </div>
+
+            <!-- Right: Start Date, End Date Inputs, Apply & Clear Buttons -->
+            <div class="flex flex-wrap items-center gap-2">
+                <div class="inline-flex items-center gap-1.5" :class="{ 'opacity-50 pointer-events-none': !useDateFilter }">
+                    <span class="text-gray-500 font-medium">From:</span>
+                    <input type="date"
+                           v-model="startDate"
+                           :disabled="!useDateFilter"
+                           @@change="onDateInputChange"
+                           class="rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs text-gray-700 shadow-xs focus:border-blue-500 focus:outline-none" />
+                </div>
+                <div class="inline-flex items-center gap-1.5" :class="{ 'opacity-50 pointer-events-none': !useDateFilter }">
+                    <span class="text-gray-500 font-medium">To:</span>
+                    <input type="date"
+                           v-model="endDate"
+                           :disabled="!useDateFilter"
+                           @@change="onDateInputChange"
+                           class="rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs text-gray-700 shadow-xs focus:border-blue-500 focus:outline-none" />
+                </div>
+                <button type="button"
+                        v-if="useDateFilter"
+                        @@click="applyDateFilter"
+                        class="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1 text-xs font-medium text-white shadow-xs hover:bg-blue-700 transition">
+                    <i class="bi bi-funnel"></i>
+                    <span>Apply</span>
+                </button>
+                <button type="button"
+                        v-if="useDateFilter"
+                        @@click="disableDateFilter"
+                        title="Turn off date filter and show all"
+                        class="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 transition">
+                    <i class="bi bi-x-lg"></i>
+                    <span>Clear</span>
                 </button>
             </div>
         </div>
@@ -195,7 +273,8 @@
         </div>
         <h3 class="text-lg font-semibold text-gray-800">No Journal Transactions Found</h3>
         <p class="text-sm text-gray-500 max-w-md mx-auto mt-1 mb-5">
-            No journal headers match your current search or date range filters.
+            <span v-if="useDateFilter">No journal transactions match your current search or date range filters ({{ fmtDate(startDate) }} – {{ fmtDate(endDate) }}).</span>
+            <span v-else>No journal transactions match your current search or filter criteria.</span>
         </p>
         <button type="button"
                 @@click="resetFilters"
@@ -302,6 +381,14 @@
 
                     <!-- Quick Actions -->
                     <div class="flex items-center gap-1.5" @@click.stop>
+                        <!-- Edit Button -->
+                        <button type="button"
+                                @@click="editJournal(journal)"
+                                title="Edit journal batch"
+                                class="inline-flex items-center justify-center w-7 h-7 rounded-md text-blue-600 hover:bg-blue-50 hover:text-blue-800 transition">
+                            <i class="bi bi-pencil-square text-xs"></i>
+                        </button>
+
                         <!-- Post Button (if draft) -->
                         <button v-if="!journal.isPosted"
                                 type="button"
@@ -335,6 +422,12 @@
                             <i class="bi bi-list-check text-blue-600 me-1"></i>
                             Journal Transaction Lines:
                         </span>
+                        <button type="button"
+                                @@click.stop="editJournal(journal)"
+                                class="inline-flex items-center gap-1 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 px-2 py-0.5 text-xs font-medium transition">
+                            <i class="bi bi-pencil-square text-[11px]"></i>
+                            <span>Edit Batch</span>
+                        </button>
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="inline-flex items-center gap-1" :class="isBatchBalanced(journal) ? 'text-emerald-700' : 'text-red-600 font-bold'">

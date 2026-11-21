@@ -1,10 +1,11 @@
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TopazErp_FrontEnd.Models;
 using TopazErp_FrontEnd.Services;
 
 namespace TopazErp_FrontEnd.Controllers;
-
+[Authorize]
 public class GeneralLedgerController : Controller
 {
     private readonly ITopazErpApi _topazErpApi;
@@ -118,9 +119,19 @@ public class GeneralLedgerController : Controller
         return View();
     }
     
-    public IActionResult CreateJournal()
+    public IActionResult CreateJournal(Guid? id = null)
     {
+        if (id.HasValue && id.Value != Guid.Empty)
+        {
+            ViewBag.JournalId = id.Value;
+        }
         return View();
+    }
+
+    public IActionResult CreateJournalEdit(Guid id)
+    {
+        ViewBag.JournalId = id;
+        return View("CreateJournal");
     }
     
      
@@ -328,12 +339,14 @@ public class GeneralLedgerController : Controller
     }
     
     
+    [HttpPost]
     public async Task<IActionResult> SaveJournal([FromBody] object dto)
     {
         var results = await _topazErpApi.CreateJournal(dto);
         return Json(results);
     }
     
+    [HttpPost]
     public async Task<IActionResult> UpdateJournal([FromBody]object dto)
     {
         var results = await _topazErpApi.UpdateJournal(dto);
@@ -408,12 +421,14 @@ public class GeneralLedgerController : Controller
         return Json(results);
     }
     
+    [HttpPost]
     public async Task<IActionResult> CreateAccountDetail([FromBody] object dto)
     {
         var results = await _topazErpApi.CreateAccountDetail(dto);
         return Json(results);
     }
-    
+
+    [HttpPost]
     public async Task<IActionResult> UpdateAccountDetail([FromBody] object dto)
     {
         var results = await _topazErpApi.UpdateAccountDetail(dto);
@@ -763,6 +778,32 @@ public class GeneralLedgerController : Controller
     public async Task<IActionResult> UpdateVoucher([FromBody] object dto, [FromQuery] Guid? id = null)
     {
         var results = await _topazErpApi.UpdateVoucher(dto, id);
+        return Json(results);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> PostVouchers([FromBody] PostVoucherDto dto)
+    {
+        var results = await _topazErpApi.PostVoucher(dto);
+        return Json(results);
+    }
+    
+    [HttpPost]
+    public async Task<IActionResult> DeleteVouchers([FromBody] PostVoucherDto dto)
+    {
+        var results = await _topazErpApi.DeleteVoucher(dto);
+        return Json(results);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> PostVoucher([FromBody] PostVoucherDto? dto = null, [FromQuery] Guid? id = null)
+    {
+        dto ??= new PostVoucherDto();
+        if ((dto.Ids == null || !dto.Ids.Any()) && id.HasValue)
+        {
+            dto.Ids = new List<Guid> { id.Value };
+        }
+        var results = await _topazErpApi.PostVoucher(dto);
         return Json(results);
     }
     

@@ -483,3 +483,8 @@ public class JournalDetail
 
      
 }
+
+public class PostVoucherDto
+{
+    public List<Guid> Ids { get; set; } = new();
+}

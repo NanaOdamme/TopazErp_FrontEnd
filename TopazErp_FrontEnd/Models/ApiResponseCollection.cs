@@ -96,6 +96,12 @@ public class JournalTransactionResponse: BaseApiResponseModel
     
 }
 
+public class JournalTransactionDetailResponse: BaseApiResponseModel
+{
+    [JsonProperty("result")]    
+    public JournalTransaction Result { get; set; }
+}
+
 public class VoucherResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]  

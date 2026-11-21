@@ -1,9 +1,10 @@
-const { createApp, ref, computed, watch, onMounted, reactive } = Vue;
+const { createApp, ref, shallowRef, computed, watch, onMounted, reactive } = Vue;
 
 createApp({
     setup() {
         // ── State ────────────────────────────────────────────────────
         const isLoading = ref(false);
+        const isShimmerLoading = ref(false);
         const showSaveMenu = ref(false);
         const emptyGuid = '00000000-0000-0000-0000-000000000000';
 
@@ -18,15 +19,25 @@ createApp({
         const batchNo         = ref('');
         const chequeNo        = ref('');
         const bankId          = ref('');
+        const voucherBatchSystemNumber = ref({});
 
         const voucherId       = ref('');
         const isEditMode      = ref(false);
         const isRecordCreated = ref(false);
+        const isPosted        = ref(false);
+        const showPreviewModal = ref(false);
+        const previewReport    = shallowRef(null);
+        const previewExporters = shallowRef(null);
+        const previewBatchNo   = ref('');
+        const isPreviewLoading = ref(false);
+        const previewError     = ref('');
+        const companyName      = ref('');
         const proposedJournalHeaderId   = ref('');
         const proposedJournalDetailIdList = ref([]);
 
         const customerList   = ref([]);
         const accountsList   = ref([]);
+        const bankGlAccountsList = ref([]);
         const bankList       = ref([]);
         const currencyList   = ref([]);
         const costCenterHierachyList = ref([]);
@@ -69,6 +80,37 @@ createApp({
         });
 
         // ── Helpers ───────────────────────────────────────────────────
+        /**
+         * Formats a system number according to its formatPattern, matching backend C# logic:
+         *   var format = string.IsNullOrWhiteSpace(sn.FormatPattern) ? "{prefix}{number}{suffix}" : sn.FormatPattern;
+         *   format.Replace("{PREFIX}", sn.Prefix ?? "")
+         *         .Replace("{NO}", sn.LastNo.ToString($"D{sn.Padding}"))
+         *         .Replace("{SUFFIX}", sn.Suffix ?? "");
+         * Also handles the lowercase fallback placeholders {prefix}, {number}, {suffix}.
+         * @param {Object} sn  — the system number record from the API
+         * @returns {string}
+         */
+        function applySystemNumberPattern(sn) {
+            const prefix  = sn.prefix  != null ? sn.prefix  : '';
+            const suffix  = sn.suffix  != null ? sn.suffix  : '';
+            const lastNo  = sn.lastNo  != null ? sn.lastNo  : 0;
+            const padding = sn.padding != null ? parseInt(sn.padding, 10) : 0;
+
+            const pattern = (sn.formatPattern && sn.formatPattern.trim())
+                ? sn.formatPattern.trim()
+                : '{prefix}{number}{suffix}';
+
+            const paddedNo = padding > 0
+                ? String(lastNo).padStart(padding, '0')
+                : String(lastNo);
+
+            return pattern
+                .replace(/\{PREFIX\}/gi, prefix)
+                .replace(/\{NO\}/gi, paddedNo)
+                .replace(/\{number\}/gi, paddedNo)
+                .replace(/\{SUFFIX\}/gi, suffix);
+        }
+
         function uuid() {
             return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
                 (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
@@ -105,13 +147,14 @@ createApp({
         }
 
         function parseCostCenterHierachy(dataArr) {
-            costCenterList.value = dataArr;
+            const arr = Array.isArray(dataArr) ? dataArr : (dataArr?.result || dataArr?.data || []);
+            costCenterList.value = arr;
             const list = [];
-            for (let i = 0; i < dataArr.length; i++) {
+            for (let i = 0; i < arr.length; i++) {
                 costCenterNameList.value = [];
-                getHierachyName(dataArr[i].id);
+                getHierachyName(arr[i].id);
                 const name = [...new Set(costCenterNameList.value)].join().replace(/,/g, '/');
-                list.push({ name, parentId: dataArr[i].parentId, id: dataArr[i].id, rawName: dataArr[i].name, tenantId: dataArr[i].tenantId });
+                list.push({ name, parentId: arr[i].parentId, id: arr[i].id, rawName: arr[i].name, tenantId: arr[i].tenantId });
             }
             return list;
         }
@@ -166,30 +209,78 @@ createApp({
         }
 
         // ── API calls ─────────────────────────────────────────────────
+        async function getBankGlAccounts() {
+            try {
+                const res = await axios.get('/GeneralLedger/GetBankGlAccounts');
+                const raw = res.data?.result?.data
+                    || res.data?.result
+                    || res.data?.data
+                    || (Array.isArray(res.data) ? res.data : []);
+                raw.forEach(v => { v.accountIdentifier = `${v.accountNo} - ${v.accountName}`; });
+                bankGlAccountsList.value = raw;
+            } catch (err) {
+                console.error('Failed to get bank GL accounts:', err);
+                toastHandler('error', 'Unable to retrieve Bank GL accounts.');
+            }
+        }
+
+        async function getAccounts() {
+            try {
+                const res = await axios.get('/GeneralLedger/GetAccountDetails?pageNo=1&pageSize=5000&isActive=true');
+                const raw = res.data?.result?.data
+                    || res.data?.result
+                    || res.data?.data
+                    || (Array.isArray(res.data) ? res.data : []);
+                raw.forEach(v => { v.accountIdentifier = `${v.accountNo} - ${v.accountName}`; });
+                accountsList.value = raw;
+            } catch (err) {
+                console.error('Failed to get account details:', err);
+                toastHandler('error', 'Unable to retrieve GL accounts.');
+            }
+        }
+
+        async function getCostCenters() {
+            try {
+                const res = await axios.get('/SharedResource/GetCostCenters?pageNo=1&pageSize=2000');
+                const raw = res.data?.result;
+                costCenterHierachyList.value = parseCostCenterHierachy(raw);
+            } catch {
+                try {
+                    const jRes = await axios.get('/GeneralLedger/InitJournalEntry');
+                    const raw = jRes.data?.costCenters?.result || [];
+                    costCenterHierachyList.value = parseCostCenterHierachy(raw);
+                } catch {
+                    toastHandler('error', 'Unable to retrieve cost centers.');
+                }
+            }
+        }
+
         async function initReceiptVoucher() {
             try {
-                let res;
-                try {
-                    res = await axios.get('/GeneralLedger/InitSupplierPvEntry');
-                } catch {
-                    res = await axios.get('/LedgerDataEntry/InitSupplierPvEntry');
-                }
+                const res = await axios.get('/GeneralLedger/InitSupplierPvEntry');
                 const data = res.data?.result || res.data;
-                const rawAccounts = data.accounts?.data || data.accounts || [];
-                rawAccounts.forEach(v => { v.accountIdentifier = `${v.accountNo} - ${v.accountName}`; });
-                accountsList.value = rawAccounts;
-                const rawCostCenters = data.costCenters?.data || data.costCenters || [];
-                costCenterHierachyList.value = parseCostCenterHierachy(rawCostCenters);
+                if (!accountsList.value.length) {
+                    const rawAccounts = data.accounts?.data || data.accounts || [];
+                    rawAccounts.forEach(v => { v.accountIdentifier = `${v.accountNo} - ${v.accountName}`; });
+                    accountsList.value = rawAccounts;
+                }
+                const rawCostCenters = data.costCenters?.result || data.costCenters?.data || (Array.isArray(data.costCenters) ? data.costCenters : []);
+                if (rawCostCenters && rawCostCenters.length) {
+                    costCenterHierachyList.value = parseCostCenterHierachy(rawCostCenters);
+                } else if (!costCenterHierachyList.value.length) {
+                    await getCostCenters();
+                }
 
                 if (data.voucherBatchSystemNumber && !batchNo.value) {
                     const sn = data.voucherBatchSystemNumber;
-                    batchNo.value = `${sn.prefix || ''}${sn.lastNo || ''}${sn.suffix || ''}`;
+                    voucherBatchSystemNumber.value = sn;
+                    batchNo.value = applySystemNumberPattern(sn);
                 }
 
                 const defaultBankId = data.defaultGlNumbers ? (data.defaultGlNumbers.accountsReceivableBankAccountId || data.defaultGlNumbers.accountReceivableBankAccountId) : '';
                 if (defaultBankId && !bankAccountId.value) {
                     bankAccountId.value = defaultBankId;
-                    const accountInfo = accountsList.value.find(a => a.id === defaultBankId);
+                    const accountInfo = bankGlAccountsList.value.find(a => a.id === defaultBankId) || accountsList.value.find(a => a.id === defaultBankId);
                     if (accountInfo && accountInfo.currencyId) currencyId.value = accountInfo.currencyId;
                 }
             } catch (err) {
@@ -253,14 +344,20 @@ createApp({
             }
         }
 
-        async function loadVoucherDetails() {
+        async function loadCompanyProfile() {
             try {
-                let res;
-                try {
-                    res = await axios.get('/GeneralLedger/GetVoucherDetails?id=' + voucherId.value);
-                } catch {
-                    res = await axios.get('/LedgerDataEntry/GetVoucherDetails?id=' + voucherId.value);
-                }
+                const res = await axios.get('/GeneralLedger/GetBusinessProfile');
+                const prof = res.data?.result;
+                companyName.value = prof?.companyName || prof?.businessName || '';
+            } catch (_) {
+                companyName.value = '';
+            }
+        }
+
+        async function loadVoucherDetails() {
+            isShimmerLoading.value = true;
+            try {
+                const res = await axios.get('/GeneralLedger/GetVoucherDetails?id=' + voucherId.value);
 
                 // Decompose the revised Voucher model (result or direct object)
                 const v = res.data?.result || res.data?.voucherInfo || res.data;
@@ -269,7 +366,32 @@ createApp({
                 // ── 1. Root Voucher Header Fields ─────────────────────────────
                 if (v.id && v.id !== emptyGuid) voucherId.value = v.id;
                 if (v.customerId && v.customerId !== emptyGuid) customerId.value = v.customerId;
-                bankAccountId.value = v.bankAccountId || '';
+
+                // Resolve bankAccountId → must match an id in bankGlAccountsList (CoaDetail.Id)
+                // v.bankAccountId may be a BankAccount PK or a GL account ID — handle both.
+                (function resolveBankGl() {
+                    const targetId = String(v.bankAccountId || '').toLowerCase();
+                    if (!targetId || targetId === emptyGuid) return;
+
+                    // 1. Direct case-insensitive match in bankGlAccountsList
+                    const matchedGl = bankGlAccountsList.value.find(b => String(b.id).toLowerCase() === targetId);
+
+                    if (matchedGl) {
+                        bankAccountId.value = matchedGl.id;
+                    } else {
+                        // 2. Fallback: inject a synthetic option so the select can display the saved value
+                        const fallback = {
+                            id: v.bankAccountId,
+                            accountNo: '',
+                            accountName: v.bankGlAccountName || v.bankAccountName || 'Bank Account',
+                            accountIdentifier: v.bankAccountName || v.bankGlAccountName || 'Bank Account',
+                        };
+                        if (!bankGlAccountsList.value.some(b => String(b.id).toLowerCase() === targetId)) {
+                            bankGlAccountsList.value.unshift(fallback);
+                        }
+                        bankAccountId.value = v.bankAccountId;
+                    }
+                })();
                 currencyId.value = v.currencyId || '';
                 currencyRate.value = v.currencyRate != null ? v.currencyRate : null;
                 isMultiCurrency.value = Boolean(v.isMultiCurrency);
@@ -279,6 +401,7 @@ createApp({
                 paymentDate.value = v.paymentDate ? moment(v.paymentDate).format('YYYY-MM-DD') : moment().format('YYYY-MM-DD');
                 batchNo.value = v.batchNo || '';
                 chequeNo.value = v.chequeNo || '';
+                isPosted.value = Boolean(v.isPosted);
 
                 // ── 2. Details (Transaction Lines) ───────────────────────────
                 const lineItems = v.details || v.lines || [];
@@ -311,23 +434,30 @@ createApp({
             } catch (err) {
                 console.error('loadVoucherDetails error:', err);
                 toastHandler('error', 'Unable to load voucher details.');
+            } finally {
+                isShimmerLoading.value = false;
             }
         }
 
         // ── Journal ───────────────────────────────────────────────────
         function rebuildJournalEntryList() {
-            const journalLines = [];
-            const currencyInfo = currencyList.value.find(x => x.id === currencyId.value);
-            const bankAccountInfo = accountsList.value.find(x => x.id === bankAccountId.value);
+            const currencyInfo    = currencyList.value.find(x => x.id === currencyId.value);
+            const bankAccountInfo = bankGlAccountsList.value.find(x => x.id === bankAccountId.value)
+                || accountsList.value.find(x => x.id === bankAccountId.value);
 
-            const commonFields = (accId, accInfo, ouId) => {
-                const ouInfo = costCenterHierachyList.value.find(x => x.id === ouId);
+            const firstOuId = (voucherList.value.find(x => x.ouId && x.ouId !== emptyGuid)?.ouId)
+                || (voucherList.value.length ? (voucherList.value[0].ouId || emptyGuid) : emptyGuid);
+            const firstRef  = voucherList.value.length ? (voucherList.value[0].referenceNo || batchNo.value) : batchNo.value;
+
+            const commonFields = (accountId, accountInfo, ouId) => {
+                const targetOuId = (ouId && ouId !== emptyGuid) ? ouId : firstOuId;
+                const ouInfo = costCenterHierachyList.value.find(x => x.id === targetOuId || (x.id && targetOuId && String(x.id).toLowerCase() === String(targetOuId).toLowerCase()));
                 return {
                     id: uuid(),
-                    accountId: accId,
-                    accountName: accInfo ? accInfo.accountIdentifier : '',
-                    ouId: ouId || emptyGuid,
-                    ouName: ouInfo ? ouInfo.name : '--',
+                    accountId,
+                    accountName: accountInfo ? accountInfo.accountIdentifier : '',
+                    ouId: targetOuId || emptyGuid,
+                    ouName: ouInfo ? ouInfo.name : '',
                     transactionDate: voucherEntryDate.value,
                     transactionSource: 'gl',
                     currencyId: currencyId.value,
@@ -341,54 +471,41 @@ createApp({
                 };
             };
 
+            const lines = [];
+
             const totalAmount = voucherList.value.reduce(
                 (sum, v) => sum + (parseFloat(v.localDebitAmount || v.debitAmount || 0)), 0
             );
-            const firstOuId = voucherList.value.length ? (voucherList.value[0].ouId || emptyGuid) : emptyGuid;
-            const firstRef  = voucherList.value.length ? (voucherList.value[0].referenceNo || batchNo.value) : batchNo.value;
-            const baseDesc  = chequeNo.value
-                ? `Voucher (#${batchNo.value}) Cheque No.: ${chequeNo.value}`
-                : `Voucher (#${batchNo.value})`;
 
-            // ── Row 1: DEBIT → Bank / Cash GL (money received)
-            journalLines.push({
-                ...commonFields(bankAccountId.value, bankAccountInfo, firstOuId),
-                invoiceNo: '',
-                referenceNumber: firstRef,
-                description: baseDesc,
-                debitAmount: totalAmount,
-                creditAmount: 0,
-            });
-
-            // ── Row 2+: CREDIT → AR / Customer GL per row
-            if (voucherList.value.length === 1) {
-                const arAccountId = voucherList.value[0].accountId;
-                const arAccountInfo = arAccountId ? accountsList.value.find(x => x.id === arAccountId) : null;
-                journalLines.push({
-                    ...commonFields(arAccountId, arAccountInfo, firstOuId),
-                    invoiceNo: voucherList.value[0].invoiceNo || '',
+            // 1. Bank / Cash GL (Debit total received amount)
+            if (totalAmount !== 0) {
+                lines.push({
+                    ...commonFields(bankAccountId.value, bankAccountInfo, firstOuId),
+                    invoiceNo: '',
                     referenceNumber: firstRef,
-                    description: voucherList.value[0].description || baseDesc,
-                    debitAmount: 0,
-                    creditAmount: totalAmount,
-                });
-            } else {
-                voucherList.value.forEach(v => {
-                    const rowAccId = v.accountId;
-                    const rowAccInfo = rowAccId ? accountsList.value.find(x => x.id === rowAccId) : null;
-                    const rowAmount = parseFloat(v.localDebitAmount || v.debitAmount || 0);
-                    journalLines.push({
-                        ...commonFields(rowAccId, rowAccInfo, v.ouId || firstOuId),
-                        invoiceNo: v.invoiceNo || '',
-                        referenceNumber: v.referenceNo || firstRef,
-                        description: v.description || baseDesc,
-                        debitAmount: 0,
-                        creditAmount: rowAmount,
-                    });
+                    description: chequeNo.value ? `Voucher (#${batchNo.value}) Cheque No.: ${chequeNo.value}` : `Voucher (#${batchNo.value})`,
+                    debitAmount: totalAmount,
+                    creditAmount: 0,
                 });
             }
 
-            journalEntryList.value = journalLines;
+            // 2. AR / Customer GL lines (Credit per row)
+            voucherList.value.forEach(v => {
+                const arAccountInfo = accountsList.value.find(x => x.id === v.accountId);
+                const rowAmount = parseFloat(v.localDebitAmount || v.debitAmount || 0);
+                const rowOuInfo = costCenterHierachyList.value.find(x => x.id === v.ouId || (x.id && v.ouId && String(x.id).toLowerCase() === String(v.ouId).toLowerCase()));
+                lines.push({
+                    ...commonFields(v.accountId, arAccountInfo, v.ouId || firstOuId),
+                    ouName: rowOuInfo ? rowOuInfo.name : (v.ouName && v.ouName !== '--' ? v.ouName : (commonFields(v.accountId, arAccountInfo, v.ouId || firstOuId).ouName)),
+                    invoiceNo: v.invoiceNo || '',
+                    referenceNumber: v.referenceNo || firstRef,
+                    description: `Voucher (#${batchNo.value}) Cheque No.: ${chequeNo.value || 'N/A'} - ${v.description || ''}`.trim(),
+                    debitAmount: 0,
+                    creditAmount: rowAmount,
+                });
+            });
+
+            journalEntryList.value = lines;
         }
 
         // ── Proposed Journal Entries (live preview) ──────────────────
@@ -404,7 +521,7 @@ createApp({
             const firstRef  = voucherList.value.length ? (voucherList.value[0].referenceNo || batchNo.value) : batchNo.value;
 
             // 1. DEBIT: Bank / Cash GL (money received in)
-            const bankAccountInfo = accountsList.value.find(x => x.id === bankAccountId.value);
+            const bankAccountInfo = bankGlAccountsList.value.find(x => x.id === bankAccountId.value) || accountsList.value.find(x => x.id === bankAccountId.value);
             if (bankAccountId.value || totalAmount > 0) {
                 lines.push({
                     accountId: bankAccountId.value || emptyGuid,
@@ -485,28 +602,23 @@ createApp({
                 isTemporary: true,
                 totalCredit: totalAmount,
                 totalDebit: totalAmount,
-                id: voucherId.value,
+                id: emptyGuid,
+                transactionSource: "GL",
                 journalDetails: journalEntryList.value,
             };
 
             try {
-                try {
-                    await axios.post('/GeneralLedger/SaveJournal', payload);
-                } catch {
-                    await axios.post('/LedgerDataEntry/CreateJournal', payload);
-                }
+                await axios.post('/GeneralLedger/SaveJournal', payload);
                 journalEntryList.value = [];
                 isLoading.value = false;
 
                 if (voucherId.value) {
-                    try {
-                        const res = await axios.get('/GeneralLedger/GetVoucherDetails?id=' + voucherId.value);
-                        const pj = res.data?.result?.proposedJournalEntries || res.data?.proposedJournalHeader;
-                        if (pj) {
-                            proposedJournalHeaderId.value = pj.id;
-                            proposedJournalDetailIdList.value = pj.detailIds || (res.data.proposedJournalDetails || []).map(a => a.id);
+                    axios.get('/GeneralLedger/GetVoucherDetails?id=' + voucherId.value).then(res => {
+                        if (res.data && res.data.proposedJournalHeader) {
+                            proposedJournalHeaderId.value = res.data.proposedJournalHeader.id;
+                            proposedJournalDetailIdList.value = (res.data.proposedJournalDetails || []).map(a => a.id);
                         }
-                    } catch {}
+                    }).catch(() => {});
                 }
             } catch {
                 isLoading.value = false;
@@ -526,7 +638,7 @@ createApp({
             rebuildJournalEntryList();
 
             const customerInfo    = customerList.value.find(a => a.id === customerId.value);
-            const bankAccountInfo = accountsList.value.find(a => a.id === bankAccountId.value);
+            const bankAccountInfo = bankGlAccountsList.value.find(a => a.id === bankAccountId.value) || accountsList.value.find(a => a.id === bankAccountId.value);
             const bankInfo        = bankList.value.find(a => a.id === bankId.value);
             const currencyInfo    = currencyList.value.find(a => a.id === currencyId.value);
 
@@ -666,13 +778,7 @@ createApp({
             const endpoint = isEditMode.value ? `/GeneralLedger/UpdateVoucher?id=${voucherId.value}` : '/GeneralLedger/CreateVoucher';
 
             try {
-                let response;
-                try {
-                    response = await axios.post(endpoint, payload);
-                } catch {
-                    const legacyEndpoint = isEditMode.value ? `/LedgerDataEntry/UpdateVoucher?id=${voucherId.value}` : '/LedgerDataEntry/CreateVoucher';
-                    response = await axios.post(legacyEndpoint, payload);
-                }
+                const response = await axios.post(endpoint, payload);
 
                 const createdId = response.data?.id || response.data?.result?.id || voucherId.value;
                 if (createdId && createdId !== emptyGuid) {
@@ -683,21 +789,158 @@ createApp({
                 await saveJournal();
 
                 if (andPreview && createdId) {
-                    window.open('/LedgerDataEntry/ReceiptVoucherPreview?id=' + createdId, '_blank');
+                    await openPreviewModal(null, true);
+                } else {
+                    setTimeout(() => {
+                        window.location.href = '/GeneralLedger/Vouchers?tab=customer';
+                    }, 1200);
                 }
-
-                setTimeout(() => {
-                    window.location.href = '/GeneralLedger/Vouchers?tab=customer';
-                }, 1000);
             } catch (err) {
-                isLoading.value = false;
                 console.error('Save voucher error:', err);
                 toastHandler('error', `Unable to ${isEditMode.value ? 'update' : 'create'} customer receipt voucher.`);
+            } finally {
+                isLoading.value = false;
             }
         }
 
         function previewVoucher() {
-            window.open('/LedgerDataEntry/ReceiptVoucherPreview?id=' + voucherId.value, '_blank');
+            openPreviewModal(null, true);
+        }
+
+        async function openPreviewModal(voucherInfoOverride = null, skipApiFetch = false) {
+            showPreviewModal.value = true;
+            isPreviewLoading.value = true;
+            previewError.value = '';
+            previewReport.value = null;
+
+            try {
+                if (!companyName.value) {
+                    await loadCompanyProfile();
+                }
+
+                let voucherData = voucherInfoOverride;
+                if (!voucherData && !skipApiFetch && voucherId.value) {
+                    try {
+                        const res = await axios.get('/GeneralLedger/GetVoucherDetails?id=' + voucherId.value);
+                        const apiRes = res.data?.result || res.data?.voucherInfo || res.data;
+                        if (apiRes && (apiRes.batchNo || apiRes.id || apiRes.details)) {
+                            voucherData = apiRes;
+                        }
+                    } catch (_) {}
+                }
+
+                if (!voucherData) {
+                    const customerInfo = customerList.value.find(c => c.id === customerId.value);
+                    const custName = customerInfo ? (customerInfo.name || customerInfo.customerName || '') : '';
+                    const bankAccountInfo = bankGlAccountsList.value.find(a => a.id === bankAccountId.value)
+                        || accountsList.value.find(a => a.id === bankAccountId.value);
+                    const bankAccountDisplayName = bankAccountInfo ? bankAccountInfo.accountIdentifier : '';
+                    const bankGlDisplayName = bankAccountInfo ? (bankAccountInfo.accountIdentifier || bankAccountInfo.accountName) : '';
+
+                    voucherData = {
+                        id: voucherId.value || 'draft',
+                        isReceipt: true,
+                        type: 'customer-receipt',
+                        voucherType: 'customer',
+                        batchNo: batchNo.value || 'Draft',
+                        voucherNumber: batchNo.value || 'Draft',
+                        voucherEntryDate: voucherEntryDate.value,
+                        receiptDate: paymentDate.value || voucherEntryDate.value,
+                        paymentDate: paymentDate.value || voucherEntryDate.value,
+                        customerName: custName,
+                        payeeName: custName,
+                        bankAccountName: bankAccountDisplayName,
+                        bankGlAccountName: bankGlDisplayName,
+                        modePayment: modePayment.value,
+                        chequeNo: chequeNo.value,
+                        currencyCode: currencyCode.value,
+                        grossAmount: totalDebit.value,
+                        netAmount: totalNetAmount.value,
+                        details: voucherList.value.map(v => {
+                            const debitAccountInfo = accountsList.value.find(a => a.id === v.accountId);
+                            const ouInfo = costCenterHierachyList.value.find(a => a.id === v.ouId);
+                            return {
+                                ...v,
+                                debitAccountName: debitAccountInfo ? debitAccountInfo.accountIdentifier : (v.debitAccountName || ''),
+                                amount: v.localDebitAmount,
+                                ouName: ouInfo ? ouInfo.name : (v.ouName || '--')
+                            };
+                        }),
+                        retensions: [],
+                    };
+                } else {
+                    voucherData.isReceipt = true;
+                    voucherData.type = 'customer-receipt';
+                    voucherData.voucherType = 'customer';
+                    const customerInfo = customerList.value.find(c => c.id === voucherData.customerId);
+                    const custName = voucherData.customerName || (customerInfo ? (customerInfo.name || customerInfo.customerName) : '');
+                    if (!voucherData.payeeName) {
+                        voucherData.payeeName = custName || voucherData.customerName || '';
+                    }
+                    if (!voucherData.customerName && custName) {
+                        voucherData.customerName = custName;
+                    }
+                    if (!voucherData.batchNo && voucherData.voucherNumber) {
+                        voucherData.batchNo = voucherData.voucherNumber;
+                    }
+                    if (!voucherData.details && voucherData.lines) {
+                        voucherData.details = voucherData.lines;
+                    }
+                    if (Array.isArray(voucherData.details)) {
+                        voucherData.details = voucherData.details.map(d => {
+                            const debitAccountInfo = accountsList.value.find(a => a.id === d.accountId || a.id === d.debitAccountId);
+                            const ouInfo = costCenterHierachyList.value.find(a => a.id === d.ouId);
+                            return {
+                                ...d,
+                                debitAccountName: d.debitAccountName || (debitAccountInfo ? debitAccountInfo.accountIdentifier : ''),
+                                amount: d.localDebitAmount != null ? d.localDebitAmount : (d.amount || d.debitAmount || 0),
+                                ouName: d.ouName && d.ouName !== '--' ? d.ouName : (ouInfo ? ouInfo.name : (d.ouName || '--'))
+                            };
+                        });
+                    }
+                }
+
+                previewBatchNo.value = voucherData.batchNo || voucherData.voucherNumber || batchNo.value || '';
+
+                const gross = parseFloat(voucherData.grossAmount != null ? voucherData.grossAmount : (totalDebit.value || 0));
+                const net   = parseFloat(voucherData.netAmount != null ? voucherData.netAmount : (totalNetAmount.value || 0));
+
+                const summary = {
+                    gross: gross.toFixed(2),
+                    net: net.toFixed(2),
+                    retained: '0.00',
+                    incomeWithholding: '0.00',
+                    vatWithholding: '0.00',
+                    nhil: '0.00',
+                    getfund: '0.00',
+                    vat: '0.00',
+                    cst: '0.00',
+                    covid: '0.00',
+                };
+
+                const rep = window.TopazReportViewer.buildVoucherReport(voucherData, summary, companyName.value);
+                previewReport.value = rep;
+
+                previewExporters.value = {
+                    pdf:  async () => window.TopazReportViewer.createVoucherPdf(previewReport.value),
+                    xlsx: async () => window.TopazReportViewer.createVoucherExcel(previewReport.value),
+                    docx: async () => window.TopazReportViewer.createVoucherWord(previewReport.value),
+                };
+            } catch (e) {
+                console.error('Failed to prepare voucher preview:', e);
+                previewError.value = e?.message || 'Unable to prepare voucher preview.';
+            } finally {
+                isPreviewLoading.value = false;
+            }
+        }
+
+        function closePreviewModal() {
+            showPreviewModal.value = false;
+        }
+
+        function onBackToVouchers() {
+            showPreviewModal.value = false;
+            window.location.href = '/GeneralLedger/Vouchers?tab=customer';
         }
 
         function createNewVoucher() {
@@ -735,42 +978,86 @@ createApp({
             errors.currencyId = false;
         }
 
-        function postVoucher() {
+        async function postVoucher() {
             if (!voucherId.value) {
                 toastHandler('warning', 'Please save the voucher before posting.');
                 return;
             }
+
+            const result = await Swal.fire({
+                title: 'Post Voucher?',
+                text: 'Are you sure you want to post this voucher? This action will affect the general ledger and cannot be undone.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#059669',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes, Post',
+                cancelButtonText: 'Cancel'
+            });
+            if (!result.isConfirmed) return;
+
             isLoading.value = true;
-            axios.post('/LedgerDataEntry/PostVouchers', { ids: [voucherId.value] })
-                .then(() => {
-                    toastHandler('success', 'Voucher posted successfully.');
-                    setTimeout(() => { window.location.href = '/GeneralLedger/Vouchers?tab=customer'; }, 1500);
-                }).catch(() => {
+            try {
+                const payload = { ids: [voucherId.value] };
+                let res;
+                try {
+                    res = await axios.post('/GeneralLedger/PostVouchers', payload);
+                } catch {
+                    res = await axios.post('/GeneralLedger/PostVoucher', payload);
+                }
+
+                if (res?.data && res.data.success === false) {
+                    toastHandler('error', res.data.message || res.data.error || 'Unable to post voucher.');
                     isLoading.value = false;
-                    toastHandler('error', 'Unable to post voucher.');
-                });
+                    return;
+                }
+
+                isPosted.value = true;
+                toastHandler('success', 'Voucher posted successfully.');
+                setTimeout(() => { window.location.href = '/GeneralLedger/Vouchers?tab=customer'; }, 1500);
+            } catch {
+                isLoading.value = false;
+                toastHandler('error', 'Unable to post voucher.');
+            }
         }
 
-        function deleteVoucher() {
+        async function deleteVoucher() {
             if (!voucherId.value) {
                 toastHandler('warning', 'Voucher not found.');
                 return;
             }
-            if (!confirm('Are you sure you want to delete this voucher?')) return;
+
+            const result = await Swal.fire({
+                title: 'Delete Voucher?',
+                text: 'Are you sure you want to delete this voucher? This action cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes, Delete',
+                cancelButtonText: 'Cancel'
+            });
+            if (!result.isConfirmed) return;
 
             isLoading.value = true;
-            axios.get('/LedgerDataEntry/DelVoucher?id=' + voucherId.value).then(() => {
+            try {
+                await axios.post('/GeneralLedger/DeleteVouchers', { ids: [voucherId.value] });
                 toastHandler('success', 'Voucher deleted successfully.');
                 setTimeout(() => { window.location.href = '/GeneralLedger/Vouchers?tab=customer'; }, 1500);
-            }).catch(() => {
+            } catch {
                 isLoading.value = false;
                 toastHandler('error', 'Unable to delete voucher.');
-            });
+            }
         }
 
         // ── Watchers ──────────────────────────────────────────────────
         watch(bankAccountId, val => {
             errors.bankAccountId = !val;
+            const bankGlAccount = bankGlAccountsList.value.find(a => a.id === val);
+            if (bankGlAccount && bankGlAccount.currencyId) {
+                currencyId.value = bankGlAccount.currencyId;
+                return;
+            }
             const account = accountsList.value.find(a => a.id === val);
             if (account && account.currencyId) currencyId.value = account.currencyId;
         });
@@ -804,17 +1091,29 @@ createApp({
             if (targetId) {
                 voucherId.value = targetId;
                 isEditMode.value = true;
+                isShimmerLoading.value = true;
             }
             if (typeof window.withHoldingVatPercentage !== 'undefined') {
                 withHoldingVatPercentage.value = parseFloat(window.withHoldingVatPercentage) || 7;
             }
 
-            await Promise.all([
-                getBanks(),
-                getCustomers(),
-                getCurrencies(),
-                initReceiptVoucher()
-            ]);
+            try {
+                if (!isEditMode.value) isShimmerLoading.value = true;
+                await Promise.all([
+                    getBankGlAccounts(),
+                    getAccounts(),
+                    getBanks(),
+                    getCustomers(),
+                    getCurrencies(),
+                    getCostCenters(),
+                    initReceiptVoucher(),
+                    loadCompanyProfile()
+                ]);
+            } catch (err) {
+                console.error('Init receipt voucher error:', err);
+            } finally {
+                if (!isEditMode.value) isShimmerLoading.value = false;
+            }
 
             document.addEventListener('click', (e) => {
                 const wrapper = document.getElementById('saveMenuWrapper');
@@ -831,15 +1130,17 @@ createApp({
         });
 
         return {
-            isLoading, showSaveMenu, customerId, voucherEntryDate, paymentDate, bankAccountId,
+            isLoading, isShimmerLoading, showSaveMenu, customerId, voucherEntryDate, paymentDate, bankAccountId,
             currencyId, currencyRate, isMultiCurrency, modePayment, batchNo, chequeNo,
-            voucherId, isEditMode, isRecordCreated,
-            customerList, accountsList, currencyList, costCenterHierachyList,
+            voucherId, isEditMode, isRecordCreated, isPosted,
+            customerList, accountsList, bankGlAccountsList, currencyList, costCenterHierachyList,
             voucherList, errors,
             totalCredit, totalDebit, totalNetAmount,
             saveButtonText, currencyCode, currencySymbol, proposedJournalEntries, proposedJournalTotals,
             saveVoucher, previewVoucher, addVoucherRow, removeVoucherRow,
             computeTotal, onForeignAmountChange, postVoucher, deleteVoucher, fmtNum,
+            showPreviewModal, previewReport, previewExporters, previewBatchNo, isPreviewLoading, previewError,
+            openPreviewModal, closePreviewModal, onBackToVouchers,
         };
     }
 }).mount('#app');

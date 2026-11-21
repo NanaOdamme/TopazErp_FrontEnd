@@ -23,7 +23,35 @@
         </div>
     </div>
 
-    <div id="app">
+    <div id="app" v-cloak>
+
+        <!-- ── Loading Overlay ─────────────────────────────────────── -->
+        <div v-if="isShimmerLoading" class="card flex flex-col items-center justify-center py-24 bg-white rounded-xl border border-gray-200 mb-4 shadow-xs gap-4">
+            <!-- Circular spinner -->
+            <div class="relative flex items-center justify-center" style="width:56px;height:56px">
+                <svg class="animate-spin" style="width:56px;height:56px" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Track ring -->
+                    <circle cx="28" cy="28" r="22" stroke="#E5E7EB" stroke-width="5"/>
+                    <!-- Spinning arc -->
+                    <circle cx="28" cy="28" r="22"
+                            stroke="#2563EB"
+                            stroke-width="5"
+                            stroke-linecap="round"
+                            stroke-dasharray="100 38.8"
+                            stroke-dashoffset="0"
+                            transform="rotate(-90 28 28)"/>
+                </svg>
+                <!-- Inner dot -->
+                <span class="absolute inline-block rounded-full bg-blue-600" style="width:8px;height:8px"></span>
+            </div>
+            <div class="flex flex-col items-center gap-1">
+                <span class="text-sm font-semibold text-gray-700">{{ isEditMode ? 'Loading voucher details…' : 'Initialising voucher…' }}</span>
+                <span class="text-xs text-gray-400">Please wait</span>
+            </div>
+        </div>
+
+        <!-- ── Main Content (hidden while loading) ───────────────── -->
+        <template v-if="!isShimmerLoading">
 
         <!-- ── Header Card ───────────────────────────────────── -->
         <div class="card mb-4 p-5">
@@ -48,7 +76,7 @@
                     <label>Bank G/L <span class="text-red-500">*</span></label>
                     <select v-model="bankAccountId" class="gl-select">
                         <option value="" disabled>Select Account...</option>
-                        <option v-for="a in (bankGlList && bankGlList.length ? bankGlList : accountsList)" :key="a.id" :value="a.id">{{ a.accountIdentifier }}</option>
+                        <option v-for="a in (bankGlAccountsList && bankGlAccountsList.length ? bankGlAccountsList : bankGlList)" :key="a.id" :value="a.id">{{ a.accountIdentifier }}</option>
                     </select>
                     <span class="text-red-500 text-xs" v-if="errors.bankAccountId">Required</span>
                 </div>
@@ -105,6 +133,25 @@
                 </div>
 
                 <div class="ml-auto flex gap-2 items-end">
+                    <!-- Posted status badge -->
+                    <span v-if="isPosted" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        <i class="bi bi-check-circle-fill text-emerald-600"></i> Posted
+                    </span>
+
+                    <!-- Post button (when voucher is saved/loaded and not posted) -->
+                    <button type="button"
+                            v-if="voucherId && !isPosted"
+                            @@click="postVoucher()"
+                            :disabled="isLoading"
+                            class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 transition disabled:opacity-60">
+                        <i class="bi bi-send-check"></i> Post
+                    </button>
+
+                    <button type="button" v-if="voucherId" @@click="previewVoucher()"
+                            class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition">
+                        <i class="bi bi-eye"></i> Preview
+                    </button>
+
                     <!-- Save dropdown button with options: Save, Save and Preview, Preview (post-save) -->
                     <div class="relative" id="saveMenuWrapper">
                         <button type="button"
@@ -137,10 +184,19 @@
                                 <!-- Preview saved voucher — only available after the voucher has been saved -->
                                 <button type="button"
                                         v-if="voucherId"
-                                        @@click="openPreviewModal()"
-                                        class="w-full text-left px-4 py-2.5 text-sm text-gray-800 hover:bg-blue-50/70 flex items-center gap-2.5 transition">
+                                        @@click="previewVoucher()"
+                                        class="w-full text-left px-4 py-2.5 text-sm text-gray-800 hover:bg-blue-50/70 flex items-center gap-2.5 transition"
+                                        :class="(!isPosted) ? 'border-b border-gray-100' : ''">
                                     <i class="bi bi-eye text-blue-600"></i>
                                     <span class="font-medium">Preview</span>
+                                </button>
+                                <!-- Post Voucher option -->
+                                <button type="button"
+                                        v-if="voucherId && !isPosted"
+                                        @@click="postVoucher()"
+                                        class="w-full text-left px-4 py-2.5 text-sm text-gray-800 hover:bg-emerald-50/70 flex items-center gap-2.5 transition">
+                                    <i class="bi bi-send-check text-emerald-600"></i>
+                                    <span class="font-medium">Post Voucher</span>
                                 </button>
                             </div>
                         </transition>
@@ -491,6 +547,8 @@
                 </section>
             </div>
         </teleport>
+
+        </template><!-- end v-if="!isShimmerLoading" -->
 
     </div>
 </div>

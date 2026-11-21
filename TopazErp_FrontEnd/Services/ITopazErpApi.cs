@@ -181,7 +181,7 @@ public interface ITopazErpApi
     Task<BaseApiResponse> DeletePayCalendar(Guid id);
 
     // employee bio data ...
-    Task<EmployeeBioDataResponse> GetEmployeeBioData(int pageNo, int pageSize, string query);
+    Task<EmployeeBioDataResponse> GetEmployeeBioData();
     Task<BaseApiResponse> CreateEmployeeBioData(object dto);
     Task<BaseApiResponse> UpdateEmployeeBioData(object dto);
     Task<BaseApiResponse> DeleteEmployeeBioData(Guid id);
@@ -272,17 +272,17 @@ public interface ITopazErpApi
     Task<JournalTransactionResponse> GetJournalTransactions(JournalListFilterDto dto);
     Task<BaseApiResponse> CreateJournal(object dto);
     Task<BaseApiResponse> UpdateJournal(object dto);
-    Task<BaseApiResponse> GetJournalDetails(Guid id);
+    Task<JournalTransactionDetailResponse> GetJournalDetails(Guid id);
     Task<BaseApiResponse> DeleteJournalBatch(Guid id);
     Task<BaseApiResponse> PostJournal(Guid id);
     
     //vouchers
     Task<VoucherResponse> GetVouchers(DateTime startDate, DateTime endDate, string voucherType);
     Task<VoucherDetailResponse> GetVoucherDetails(Guid id);
-    Task<BaseApiResponse> CreateVoucher(object dto);
+    Task<VoucherDetailResponse> CreateVoucher(object dto);
     Task<BaseApiResponse> UpdateVoucher(object dto, Guid? id = null);
-    Task<BaseApiResponse> DeleteVoucher(Guid id);
-    Task<BaseApiResponse> PostVoucher(Guid id);
+    Task<BaseApiResponse> DeleteVoucher(object dto);
+    Task<BaseApiResponse> PostVoucher(object dto);
     
 
 }

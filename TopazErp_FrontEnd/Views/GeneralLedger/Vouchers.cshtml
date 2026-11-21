@@ -138,18 +138,19 @@
                     </button>
                 </div>
 
-                <!-- Bulk actions: show only when rows are selected -->
-                <div v-if="selectedIds.length > 0" class="ml-auto flex items-end gap-2">
-                    <span class="text-xs font-medium text-gray-500 h-[38px] flex items-center">
+                <!-- Post & Bulk actions -->
+                <div class="ml-auto flex items-end gap-2">
+                    <span v-if="selectedIds.length > 0" class="text-xs font-medium text-gray-500 h-[38px] flex items-center">
                         {{ selectedIds.length }} selected
                     </span>
                     <button type="button" @@click="postSelectedVouchers()"
-                            :disabled="isLoading"
-                            class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 transition disabled:opacity-60 h-[38px]">
-                        <i class="bi bi-check2-circle"></i>
-                        Post Selected
+                            :disabled="isLoading || selectedIds.length === 0"
+                            class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 transition disabled:opacity-60 disabled:cursor-not-allowed h-[38px]"
+                            title="Post selected voucher(s)">
+                        <i class="bi bi-send-check"></i>
+                        POST
                     </button>
-                    <button type="button" @@click="deleteSelectedVouchers()"
+                    <button v-if="selectedIds.length > 0" type="button" @@click="deleteSelectedVouchers()"
                             :disabled="isLoading"
                             class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 transition disabled:opacity-60 h-[38px]">
                         <i class="bi bi-trash3"></i>
@@ -175,6 +176,7 @@
                 item-label-plural="Supplier Vouchers"
                 :page-size="15"
                 :selectable="true"
+                :selected-ids="selectedIds"
                 :actions="true"
                 :allow-add="false"
                 :allow-edit="true"
@@ -202,6 +204,7 @@
                 item-label-plural="Employee Vouchers"
                 :page-size="15"
                 :selectable="true"
+                :selected-ids="selectedIds"
                 :actions="true"
                 :allow-add="false"
                 :allow-edit="true"
@@ -229,6 +232,7 @@
                 item-label-plural="Receipt Vouchers"
                 :page-size="15"
                 :selectable="true"
+                :selected-ids="selectedIds"
                 :actions="true"
                 :allow-add="false"
                 :allow-edit="true"

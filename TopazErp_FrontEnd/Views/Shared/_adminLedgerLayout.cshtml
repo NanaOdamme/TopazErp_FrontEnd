@@ -131,6 +131,10 @@
 
     <!-- Enhanced ERP UI Styling Overrides -->
     <style>
+        [v-cloak] {
+            display: none !important;
+        }
+
         :root {
             --shell-accent: #059669;
             --shell-accent-soft: rgba(5, 150, 105, 0.12);
@@ -407,7 +411,7 @@
             <li class="nav-item">
                 <a class="menu-link" asp-controller="GeneralLedger" asp-action="Vouchers">
                     <i class="bi bi-receipt-cutoff" aria-hidden="true"></i>
-                    <span class="menu-title">Payment Vouchers</span>
+                    <span class="menu-title">Vouchers</span>
                 </a>
             </li>
             
@@ -667,7 +671,7 @@
                 <div class="dropdown-foot signout p-2 border-t border-slate-100 dark:border-slate-800">
                     <a asp-area="" asp-controller="Account" asp-action="Login" class="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40">
                         <i class="bi bi-box-arrow-right"></i>
-                        <span>Sign out of ERP</span>
+                        <span>Sign out</span>
                     </a>
                 </div>
             </div>

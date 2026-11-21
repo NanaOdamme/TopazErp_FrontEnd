@@ -27,6 +27,7 @@ createApp({
         const voucherId       = ref('');
         const isEditMode      = ref(false);
         const isRecordCreated = ref(false);
+        const isPosted        = ref(false);
         const showSaveMenu    = ref(false);
         const showPreviewModal = ref(false);
         const previewReport    = shallowRef(null);
@@ -41,6 +42,7 @@ createApp({
         const isShimmerLoading = ref(false);
         const supplierList   = ref([]);
         const accountsList   = ref([]);
+        const bankGlAccountsList = ref([]);
         const bankList       = ref([]);
         const bankAccountList = ref([]);
         const currencyList   = ref([]);
@@ -111,15 +113,14 @@ createApp({
         });
 
         const bankGlList = computed(() => {
-            if (bankAccountList.value && bankAccountList.value.length > 0) {
-                if (bankAccountId.value && !bankAccountList.value.some(b => b.id === bankAccountId.value)) {
-                    const matchedBank = resolveBankAccount(bankAccountId.value);
-                    if (matchedBank) {
-                        return bankAccountList.value;
-                    }
+            if (bankGlAccountsList.value && bankGlAccountsList.value.length > 0) {
+                if (bankAccountId.value && !bankGlAccountsList.value.some(b => b.id === bankAccountId.value)) {
                     const acc = accountsList.value.find(a => a.id === bankAccountId.value);
-                    if (acc) return [acc, ...bankAccountList.value];
+                    if (acc) return [acc, ...bankGlAccountsList.value];
                 }
+                return bankGlAccountsList.value;
+            }
+            if (bankAccountList.value && bankAccountList.value.length > 0) {
                 return bankAccountList.value;
             }
             return accountsList.value;
@@ -341,8 +342,11 @@ createApp({
         // ── API calls ─────────────────────────────────────────────────
         async function getAccounts() {
             try {
-                const res = await axios.get('/GeneralLedger/GetBankGlAccounts');
-                const raw = res.data?.result;
+                const res = await axios.get('/GeneralLedger/GetAccountDetails?pageNo=1&pageSize=5000&isActive=true');
+                const raw = res.data?.result?.data
+                    || res.data?.result
+                    || res.data?.data
+                    || (Array.isArray(res.data) ? res.data : []);
                 
                 raw.forEach(v => {
                     v.accountIdentifier = `${v.accountNo} - ${v.accountName}`;
@@ -351,6 +355,24 @@ createApp({
             } catch (err) {
                 console.error('Failed to get account details:', err);
                 toastHandler('error', 'Unable to retrieve GL accounts.');
+            }
+        }
+
+        async function getBankGlAccounts() {
+            try {
+                const res = await axios.get('/GeneralLedger/GetBankGlAccounts');
+                const raw = res.data?.result?.data
+                    || res.data?.result
+                    || res.data?.data
+                    || (Array.isArray(res.data) ? res.data : []);
+                
+                raw.forEach(v => {
+                    v.accountIdentifier = `${v.accountNo} - ${v.accountName}`;
+                });
+                bankGlAccountsList.value = raw;
+            } catch (err) {
+                console.error('Failed to get bank GL accounts:', err);
+                toastHandler('error', 'Unable to retrieve Bank GL accounts.');
             }
         }
 
@@ -543,6 +565,7 @@ createApp({
             isShimmerLoading.value = true;
             try {
                 await Promise.all([
+                    getBankGlAccounts(),
                     getAccounts(),
                     getBankAccounts(),
                     getCostCenters(),
@@ -563,11 +586,14 @@ createApp({
                 console.error('Initialization error:', err);
                 toastHandler('error', 'Voucher initialization failed.');
             } finally {
-                isShimmerLoading.value = false;
+                if (!isEditMode.value) {
+                    isShimmerLoading.value = false;
+                }
             }
         }
 
         async function loadVoucherDetails() {
+            isShimmerLoading.value = true;
             try {
                 let res;
                 try {
@@ -577,14 +603,48 @@ createApp({
                 }
 
                 // Decompose the revised Voucher model (result or direct object)
-                const v = res.data?.result || res.data?.voucherInfo || res.data;
+                const v = res.data?.result;
                 if (!v) return;
 
                 // ── 1. Root Voucher Header Fields ─────────────────────────────
                 if (v.id && v.id !== emptyGuid) voucherId.value = v.id;
                 if (v.supplierId && v.supplierId !== emptyGuid) supplierId.value = v.supplierId;
-                const matchedBank = resolveBankAccount(v.bankAccountId);
-                bankAccountId.value = matchedBank ? matchedBank.id : (v.bankAccountId || '');
+
+                // Resolve bankAccountId → must match an id in bankGlAccountsList (CoaDetail.Id)
+                // v.bankAccountId may be a BankAccount PK or a GL account ID — handle both.
+                (function resolveBankGl() {
+                    const targetId = String(v.bankAccountId || '').toLowerCase();
+                    if (!targetId || targetId === emptyGuid) return;
+
+                    // 1. Direct case-insensitive match in bankGlAccountsList
+                    let matchedGl = bankGlAccountsList.value.find(b => String(b.id).toLowerCase() === targetId);
+
+                    // 2. If not found, check if bankAccountId is a BankAccount PK — resolve its GL accountId
+                    if (!matchedGl) {
+                        const bankRecord = resolveBankAccount(v.bankAccountId);
+                        if (bankRecord && bankRecord.accountId) {
+                            matchedGl = bankGlAccountsList.value.find(b =>
+                                String(b.id).toLowerCase() === String(bankRecord.accountId).toLowerCase()
+                            );
+                        }
+                    }
+
+                    if (matchedGl) {
+                        bankAccountId.value = matchedGl.id;
+                    } else {
+                        // 3. Fallback: inject a synthetic option so the select can display the saved value
+                        const fallback = {
+                            id: v.bankAccountId,
+                            accountNo: '',
+                            accountName: v.bankGlAccountName || v.bankAccountName || 'Bank Account',
+                            accountIdentifier: v.bankAccountName || v.bankGlAccountName || 'Bank Account',
+                        };
+                        if (!bankGlAccountsList.value.some(b => String(b.id).toLowerCase() === targetId)) {
+                            bankGlAccountsList.value.unshift(fallback);
+                        }
+                        bankAccountId.value = v.bankAccountId;
+                    }
+                })();
                 currencyId.value = v.currencyId || '';
                 currencyRate.value = v.currencyRate != null ? v.currencyRate : null;
                 isMultiCurrency.value = Boolean(v.isMultiCurrency);
@@ -593,6 +653,7 @@ createApp({
                 paymentDate.value = v.paymentDate ? moment(v.paymentDate).format('YYYY-MM-DD') : moment().format('YYYY-MM-DD');
                 batchNo.value = v.batchNo || '';
                 chequeNo.value = v.chequeNo || '';
+                isPosted.value = Boolean(v.isPosted);
 
                 // ── 2. Details (Transaction Lines) ───────────────────────────
                 const lineItems = v.details || v.lines || [];
@@ -676,6 +737,8 @@ createApp({
                 reComputeVoucherSummary();
             } catch {
                 toastHandler('error', 'Unable to load voucher details.');
+            } finally {
+                isShimmerLoading.value = false;
             }
         }
 
@@ -787,7 +850,8 @@ createApp({
             const netAmount = parseFloat(totalNetAmount.value || 0);
             const matchedBank = resolveBankAccount(bankAccountId.value);
             const glBankAccountId = matchedBank ? (matchedBank.accountId || matchedBank.id) : bankAccountId.value;
-            const bankAccountInfo = accountsList.value.find(x => x.id === glBankAccountId)
+            const bankAccountInfo = bankGlAccountsList.value.find(x => x.id === glBankAccountId || x.id === bankAccountId.value)
+                || accountsList.value.find(x => x.id === glBankAccountId)
                 || accountsList.value.find(x => x.id === bankAccountId.value)
                 || (matchedBank ? { accountNo: matchedBank.accountNo, accountName: matchedBank.accountName } : null);
             const firstOuId = voucherList.value.length ? (voucherList.value[0].ouId || emptyGuid) : emptyGuid;
@@ -886,17 +950,24 @@ createApp({
             const currencyInfo           = currencyList.value.find(x => x.id === currencyId.value);
             const bankRecord             = resolveBankAccount(bankAccountId.value);
             const glBankAccountId        = bankRecord ? bankRecord.accountId : bankAccountId.value;
-            const bankAccountInfo        = accountsList.value.find(x => x.id === glBankAccountId)
+            const bankAccountInfo        = bankGlAccountsList.value.find(x => x.id === glBankAccountId || x.id === bankAccountId.value)
+                || accountsList.value.find(x => x.id === glBankAccountId)
                 || accountsList.value.find(x => x.id === bankAccountId.value)
                 || (bankRecord ? { accountIdentifier: bankRecord.accountIdentifier, accountName: bankRecord.accountName } : null);
             const withHoldingAccountInfo = accountsList.value.find(x => x.id === withHoldingAccountId.value);
             const vatWithHoldingAccountInfo = accountsList.value.find(x => x.id === vatWithHoldingAccountId.value);
 
+            const firstOuId = (voucherList.value.find(x => x.ouId && x.ouId !== emptyGuid)?.ouId)
+                || (voucherList.value.length ? (voucherList.value[0].ouId || emptyGuid) : emptyGuid);
+            const firstRef  = voucherList.value.length ? (voucherList.value[0].referenceNo || batchNo.value) : batchNo.value;
+
             const commonFields = (accountId, accountInfo, ouId) => {
-                const ouInfo = costCenterHierachyList.value.find(x => x.id === ouId);
+                const targetOuId = (ouId && ouId !== emptyGuid) ? ouId : firstOuId;
+                const ouInfo = costCenterHierachyList.value.find(x => x.id === targetOuId || (x.id && targetOuId && String(x.id).toLowerCase() === String(targetOuId).toLowerCase()));
                 return {
                     id: uuid(), accountId, accountName: accountInfo ? accountInfo.accountIdentifier : '',
-                    ouId, ouName: ouInfo ? ouInfo.name : '',
+                    ouId: targetOuId || emptyGuid,
+                    ouName: ouInfo ? ouInfo.name : '',
                     transactionDate: voucherEntryDate.value, transactionSource: 'gl',
                     currencyId: currencyId.value,
                     currencyName: currencyInfo ? currencyInfo.currencyName : '',
@@ -914,17 +985,16 @@ createApp({
             voucherList.value.forEach(v => {
                 const debitAccountInfo = accountsList.value.find(x => x.id === v.accountId);
                 const debitAmount = parseFloat(v.localDebitAmount || v.debitAmount || 0);
+                const rowOuInfo = costCenterHierachyList.value.find(x => x.id === v.ouId || (x.id && v.ouId && String(x.id).toLowerCase() === String(v.ouId).toLowerCase()));
                 lines.push({
                     ...commonFields(v.accountId, debitAccountInfo, v.ouId),
+                    ouName: rowOuInfo ? rowOuInfo.name : (v.ouName && v.ouName !== '--' ? v.ouName : (commonFields(v.accountId, debitAccountInfo, v.ouId).ouName)),
                     invoiceNo: v.invoiceNo,
                     referenceNumber: v.referenceNo || batchNo.value,
                     description: `Voucher (#${batchNo.value}) Cheque No.: ${chequeNo.value || 'N/A'} - ${v.description || ''}`.trim(),
                     debitAmount, creditAmount: 0,
                 });
             });
-
-            const firstOuId = voucherList.value.length ? voucherList.value[0].ouId : null;
-            const firstRef  = voucherList.value.length ? (voucherList.value[0].referenceNo || batchNo.value) : batchNo.value;
 
             const netAmount = parseFloat(totalNetAmount.value || 0);
             if (netAmount !== 0) {
@@ -969,7 +1039,8 @@ createApp({
                 batchNumber: batchNo.value, batchDate: voucherEntryDate.value, isTemporary: true,
                 totalCredit: totalNetAmount.value + vatWhAmt + whAmt + retAmt,
                 totalDebit: totalDebit.value,
-                id: voucherId.value,
+                id: voucherId.value || this.emptyGuid,
+                transactionSource: "GL",
                 journalDetails: journalEntryList.value,
             };
             
@@ -979,7 +1050,7 @@ createApp({
                 isLoading.value = false;
                 
                 if (voucherId.value) {
-                    axios.get('/LedgerDataEntry/GetVoucherDetails?id=' + voucherId.value).then(res => {
+                    axios.get('/GeneralLedger/GetVoucherDetails?id=' + voucherId.value).then(res => {
                         if (res.data && res.data.proposedJournalHeader) {
                             proposedJournalHeaderId.value = res.data.proposedJournalHeader.id;
                             proposedJournalDetailIdList.value = (res.data.proposedJournalDetails || []).map(a => a.id);
@@ -1017,7 +1088,8 @@ createApp({
             const bankRecord             = resolveBankAccount(bankAccountId.value);
             const payloadBankAccountId   = bankRecord ? bankRecord.id : bankAccountId.value;
             const glBankAccountId        = bankRecord ? bankRecord.accountId : bankAccountId.value;
-            const bankAccountInfo        = accountsList.value.find(a => a.id === glBankAccountId)
+            const bankAccountInfo        = bankGlAccountsList.value.find(a => a.id === glBankAccountId || a.id === bankAccountId.value)
+                || accountsList.value.find(a => a.id === glBankAccountId)
                 || accountsList.value.find(a => a.id === bankAccountId.value);
             const withHoldingAccountInfo = accountsList.value.find(a => a.id === withHoldingAccountId.value);
             const vatWithHoldingAccountInfo = accountsList.value.find(a => a.id === vatWithHoldingAccountId.value);
@@ -1181,6 +1253,10 @@ createApp({
             }
         }
 
+        function previewVoucher() {
+            openPreviewModal(null, true);
+        }
+
         async function openPreviewModal(voucherInfoOverride = null, skipApiFetch = false) {
             showPreviewModal.value = true;
             isPreviewLoading.value = true;
@@ -1196,8 +1272,11 @@ createApp({
                 // Only fetch from the API when explicitly allowed (e.g. standalone "Preview" button)
                 if (!voucherData && !skipApiFetch && voucherId.value) {
                     try {
-                        const res = await axios.get('/LedgerDataEntry/GetVoucherDetails?id=' + voucherId.value);
-                        voucherData = res.data?.voucherInfo || res.data;
+                        const res = await axios.get('/GeneralLedger/GetVoucherDetails?id=' + voucherId.value);
+                        const apiRes = res.data?.result || res.data?.voucherInfo || res.data;
+                        if (apiRes && (apiRes.batchNo || apiRes.id || apiRes.details)) {
+                            voucherData = apiRes;
+                        }
                     } catch (_) {}
                 }
 
@@ -1205,7 +1284,8 @@ createApp({
                     const supplierInfo = supplierList.value.find(a => a.id === supplierId.value);
                     const bankRecord = resolveBankAccount(bankAccountId.value);
                     const glBankAccountId = bankRecord ? bankRecord.accountId : bankAccountId.value;
-                    const bankAccountInfo = accountsList.value.find(a => a.id === glBankAccountId)
+                    const bankAccountInfo = bankGlAccountsList.value.find(a => a.id === glBankAccountId || a.id === bankAccountId.value)
+                        || accountsList.value.find(a => a.id === glBankAccountId)
                         || accountsList.value.find(a => a.id === bankAccountId.value);
                     const bankAccountDisplayName = bankRecord ? bankRecord.accountIdentifier : (bankAccountInfo ? bankAccountInfo.accountIdentifier : '');
                     const bankGlDisplayName = bankAccountInfo ? (bankAccountInfo.accountIdentifier || bankAccountInfo.accountName) : (bankRecord?.accountIdentifier || bankRecord?.accountName || '');
@@ -1223,6 +1303,7 @@ createApp({
                         voucherNumber: batchNo.value || 'Draft',
                         voucherEntryDate: voucherEntryDate.value,
                         paymentDate: paymentDate.value,
+                        voucherType: 'supplier',
                         supplierName: supplierInfo ? supplierInfo.name : '',
                         payeeName: supplierInfo ? supplierInfo.name : '',
                         bankAccountName: bankAccountDisplayName,
@@ -1249,6 +1330,7 @@ createApp({
                         communicationServiceTaxRate: cstF ? cstF.rate : 0,
                         hasCovidTax: covidF ? covidF.enabled : false,
                         covidTaxRate: covidF ? covidF.rate : 0,
+                        taxFlags: taxFlags,
                         details: voucherList.value.map(v => {
                             const debitAccountInfo = accountsList.value.find(a => a.id === v.accountId);
                             const ouInfo = costCenterHierachyList.value.find(a => a.id === v.ouId);
@@ -1261,27 +1343,81 @@ createApp({
                         }),
                         retensions: retentionsList.value,
                     };
+                } else {
+                    const wh = voucherData.withholdingSettings || {};
+                    const whSummary = wh.summary || {};
+                    const supplierInfo = supplierList.value.find(a => a.id === voucherData.supplierId);
+                    const suppName = voucherData.supplierName || (supplierInfo ? supplierInfo.name : '');
+                    if (!voucherData.payeeName) {
+                        voucherData.payeeName = suppName || voucherData.supplierName || '';
+                    }
+                    if (!voucherData.supplierName && suppName) {
+                        voucherData.supplierName = suppName;
+                    }
+                    if (!voucherData.voucherType) {
+                        voucherData.voucherType = 'supplier';
+                    }
+                    if (!voucherData.batchNo && voucherData.voucherNumber) {
+                        voucherData.batchNo = voucherData.voucherNumber;
+                    }
+                    if (voucherData.hasWithHolding === undefined && wh.hasWithHolding !== undefined) {
+                        voucherData.hasWithHolding = wh.hasWithHolding;
+                    }
+                    if (voucherData.withHoldingRate === undefined && wh.withHoldingRate !== undefined) {
+                        voucherData.withHoldingRate = wh.withHoldingRate;
+                    }
+                    if (!voucherData.taxFlags && wh.taxFlags) {
+                        voucherData.taxFlags = wh.taxFlags;
+                    }
+                    if (voucherData.totalWithheld === undefined && whSummary.totalWithheld !== undefined) {
+                        voucherData.totalWithheld = whSummary.totalWithheld;
+                    }
+                    if (voucherData.totalVatWithheld === undefined && whSummary.totalVatWithheld !== undefined) {
+                        voucherData.totalVatWithheld = whSummary.totalVatWithheld;
+                    }
+                    if (voucherData.totalRetained === undefined && whSummary.totalRetained !== undefined) {
+                        voucherData.totalRetained = whSummary.totalRetained;
+                    }
+                    if (!voucherData.details && voucherData.lines) {
+                        voucherData.details = voucherData.lines;
+                    }
+                    if (Array.isArray(voucherData.details)) {
+                        voucherData.details = voucherData.details.map(d => {
+                            const debitAccountInfo = accountsList.value.find(a => a.id === d.accountId || a.id === d.debitAccountId);
+                            const ouInfo = costCenterHierachyList.value.find(a => a.id === d.ouId);
+                            return {
+                                ...d,
+                                debitAccountName: d.debitAccountName || (debitAccountInfo ? debitAccountInfo.accountIdentifier : ''),
+                                amount: d.localDebitAmount != null ? d.localDebitAmount : (d.amount || d.debitAmount || 0),
+                                ouName: d.ouName && d.ouName !== '--' ? d.ouName : (ouInfo ? ouInfo.name : (d.ouName || '--'))
+                            };
+                        });
+                    }
+                    if (!voucherData.retensions && voucherData.retentions) {
+                        voucherData.retensions = voucherData.retentions;
+                    }
                 }
 
                 previewBatchNo.value = voucherData.batchNo || voucherData.voucherNumber || batchNo.value || '';
 
-                const gross    = parseFloat(voucherData.grossAmount != null ? voucherData.grossAmount : (totalDebit.value || 0));
-                const net      = parseFloat(voucherData.netAmount != null ? voucherData.netAmount : (totalNetAmount.value || 0));
-                const withheld = parseFloat(voucherData.totalWithheld != null ? voucherData.totalWithheld : (totalWithHeldAmount.value || 0));
-                const vatWithheld = parseFloat(voucherData.totalVatWithheld != null ? voucherData.totalVatWithheld : (totalVatWithHeldAmount.value || 0));
-                const retained = parseFloat(voucherData.totalRetained != null ? voucherData.totalRetained : (totalRetentionCredit.value || 0));
+                const wh = voucherData.withholdingSettings || {};
+                const whSummary = wh.summary || {};
+                const gross       = parseFloat(whSummary.grossAmount != null ? whSummary.grossAmount : (voucherData.grossAmount != null ? voucherData.grossAmount : (totalDebit.value || 0)));
+                const net         = parseFloat(whSummary.netAmount != null ? whSummary.netAmount : (voucherData.netAmount != null ? voucherData.netAmount : (totalNetAmount.value || 0)));
+                const withheld    = parseFloat(whSummary.totalWithheld != null ? whSummary.totalWithheld : (voucherData.totalWithheld != null ? voucherData.totalWithheld : (totalWithHeldAmount.value || 0)));
+                const vatWithheld = parseFloat(whSummary.totalVatWithheld != null ? whSummary.totalVatWithheld : (voucherData.totalVatWithheld != null ? voucherData.totalVatWithheld : (totalVatWithHeldAmount.value || 0)));
+                const retained    = parseFloat(whSummary.totalRetained != null ? whSummary.totalRetained : (voucherData.totalRetained != null ? voucherData.totalRetained : (totalRetentionCredit.value || 0)));
 
-                const nhilF  = getTaxFlag('nhil');
-                const getflF = getTaxFlag('getfl');
-                const vatF   = getTaxFlag('vat');
-                const cstF   = getTaxFlag('cst');
-                const covidF = getTaxFlag('covid');
+                const tfList = (wh.taxFlags && wh.taxFlags.length) ? wh.taxFlags : taxFlags;
+                const getFlag = (k) => tfList.find(x => x.key === k) || getTaxFlag(k);
 
-                const nhilAmt  = (nhilF  && nhilF.enabled  && nhilF.rate)  ? ((gross * nhilF.rate)  / 100).toFixed(2) : '0.00';
-                const getflAmt = (getflF && getflF.enabled && getflF.rate) ? ((gross * getflF.rate) / 100).toFixed(2) : '0.00';
-                const vatAmt   = (vatF   && vatF.enabled   && vatF.rate)   ? ((gross * vatF.rate)   / 100).toFixed(2) : '0.00';
-                const cstAmt   = (cstF   && cstF.enabled   && cstF.rate)   ? ((gross * cstF.rate)   / 100).toFixed(2) : '0.00';
-                const covidAmt = (covidF && covidF.enabled && covidF.rate) ? ((gross * covidF.rate) / 100).toFixed(2) : '0.00';
+                const getTaxAmount = (k) => {
+                    const f = getFlag(k);
+                    if (!f || !f.enabled) return '0.00';
+                    if (f.amount != null) return parseFloat(f.amount).toFixed(2);
+                    if (f.rate) return ((gross * parseFloat(f.rate)) / 100).toFixed(2);
+                    return '0.00';
+                };
 
                 const summary = {
                     gross: gross.toFixed(2),
@@ -1289,11 +1425,11 @@ createApp({
                     retained: retained.toFixed(2),
                     incomeWithholding: withheld.toFixed(2),
                     vatWithholding: vatWithheld.toFixed(2),
-                    nhil: nhilAmt,
-                    getfund: getflAmt,
-                    vat: vatAmt,
-                    cst: cstAmt,
-                    covid: covidAmt,
+                    nhil: getTaxAmount('nhil'),
+                    getfund: getTaxAmount('getfl'),
+                    vat: getTaxAmount('vat'),
+                    cst: getTaxAmount('cst'),
+                    covid: getTaxAmount('covid'),
                 };
 
                 const rep = window.TopazReportViewer.buildVoucherReport(voucherData, summary, companyName.value);
@@ -1321,6 +1457,49 @@ createApp({
             window.location.href = '/GeneralLedger/Vouchers?tab=supplier';
         }
 
+        async function postVoucher() {
+            if (!voucherId.value) {
+                toastHandler('warning', 'Please save the voucher before posting.');
+                return;
+            }
+
+            const result = await Swal.fire({
+                title: 'Post Voucher?',
+                text: 'Are you sure you want to post this voucher? This action will affect the general ledger and cannot be undone.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#059669',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes, Post',
+                cancelButtonText: 'Cancel'
+            });
+            if (!result.isConfirmed) return;
+
+            isLoading.value = true;
+            try {
+                const payload = { ids: [voucherId.value] };
+                let res;
+                try {
+                    res = await axios.post('/GeneralLedger/PostVouchers', payload);
+                } catch {
+                    res = await axios.post('/GeneralLedger/PostVoucher', payload);
+                }
+
+                if (res?.data && res.data.success === false) {
+                    toastHandler('error', res.data.message || res.data.error || 'Unable to post voucher.');
+                    isLoading.value = false;
+                    return;
+                }
+
+                isPosted.value = true;
+                toastHandler('success', 'Voucher posted successfully.');
+                setTimeout(() => { window.location.href = '/GeneralLedger/Vouchers?tab=supplier'; }, 1500);
+            } catch {
+                isLoading.value = false;
+                toastHandler('error', 'Unable to post voucher.');
+            }
+        }
+
         function createNewVoucher() {
             resetForm();
             isRecordCreated.value = false;
@@ -1344,6 +1523,11 @@ createApp({
 
         // ── Watchers ──────────────────────────────────────────────────
         watch(bankAccountId, val => {
+            const bankGlAccount = bankGlAccountsList.value.find(a => a.id === val);
+            if (bankGlAccount && bankGlAccount.currencyId) {
+                currencyId.value = bankGlAccount.currencyId;
+                return;
+            }
             const bankRecord = resolveBankAccount(val);
             if (bankRecord && bankRecord.currencyId) {
                 currencyId.value = bankRecord.currencyId;
@@ -1388,6 +1572,7 @@ createApp({
             if (targetId) {
                 voucherId.value = targetId;
                 isEditMode.value = true;
+                isShimmerLoading.value = true;
             }
             if (typeof window.withHoldingVatPercentage !== 'undefined') {
                 withHoldingVatPercentage.value = parseFloat(window.withHoldingVatPercentage) || 7;
@@ -1413,8 +1598,8 @@ createApp({
             isLoading, isShimmerLoading, supplierId, voucherEntryDate, paymentDate, bankAccountId,
             currencyId, currencyRate, isMultiCurrency, modePayment, batchNo, chequeNo,
             taxType, withHoldingRate, withHoldingAccountId, vatWithHoldingAccountId,
-            hasWithHolding, voucherId, isEditMode, isRecordCreated, showSaveMenu,
-            supplierList, accountsList, bankAccountList, bankGlList, currencyList, costCenterHierachyList,
+            hasWithHolding, voucherId, isEditMode, isRecordCreated, isPosted, showSaveMenu,
+            supplierList, accountsList, bankAccountList, bankGlAccountsList, bankGlList, currencyList, costCenterHierachyList,
             voucherList, retentionsList, errors, taxFlags,
             totalVatAmount, totalWithHeldAmount, totalVatWithHeldAmount,
             totalRetentionCredit, totalCredit, totalDebit, totalNetAmount, amountWithoutTaxes,
@@ -1427,7 +1612,7 @@ createApp({
             onWithHoldChange, addRetentionRow, removeRetentionRow, onRetentionAmountChange,
             onLocalDebitChange, onForeignDebitChange,
             onTaxFlagChange, reComputeVoucherSummary, fmtNum,
-            openPreviewModal, closePreviewModal, onBackToVouchers,
+            openPreviewModal, closePreviewModal, onBackToVouchers, postVoucher, previewVoucher,
         };
     }
 }).mount('#app');

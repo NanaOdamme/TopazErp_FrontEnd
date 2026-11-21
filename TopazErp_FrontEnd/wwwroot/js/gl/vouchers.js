@@ -178,7 +178,6 @@ const app = Vue.createApp({
                 try {
                     response = await axios.get(`/GeneralLedger/GetVoucherData?${params}`);
                 } catch {
-                    response = await axios.get(`/LedgerDataEntry/GetVoucherData?${params}`);
                 }
 
                 const raw = this._extractList(response);
@@ -206,7 +205,6 @@ const app = Vue.createApp({
                 try {
                     response = await axios.get(`/GeneralLedger/GetVoucherData?${params}`);
                 } catch {
-                    response = await axios.get(`/LedgerDataEntry/GetVoucherData?${params}`);
                 }
 
                 const raw = this._extractList(response);
@@ -234,7 +232,6 @@ const app = Vue.createApp({
                 try {
                     response = await axios.get(`/GeneralLedger/GetVoucherData?${params}`);
                 } catch {
-                    response = await axios.get(`/LedgerDataEntry/GetVoucherData?${params}`);
                 }
 
                 const raw = this._extractList(response);
@@ -405,12 +402,29 @@ const app = Vue.createApp({
            Selection
         ══════════════════════════════════════════════════════ */
 
-        onSelectionChange(selected) {
-            if (Array.isArray(selected)) {
-                this.selectedIds = selected.map(item =>
-                    typeof item === 'object' && item !== null ? item.id : item
-                );
+        onSelectionChange(payload) {
+            if (!payload) {
+                this.selectedIds = [];
+                return;
             }
+
+            // Ignore nested child grid events
+            if (payload.level && payload.level > 0) {
+                return;
+            }
+
+            let raw = [];
+            if (Array.isArray(payload.ids)) {
+                raw = payload.ids;
+            } else if (Array.isArray(payload)) {
+                raw = payload;
+            } else if (Array.isArray(payload.rows)) {
+                raw = payload.rows.map(r => r?.id || r);
+            }
+
+            this.selectedIds = raw.map(item =>
+                typeof item === 'object' && item !== null ? item.id : item
+            ).filter(Boolean);
         },
 
         /* ══════════════════════════════════════════════════════
@@ -418,35 +432,49 @@ const app = Vue.createApp({
         ══════════════════════════════════════════════════════ */
 
         async postSelectedVouchers() {
-            const list = this.activeList;
-            const idSet = new Set(this.selectedIds.map(String));
-            const toPost = list.filter(v => idSet.has(String(v.id)) && !v.isPosted);
-
-            if (toPost.length === 0) {
-                this.toastHandler('warning', 'No unposted vouchers selected to post.');
+            if (!this.selectedIds || this.selectedIds.length === 0) {
+                this.toastHandler('warning', 'Please select at least one voucher to post.');
                 return;
             }
 
+            const list = this.activeList;
+            const idSet = new Set(this.selectedIds.map(id => String(id).toLowerCase()));
+            const toPost = list.filter(v => idSet.has(String(v.id).toLowerCase()) && !v.isPosted);
+
+            if (toPost.length === 0) {
+                this.toastHandler('warning', 'The selected voucher(s) are already posted.');
+                return;
+            }
+
+            const isSingle = toPost.length === 1;
             const confirm = await Swal.fire({
-                title: `Post ${toPost.length} Voucher${toPost.length !== 1 ? 's' : ''}?`,
+                title: isSingle ? 'Post Voucher?' : `Post ${toPost.length} Vouchers?`,
                 text: 'Posted vouchers will affect the general ledger permanently.',
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#059669',
                 cancelButtonColor: '#64748b',
-                confirmButtonText: `Yes, Post ${toPost.length}`,
+                confirmButtonText: isSingle ? 'Yes, Post' : `Yes, Post ${toPost.length}`,
             });
             if (!confirm.isConfirmed) return;
 
             this.isLoading = true;
             try {
                 const ids = toPost.map(v => v.id);
+                const payload = { ids: ids };
+                 
                 let response;
                 try {
-                    response = await axios.post('/GeneralLedger/PostVouchers', ids);
+                    response = await axios.post('/GeneralLedger/PostVouchers', payload);
                 } catch {
-                    response = await axios.post('/LedgerDataEntry/PostVouchers', { ids });
+                     
                 }
+
+                if (response?.data && response.data.success === false) {
+                    this.toastHandler('error',  'Unable to post selected voucher(s).');
+                    return;
+                }
+
                 this.toastHandler('success', `${ids.length} voucher(s) posted successfully.`);
                 this.selectedIds = [];
                 this.loadActiveTab();
@@ -464,9 +492,9 @@ const app = Vue.createApp({
 
         async deleteSelectedVouchers() {
             const list = this.activeList;
-            const idSet = new Set(this.selectedIds.map(String));
-            const unposted = list.filter(v => idSet.has(String(v.id)) && !v.isPosted);
-            const hasPosted = list.some(v => idSet.has(String(v.id)) && v.isPosted);
+            const idSet = new Set(this.selectedIds.map(id => String(id).toLowerCase()));
+            const unposted = list.filter(v => idSet.has(String(v.id).toLowerCase()) && !v.isPosted);
+            const hasPosted = list.some(v => idSet.has(String(v.id).toLowerCase()) && v.isPosted);
 
             if (hasPosted) {
                 await Swal.fire({
@@ -498,9 +526,8 @@ const app = Vue.createApp({
                 const ids = unposted.map(v => v.id);
                 let response;
                 try {
-                    response = await axios.post('/GeneralLedger/DeleteVouchers', ids);
+                    response = await axios.post('/GeneralLedger/DeleteVouchers', { ids });
                 } catch {
-                    response = await axios.post('/LedgerDataEntry/DeleteVouchers', { ids });
                 }
                 this.toastHandler('success', `${ids.length} voucher(s) deleted successfully.`);
                 this.selectedIds = [];
