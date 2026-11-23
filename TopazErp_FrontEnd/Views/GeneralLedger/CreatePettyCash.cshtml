@@ -89,7 +89,7 @@
                     </div>
                     <div>
                         <h4 class="font-bold text-gray-900 dark:text-white">Batch Header Information</h4>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Specifies batch timing, petty cash ledger account, originator and currency</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Specifies batch timing, petty cash ledger account and currency</p>
                     </div>
                 </div>
 
@@ -111,21 +111,12 @@
                         <label for="batchNo" class="text-xs font-semibold text-gray-700 dark:text-gray-300">
                             Batch # <span class="text-red-500">*</span>
                         </label>
-                        <div class="flex gap-1.5">
-                            <input id="batchNo"
-                                   type="text"
-                                   v-model.trim="entryForm.batchNo"
-                                   required
-                                   placeholder="e.g. 1560"
-                                   class="gl-input font-mono font-semibold" />
-                            <button type="button"
-                                    @@click="generateBatchNumber"
-                                    :disabled="isEditing"
-                                    title="Auto-generate Batch #"
-                                    class="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-2.5 text-blue-700 hover:bg-blue-100 disabled:opacity-40 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-800 dark:text-blue-400">
-                                <i class="bi bi-magic text-xs"></i>
-                            </button>
-                        </div>
+                        <input id="batchNo"
+                               type="text"
+                               v-model.trim="entryForm.batchNo"
+                               required
+                               placeholder="Batch No."
+                               class="gl-input font-mono font-semibold" />
                     </div>
 
                     <!-- Source Doc. No -->
@@ -157,21 +148,8 @@
                         </select>
                     </div>
 
-                    <!-- Batch Originator -->
-                    <div class="gl-field sm:col-span-2 lg:col-span-2 xl:col-span-3">
-                        <label for="batchOriginator" class="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                            Batch Originator <span class="text-red-500">*</span>
-                        </label>
-                        <input id="batchOriginator"
-                               type="text"
-                               v-model.trim="entryForm.batchOriginator"
-                               required
-                               placeholder="e.g. Leticia"
-                               class="gl-input font-medium" />
-                    </div>
-
                     <!-- Currency -->
-                    <div class="gl-field sm:col-span-1 lg:col-span-1 xl:col-span-2">
+                    <div class="gl-field sm:col-span-1 lg:col-span-2 xl:col-span-4">
                         <label for="currencyId" class="text-xs font-semibold text-gray-700 dark:text-gray-300">
                             Currency <span class="text-red-500">*</span>
                         </label>
@@ -188,7 +166,7 @@
                     </div>
 
                     <!-- Currency Rate -->
-                    <div class="gl-field sm:col-span-1 lg:col-span-1 xl:col-span-1">
+                    <div class="gl-field sm:col-span-1 lg:col-span-1 xl:col-span-2">
                         <label for="currencyRate" class="text-xs font-semibold text-gray-700 dark:text-gray-300">
                             Exchange Rate
                         </label>

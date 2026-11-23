@@ -563,16 +563,11 @@ public class TopazErpApi: ITopazErpApi
     }
     
     //Customers
-    public async Task<CustomerResponse> GetCustomers(int pageNo, int pageSize, string query)
+    public async Task<CustomerResponse> GetCustomers()
     {
         var authToken = _claimsHelper.GetAuthToken();
         
-        string url = $"{_apiBaseUrl}Customer/GetAll?pageNo={pageNo}&pageSize={pageSize}";
-
-        if (!string.IsNullOrEmpty(query))
-        {
-            url += $"&query={query}";
-        }
+        string url = $"{_apiBaseUrl}Customer/ListAll";
         
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");

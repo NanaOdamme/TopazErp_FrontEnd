@@ -48,6 +48,92 @@
         return [h ? `${ones[h]} Hundred` : '', rest < 20 ? (rest ? ones[rest] : '') : `${tens[Math.floor(rest / 10)]}${rest % 10 ? `-${ones[rest % 10]}` : ''}`].filter(Boolean).join(' ');
     }
 
+    function receiptUnderHundred(n) {
+        if (n < 20) return ones[n];
+        const t = Math.floor(n / 10);
+        const r = n % 10;
+        return r ? `${tens[t]}-${ones[r]}` : tens[t];
+    }
+
+    function receiptUnderThousand(n) {
+        const h = Math.floor(n / 100);
+        const rest = n % 100;
+        const parts = [];
+        if (h) parts.push(`${ones[h]} Hundred`);
+        if (rest) parts.push((h ? 'and ' : '') + receiptUnderHundred(rest));
+        return parts.join(' ');
+    }
+
+    function receiptAmountInWords(value, currencyCode) {
+        const num = parseFloat(value);
+        if (!isFinite(num)) return '—';
+        const [wholeStr = '0', fracStr = '00'] = num.toFixed(2).split('.');
+        const whole = parseInt(wholeStr, 10);
+        const cents = parseInt(fracStr.slice(0, 2), 10);
+
+        const groups = ['', 'Thousand', 'Million', 'Billion', 'Trillion'];
+        let temp = whole;
+        const parts = [];
+        for (let i = 0; temp > 0 && i < groups.length; i++) {
+            const chunk = temp % 1000;
+            if (chunk) {
+                const chunkWords = receiptUnderThousand(chunk);
+                parts.unshift(chunkWords + (groups[i] ? ` ${groups[i]}` : ''));
+            }
+            temp = Math.floor(temp / 1000);
+        }
+        const wholeWords = parts.join(', ') || 'Zero';
+        const curr = (currencyCode || 'GHS').toUpperCase();
+        const currNames = {
+            GHS: 'Ghana Cedis',
+            USD: 'US Dollars',
+            EUR: 'Euros',
+            GBP: 'British Pounds',
+            NGN: 'Naira',
+            CAD: 'Canadian Dollars',
+            AUD: 'Australian Dollars',
+            ZAR: 'Rands',
+        };
+        const currName = currNames[curr] || curr;
+        const centsWords = cents > 0 ? ` and ${receiptUnderHundred(cents)}` : '';
+        return `${wholeWords} ${currName}${centsWords} ONLY`;
+    }
+
+    function formatReceiptDate(val) {
+        if (!val) return '—';
+        try {
+            const str = String(val);
+            const d = new Date(str.includes('T') ? str : (str.length === 10 ? str + 'T00:00:00' : str));
+            if (isNaN(d.getTime())) return str;
+            const day = String(d.getDate()).padStart(2, '0');
+            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            return `${day}-${months[d.getMonth()]}-${d.getFullYear()}`;
+        } catch (_) {
+            return String(val);
+        }
+    }
+
+    function formatPrintedDate(d) {
+        try {
+            const date = d instanceof Date ? d : new Date();
+            const day = String(date.getDate()).padStart(2, '0');
+            const fullMonths = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            return `${day}-${fullMonths[date.getMonth()]}-${date.getFullYear()}`;
+        } catch (_) {
+            return '';
+        }
+    }
+
+    function formatLogoImage(logo) {
+        if (!logo || typeof logo !== 'string') return null;
+        const trimmed = logo.trim();
+        if (!trimmed || trimmed === 'null' || trimmed === 'undefined') return null;
+        if (trimmed.startsWith('data:image/')) return trimmed;
+        if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+        const mime = trimmed.startsWith('/9j/') ? 'image/jpeg' : 'image/png';
+        return `data:${mime};base64,${trimmed}`;
+    }
+
     const currencyUnits = {
         GHS: { major: 'Ghana Cedi',          minor: 'Pesewa',  plural: 'Pesewas' },
         USD: { major: 'US Dollar',            minor: 'Cent',    plural: 'Cents' },
@@ -278,11 +364,274 @@
     const cell = (text, span, bold, align) => ({ text: String(text || ''), span: span || 1, bold: !!bold, align: align || 'left' });
     const dateStr = v => v ? (v.includes('T') ? v.slice(0, 10) : v) : '—';
 
+    function buildCustomerReceiptReport(voucher, summary, companyProfileOrName) {
+        const prof = (typeof companyProfileOrName === 'object' && companyProfileOrName !== null) ? companyProfileOrName : {};
+        const companyName = prof.companyName || prof.businessName || (typeof companyProfileOrName === 'string' ? companyProfileOrName : '') || voucher.companyName || 'Topaz ERP';
+        const companyAddress = prof.address || voucher.companyAddress || '';
+        const companyPhone = prof.phoneNo || prof.phone || voucher.companyPhone || '';
+        const rawLogo = prof.companyLogo != null ? prof.companyLogo : (voucher.companyLogo != null ? voucher.companyLogo : null);
+        const companyLogo = formatLogoImage(rawLogo);
+
+        const currencyCode = voucher.currencyCode || 'GHS';
+        const s = summary || {};
+        const net = parseFloat(s.net != null ? s.net : (voucher.netAmount != null ? voucher.netAmount : (voucher.totalNetAmount != null ? voucher.totalNetAmount : (voucher.grossAmount || 0))));
+        const gross = parseFloat(s.gross != null ? s.gross : (voucher.grossAmount != null ? voucher.grossAmount : (voucher.totalDebit != null ? voucher.totalDebit : net)));
+
+        const customerName = (voucher.customerName || voucher.payeeName || '—').trim();
+        const amountInWords = receiptAmountInWords(net, currencyCode);
+        const amountFormatted = fmt(net);
+
+        const lines = voucher.details || voucher.lines || [];
+        const beingDescription = lines.map(l => l.description).filter(Boolean).join('; ') || voucher.description || '—';
+
+        const rawDate = voucher.receiptDate || voucher.paymentDate || voucher.voucherEntryDate || voucher.entryDate;
+        const receiptDate = formatReceiptDate(rawDate);
+        const printedDate = formatPrintedDate(new Date());
+
+        const batchNo = voucher.batchNo || voucher.voucherNumber || '—';
+        const receiptNo = voucher.receiptNo || voucher.voucherNo || (batchNo !== '—' ? (batchNo.endsWith('V') ? batchNo.slice(0, -1) + 'RCT' : batchNo) : '—');
+        const rvNo = voucher.rvNo || voucher.referenceNo || (lines.length > 0 && lines[0].referenceNo ? lines[0].referenceNo : '') || '—';
+        const regNo = voucher.regNo || voucher.registrationNo || (lines.length > 0 && lines[0].invoiceNo ? lines[0].invoiceNo : '');
+
+        const chequeNo = voucher.modePayment === 'Cheque'
+            ? (voucher.chequeNo || '—')
+            : (voucher.chequeNo ? voucher.chequeNo : (voucher.modePayment || 'Cash'));
+
+        return {
+            id: `receipt-${receiptNo || batchNo || 'preview'}`.replace(/[^a-zA-Z0-9_-]/g, '-'),
+            reportType: 'official-receipt',
+            isReceipt: true,
+            title: 'OFFICIAL RECEIPT',
+            companyName,
+            companyAddress,
+            companyPhone,
+            companyLogo,
+            customerName,
+            amountInWords,
+            amountFormatted,
+            beingDescription,
+            receiptDate,
+            printedDate,
+            receiptNo,
+            batchNo,
+            rvNo,
+            regNo,
+            chequeNo,
+            currencyCode,
+            netAmount: net,
+            grossAmount: gross,
+            lines,
+            generatedAt: printedDate,
+            landscape: false,
+            voucherRows: [
+                { cells: [cell('Receipt No:', 1, true), cell(receiptNo, 2)] },
+                { cells: [cell('Receipt From:', 1, true), cell(customerName, 2)] },
+                { cells: [cell('The Sum of:', 1, true), cell(amountInWords, 2)] },
+                { cells: [cell('being:', 1, true), cell(beingDescription, 2)] },
+                { cells: [cell('Cheque No:', 1, true), cell(chequeNo, 2)] },
+                { cells: [cell('Amount Paid:', 1, true), cell(`${currencyCode} ${amountFormatted}`, 2)] },
+            ],
+        };
+    }
+
+    function buildReceiptBlock(report, isDuplicate) {
+        let logoElement;
+        if (report.companyLogo) {
+            try {
+                logoElement = {
+                    image: report.companyLogo,
+                    fit: [65, 65],
+                    alignment: 'left',
+                };
+            } catch (_) {
+                logoElement = { text: '', width: 70, height: 65 };
+            }
+        } else {
+            logoElement = { text: '', width: 70, height: 65 };
+        }
+
+        const centerStack = [
+            { text: (report.companyName || 'Topaz ERP').toUpperCase(), fontSize: 13, bold: true, alignment: 'center' },
+        ];
+        if (report.companyAddress) {
+            centerStack.push({ text: report.companyAddress, fontSize: 8.5, alignment: 'center', margin: [0, 3, 0, 0] });
+        }
+        if (report.companyPhone) {
+            const phoneTxt = report.companyPhone.startsWith('Tel') ? report.companyPhone : `Tel: ${report.companyPhone}`;
+            centerStack.push({ text: phoneTxt, fontSize: 8, alignment: 'center', margin: [0, 2, 0, 0] });
+        }
+
+        const headerRow = {
+            columns: [
+                { width: 70, stack: [logoElement] },
+                { width: '*', stack: centerStack, margin: [0, 2, 0, 0] },
+                { width: 70, text: '' }
+            ],
+            margin: [0, 0, 0, 6]
+        };
+
+        const titleBox = {
+            table: {
+                widths: [180],
+                body: [
+                    [{ text: 'OFFICIAL RECEIPT', fontSize: 11.5, bold: true, alignment: 'center', margin: [0, 4, 0, 4] }]
+                ]
+            },
+            layout: {
+                hLineWidth: () => 0.8,
+                vLineWidth: () => 0.8,
+                hLineColor: () => '#555555',
+                vLineColor: () => '#555555'
+            }
+        };
+
+        const metadataRows = [
+            [{ text: 'Receipt No:', fontSize: 8, margin: [0, 1, 0, 1] }, { text: report.receiptNo || '—', fontSize: 8, margin: [0, 1, 0, 1] }],
+            [{ text: 'Date      :', fontSize: 8, margin: [0, 1, 0, 1] }, { text: report.receiptDate || '—', fontSize: 8, margin: [0, 1, 0, 1] }],
+            [{ text: 'Batch No:',   fontSize: 8, margin: [0, 1, 0, 1] }, { text: report.batchNo || '—', fontSize: 8, margin: [0, 1, 0, 1] }],
+            [{ text: 'RV.',        fontSize: 8, margin: [0, 1, 0, 1] }, { text: report.rvNo || '—', fontSize: 8, margin: [0, 1, 0, 1] }],
+        ];
+        if (report.regNo) {
+            metadataRows.push([
+                { text: 'Reg. No.:', fontSize: 8, margin: [0, 1, 0, 1] },
+                { text: report.regNo, fontSize: 8, margin: [0, 1, 0, 1] }
+            ]);
+        }
+
+        const metadataBox = {
+            table: {
+                widths: [55, 95],
+                body: metadataRows
+            },
+            layout: 'noBorders'
+        };
+
+        const titleMetadataRow = {
+            columns: [
+                { width: 135, text: '' },
+                { width: 'auto', stack: [titleBox] },
+                { width: '*', text: '' },
+                { width: 'auto', stack: [metadataBox] }
+            ],
+            margin: [0, 4, 0, 8]
+        };
+
+        const bodyTable = {
+            table: {
+                widths: [80, '*'],
+                body: [
+                    [
+                        { text: 'Receipt From :', fontSize: 8.5, margin: [0, 2, 0, 2] },
+                        { text: report.customerName || '—', fontSize: 8.5, bold: false, margin: [0, 2, 0, 2] }
+                    ],
+                    [
+                        { text: 'The Sum of   :', fontSize: 8.5, margin: [0, 2, 0, 2] },
+                        { text: report.amountInWords || '—', fontSize: 8.5, bold: false, margin: [0, 2, 0, 2] }
+                    ],
+                    [
+                        { text: 'being        :', fontSize: 8.5, margin: [0, 2, 0, 2] },
+                        { text: report.beingDescription || '—', fontSize: 8.5, bold: false, margin: [0, 2, 0, 2] }
+                    ]
+                ]
+            },
+            layout: 'noBorders',
+            margin: [0, 4, 0, 8]
+        };
+
+        const paymentTable = {
+            table: {
+                widths: [80, '*'],
+                body: [
+                    [
+                        { text: 'Cheque No :', fontSize: 8.5, margin: [0, 2, 0, 2] },
+                        { text: report.chequeNo || '—', fontSize: 8.5, margin: [0, 2, 0, 2] }
+                    ],
+                    [
+                        { text: 'Amount Paid :', fontSize: 8.5, margin: [0, 2, 0, 2] },
+                        { text: `${report.currencyCode || 'GHS'} ${report.amountFormatted}`, fontSize: 9, bold: false, margin: [0, 2, 0, 2] }
+                    ]
+                ]
+            },
+            layout: 'noBorders'
+        };
+
+        const signatureStack = [
+            {
+                margin: [0, 14, 0, 0],
+                canvas: [{ type: 'line', x1: 20, y1: 0, x2: 170, y2: 0, lineWidth: 0.8, lineColor: '#555555' }]
+            },
+            { text: 'Admin', alignment: 'center', fontSize: 8.5, margin: [0, 4, 0, 0] }
+        ];
+
+        const paymentSignatureRow = {
+            columns: [
+                { width: 270, stack: [paymentTable] },
+                { width: '*', stack: signatureStack }
+            ],
+            margin: [0, 6, 0, 10]
+        };
+
+        const footerRule = {
+            canvas: [{ type: 'line', x1: 0, y1: 0, x2: 523, y2: 0, lineWidth: 0.7, lineColor: '#555555' }]
+        };
+        const footerText = {
+            columns: [
+                { text: `Report Printed On ${report.printedDate}`, fontSize: 7, width: '*' },
+                { text: 'Topaz Accounting Pro - G/L', fontSize: 7, alignment: 'center', width: 140 },
+                { text: 'Page 1 of 1', fontSize: 7, alignment: 'right', width: 70 }
+            ],
+            margin: [0, 3, 0, 0]
+        };
+
+        return [
+            headerRow,
+            titleMetadataRow,
+            bodyTable,
+            paymentSignatureRow,
+            footerRule,
+            footerText
+        ];
+    }
+
+    function customerReceiptPdfDefinition(report) {
+        const topReceipt = buildReceiptBlock(report, false);
+        const bottomReceipt = buildReceiptBlock(report, true);
+        const perforationDivider = {
+            margin: [0, 8, 0, 8],
+            canvas: [{
+                type: 'line',
+                x1: 0,
+                y1: 0,
+                x2: 523,
+                y2: 0,
+                lineWidth: 0.8,
+                dash: { length: 2, space: 3 },
+                lineColor: '#888888'
+            }]
+        };
+
+        return {
+            info: { title: `Official Receipt - ${report.receiptNo || report.batchNo}`, author: report.companyName, creator: 'Topaz ERP' },
+            pageSize: 'A4',
+            pageOrientation: 'portrait',
+            pageMargins: [36, 18, 36, 14],
+            defaultStyle: { font: 'Roboto', fontSize: 8.5, color: '#171717' },
+            content: [
+                ...topReceipt,
+                perforationDivider,
+                ...bottomReceipt
+            ]
+        };
+    }
+
     function buildVoucherReport(voucher, summary, companyName) {
         const isReceipt = !!(voucher.isReceipt || voucher.type === 'customer-receipt' || voucher.voucherType === 'customer');
+        if (isReceipt) {
+            return buildCustomerReceiptReport(voucher, summary, companyName);
+        }
         const currency  = voucher.currencyCode || 'GHS';
-        const title     = isReceipt ? 'RECEIPT VOUCHER' : 'PAYMENT VOUCHER';
-        companyName     = companyName || voucher.companyName || 'Topaz ERP';
+        const title     = 'PAYMENT VOUCHER';
+        companyName     = (typeof companyName === 'object' && companyName !== null ? (companyName.companyName || companyName.businessName) : companyName) || voucher.companyName || 'Topaz ERP';
 
         const s = summary || {};
         const net    = parseFloat(s.net    || voucher.netAmount   || 0);
@@ -465,13 +814,109 @@
     function createVoucherPdf(report) {
         return new Promise((resolve, reject) => {
             if (!window.pdfMake) { reject(new Error('pdfmake is not loaded on the page.')); return; }
-            const definition = voucherPdfDefinition(report);
+            const definition = (report.isReceipt || report.reportType === 'official-receipt')
+                ? customerReceiptPdfDefinition(report)
+                : voucherPdfDefinition(report);
             window.pdfMake.createPdf(definition).getBuffer(buffer => resolve(new Uint8Array(buffer)));
+        });
+    }
+
+    async function createReceiptExcel(report) {
+        if (!window.ExcelJS) throw new Error('ExcelJS is not loaded on the page.');
+        const book = new window.ExcelJS.Workbook();
+        book.creator = 'Topaz ERP';
+        const sheet = book.addWorksheet('Official Receipt', {
+            pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0 }
+        });
+        sheet.columns = [
+            { width: 18 },
+            { width: 22 },
+            { width: 22 },
+            { width: 18 },
+            { width: 20 },
+            { width: 16 },
+        ];
+
+        function addReceiptSection() {
+            let r = sheet.addRow([(report.companyName || 'Topaz ERP').toUpperCase()]);
+            sheet.mergeCells(r.number, 1, r.number, 6);
+            r.font = { bold: true, size: 13 };
+            r.alignment = { horizontal: 'center' };
+
+            if (report.companyAddress) {
+                r = sheet.addRow([report.companyAddress]);
+                sheet.mergeCells(r.number, 1, r.number, 6);
+                r.font = { size: 9 };
+                r.alignment = { horizontal: 'center' };
+            }
+            if (report.companyPhone) {
+                const ph = report.companyPhone.startsWith('Tel') ? report.companyPhone : `Tel: ${report.companyPhone}`;
+                r = sheet.addRow([ph]);
+                sheet.mergeCells(r.number, 1, r.number, 6);
+                r.font = { size: 8.5 };
+                r.alignment = { horizontal: 'center' };
+            }
+
+            sheet.addRow([]);
+
+            r = sheet.addRow(['', 'OFFICIAL RECEIPT', '', '', 'Receipt No:', report.receiptNo || '—']);
+            sheet.mergeCells(r.number, 2, r.number, 3);
+            r.getCell(2).font = { bold: true, size: 12 };
+            r.getCell(2).alignment = { horizontal: 'center' };
+            r.getCell(2).border = { top:{style:'thin'}, bottom:{style:'thin'}, left:{style:'thin'}, right:{style:'thin'} };
+            r.getCell(3).border = { top:{style:'thin'}, bottom:{style:'thin'}, left:{style:'thin'}, right:{style:'thin'} };
+
+            r = sheet.addRow(['', '', '', '', 'Date      :', report.receiptDate || '—']);
+            r = sheet.addRow(['', '', '', '', 'Batch No:', report.batchNo || '—']);
+            r = sheet.addRow(['', '', '', '', 'RV.', report.rvNo || '—']);
+            if (report.regNo) {
+                r = sheet.addRow(['', '', '', '', 'Reg. No.:', report.regNo]);
+            }
+
+            sheet.addRow([]);
+
+            r = sheet.addRow(['Receipt From :', report.customerName]);
+            sheet.mergeCells(r.number, 2, r.number, 6);
+            r = sheet.addRow(['The Sum of   :', report.amountInWords]);
+            sheet.mergeCells(r.number, 2, r.number, 6);
+            r = sheet.addRow(['being        :', report.beingDescription]);
+            sheet.mergeCells(r.number, 2, r.number, 6);
+
+            sheet.addRow([]);
+
+            r = sheet.addRow(['Cheque No :', report.chequeNo, '', '', '____________________', '']);
+            sheet.mergeCells(r.number, 5, r.number, 6);
+            r.getCell(5).alignment = { horizontal: 'center' };
+
+            r = sheet.addRow(['Amount Paid :', `${report.currencyCode || 'GHS'} ${report.amountFormatted}`, '', '', 'Admin', '']);
+            sheet.mergeCells(r.number, 5, r.number, 6);
+            r.getCell(5).alignment = { horizontal: 'center' };
+
+            sheet.addRow([]);
+
+            r = sheet.addRow([`Report Printed On ${report.printedDate}`, '', 'Topaz Accounting Pro - G/L', '', 'Page 1 of 1', '']);
+            r.font = { size: 8 };
+            sheet.getRow(r.number).eachCell(c => { c.border = { top: { style: 'thin' } }; });
+        }
+
+        addReceiptSection();
+        const sep = sheet.addRow(['-------------------------------------------------------------------------------------------------']);
+        sheet.mergeCells(sep.number, 1, sep.number, 6);
+        sep.alignment = { horizontal: 'center' };
+        sep.font = { color: { argb: 'FF888888' } };
+        addReceiptSection();
+
+        sheet.pageSetup.printArea = `A1:F${sheet.rowCount}`;
+        return new Blob([new Uint8Array(await book.xlsx.writeBuffer())], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         });
     }
 
     async function createVoucherExcel(report) {
         if (!window.ExcelJS) throw new Error('ExcelJS is not loaded on the page.');
+        if (report.isReceipt || report.reportType === 'official-receipt') {
+            return createReceiptExcel(report);
+        }
         const book = new window.ExcelJS.Workbook();
         book.creator = 'Topaz ERP';
         const sheet = book.addWorksheet('Voucher', {
@@ -512,7 +957,101 @@
         });
     }
 
+    function createReceiptWord(report) {
+        function receiptHtml() {
+            const logoHtml = report.companyLogo
+                ? `<img src="${report.companyLogo}" style="max-height:60px; max-width:120px;" alt="Logo" />`
+                : '';
+            return `
+            <table style="width:100%; border:none; margin-bottom:12px;">
+                <tr>
+                    <td style="width:70px; vertical-align:top;">${logoHtml}</td>
+                    <td style="text-align:center; vertical-align:top;">
+                        <h2 style="margin:0; font-size:14pt;">${(report.companyName || '').toUpperCase()}</h2>
+                        ${report.companyAddress ? `<p style="margin:2px 0; font-size:9pt;">${report.companyAddress}</p>` : ''}
+                        ${report.companyPhone ? `<p style="margin:2px 0; font-size:8.5pt;">${report.companyPhone.startsWith('Tel') ? report.companyPhone : 'Tel: ' + report.companyPhone}</p>` : ''}
+                    </td>
+                    <td style="width:70px;"></td>
+                </tr>
+            </table>
+
+            <table style="width:100%; border:none; margin-bottom:14px;">
+                <tr>
+                    <td style="width:25%;"></td>
+                    <td style="width:40%; text-align:center;">
+                        <div style="border:1px solid #555; padding:6px 12px; display:inline-block; font-weight:bold; font-size:12pt; letter-spacing:1px;">
+                            OFFICIAL RECEIPT
+                        </div>
+                    </td>
+                    <td style="width:35%; font-size:8.5pt; text-align:right;">
+                        <table style="margin-left:auto; border:none; font-size:8.5pt;">
+                            <tr><td style="text-align:left;">Receipt No:</td><td style="text-align:left; padding-left:8px;">${report.receiptNo || '—'}</td></tr>
+                            <tr><td style="text-align:left;">Date&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</td><td style="text-align:left; padding-left:8px;">${report.receiptDate || '—'}</td></tr>
+                            <tr><td style="text-align:left;">Batch No:</td><td style="text-align:left; padding-left:8px;">${report.batchNo || '—'}</td></tr>
+                            <tr><td style="text-align:left;">RV.</td><td style="text-align:left; padding-left:8px;">${report.rvNo || '—'}</td></tr>
+                            ${report.regNo ? `<tr><td style="text-align:left;">Reg. No.:</td><td style="text-align:left; padding-left:8px;">${report.regNo}</td></tr>` : ''}
+                        </table>
+                    </td>
+                </tr>
+            </table>
+
+            <table style="width:100%; border:none; font-size:9.5pt; margin-bottom:16px; border-collapse:collapse;">
+                <tr>
+                    <td style="width:110px; padding:3px 0; vertical-align:top;">Receipt From :</td>
+                    <td style="padding:3px 0; vertical-align:top;">${report.customerName || '—'}</td>
+                </tr>
+                <tr>
+                    <td style="padding:3px 0; vertical-align:top;">The Sum of&nbsp;&nbsp;&nbsp;:</td>
+                    <td style="padding:3px 0; vertical-align:top;">${report.amountInWords || '—'}</td>
+                </tr>
+                <tr>
+                    <td style="padding:3px 0; vertical-align:top;">being&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:</td>
+                    <td style="padding:3px 0; vertical-align:top;">${report.beingDescription || '—'}</td>
+                </tr>
+            </table>
+
+            <table style="width:100%; border:none; font-size:9.5pt; margin-bottom:18px;">
+                <tr>
+                    <td style="width:55%; vertical-align:bottom;">
+                        <table style="border:none; font-size:9.5pt;">
+                            <tr><td style="width:100px;">Cheque No :</td><td>${report.chequeNo || '—'}</td></tr>
+                            <tr><td>Amount Paid :</td><td><strong>${report.currencyCode || 'GHS'} ${report.amountFormatted}</strong></td></tr>
+                        </table>
+                    </td>
+                    <td style="width:45%; text-align:center; vertical-align:bottom;">
+                        <div style="border-top:1px solid #555; width:180px; margin:0 auto 4px auto;"></div>
+                        <div style="font-size:9pt;">Admin</div>
+                    </td>
+                </tr>
+            </table>
+
+            <div style="border-top:1px solid #555; padding-top:4px; font-size:7.5pt; color:#555;">
+                <table style="width:100%; border:none; font-size:7.5pt; color:#555;">
+                    <tr>
+                        <td style="text-align:left;">Report Printed On ${report.printedDate}</td>
+                        <td style="text-align:center;">Topaz Accounting Pro - G/L</td>
+                        <td style="text-align:right;">Page 1 of 1</td>
+                    </tr>
+                </table>
+            </div>`;
+        }
+
+        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Official Receipt</title>
+<style>
+  body { font-family: Arial, sans-serif; font-size: 9pt; color: #171717; margin: 20px; }
+  table { border-collapse: collapse; }
+</style></head><body>
+${receiptHtml()}
+<div style="border-top:1px dashed #888; margin: 24px 0;"></div>
+${receiptHtml()}
+</body></html>`;
+        return Promise.resolve(new Blob(['\ufeff' + html], { type: 'application/msword' }));
+    }
+
     function createVoucherWord(report) {
+        if (report.isReceipt || report.reportType === 'official-receipt') {
+            return createReceiptWord(report);
+        }
         let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${report.title}</title>
 <style>
   body { font-family: Arial, sans-serif; font-size: 9pt; color: #171717; }
@@ -543,11 +1082,16 @@
     // ── Expose API on window ────────────────────────────────────────────────
     global.TopazReportViewer = {
         voucherAmountInWords,
+        receiptAmountInWords,
         buildVoucherReport,
+        buildCustomerReceiptReport,
         voucherPdfDefinition,
+        customerReceiptPdfDefinition,
         createVoucherPdf,
         createVoucherExcel,
         createVoucherWord,
+        createReceiptExcel,
+        createReceiptWord,
         reportPalette,
         reportHierarchyRows,
         reportPdfDefinition,

@@ -528,7 +528,15 @@ const app = Vue.createApp({
                 try {
                     response = await axios.post('/GeneralLedger/DeleteVouchers', { ids });
                 } catch {
+                    response = await axios.post('/GeneralLedger/DeleteVoucher', { ids });
                 }
+
+                if (response?.data && response.data.success === false) {
+                    this.toastHandler('error', response.data.message || response.data.error || 'Unable to delete selected vouchers.');
+                    this.loadActiveTab();
+                    return;
+                }
+
                 this.toastHandler('success', `${ids.length} voucher(s) deleted successfully.`);
                 this.selectedIds = [];
                 this.loadActiveTab();
@@ -564,27 +572,69 @@ const app = Vue.createApp({
         },
 
         async onDelete(event) {
-            const rows = event?.rows || (event?.row ? [event.row] : []);
+            const rows = event?.rows || (event?.row ? [event.row] : (Array.isArray(event) ? event : [event]));
             if (!rows || rows.length === 0) return;
 
             const unposted = rows.filter(r => !r.isPosted);
-            if (unposted.length === 0) {
-                this.toastHandler('warning', 'Posted vouchers cannot be deleted.');
+            const hasPosted = rows.some(r => r.isPosted);
+
+            if (hasPosted) {
+                await Swal.fire({
+                    title: 'Posted Voucher',
+                    text: 'This voucher is already posted and cannot be deleted.',
+                    icon: 'warning',
+                    confirmButtonColor: '#64748b',
+                });
+                this.loadActiveTab();
                 return;
             }
 
-            const ids = unposted.map(r => r.id);
+            if (unposted.length === 0) {
+                this.toastHandler('warning', 'No deletable draft voucher selected.');
+                this.loadActiveTab();
+                return;
+            }
+
+            const confirm = await Swal.fire({
+                title: unposted.length === 1 ? 'Delete Voucher?' : `Delete ${unposted.length} Vouchers?`,
+                text: 'This action cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes, Delete',
+                cancelButtonText: 'Cancel'
+            });
+            if (!confirm.isConfirmed) {
+                this.loadActiveTab();
+                return;
+            }
+
+            this.isLoading = true;
             try {
+                const ids = unposted.map(v => v.id);
                 let response;
                 try {
-                    response = await axios.post('/GeneralLedger/DeleteVouchers', ids);
+                    response = await axios.post('/GeneralLedger/DeleteVouchers', { ids });
                 } catch {
-                    response = await axios.post('/LedgerDataEntry/DeleteVouchers', { ids });
+                    response = await axios.post('/GeneralLedger/DeleteVoucher', { ids });
                 }
-                this.toastHandler('success', 'Voucher(s) deleted successfully.');
+
+                if (response?.data && response.data.success === false) {
+                    this.toastHandler('error', response.data.message || response.data.error || 'Unable to delete voucher.');
+                    this.loadActiveTab();
+                    return;
+                }
+
+                this.toastHandler('success', `${ids.length} voucher(s) deleted successfully.`);
+                this.selectedIds = this.selectedIds.filter(id => !ids.some(x => String(x).toLowerCase() === String(id).toLowerCase()));
                 this.loadActiveTab();
-            } catch (e) {
-                this.toastHandler('error', 'Unable to delete voucher(s).');
+            } catch (err) {
+                console.error(err);
+                this.toastHandler('error', 'Unable to delete voucher.');
+                this.loadActiveTab();
+            } finally {
+                this.isLoading = false;
             }
         },
 

@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TopazErp_FrontEnd.Services;
 
 namespace TopazErp_FrontEnd.Controllers;
 
+[Authorize]
 public class PayrollController : Controller
 {
     private readonly ITopazErpApi _topazErpApi;

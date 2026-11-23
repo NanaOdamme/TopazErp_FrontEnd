@@ -198,6 +198,14 @@
                                     <i class="bi bi-send-check text-emerald-600"></i>
                                     <span class="font-medium">Post Voucher</span>
                                 </button>
+                                <!-- Delete Voucher option -->
+                                <button type="button"
+                                        v-if="voucherId && !isPosted"
+                                        @@click="deleteVoucher()"
+                                        class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50/70 flex items-center gap-2.5 transition border-t border-gray-100">
+                                    <i class="bi bi-trash3 text-red-600"></i>
+                                    <span class="font-medium">Delete Voucher</span>
+                                </button>
                             </div>
                         </transition>
                     </div>

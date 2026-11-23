@@ -32,49 +32,7 @@
         </div>
     </div>
 
-    <!-- ── KPI Metric Summary Cards ─────────────────────────────────────── -->
-    <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="card flex items-center gap-4 p-5">
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                <i class="bi bi-wallet2 text-2xl"></i>
-            </div>
-            <div>
-                <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Total Batches</p>
-                <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ totalBatches }}</h3>
-            </div>
-        </div>
-
-        <div class="card flex items-center gap-4 p-5">
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
-                <i class="bi bi-cash-stack text-2xl"></i>
-            </div>
-            <div>
-                <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Total Disbursed</p>
-                <h3 class="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">{{ totalDisbursementsFormatted }}</h3>
-            </div>
-        </div>
-
-        <div class="card flex items-center gap-4 p-5">
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
-                <i class="bi bi-receipt text-2xl"></i>
-            </div>
-            <div>
-                <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Expense Lines</p>
-                <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ totalLineItems }}</h3>
-            </div>
-        </div>
-
-        <div class="card flex items-center gap-4 p-5">
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
-                <i class="bi bi-bank text-2xl"></i>
-            </div>
-            <div>
-                <p class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Petty Cash Accounts</p>
-                <h3 class="text-2xl font-bold text-gray-900 dark:text-white">{{ pettyCashAccountsCount }}</h3>
-            </div>
-        </div>
-    </div>
-
+     
     <!-- ── Filter Bar ───────────────────────────────────────────────────── -->
     <div class="card mb-6 p-4">
         <div class="flex flex-col sm:flex-row flex-wrap items-end gap-3.5">

@@ -260,10 +260,28 @@
         </div>
     </div>
 
-    <!-- ── Loading Overlay ────────────────────────────────────────── -->
-    <div v-if="isShimmerLoading" class="card flex flex-col items-center justify-center py-24 text-gray-400 gap-3 bg-white rounded-xl border border-gray-200">
-        <span class="spinner-border text-blue-600" role="status" style="width:28px;height:28px"></span>
-        <span class="text-sm font-medium text-gray-600">Loading journal transactions…</span>
+    <div v-if="isShimmerLoading" class="card flex flex-col items-center justify-center py-24 bg-white rounded-xl border border-gray-200 mb-4 shadow-xs gap-4">
+        <!-- Circular spinner -->
+        <div class="relative flex items-center justify-center" style="width:56px;height:56px">
+            <svg class="animate-spin" style="width:56px;height:56px" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Track ring -->
+                <circle cx="28" cy="28" r="22" stroke="#E5E7EB" stroke-width="5"/>
+                <!-- Spinning arc -->
+                <circle cx="28" cy="28" r="22"
+                        stroke="#2563EB"
+                        stroke-width="5"
+                        stroke-linecap="round"
+                        stroke-dasharray="100 38.8"
+                        stroke-dashoffset="0"
+                        transform="rotate(-90 28 28)"/>
+            </svg>
+            <!-- Inner dot -->
+            <span class="absolute inline-block rounded-full bg-blue-600" style="width:8px;height:8px"></span>
+        </div>
+        <div class="flex flex-col items-center gap-1">
+            <span class="text-sm font-semibold text-gray-700">Loading journal transactions…</span>
+            <span class="text-xs text-gray-400">Please wait</span>
+        </div>
     </div>
 
     <!-- ── Empty State ────────────────────────────────────────────── -->

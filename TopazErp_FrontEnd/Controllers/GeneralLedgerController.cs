@@ -249,12 +249,17 @@ public class GeneralLedgerController : Controller
             (s.Key.Contains("gl-voucher-batch-id", StringComparison.OrdinalIgnoreCase)) )
             ?? systemNumbers?.Result?.FirstOrDefault();
 
+        var receiptVoucherSystemNumber = systemNumbers?.Result?.FirstOrDefault(s =>
+            !string.IsNullOrEmpty(s.Key) &&
+            (s.Key.Contains("gl-receipt-voucher-id", StringComparison.OrdinalIgnoreCase)));
+
         return Json(new
         {
             accounts = accounts?.Result,
             costCenters = costCenters?.Result,
             defaultGlNumbers = defaultGl?.Result,
-            voucherBatchSystemNumber
+            voucherBatchSystemNumber,
+            receiptVoucherSystemNumber
         });
     }
 
@@ -556,7 +561,7 @@ public class GeneralLedgerController : Controller
     //customers
     public async Task<IActionResult> GetCustomers()
     {
-        var results = await _topazErpApi.GetCustomers(1,1000, "");
+        var results = await _topazErpApi.GetCustomers();
         return Json(results);
     }
 
@@ -638,6 +643,11 @@ public class GeneralLedgerController : Controller
         var defaultGl = await _topazErpApi.GetDefaultGlNumbersSetup();
         var systemNumbers = await _topazErpApi.GetSystemNumbers("");
 
+        var pettyCashSystemNumber = systemNumbers?.Result?.FirstOrDefault(s =>
+            !string.IsNullOrEmpty(s.Key) &&
+            (s.Key.Equals("petty-cash-id", StringComparison.OrdinalIgnoreCase) ||
+             s.Key.Contains("petty-cash-id", StringComparison.OrdinalIgnoreCase)));
+
         var currentUser = User?.Identity?.Name ?? "Administrator";
 
         return Json(new
@@ -650,7 +660,8 @@ public class GeneralLedgerController : Controller
             recipients = recipients?.Result,
             currencies = currencies?.Result,
             defaultGlNumbers = defaultGl?.Result,
-            systemNumbers = systemNumbers?.Result
+            systemNumbers = systemNumbers?.Result,
+            pettyCashSystemNumber
         });
     }
 
@@ -789,8 +800,58 @@ public class GeneralLedgerController : Controller
     }
     
     [HttpPost]
-    public async Task<IActionResult> DeleteVouchers([FromBody] PostVoucherDto dto)
+    public async Task<IActionResult> DeleteVouchers([FromBody] System.Text.Json.JsonElement? body = null, [FromQuery] Guid? id = null)
     {
+        return await HandleDeleteVouchers(body, id);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteVoucher([FromBody] System.Text.Json.JsonElement? body = null, [FromQuery] Guid? id = null)
+    {
+        return await HandleDeleteVouchers(body, id);
+    }
+
+    private async Task<IActionResult> HandleDeleteVouchers(System.Text.Json.JsonElement? body, Guid? id)
+    {
+        var dto = new PostVoucherDto { Ids = new List<Guid>() };
+        if (id.HasValue && id.Value != Guid.Empty)
+        {
+            dto.Ids.Add(id.Value);
+        }
+
+        if (body.HasValue)
+        {
+            var el = body.Value;
+            if (el.ValueKind == System.Text.Json.JsonValueKind.Array)
+            {
+                foreach (var item in el.EnumerateArray())
+                {
+                    if (item.ValueKind == System.Text.Json.JsonValueKind.String && Guid.TryParse(item.GetString(), out var g))
+                    {
+                        dto.Ids.Add(g);
+                    }
+                }
+            }
+            else if (el.ValueKind == System.Text.Json.JsonValueKind.Object)
+            {
+                if ((el.TryGetProperty("ids", out var idsProp) || el.TryGetProperty("Ids", out idsProp)) && idsProp.ValueKind == System.Text.Json.JsonValueKind.Array)
+                {
+                    foreach (var item in idsProp.EnumerateArray())
+                    {
+                        if (item.ValueKind == System.Text.Json.JsonValueKind.String && Guid.TryParse(item.GetString(), out var g))
+                        {
+                            dto.Ids.Add(g);
+                        }
+                    }
+                }
+                if ((el.TryGetProperty("id", out var idProp) || el.TryGetProperty("Id", out idProp)) && idProp.ValueKind == System.Text.Json.JsonValueKind.String && Guid.TryParse(idProp.GetString(), out var singleG))
+                {
+                    dto.Ids.Add(singleG);
+                }
+            }
+        }
+
+        dto.Ids = dto.Ids.Distinct().ToList();
         var results = await _topazErpApi.DeleteVoucher(dto);
         return Json(results);
     }

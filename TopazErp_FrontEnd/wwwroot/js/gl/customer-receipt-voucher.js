@@ -17,9 +17,11 @@ createApp({
         const isMultiCurrency = ref(false);
         const modePayment     = ref('Cash');
         const batchNo         = ref('');
+        const receiptNo       = ref('');
         const chequeNo        = ref('');
         const bankId          = ref('');
         const voucherBatchSystemNumber = ref({});
+        const receiptVoucherSystemNumber = ref({});
 
         const voucherId       = ref('');
         const isEditMode      = ref(false);
@@ -32,6 +34,8 @@ createApp({
         const isPreviewLoading = ref(false);
         const previewError     = ref('');
         const companyName      = ref('');
+        const companyProfile   = ref(null);
+        const companyLogo      = ref(null);
         const proposedJournalHeaderId   = ref('');
         const proposedJournalDetailIdList = ref([]);
 
@@ -277,6 +281,30 @@ createApp({
                     batchNo.value = applySystemNumberPattern(sn);
                 }
 
+                // gl-receipt-voucher-id system number
+                let rctSn = data.receiptVoucherSystemNumber;
+                if (!rctSn) {
+                    try {
+                        const snRes = await axios.get('/SharedResource/GetSystemNumberInfo?key=gl-receipt-voucher-id');
+                        const snData = snRes.data?.result || snRes.data;
+                        if (Array.isArray(snData)) {
+                            rctSn = snData.find(s => s.key && s.key.toLowerCase().includes('gl-receipt-voucher-id')) || snData[0];
+                        } else if (snData && snData.key) {
+                            rctSn = snData;
+                        }
+                    } catch (_) {
+                        try {
+                            const sysRes = await axios.get('/SharedResource/GetSystemNumbers');
+                            const allSys = sysRes.data?.result || sysRes.data || [];
+                            rctSn = allSys.find(s => s.key && s.key.toLowerCase().includes('gl-receipt-voucher-id'));
+                        } catch (_) {}
+                    }
+                }
+                if (rctSn && !receiptNo.value) {
+                    receiptVoucherSystemNumber.value = rctSn;
+                    receiptNo.value = applySystemNumberPattern(rctSn);
+                }
+
                 const defaultBankId = data.defaultGlNumbers ? (data.defaultGlNumbers.accountsReceivableBankAccountId || data.defaultGlNumbers.accountReceivableBankAccountId) : '';
                 if (defaultBankId && !bankAccountId.value) {
                     bankAccountId.value = defaultBankId;
@@ -291,66 +319,45 @@ createApp({
 
         async function getCustomers() {
             try {
-                const res = await axios.get('/SharedResource/GetCustomers?pageNo=1&pageSize=500');
-                const raw = res.data?.result?.items
-                    || res.data?.result?.data
-                    || res.data?.result
-                    || res.data?.data
-                    || (Array.isArray(res.data) ? res.data : []);
+                const res = await axios.get('/SharedResource/GetCustomers');
+                const raw = res.data?.result;
                 customerList.value = raw;
             } catch {
-                try {
-                    const res2 = await axios.get('/SharedResource/GetCustomers');
-                    customerList.value = res2.data?.result || res2.data || [];
-                } catch {
-                    toastHandler('error', 'Unable to retrieve customers.');
-                }
+                
             }
         }
 
         async function getBanks() {
             try {
                 const res = await axios.get('/SharedResource/GetBanks?pageNo=1&pageSize=1000');
-                const raw = res.data?.result?.data
-                    || res.data?.result
-                    || res.data?.data
-                    || (Array.isArray(res.data) ? res.data : []);
+                const raw = res.data?.result;
                 bankList.value = raw;
             } catch {
-                try {
-                    const res2 = await axios.get('/SharedResource/GetBanks');
-                    bankList.value = res2.data?.result || res2.data || [];
-                } catch {
-                    toastHandler('error', 'Unable to retrieve banks.');
-                }
+                
             }
         }
 
         async function getCurrencies() {
             try {
                 const res = await axios.get('/SharedResource/GetCurrencies?pageNo=1&pageSize=100');
-                const raw = res.data?.result?.data
-                    || res.data?.result
-                    || res.data?.data
-                    || (Array.isArray(res.data) ? res.data : []);
+                const raw = res.data?.result;
                 currencyList.value = raw;
             } catch {
-                try {
-                    const res2 = await axios.get('/SharedResource/GetCurrencys');
-                    currencyList.value = res2.data?.result || res2.data || [];
-                } catch {
-                    toastHandler('error', 'Unable to retrieve currencies.');
-                }
+                
             }
         }
 
         async function loadCompanyProfile() {
             try {
                 const res = await axios.get('/GeneralLedger/GetBusinessProfile');
-                const prof = res.data?.result;
+                const prof = res.data?.result || res.data;
+                companyProfile.value = prof || null;
                 companyName.value = prof?.companyName || prof?.businessName || '';
+                companyLogo.value = prof?.companyLogo || null;
             } catch (_) {
+                companyProfile.value = null;
                 companyName.value = '';
+                companyLogo.value = null;
             }
         }
 
@@ -360,7 +367,7 @@ createApp({
                 const res = await axios.get('/GeneralLedger/GetVoucherDetails?id=' + voucherId.value);
 
                 // Decompose the revised Voucher model (result or direct object)
-                const v = res.data?.result || res.data?.voucherInfo || res.data;
+                const v = res.data?.result
                 if (!v) return;
 
                 // ── 1. Root Voucher Header Fields ─────────────────────────────
@@ -400,6 +407,7 @@ createApp({
                 voucherEntryDate.value = v.voucherEntryDate ? moment(v.voucherEntryDate).format('YYYY-MM-DD') : moment().format('YYYY-MM-DD');
                 paymentDate.value = v.paymentDate ? moment(v.paymentDate).format('YYYY-MM-DD') : moment().format('YYYY-MM-DD');
                 batchNo.value = v.batchNo || '';
+                receiptNo.value = v.receiptNo || (v.batchNo ? (v.batchNo.endsWith('V') ? v.batchNo.slice(0, -1) + 'RCT' : v.batchNo) : '');
                 chequeNo.value = v.chequeNo || '';
                 isPosted.value = Boolean(v.isPosted);
 
@@ -730,6 +738,7 @@ createApp({
                 modePayment:      modePayment.value,
                 paymentDate:      paymentDate.value || voucherEntryDate.value,
                 batchNo:          batchNo.value,
+                receiptNo:        receiptNo.value,
                 chequeNo:         modePayment.value === 'Cheque' ? chequeNo.value : '',
                 isPosted:         false,
                 grossAmount:      parseFloat(totalDebit.value || 0),
@@ -814,7 +823,7 @@ createApp({
             previewReport.value = null;
 
             try {
-                if (!companyName.value) {
+                if (!companyName.value || !companyProfile.value) {
                     await loadCompanyProfile();
                 }
 
@@ -843,7 +852,8 @@ createApp({
                         type: 'customer-receipt',
                         voucherType: 'customer',
                         batchNo: batchNo.value || 'Draft',
-                        voucherNumber: batchNo.value || 'Draft',
+                        voucherNumber: batchNo.value,
+                        receiptNo: receiptNo.value,
                         voucherEntryDate: voucherEntryDate.value,
                         receiptDate: paymentDate.value || voucherEntryDate.value,
                         paymentDate: paymentDate.value || voucherEntryDate.value,
@@ -898,9 +908,12 @@ createApp({
                             };
                         });
                     }
+                    if (!voucherData.receiptNo) {
+                        voucherData.receiptNo = receiptNo.value || (voucherData.batchNo ? (voucherData.batchNo.endsWith('V') ? voucherData.batchNo.slice(0, -1) + 'RCT' : voucherData.batchNo) : '');
+                    }
                 }
 
-                previewBatchNo.value = voucherData.batchNo || voucherData.voucherNumber || batchNo.value || '';
+                previewBatchNo.value = voucherData.receiptNo || voucherData.batchNo || voucherData.voucherNumber || batchNo.value || '';
 
                 const gross = parseFloat(voucherData.grossAmount != null ? voucherData.grossAmount : (totalDebit.value || 0));
                 const net   = parseFloat(voucherData.netAmount != null ? voucherData.netAmount : (totalNetAmount.value || 0));
@@ -918,7 +931,8 @@ createApp({
                     covid: '0.00',
                 };
 
-                const rep = window.TopazReportViewer.buildVoucherReport(voucherData, summary, companyName.value);
+                const profileObj = companyProfile.value || { companyName: companyName.value, companyLogo: companyLogo.value };
+                const rep = window.TopazReportViewer.buildVoucherReport(voucherData, summary, profileObj);
                 previewReport.value = rep;
 
                 previewExporters.value = {
@@ -959,6 +973,7 @@ createApp({
             voucherEntryDate.value = moment().format('YYYY-MM-DD');
             paymentDate.value = moment().format('YYYY-MM-DD');
             batchNo.value = '';
+            receiptNo.value = '';
             chequeNo.value = '';
             modePayment.value = 'Cash';
 
@@ -1041,7 +1056,17 @@ createApp({
 
             isLoading.value = true;
             try {
-                await axios.post('/GeneralLedger/DeleteVouchers', { ids: [voucherId.value] });
+                let res;
+                try {
+                    res = await axios.post('/GeneralLedger/DeleteVouchers', { ids: [voucherId.value] });
+                } catch {
+                    res = await axios.post('/GeneralLedger/DeleteVoucher', { ids: [voucherId.value] });
+                }
+                if (res?.data && res.data.success === false) {
+                    toastHandler('error', res.data.message || res.data.error || 'Unable to delete voucher.');
+                    isLoading.value = false;
+                    return;
+                }
                 toastHandler('success', 'Voucher deleted successfully.');
                 setTimeout(() => { window.location.href = '/GeneralLedger/Vouchers?tab=customer'; }, 1500);
             } catch {
@@ -1131,7 +1156,7 @@ createApp({
 
         return {
             isLoading, isShimmerLoading, showSaveMenu, customerId, voucherEntryDate, paymentDate, bankAccountId,
-            currencyId, currencyRate, isMultiCurrency, modePayment, batchNo, chequeNo,
+            currencyId, currencyRate, isMultiCurrency, modePayment, batchNo, receiptNo, chequeNo,
             voucherId, isEditMode, isRecordCreated, isPosted,
             customerList, accountsList, bankGlAccountsList, currencyList, costCenterHierachyList,
             voucherList, errors,
@@ -1140,6 +1165,7 @@ createApp({
             saveVoucher, previewVoucher, addVoucherRow, removeVoucherRow,
             computeTotal, onForeignAmountChange, postVoucher, deleteVoucher, fmtNum,
             showPreviewModal, previewReport, previewExporters, previewBatchNo, isPreviewLoading, previewError,
+            companyProfile, companyLogo,
             openPreviewModal, closePreviewModal, onBackToVouchers,
         };
     }

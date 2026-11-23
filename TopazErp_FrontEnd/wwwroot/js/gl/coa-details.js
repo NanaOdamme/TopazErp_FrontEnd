@@ -12,6 +12,7 @@ const app = Vue.createApp({
             accountHeadList: [],         // raw account heads/groups from server
             currencyList: [],            // raw currencies from server
             currencyOptions: [],         // [{ label, value, code, name }]
+            defaultCurrencyId: null,
 
             standardAccountTypes: [
                 { label: 'Asset', value: 1, color: 'blue' },
@@ -72,7 +73,7 @@ const app = Vue.createApp({
                     searchable: true,
                     width: 280,
                     wrap: true,
-                    onChange: (val, values) => {
+                    onChange: (val, values, row) => {
                         // 1. Auto-set Account Type from the selected control (full hierarchy traversal)
                         const acctType = this.resolveStandardAccountType(val, values);
                         if (values) {
@@ -82,7 +83,30 @@ const app = Vue.createApp({
                         // 2. Update reactive _controlRange → accountNo constraints re-evaluate
                         this.syncControlRange(val);
 
-                        // 3. Sync native DOM attributes for instant browser enforcement
+                        // 3. Auto-populate next available account number within range if creating or out-of-range
+                        const numEl = document.getElementById('f-accountNo');
+                        const currentVal = numEl ? parseInt(numEl.value, 10) : NaN;
+                        const r = this._controlRange;
+                        const isOutOfRange = isNaN(currentVal) || (r.min != null && currentVal < parseInt(r.min, 10)) || (r.max != null && currentVal > parseInt(r.max, 10));
+
+                        if ((!row || isOutOfRange) && val) {
+                            const nextNo = this.getNextAvailableAccountNo(val);
+                            if (nextNo !== null) {
+                                if (values) {
+                                    values.accountNo = String(nextNo);
+                                }
+                                this.$nextTick(() => {
+                                    const el = document.getElementById('f-accountNo');
+                                    if (el) {
+                                        el.value = nextNo;
+                                        el.dispatchEvent(new Event('input', { bubbles: true }));
+                                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                                    }
+                                });
+                            }
+                        }
+
+                        // 4. Sync native DOM attributes for instant browser enforcement
                         this.$nextTick(() => {
                             const el = document.getElementById('f-accountNo');
                             if (!el) return;
@@ -154,7 +178,9 @@ const app = Vue.createApp({
                     options: this.currencyOptions,
                     required: true,
                     searchable: true,
-                    width: 170
+                    width: 170,
+                    default: () => this.defaultCurrencyId,
+                    defaultValue: () => this.defaultCurrencyId
                 },
                 {
                     key: 'currentBalance',
@@ -456,8 +482,14 @@ const app = Vue.createApp({
                     label: `${c.currencyCode} - ${c.currencyName}`,
                     value: c.id,
                     code: c.currencyCode,
-                    name: c.currencyName
+                    name: c.currencyName,
+                    isDefault: c.isDefault
                 }));
+                // Store the default currency id so new rows auto-select it
+                const defaultCurr = rawList.find(c => c.isDefault);
+                if (defaultCurr) {
+                    this.defaultCurrencyId = defaultCurr.id;
+                }
             } catch (error) {
                 console.error('Failed to load currencies:', error);
             }
@@ -715,6 +747,33 @@ const app = Vue.createApp({
         },
 
         /* ── Helpers ─────────────────────────────────────────────── */
+
+        /* ── getNextAvailableAccountNo ────────────────────────────────
+           Returns the first integer in [minAccount, maxAccount] for the
+           given controlId that is NOT already used by a loaded account
+           detail.  Uses the already-loaded coaDetailList so no extra
+           network round-trip is needed.                                */
+        getNextAvailableAccountNo(controlId) {
+            if (!controlId) return null;
+            const control = this.accountControlList.find(h => String(h.id) === String(controlId));
+            if (!control || !control.minAccount || !control.maxAccount) return null;
+
+            const min = parseInt(control.minAccount, 10);
+            const max = parseInt(control.maxAccount, 10);
+            if (isNaN(min) || isNaN(max) || min > max) return null;
+
+            // Collect all used account numbers that fall in this range
+            const usedNos = new Set(
+                this.coaDetailList
+                    .map(d => parseInt(d.accountNo, 10))
+                    .filter(n => !isNaN(n) && n >= min && n <= max)
+            );
+
+            for (let n = min; n <= max; n++) {
+                if (!usedNos.has(n)) return n;
+            }
+            return null; // entire range exhausted
+        },
 
         /* ── syncControlRange ─────────────────────────────────────────
            Single source of truth for updating _controlRange from a

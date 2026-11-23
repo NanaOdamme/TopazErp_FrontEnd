@@ -1500,6 +1500,45 @@ createApp({
             }
         }
 
+        async function deleteVoucher() {
+            if (!voucherId.value) {
+                toastHandler('warning', 'Voucher not found.');
+                return;
+            }
+
+            const result = await Swal.fire({
+                title: 'Delete Voucher?',
+                text: 'Are you sure you want to delete this voucher? This action cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes, Delete',
+                cancelButtonText: 'Cancel'
+            });
+            if (!result.isConfirmed) return;
+
+            isLoading.value = true;
+            try {
+                let res;
+                try {
+                    res = await axios.post('/GeneralLedger/DeleteVouchers', { ids: [voucherId.value] });
+                } catch {
+                    res = await axios.post('/GeneralLedger/DeleteVoucher', { ids: [voucherId.value] });
+                }
+                if (res?.data && res.data.success === false) {
+                    toastHandler('error', res.data.message || res.data.error || 'Unable to delete voucher.');
+                    isLoading.value = false;
+                    return;
+                }
+                toastHandler('success', 'Voucher deleted successfully.');
+                setTimeout(() => { window.location.href = '/GeneralLedger/Vouchers?tab=supplier'; }, 1500);
+            } catch {
+                isLoading.value = false;
+                toastHandler('error', 'Unable to delete voucher.');
+            }
+        }
+
         function createNewVoucher() {
             resetForm();
             isRecordCreated.value = false;
@@ -1612,7 +1651,7 @@ createApp({
             onWithHoldChange, addRetentionRow, removeRetentionRow, onRetentionAmountChange,
             onLocalDebitChange, onForeignDebitChange,
             onTaxFlagChange, reComputeVoucherSummary, fmtNum,
-            openPreviewModal, closePreviewModal, onBackToVouchers, postVoucher, previewVoucher,
+            openPreviewModal, closePreviewModal, onBackToVouchers, postVoucher, deleteVoucher, previewVoucher,
         };
     }
 }).mount('#app');

@@ -41,7 +41,7 @@ public interface ITopazErpApi
     Task<BaseApiResponse> DeleteCustomerGroup(Guid id);
     
     //Customers...
-    Task<CustomerResponse> GetCustomers(int pageNo, int pageSize, string query);
+    Task<CustomerResponse> GetCustomers();
     Task<CustomerDetailResponse> GetCustomer(Guid id);
     Task<CustomersResponse> GetCustomersByGroup(Guid groupId);
     Task<BaseApiResponse> CreateCustomer(object dto);

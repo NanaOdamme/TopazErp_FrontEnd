@@ -252,6 +252,8 @@ public class Voucher: AuditedEntity<Guid>
     
     public string ChequeNo { get; set; } = string.Empty;
     
+    public string ReceiptNo { get; set; } = string.Empty;
+    
     public bool IsPosted { get; set; }
     
     public decimal GrossAmount { get; set; }

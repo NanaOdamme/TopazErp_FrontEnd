@@ -23,7 +23,7 @@ const app = Vue.createApp({
             currencyList: [],
             defaultGlSetup: null,
             currentSystemNumber: null,
-            currentUser: 'Leticia',
+            currentUser: '',
 
             // Entry Form State
             entryForm: {
@@ -33,7 +33,7 @@ const app = Vue.createApp({
                 sourceDocNo: '',
                 pettyCashAccountId: '',
                 pettyCashAccountName: '',
-                batchOriginator: 'Leticia',
+                batchOriginator: '',
                 currencyId: '',
                 currencyName: 'Ghana Cedi',
                 currencyCode: 'GHS',
@@ -162,37 +162,80 @@ const app = Vue.createApp({
             }
         },
 
+        applySystemNumberPattern(sn) {
+            if (!sn) return '';
+            const prefix  = sn.prefix  != null ? sn.prefix  : '';
+            const suffix  = sn.suffix  != null ? sn.suffix  : '';
+            const lastNo  = sn.lastNo  != null ? sn.lastNo  : 0;
+            const padding = sn.padding != null ? parseInt(sn.padding, 10) : 0;
+
+            // Mirror C# fallback: use lowercase "{prefix}{number}{suffix}" when no pattern
+            const pattern = (sn.formatPattern && sn.formatPattern.trim())
+                ? sn.formatPattern.trim()
+                : '{prefix}{number}{suffix}';
+
+            const numStr = padding > 0
+                ? String(lastNo).padStart(padding, '0')
+                : String(lastNo);
+
+            return pattern
+                .replace(/{PREFIX}/g, prefix)
+                .replace(/{NO}/g,     numStr)
+                .replace(/{SUFFIX}/g, suffix)
+                .replace(/{prefix}/g, prefix)
+                .replace(/{number}/g, numStr)
+                .replace(/{suffix}/g, suffix);
+        },
+
         async generateBatchNumber() {
             if (this.isEditing) {
-                this.toast('info', 'Batch number cannot be regenerated for an existing entry.');
                 return;
             }
 
             try {
-                const response = await axios.get('/SharedResource/GetSystemNumbers');
-                const systemNumbers = response.data.result || response.data || [];
-                if (Array.isArray(systemNumbers) && systemNumbers.length > 0) {
-                    const sn = systemNumbers.find(item =>
-                        item.key === 'petty-cash-batch-id' ||
-                        item.key === 'pettycash-batch-id' ||
-                        item.key === 'petty-cash' ||
-                        item.itemName === 'PettyCashBatch' ||
-                        (item.itemName && item.itemName.toLowerCase().includes('pettycash')) ||
-                        (item.key && item.key.toLowerCase().includes('pettycash'))
-                    );
-                    if (sn) {
-                        this.currentSystemNumber = sn;
-                        this.entryForm.batchNo = `${sn.prefix || ''}${sn.lastNo || ''}${sn.suffix || ''}`;
-                        return;
-                    }
+                let sn = this.currentSystemNumber;
+                if (!sn || !(sn.key && sn.key.toLowerCase().includes('petty-cash-id'))) {
+                    try {
+                        const snRes = await axios.get('/SharedResource/GetSystemNumberInfo?key=petty-cash-id');
+                        const snData = snRes.data?.result || snRes.data;
+                        if (Array.isArray(snData)) {
+                            sn = snData.find(s => s.key && s.key.toLowerCase().includes('petty-cash-id')) || snData[0];
+                        } else if (snData && snData.key) {
+                            sn = snData;
+                        }
+                    } catch (_) {}
+                }
+
+                if (!sn) {
+                    try {
+                        const response = await axios.get('/SharedResource/GetSystemNumbers');
+                        const systemNumbers = response.data?.result || response.data || [];
+                        if (Array.isArray(systemNumbers) && systemNumbers.length > 0) {
+                            sn = systemNumbers.find(item =>
+                                item.key && item.key.toLowerCase() === 'petty-cash-id'
+                            ) || systemNumbers.find(item =>
+                                item.key && item.key.toLowerCase().includes('petty-cash-id')
+                            ) || systemNumbers.find(item =>
+                                item.key && (item.key.toLowerCase().includes('petty-cash') || item.key.toLowerCase().includes('pettycash'))
+                            );
+                        }
+                    } catch (_) {}
+                }
+
+                if (sn) {
+                    this.currentSystemNumber = sn;
+                    this.entryForm.batchNo = this.applySystemNumberPattern(sn);
+                    return;
                 }
             } catch (err) {
                 console.warn('Unable to fetch system numbers for petty cash batch:', err);
             }
 
             // Fallback generated batch number
-            const rand = Math.floor(1000 + Math.random() * 9000);
-            this.entryForm.batchNo = `${rand}`;
+            if (!this.entryForm.batchNo) {
+                const rand = Math.floor(1000 + Math.random() * 9000);
+                this.entryForm.batchNo = `${rand}`;
+            }
         },
 
         newBatch() {
@@ -202,7 +245,7 @@ const app = Vue.createApp({
             this.entryForm = {
                 ...JSON.parse(JSON.stringify(this.emptyFormTemplate)),
                 batchDate: todayStr,
-                batchOriginator: this.currentUser || 'Leticia',
+                batchOriginator: this.currentUser || 'Administrator',
                 lines: [this.createEmptyLine({ transactionDate: todayStr })]
             };
 
@@ -251,7 +294,7 @@ const app = Vue.createApp({
                 sourceDocNo: batch.sourceDocNo || '',
                 pettyCashAccountId: batch.pettyCashAccountId || '',
                 pettyCashAccountName: batch.pettyCashAccountName || '',
-                batchOriginator: batch.batchOriginator || this.currentUser || 'Leticia',
+                batchOriginator: batch.batchOriginator || this.currentUser || 'Administrator',
                 currencyId: batch.currencyId || '',
                 currencyName: batch.currencyName || 'Ghana Cedi',
                 currencyCode: batch.currencyCode || 'GHS',
@@ -358,9 +401,8 @@ const app = Vue.createApp({
                 this.toast('warning', 'Petty Cash G/L Account is required.');
                 return false;
             }
-            if (!this.entryForm.batchOriginator || !this.entryForm.batchOriginator.trim()) {
-                this.toast('warning', 'Batch Originator is required.');
-                return false;
+            if (!this.entryForm.batchOriginator) {
+                this.entryForm.batchOriginator = this.currentUser || 'Administrator';
             }
             if (!this.entryForm.lines || !this.entryForm.lines.length) {
                 this.toast('warning', 'Please add at least one transaction line item.');
@@ -489,6 +531,12 @@ const app = Vue.createApp({
                     if (!this.entryForm.batchOriginator) {
                         this.entryForm.batchOriginator = data.currentUser;
                     }
+                }
+
+                if (data.pettyCashSystemNumber) {
+                    this.currentSystemNumber = data.pettyCashSystemNumber;
+                } else if (data.systemNumbers && Array.isArray(data.systemNumbers)) {
+                    this.currentSystemNumber = data.systemNumbers.find(s => s.key && s.key.toLowerCase().includes('petty-cash-id'));
                 }
 
                 if (data.accounts && Array.isArray(data.accounts)) {

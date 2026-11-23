@@ -446,10 +446,12 @@
                 document.body.style.overflow = 'hidden';
                 onCleanup = () => { document.body.style.overflow = oldOverflow; };
 
+                let companyProfile = null;
                 let companyName = '';
                 try {
                     const profileRes = await (window.axios ? window.axios.get('/GeneralLedger/GetBusinessProfile') : fetch('/GeneralLedger/GetBusinessProfile').then(r => r.json()));
-                    companyName = profileRes.data?.result?.businessName || profileRes.data?.result?.companyName || '';
+                    companyProfile = profileRes.data?.result || profileRes?.result || null;
+                    companyName = companyProfile?.businessName || companyProfile?.companyName || '';
                 } catch (_) {}
 
                 if (disposed) return;
@@ -467,7 +469,7 @@
                         cst: (voucherData.hasCommunicationServiceTax && voucherData.communicationServiceTaxRate) ? ((voucherData.grossAmount * voucherData.communicationServiceTaxRate) / 100).toFixed(2) : '0.00',
                         covid: (voucherData.hasCovidTax && voucherData.covidTaxRate) ? ((voucherData.grossAmount * voucherData.covidTaxRate) / 100).toFixed(2) : '0.00',
                     };
-                    report.value = window.TopazReportViewer.buildVoucherReport(voucherData, summary, companyName);
+                    report.value = window.TopazReportViewer.buildVoucherReport(voucherData, summary, companyProfile || companyName);
                 } catch (e) {
                     error.value = 'The voucher was saved, but its preview could not be prepared. Return to the voucher register and review the saved record.';
                 } finally {
