@@ -803,7 +803,6 @@ public class StContactRelationship : AuditedEntity<Guid>
     public string PlaceOfWork { get; set; }
     public string WorkPhone { get; set; }
     public int TenantId { get; set; }
-
 }
 public class StudentAllergy : AuditedEntity<Guid>
 {

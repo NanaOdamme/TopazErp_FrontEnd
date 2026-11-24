@@ -1,0 +1,352 @@
+@{
+    ViewBag.Title = "Student Setups";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2 dark:text-gray-400">
+            <span>School Manager - Data Entries</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium dark:text-blue-400">Student Setups</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="page-title">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
+                    Student Setups
+                </h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" data-card-title="Student Setups">
+        <div id="app">
+            <!-- initial shimmer -->
+            <div v-if="!setupDone" class="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500">
+                <i class="bi bi-arrow-repeat animate-spin text-2xl mb-3 text-blue-800"></i>
+                <p class="text-sm">Loading student setups…</p>
+            </div>
+
+            <template v-else>
+                <!-- TABS -->
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-5 border-b border-gray-200 dark:border-slate-700">
+                    <div class="flex items-center gap-1" role="tablist" aria-label="Student sections">
+                        <button type="button" role="tab" :aria-selected="activeTab === 'bios'" :class="activeTab === 'bios' ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500' : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'" class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors" @@click="activeTab = 'bios'">
+                           Student Bios
+                    
+                        </button>
+                        <button type="button" role="tab" :aria-selected="activeTab === 'allergies'" :class="activeTab === 'allergies' ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500' : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'" class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors" @@click="activeTab = 'allergies'">
+                          Allergies
+                           
+                        </button>
+                        <button type="button" role="tab" :aria-selected="activeTab === 'disabilities'" :class="activeTab === 'disabilities' ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500' : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'" class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors" @@click="activeTab = 'disabilities'">
+                            Disabilities
+                           
+                        </button>
+                        <button type="button" role="tab" :aria-selected="activeTab === 'immunizations'" :class="activeTab === 'immunizations' ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500' : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'" class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors" @@click="activeTab = 'immunizations'">
+                          Immunizations
+                           
+                        </button>
+                        <button type="button" role="tab" :aria-selected="activeTab === 'medicals'" :class="activeTab === 'medicals' ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500' : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'" class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors" @@click="activeTab = 'medicals'">
+                            Medicals</button>
+                        <button type="button" role="tab" :aria-selected="activeTab === 'positions'" :class="activeTab === 'positions' ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500' : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'" class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors" @@click="activeTab = 'positions'">
+                            Positions</button>
+                    </div>
+                </div>
+
+                <!-- Scope bar for Child Tabs (Tabs 2-6) -->
+                <div v-if="activeTab !== 'bios'" class="mb-5 p-4 rounded-xl border border-blue-100 bg-blue-50/50 dark:border-slate-700 dark:bg-slate-800/40">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div class="flex-1 max-w-md">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 mb-1.5">
+                                Select Student to View & Manage Records:
+                            </label>
+                            <w-select v-model="selectedStudentId"
+                                      :options="studentOptions"
+                                      display-key="label"
+                                      value-key="id"
+                                      placeholder="Choose a student...">
+                            </w-select>
+                        </div>
+                        <div v-if="selectedStudent" class="text-xs text-gray-500 dark:text-gray-400">
+                            <div><strong class="text-gray-800 dark:text-white">{{ displayName(selectedStudent) }}</strong></div>
+                            <div>ID: {{ selectedStudent.studentIdentifier }} · Class: {{ selectedStudent.className || '—' }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============ TAB 1 — STUDENT BIOS ============ -->
+                <section v-show="activeTab === 'bios'" role="tabpanel">
+                
+                    <data-grid title="Student Bios"
+                               :columns="bioColumns"
+                               :data="studentBios"
+                               :theme="theme"
+                               row-id="id"
+                               label-key="studentIdentifier"
+                               item-label="Student Bio"
+                               item-label-plural="Student Bios"
+                               add-label="Add"
+                               :page-size="10"
+                               :selectable="true"
+                               :actions="true"
+                               :loading="isShimmerLoading"
+                               :stripes="true"
+                               density="compact"
+                               @@create="onBioCreate"
+                               @@update="onBioUpdate"
+                               @@delete="onBioDelete">
+                    </data-grid>
+                </section>
+
+                <!-- ============ TAB 2 — ALLERGIES ============ -->
+                <section v-show="activeTab === 'allergies'" role="tabpanel">
+                    <p class="mb-3 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+                        <i class="bi bi-info-circle"></i>
+                        Allergy records for the selected student.
+                    </p>
+                    <data-grid title="Student Allergies"
+                               :columns="allergyColumns"
+                               :data="scopedAllergies"
+                               :theme="theme"
+                               row-id="id"
+                               label-key="allergyTypeName"
+                               item-label="Allergy"
+                               item-label-plural="Allergies"
+                               add-label="Add"
+                               :page-size="10"
+                               :selectable="true"
+                               :actions="true"
+                               :loading="isShimmerLoading"
+                               :stripes="true"
+                               density="compact"
+                               @@create="onAllergyCreate"
+                               @@update="onAllergyUpdate"
+                               @@delete="onAllergyDelete">
+                    </data-grid>
+                </section>
+
+                <!-- ============ TAB 3 — DISABILITIES ============ -->
+                <section v-show="activeTab === 'disabilities'" role="tabpanel">
+                    <p class="mb-3 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+                        <i class="bi bi-info-circle"></i>
+                        Disability information for the selected student.
+                    </p>
+                    <data-grid title="Student Disabilities"
+                               :columns="disabilityColumns"
+                               :data="scopedDisabilities"
+                               :theme="theme"
+                               row-id="id"
+                               label-key="disabilityName"
+                               item-label="Disability"
+                               item-label-plural="Disabilities"
+                               add-label="Add"
+                               :page-size="10"
+                               :selectable="true"
+                               :actions="true"
+                               :loading="isShimmerLoading"
+                               :stripes="true"
+                               density="compact"
+                               @@create="onDisabilityCreate"
+                               @@update="onDisabilityUpdate"
+                               @@delete="onDisabilityDelete">
+                    </data-grid>
+                </section>
+
+                <!-- ============ TAB 4 — IMMUNIZATIONS ============ -->
+                <section v-show="activeTab === 'immunizations'" role="tabpanel">
+                    <p class="mb-3 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+                        <i class="bi bi-info-circle"></i>
+                        Vaccination and immunization logs for the selected student.
+                    </p>
+                    <data-grid title="Student Immunizations"
+                               :columns="immunizationColumns"
+                               :data="scopedImmunizations"
+                               :theme="theme"
+                               row-id="id"
+                               label-key="immunizationTypeName"
+                               item-label="Immunization"
+                               item-label-plural="Immunizations"
+                               add-label="Add"
+                               :page-size="10"
+                               :selectable="true"
+                               :actions="true"
+                               :loading="isShimmerLoading"
+                               :stripes="true"
+                               density="compact"
+                               @@create="onImmunizationCreate"
+                               @@update="onImmunizationUpdate"
+                               @@delete="onImmunizationDelete">
+                    </data-grid>
+                </section>
+
+                <section v-show="activeTab === 'medicals'" role="tabpanel">
+                    <div >
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-5 border-b border-gray-100 dark:border-slate-700 gap-3">
+                            <div>
+                                <h3 class="text-base font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                                
+                                    Medical Profile
+                                    <span v-if="selectedStudent" class="text-sm font-normal text-gray-500 dark:text-gray-400">
+                                        — {{ displayName(selectedStudent) }}
+                                    </span>
+                                </h3>
+                            
+                            </div>
+
+                            <div v-if="medicalForm.id" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-slate-700 dark:text-emerald-400 border border-emerald-200 dark:border-slate-600">
+                                <i class="bi bi-check-circle-fill"></i> Record on file
+                            </div>
+                            <div v-else class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 dark:bg-slate-700 dark:text-amber-400 border border-amber-200 dark:border-slate-600">
+                                <i class="bi bi-plus-circle-fill"></i> New record
+                            </div>
+                        </div>
+
+                        <form  class="space-y-6">
+                            <!-- Section: Physician & Clinic -->
+                            <div>
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400 mb-3 flex items-center gap-1.5">
+                                    <i class="bi bi-hospital"></i> Physician & Clinic
+                                </h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Doctor Name</label>
+                                        <input type="text"
+                                               v-model="medicalForm.doctorName"
+                                               placeholder="e.g. Dr. Kwame Mensah"
+                                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Doctor Phone</label>
+                                        <input type="text"
+                                               v-model="medicalForm.doctorPhone"
+                                               placeholder="e.g. 0241234567"
+                                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Clinic Name</label>
+                                        <input type="text"
+                                               v-model="medicalForm.clinicName"
+                                               placeholder="e.g. Nyaho Medical Centre"
+                                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Clinic Phone</label>
+                                        <input type="text"
+                                               v-model="medicalForm.clinicPhone"
+                                               placeholder="e.g. 0302770000"
+                                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section: Emergency Contact -->
+                            <div>
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400 mb-3 flex items-center gap-1.5">
+                                    <i class="bi bi-telephone-plus"></i> Emergency Contact
+                                </h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Emergency Contact Person</label>
+                                        <input type="text"
+                                               v-model="medicalForm.emergencyContactName"
+                                               placeholder="e.g. Grace Mensah (Mother)"
+                                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Emergency Phone</label>
+                                        <input type="text"
+                                               v-model="medicalForm.emergencyContactPhone"
+                                               placeholder="e.g. 0209876543"
+                                               class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section: Conditions & Medications Lists -->
+                            <div>
+                                <h4 class="text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400 mb-3 flex items-center gap-1.5">
+                                    <i class="bi bi-clipboard2-pulse"></i> Medical Conditions & Medications (Comma-separated)
+                                </h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Medical Conditions
+                                            <span class="text-gray-400 text-[11px] font-normal">(separate with commas)</span>
+                                        </label>
+                                        <textarea v-model="medicalForm.medicalConditionsText"
+                                                  rows="3"
+                                                  placeholder="e.g. Asthma, Sickle Cell Trait, Eczema"
+                                                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white"></textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Medications
+                                            <span class="text-gray-400 text-[11px] font-normal">(separate with commas)</span>
+                                        </label>
+                                        <textarea v-model="medicalForm.medicationsText"
+                                                  rows="3"
+                                                  placeholder="e.g. Ventolin Inhaler, Cetirizine 10mg"
+                                                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-white"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="pt-4 border-t border-gray-100 dark:border-slate-700 flex items-center justify-between">
+                                <div>
+                                    <button v-if="medicalForm.id"
+                                            type="button"
+                                            @@click="deleteMedicalRecord"
+                                            :disabled="savingMedical"
+                                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-slate-700 transition">
+                                        <i class="bi bi-trash"></i> Delete Medical Record
+                                    </button>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <button @@click="saveMedical"
+                                            :disabled="savingMedical || !selectedStudentId"
+                                            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-900 hover:bg-blue-800 border border-blue-900 transition disabled:opacity-50 shadow-sm">
+                                        <i v-if="savingMedical" class="bi bi-arrow-repeat animate-spin"></i>
+                                        <i v-else class="bi bi-check2-circle"></i>
+                                        {{ medicalForm.id ? 'Update Medical Record' : 'Save Medical Record' }}
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+                <!-- ============ TAB 6 — POSITIONS ============ -->
+                <section v-show="activeTab === 'positions'" role="tabpanel">
+                    <p class="mb-3 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+                        <i class="bi bi-info-circle"></i>
+                        Leadership and student prefect positions held.
+                    </p>
+                    <data-grid title="Student Positions"
+                               :columns="positionColumns"
+                               :data="scopedPositions"
+                               :theme="theme"
+                               row-id="id"
+                               label-key="positionName"
+                               item-label="Position"
+                               item-label-plural="Positions"
+                               add-label="Add"
+                               :page-size="10"
+                               :selectable="true"
+                               :actions="true"
+                               :loading="isShimmerLoading"
+                               :stripes="true"
+                               density="compact"
+                               @@create="onPositionCreate"
+                               @@update="onPositionUpdate"
+                               @@delete="onPositionDelete">
+                    </data-grid>
+                </section>
+            </template>
+
+        </div>
+    </div>
+</div>
+
+<script src="~/js/school-manager/student-setups.js"></script>

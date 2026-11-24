@@ -12936,7 +12936,7 @@ public async Task<BaseApiResponse> DeleteDisabilityType(Guid id)
 public async Task<StudentDisabilityResponse> GetStudentDisabilities(Guid studentId)
 {
     var authToken = _claimsHelper.GetAuthToken();
-    string url = $"{_apiBaseUrl}StudentDisability/ListByStudent?studentId={studentId}";
+    string url = $"{_apiBaseUrl}StudentDisability/ListByStudentId?studentId={studentId}";
 
     using var request = new HttpRequestMessage(HttpMethod.Get, url);
     request.Headers.Add("Authorization", $"Bearer {authToken}");

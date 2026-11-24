@@ -77,6 +77,20 @@ const app = Vue.createApp({
     },
 
     methods: {
+        sameId(a, b) {
+            return a != null && b != null &&
+                String(a).toLowerCase() === String(b).toLowerCase();
+        },
+
+        isGuid(value) {
+            return !!value &&
+                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value));
+        },
+
+        asGuid(value) {
+            return this.isGuid(value) ? String(value) : this.uuid();
+        },
+        
         getSetupData() {
             this.isShimmerLoading = true;
 
@@ -95,52 +109,59 @@ const app = Vue.createApp({
 
         async onCreate(event) {
             const row = event?.row || event?.data;
-            const level = event?.level || 0;
-
+            const level = Number(event?.level ?? 0);
             if (!row) return;
 
             if (level === 0) {
                 await this.createHostel(row);
-            } else if (level === 1) {
-                const parentHostelId = event?.grid?.parentLabelData?.id || row.hostelId;
-                if (!parentHostelId) {
-                    this.toastHandler('error', 'Hostel was not found for this block.');
-                    return;
-                }
-
-                await this.saveHostelDetail(parentHostelId, row, 'create');
+                return;
             }
+
+            const parentHostelId = event?.grid?.parentRow?.id || row.hostelId;
+            if (!parentHostelId) {
+                this.toastHandler('error', 'Hostel was not found for this block.');
+                return;
+            }
+
+            row.hostelId = parentHostelId;
+            await this.saveHostelDetail(parentHostelId, row, 'create');
         },
 
         async onUpdate(event) {
             const row = event?.row || event?.data;
-            const level = event?.level || 0;
-
+            const level = Number(event?.level ?? 0);
             if (!row) return;
 
             if (level === 0) {
                 await this.updateHostel(row);
-            } else if (level === 1) {
-                const parentHostelId = event?.grid?.parentLabelData?.id || row.hostelId;
-                if (!parentHostelId) {
-                    this.toastHandler('error', 'Hostel was not found for this block.');
-                    return;
-                }
-
-                await this.saveHostelDetail(parentHostelId, row, 'update');
+                return;
             }
+
+            const parentHostelId = event?.grid?.parentRow?.id || row.hostelId;
+            if (!parentHostelId) {
+                this.toastHandler('error', 'Hostel was not found for this block.');
+                return;
+            }
+
+            row.hostelId = parentHostelId;
+            await this.saveHostelDetail(parentHostelId, row, 'update');
         },
 
         async onDelete(event) {
-            const rows = event?.rows;
-            const level = event?.level || 0;
-
-            if (!Array.isArray(rows) || !rows.length) return;
+            const rows = Array.isArray(event?.rows) ? event.rows : [];
+            const level = Number(event?.level ?? 0);
+            if (!rows.length) return;
 
             if (level === 0) {
                 await this.deleteHostels(rows);
-            } else if (level === 1) {
-                const parentHostelId = event?.grid?.parentLabelData?.id;
+                return;
+            }
+
+            if (level === 1) {
+                const parentHostelId =
+                    event?.grid?.parentRow?.id ||
+                    rows.find(row => row.hostelId)?.hostelId;
+
                 if (!parentHostelId) {
                     this.toastHandler('error', 'Hostel was not found for these blocks.');
                     return;
@@ -217,41 +238,66 @@ const app = Vue.createApp({
         },
 
         async saveHostelDetail(hostelId, row, action) {
-            const existing = this.hostelList.find(item => item.id === hostelId);
+            const existing = this.hostelList.find(item => this.sameId(item.id, hostelId));
             if (!existing) {
                 this.toastHandler('error', 'Hostel was not found.');
+                await this.getSetupData();
+                return;
+            }
+
+            // Don't send a DataGrid-generated draft ID to an endpoint expecting a saved hostel ID.
+            if (!this.isGuid(existing.id)) {
+                this.toastHandler('warning', 'Save the hostel before saving blocks.');
                 return;
             }
 
             let details = [...(existing.details || [])];
             const detail = {
                 ...row,
-                id: row.id || this.uuid(),
-                hostelId,
+                id: this.asGuid(row.id),
+                hostelId: existing.id,
                 blockName: String(row.blockName || '').trim()
             };
 
             if (action === 'create') {
+                details = details.filter(item => !this.sameId(item.id, row.id));
                 details.push(detail);
             } else {
-                details = details.map(item => item.id === detail.id ? detail : item);
+                details = details.map(item =>
+                    this.sameId(item.id, row.id) ? detail : item
+                );
             }
 
             await this.saveHostelWithDetails(existing, details, action);
         },
 
         async deleteHostelDetails(hostelId, rows) {
-            const existing = this.hostelList.find(item => item.id === hostelId);
+            if (!hostelId || !Array.isArray(rows) || !rows.length) return;
+
+            // A block under an unsaved draft parent was only removed locally.
+            if (!this.isGuid(hostelId)) return;
+
+            const existing = this.hostelList.find(item => this.sameId(item.id, hostelId));
             if (!existing) {
                 this.toastHandler('error', 'Hostel was not found.');
+                await this.getSetupData();
                 return;
             }
 
-            const deletedIds = new Set(rows.map(row => row.id));
-            const details = (existing.details || []).filter(item => !deletedIds.has(item.id));
+            const deletedIds = new Set(
+                rows
+                    .map(row => row.id)
+                    .filter(id => id != null)
+                    .map(id => String(id).toLowerCase())
+            );
+
+            const details = (existing.details || []).filter(item =>
+                !deletedIds.has(String(item.id || '').toLowerCase())
+            );
 
             await this.saveHostelWithDetails(existing, details, 'delete');
         },
+       
 
         async saveHostelWithDetails(hostel, details, action) {
             const payload = {

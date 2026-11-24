@@ -97,7 +97,7 @@
             return {
                 emptyGuid: EMPTY_GUID,
                 theme: '#ff2056',
-                theme1: '#0645e7',
+                theme1: '#171717',
                 tenantId: null,
                 accounts: [],
                 suppliers: [],

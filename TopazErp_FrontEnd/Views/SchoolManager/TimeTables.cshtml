@@ -1,0 +1,458 @@
+@{
+    ViewBag.Title = "Class Timetables";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+
+<style>
+    /* Modern Hubstaff / Google Calendar Grid Styles */
+    .cal-container {
+        border-radius: 1rem;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+    }
+    .dark .cal-container {
+        background: #0f172a;
+        border-color: #334155;
+    }
+    .cal-header-row {
+        display: grid;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .dark .cal-header-row {
+        background: #1e293b;
+        border-color: #334155;
+    }
+    .cal-col-header {
+        padding: 0.85rem 0.5rem;
+        text-align: center;
+        border-right: 1px solid #e2e8f0;
+        position: relative;
+    }
+    .dark .cal-col-header {
+        border-color: #334155;
+    }
+    .cal-col-header:last-child {
+        border-right: none;
+    }
+    .cal-body-row {
+        display: grid;
+        min-height: 520px;
+        background: #ffffff;
+    }
+    .dark .cal-body-row {
+        background: #0f172a;
+    }
+    .cal-day-col {
+        padding: 0.75rem 0.6rem;
+        border-right: 1px solid #f1f5f9;
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+        background: #ffffff;
+        transition: background 0.15s;
+    }
+    .dark .cal-day-col {
+        background: #0f172a;
+        border-color: #1e293b;
+    }
+    .cal-day-col:hover {
+        background: #fafbfc;
+    }
+    .dark .cal-day-col:hover {
+        background: #1e293b/40;
+    }
+    .cal-day-col:last-child {
+        border-right: none;
+    }
+
+    /* Vibrant Calendar Period Card */
+    .cal-card {
+        border-radius: 0.65rem;
+        padding: 0.65rem 0.75rem;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+        cursor: pointer;
+        transition: transform 0.12s ease, box-shadow 0.12s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .cal-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+    }
+    .cal-card-indicator {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+    }
+
+    /* Modern clean modal backdrop */
+    .modal-backdrop {
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(3px);
+    }
+</style>
+
+<div class="content">
+    <div class="mb-4 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2 dark:text-gray-400">
+            <span>School Manager - Data Entries</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium dark:text-blue-400">Time Tables</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="page-title">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
+                   Time Tables
+                </h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" data-card-title="Class Timetables">
+        <div id="app">
+
+            <!-- Top Filter & Controls Bar -->
+            <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-5 pb-4 border-b border-gray-100 dark:border-slate-700">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
+                    <div>
+                        <label class="label">Academic Year</label>
+                        <w-select v-model="academicYearId"
+                                  :options="academicYears"
+                                  display-key="name"
+                                  value-key="id"
+                                  placeholder="Academic Year">
+                        </w-select>
+                    </div>
+
+                    <div>
+                        <label class="label">Term</label>
+                        <w-select v-model="termId"
+                                  :options="terms"
+                                  display-key="name"
+                                  value-key="id"
+                                  placeholder="Term">
+                        </w-select>
+                    </div>
+
+                    <div>
+                        <label class="label">Class</label>
+                        <w-select v-model="classId"
+                                  :options="classes"
+                                  display-key="name"
+                                  value-key="id"
+                                  placeholder="Class">
+                        </w-select>
+                    </div>
+                </div>
+
+                <!-- Calendar View Toggles -->
+                <div v-if="scopeReady" class="flex items-center gap-2 self-start lg:self-end">
+                    <button type="button"
+                            @@click="showWeekend = !showWeekend"
+                            class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold border transition"
+                            :class="showWeekend
+                                ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-slate-800 dark:border-slate-700 dark:text-blue-300'
+                                : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-300'">
+                        <i class="bi" :class="showWeekend ? 'bi-check-square' : 'bi-square'"></i>
+                        <span>Sat &amp; Sun</span>
+                    </button>
+
+                    <button type="button"
+                            @@click="openCopyModal(activeDay)"
+                            class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-200 transition">
+                        <i class="bi bi-copy"></i>
+                        <span>Copy Schedule</span>
+                    </button>
+
+                    <button type="button"
+                            @@click="openCreateModal(activeDay)"
+                            class="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold text-white bg-[#062a81] hover:bg-blue-900 shadow-sm transition">
+                        <i class="bi bi-plus-lg"></i>
+                        <span>Add Period</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Initial Loading -->
+            <div v-if="!setupDone" class="py-24 text-center text-gray-400">
+                <i class="bi bi-arrow-repeat animate-spin text-3xl inline-block mb-2 text-[#062a81]"></i>
+                <p class="text-sm">Loading timetables...</p>
+            </div>
+
+            <template v-else>
+                <template v-if="scopeReady">
+
+                    <!-- Google Calendar / Hubstaff Style Matrix View -->
+                    <div class="cal-container shadow-sm">
+                        <!-- Column Headers: Weekdays -->
+                        <div class="cal-header-row" :style="{ gridTemplateColumns: `repeat(${visibleDays.length}, minmax(0, 1fr))` }">
+                            <div v-for="day in visibleDays"
+                                 :key="day"
+                                 class="cal-col-header"
+                                 :class="{ 'bg-blue-50/70 dark:bg-slate-800/80': activeDay === day }">
+                                <div class="flex items-center justify-between px-2">
+                                    <div class="text-left">
+                                        <div class="text-xs font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wider">
+                                            {{ day }}
+                                        </div>
+                                        <div class="text-[11px] text-gray-400 font-medium">
+                                            {{ dayCounts[day] }} {{ dayCounts[day] === 1 ? 'period' : 'periods' }}
+                                        </div>
+                                    </div>
+                                    <button type="button"
+                                            @@click.stop="openCreateModal(day)"
+                                            class="h-6 w-6 rounded-full flex items-center justify-center text-gray-400 hover:text-[#062a81] hover:bg-white dark:hover:bg-slate-700 transition"
+                                            title="Add period to this day">
+                                        <i class="bi bi-plus-lg text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Calendar Columns Body -->
+                        <div class="cal-body-row" :style="{ gridTemplateColumns: `repeat(${visibleDays.length}, minmax(0, 1fr))` }">
+                            <div v-for="day in visibleDays"
+                                 :key="day"
+                                 class="cal-day-col"
+                                 :class="{ 'bg-blue-50/30 dark:bg-slate-900/40': activeDay === day }"
+                                 @@click="activeDay = day">
+
+                                <!-- Period Cards -->
+                                <div v-for="(period, idx) in getPeriodsForDay(day)"
+                                     :key="period.id || idx"
+                                     class="cal-card"
+                                     :style="{
+                                         backgroundColor: getSubjectStyle(period.subjectId).bg,
+                                         border: '1px solid ' + getSubjectStyle(period.subjectId).border
+                                     }"
+                                     @@click.stop="openEditModal(period, day)">
+
+                                    <!-- Left colored accent strip -->
+                                    <div class="cal-card-indicator" :style="{ backgroundColor: getSubjectStyle(period.subjectId).dot }"></div>
+
+                                    <div class="flex items-start justify-between gap-1 pl-1">
+                                        <div class="min-w-0 flex-1">
+                                            <!-- Time badge -->
+                                            <div class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 flex items-center gap-1 mb-1">
+                                                <i class="bi bi-clock text-[10px]"></i>
+                                                <span>{{ formatTimeDisplay(period.startTime) }} - {{ formatTimeDisplay(period.endTime) }}</span>
+                                            </div>
+
+                                            <!-- Subject Title -->
+                                            <div class="text-xs font-bold truncate" :style="{ color: getSubjectStyle(period.subjectId).text }">
+                                                {{ period.subjectName || 'Unassigned Subject' }}
+                                            </div>
+
+                                            <!-- Teacher Info -->
+                                            <div class="text-[11px] text-gray-600 dark:text-gray-300 mt-1 flex items-center gap-1.5 truncate">
+                                                <i class="bi bi-person text-[10px] text-gray-400"></i>
+                                                <span class="truncate">{{ period.teacherName || 'No Teacher' }}</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Quick delete inside card -->
+                                        <button type="button"
+                                                @@click.stop="removePeriod(idx, day)"
+                                                class="text-gray-400 hover:text-red-600 p-0.5 rounded transition"
+                                                title="Delete Period">
+                                            <i class="bi bi-x text-sm"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Add Slot Button when day is empty -->
+                                <button v-if="getPeriodsForDay(day).length === 0"
+                                        type="button"
+                                        @@click.stop="openCreateModal(day)"
+                                        class="h-24 w-full rounded-lg border-2 border-dashed border-gray-200 dark:border-slate-800 hover:border-blue-400 hover:bg-blue-50/50 flex flex-col items-center justify-center text-gray-400 hover:text-[#062a81] transition group">
+                                    <i class="bi bi-plus-circle text-lg mb-0.5 group-hover:scale-110 transition-transform"></i>
+                                    <span class="text-[11px] font-medium">Add Period</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Clean Schedule Footer Stats -->
+                    <div class="mt-4 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-gray-500 dark:text-gray-400 px-1 gap-2">
+                        <div class="flex items-center gap-3">
+                            <span class="font-medium text-gray-700 dark:text-gray-200">
+                                <strong>{{ selectedClass ? selectedClass.name : '' }}</strong> · {{ selectedTerm ? selectedTerm.name : '' }} ({{ selectedAcademicYear ? selectedAcademicYear.name : '' }})
+                            </span>
+                            <span>•</span>
+                            <span>{{ totalPeriodsInWeek }} total periods scheduled</span>
+                        </div>
+                        <div class="text-[11px]">
+                            Click any card to edit details or change period timing.
+                        </div>
+                    </div>
+
+                </template>
+
+                <div v-else class="py-24 text-center text-gray-400">
+                    <i class="bi bi-calendar3 text-3xl block mb-2 text-gray-300 dark:text-gray-600"></i>
+                    <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Select Academic Year, Term, and Class to view schedule</p>
+                </div>
+            </template>
+
+            <!-- ========================================================= -->
+            <!-- MODAL: ADD / EDIT PERIOD                                 -->
+            <!-- ========================================================= -->
+            <div v-if="modalOpen"
+                 class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+                 @@click.self="closeModal">
+                <div class="w-full max-w-md rounded-2xl bg-white dark:bg-slate-800 shadow-2xl border border-gray-100 dark:border-slate-700 overflow-hidden transform transition-all animate-in fade-in duration-150">
+
+                    <!-- Modal Header -->
+                    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-700">
+                        <div class="flex items-center gap-2">
+                            <div class="h-8 w-8 rounded-lg bg-blue-50 dark:bg-slate-700 flex items-center justify-center text-[#062a81] dark:text-blue-400">
+                                <i class="bi" :class="isEditingPeriod ? 'bi-pencil-square' : 'bi-calendar-plus'"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-bold text-gray-800 dark:text-white">
+                                    {{ isEditingPeriod ? 'Edit Period' : 'Add Period' }}
+                                </h3>
+                                <p class="text-[11px] text-gray-400">
+                                    {{ modalTargetDay }} · {{ selectedClass ? selectedClass.name : '' }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <button type="button"
+                                @@click="closeModal"
+                                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg">
+                            <i class="bi bi-x-lg text-sm"></i>
+                        </button>
+                    </div>
+
+                    <!-- Modal Form Body -->
+                    <form  class="p-5 space-y-4">
+                        <div>
+                            <label class="label">Day of Week</label>
+                            <select v-model="modalTargetDay" required class="input-control">
+                                <option v-for="d in daysOfWeek" :key="d" :value="d">{{ d }}</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="label">Subject</label>
+                            <select v-model="draftPeriod.subjectId" required class="input-control">
+                                <option value="" disabled>Select Subject</option>
+                                <option v-for="s in subjects" :key="s.id" :value="s.id">{{ s.name }}</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="label">Teacher</label>
+                            <w-select v-model="draftPeriod.teacherId"
+                                      :options="teachers"
+                                      display-key="name"
+                                      value-key="id"
+                                      placeholder="Select Teacher">
+                            </w-select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="label">Start Time</label>
+                                <input type="time" v-model="draftPeriod.startTime" required class="input-control" />
+                            </div>
+                            <div>
+                                <label class="label">End Time</label>
+                                <input type="time" v-model="draftPeriod.endTime" required class="input-control" />
+                            </div>
+                        </div>
+
+                        <!-- Modal Actions -->
+                        <div class="pt-3 border-t border-gray-100 dark:border-slate-700 flex items-center justify-end gap-2.5">
+                            <button type="button"
+                                    @@click="closeModal"
+                                    class="rounded-lg px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-700 transition">
+                                Cancel
+                            </button>
+                            <button @@click="savePeriod"
+                                    :disabled="saving"
+                                    class="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold text-white bg-[#062a81] hover:bg-blue-900 shadow-sm transition disabled:opacity-50">
+                                <i v-if="saving" class="bi bi-arrow-repeat animate-spin"></i>
+                                <i v-else class="bi bi-check2"></i>
+                                <span>{{ isEditingPeriod ? 'Save Changes' : 'Add Period' }}</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- MODAL: COPY SCHEDULE                                     -->
+            <!-- ========================================================= -->
+            <div v-if="copyModalOpen"
+                 class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+                 @@click.self="copyModalOpen = false">
+                <div class="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-800 shadow-2xl border border-gray-100 dark:border-slate-700 overflow-hidden transform transition-all animate-in fade-in duration-150">
+
+                    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-700">
+                        <div class="flex items-center gap-2">
+                            <div class="h-8 w-8 rounded-lg bg-blue-50 dark:bg-slate-700 flex items-center justify-center text-[#062a81] dark:text-blue-400">
+                                <i class="bi bi-copy"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-bold text-gray-800 dark:text-white">Copy Schedule</h3>
+                                <p class="text-[11px] text-gray-400">Duplicate periods across days</p>
+                            </div>
+                        </div>
+                        <button type="button"
+                                @@click="copyModalOpen = false"
+                                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1">
+                            <i class="bi bi-x-lg text-sm"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-5 space-y-4">
+                        <div>
+                            <label class="label">Copy From (Source Day)</label>
+                            <select v-model="copySourceDay" required class="input-control">
+                                <option value="" disabled>Select day with periods</option>
+                                <option v-for="d in daysOfWeek"
+                                        :key="d"
+                                        :value="d"
+                                        :disabled="dayCounts[d] === 0">
+                                    {{ d }} ({{ dayCounts[d] }} periods)
+                                </option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="label">Paste To (Target Day)</label>
+                            <select v-model="copyTargetDay" required class="input-control">
+                                <option v-for="d in daysOfWeek" :key="d" :value="d">{{ d }}</option>
+                            </select>
+                        </div>
+
+                        <div class="pt-3 border-t border-gray-100 dark:border-slate-700 flex items-center justify-end gap-2.5">
+                            <button type="button"
+                                    @@click="copyModalOpen = false"
+                                    class="rounded-lg px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-700 transition">
+                                Cancel
+                            </button>
+                            <button type="button"
+                                    :disabled="!copySourceDay || copySourceDay === copyTargetDay || saving"
+                                    @@click="copyDaySchedule(copySourceDay)"
+                                    class="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold text-white bg-[#062a81] hover:bg-blue-900 shadow-sm transition disabled:opacity-50">
+                                <i v-if="saving" class="bi bi-arrow-repeat animate-spin"></i>
+                                <i v-else class="bi bi-check2"></i>
+                                <span>Confirm Copy</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /#app -->
+    </div><!-- /.card -->
+</div><!-- /.content -->
+
+<script src="~/js/school-manager/timetables.js"></script>

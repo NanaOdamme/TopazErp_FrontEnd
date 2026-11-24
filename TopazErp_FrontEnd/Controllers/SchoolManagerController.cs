@@ -196,6 +196,14 @@ public IActionResult StaffSetups()
 {
     return View();
 } 
+public IActionResult AssignTeacherSubjects()
+{
+    return View();
+} 
+public IActionResult AssignClasses()
+{
+    return View();
+} 
 public IActionResult AssignSubjects()
 {
     return View();
@@ -233,6 +241,10 @@ public IActionResult Excursions()
     return View();
 } 
 public IActionResult YearEndProcedure()
+{
+    return View();
+} 
+public IActionResult RegisterClasses()
 {
     return View();
 } 
@@ -2516,7 +2528,7 @@ public async Task<ActionResult> DeletePositionType([FromQuery] Guid id)
     return Json(200);
 }
 
-public async Task<ActionResult> GetStudentPositions([FromQuery] Guid studentId)
+public async Task<ActionResult> GetPositionsByStudent([FromQuery] Guid studentId)
 {
     var result = await _topazErpApi.GetStudentPositions(studentId);
     return Json(result);

@@ -1,0 +1,125 @@
+@{
+    ViewBag.Title = "Subject Remarks";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2 dark:text-gray-400">
+            <span>School Manager - Data Entries</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium dark:text-blue-400">Subject Remarks</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="page-title">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
+                    Subject Remarks
+                </h2>
+            </div>
+        
+        </div>
+    </div>
+
+    <div class="card" data-card-title="Subject Remarks - Primary & JHS">
+        <div id="app">
+
+            <!-- initial loading shimmer -->
+            <div v-if="!setupDone" class="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500">
+                <i class="bi bi-arrow-repeat animate-spin text-2xl text-blue-800 mb-3"></i>
+                <p class="text-sm">Loading subject remarks…</p>
+            </div>
+
+            <template v-else>
+                <!-- TABS (Primary vs JHS) -->
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-5 border-b border-gray-200 dark:border-slate-700">
+                    <div class="flex items-center gap-1" role="tablist" aria-label="Educational stages">
+                        <button type="button"
+                                role="tab"
+                                :aria-selected="activeTab === 'Primary'"
+                                :class="activeTab === 'Primary'
+                                    ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500'
+                                    : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'"
+                                class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-5 py-2.5 text-sm font-semibold transition-colors"
+                                @@click="activeTab = 'Primary'">
+                        
+                            <span>Primary</span>
+                        
+                        </button>
+                        <button type="button"
+                                role="tab"
+                                :aria-selected="activeTab === 'JHS'"
+                                :class="activeTab === 'JHS'
+                                    ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500'
+                                    : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'"
+                                class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-5 py-2.5 text-sm font-semibold transition-colors"
+                                @@click="activeTab = 'JHS'">
+                           
+                            <span>Junior High School (JHS)</span>
+                           
+                        </button>
+                    </div>
+
+                
+                </div>
+
+                <!-- ============ TAB 1 — PRIMARY STAGE ============ -->
+                <section v-show="activeTab === 'Primary'" role="tabpanel">
+                    <p class="mb-3 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+                        <i class="bi bi-info-circle"></i>
+                        Subject remarks, mark boundaries, and grade classifications for Primary stage pupils.
+                    </p>
+                    <data-grid title="Primary Subject Remarks"
+                               :columns="columns"
+                               :data="primaryRemarks"
+                               :theme="theme"
+                               row-id="id"
+                               label-key="gradeNumber"
+                               item-label="Remark"
+                               item-label-plural="Remarks"
+                               add-label="Add"
+                               :page-size="10"
+                               :selectable="true"
+                               :actions="true"
+                               :loading="isShimmerLoading"
+                               :stripes="true"
+                               density="compact"
+                               @@create="onCreate"
+                               @@update="onUpdate"
+                               @@delete="onDelete">
+                    </data-grid>
+                </section>
+
+                <!-- ============ TAB 2 — JUNIOR HIGH SCHOOL (JHS) ============ -->
+                <section v-show="activeTab === 'JHS'" role="tabpanel">
+                    <p class="mb-3 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+                        <i class="bi bi-info-circle"></i>
+                        Subject remarks, mark boundaries, and grade classifications for Junior High School (JHS) students.
+                    </p>
+                    <data-grid title="JHS Subject Remarks"
+                               :columns="columns"
+                               :data="jhsRemarks"
+                               :theme="theme"
+                               row-id="id"
+                               label-key="gradeNumber"
+                               item-label="Remark"
+                               item-label-plural="Remarks"
+                               add-label="Add"
+                               :page-size="10"
+                               :selectable="true"
+                               :actions="true"
+                               :loading="isShimmerLoading"
+                               :stripes="true"
+                               density="compact"
+                               @@create="onCreate"
+                               @@update="onUpdate"
+                               @@delete="onDelete">
+                    </data-grid>
+                </section>
+            </template>
+
+        </div>
+    </div>
+</div>
+
+<script src="~/js/school-manager/subject-remarks.js"></script>

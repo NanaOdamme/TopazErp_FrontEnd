@@ -15,6 +15,7 @@
 </w-select>
 * */
 
+/* Vue 3 global-build W-Select component. No build step; load Vue before this file. */
 (function registerWSelect(global) {
     'use strict';
 
@@ -45,7 +46,7 @@
             error: { type: String, default: '' },
             disabled: { type: Boolean, default: false },
             required: { type: Boolean, default: false },
-            clearable: { type: Boolean, default: false },
+            clearable: { type: Boolean, default: true },
             maxHeight: { type: String, default: '15rem' },
             size: { type: String, default: 'md', validator: (value) => ['sm', 'md', 'lg'].includes(value) }
         },
@@ -261,7 +262,7 @@
               <i class="bi bi-chevron-down text-xs transition-transform" :class="isOpen ? 'rotate-180' : ''" aria-hidden="true"></i>
             </span>
           </button>
-          <button v-if="clearable && selectedOption && !disabled" type="button" class="absolute right-8 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-slate-100" aria-label="Clear selection" @click.stop="clearSelection">
+          <button v-if="clearable && selectedOption && !disabled" type="button" class="absolute right-4 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-slate-100" aria-label="Clear selection" @click.stop="clearSelection">
             <i class="bi bi-x-lg text-xs" aria-hidden="true"></i>
           </button>
           <input v-if="name" type="hidden" :name="name" :value="modelValue == null ? '' : modelValue">
@@ -308,3 +309,5 @@
     global.WSelect = WSelect;
     global.WSelectPlugin = WSelectPlugin;
 })(globalThis);
+
+

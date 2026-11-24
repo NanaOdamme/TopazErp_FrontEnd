@@ -1,0 +1,536 @@
+@{
+    ViewBag.Title = "Assignment Results";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+
+<style>
+    .modal-backdrop {
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(4px);
+    }
+
+    /* Modern elevated SaaS card-table style */
+    .results-table-wrap {
+        border-radius: 1rem;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+    .dark .results-table-wrap {
+        background: #0f172a;
+        border-color: #334155;
+    }
+    .res-row {
+        transition: all 0.15s ease;
+    }
+    .res-row:hover {
+        background: #f8fafc;
+    }
+    .dark .res-row:hover {
+        background: #1e293b/60;
+    }
+    .type-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.25rem 0.65rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+    }
+    .assign-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 1.75rem;
+        height: 1.75rem;
+        padding: 0 0.35rem;
+        border-radius: 0.4rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        background: #f1f5f9;
+        color: #334155;
+    }
+    .dark .assign-badge {
+        background: #1e293b;
+        color: #e2e8f0;
+    }
+    .midterm-badge {
+        background: #fef2f2 !important;
+        color: #dc2626 !important;
+        border: 1px solid #fecaca;
+    }
+    .dark .midterm-badge {
+        background: #450a0a !important;
+        color: #f87171 !important;
+        border-color: #991b1b;
+    }
+
+    /* Exceeded Mark Warning Styles */
+    .mark-exceeded-input {
+        border-color: #ef4444 !important;
+        background-color: #fef2f2 !important;
+        color: #b91c1c !important;
+        outline-color: #ef4444 !important;
+    }
+    .dark .mark-exceeded-input {
+        background-color: #450a0a !important;
+        color: #fca5a5 !important;
+        border-color: #dc2626 !important;
+    }
+    .mark-exceeded-row {
+        background-color: #fff1f2 !important;
+    }
+    .dark .mark-exceeded-row {
+        background-color: #3f1218 !important;
+    }
+</style>
+
+<div class="content">
+    <div class="mb-4 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-1 dark:text-gray-400">
+            <span>School Manager - Promotions & Results</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium dark:text-blue-400">Results</span>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <h2 class="text-lg font-bold text-gray-800 dark:text-white tracking-tight flex items-center gap-2.5">
+        
+                Assignment Results
+            </h2>
+
+            
+        </div>
+    </div>
+
+    <div class="card" data-card-title="Results">
+        <div id="app">
+           
+            <!-- Filter Controls Header -->
+            <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-5 pb-5 border-b border-gray-100 dark:border-slate-700">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-1">
+                    <div>
+                        <label class="label">Academic Year</label>
+                        <w-select v-model="academicYearId"
+                                  :options="academicYears"
+                                  display-key="name"
+                                  value-key="id"
+                                  placeholder="Academic Year">
+                        </w-select>
+                    </div>
+
+                    <div>
+                        <label class="label">Term</label>
+                        <w-select v-model="termId"
+                                  :options="terms"
+                                  display-key="name"
+                                  value-key="id"
+                                  placeholder="Term">
+                        </w-select>
+                    </div>
+
+                    <div>
+                        <label class="label">Class</label>
+                        <w-select v-model="classId"
+                                  :options="classes"
+                                  display-key="name"
+                                  value-key="id"
+                                  placeholder="Class">
+                        </w-select>
+                    </div>
+
+                    <div>
+                        <label class="label">Subject</label>
+                        <w-select v-model="subjectId"
+                                  :options="availableSubjects"
+                                  display-key="name"
+                                  value-key="id"
+                                  :disabled="!hasAssignedSubjects || availableSubjects.length === 0"
+                                  placeholder="All Subjects">
+                        </w-select>
+                    </div>
+                </div>
+                <button v-if="scopeReady"
+                        type="button"
+                        @@click="openCreateModal"
+                        :disabled="!hasAssignedSubjects"
+                        class="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold text-white bg-[#062a81] hover:bg-blue-900 shadow-sm transition disabled:opacity-50">
+                    <i class="bi bi-plus-lg"></i>
+                    <span>Enter Marks</span>
+                </button>
+                <!-- Secondary Filter & Search -->
+                <div v-if="scopeReady" class="flex items-center gap-2 self-start lg:self-end">
+                    <div class="w-36">
+                        <label class="label">Type Filter</label>
+                        <select v-model="selectedTypeFilter" class="input-control text-xs">
+                            <option value="">All Types</option>
+                            <option v-for="t in assessmentTypes" :key="t.id" :value="t.id">{{ t.name }}</option>
+                        </select>
+                    </div>
+
+                    @*<div class="w-44">
+                        <label class="label">Search</label>
+                        <input type="text"
+                               v-model="searchQuery"
+                               placeholder="Filter table..."
+                               class="input-control text-xs" />
+                    </div>*@
+                </div>
+            </div>
+
+            <!-- Unassigned subjects alert -->
+            <div v-if="classId && !hasAssignedSubjects" class="mb-5 flex items-center gap-2.5 text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-xl border border-amber-200 dark:border-amber-800/40">
+                <i class="bi bi-exclamation-triangle-fill text-amber-600"></i>
+                <span>No assigned subjects found for <strong>{{ selectedClass ? selectedClass.name : 'this class' }}</strong>. Please assign subjects to this class first.</span>
+            </div>
+
+            <!-- Initial Loading -->
+            <div v-if="!setupDone" class="py-24 text-center text-gray-400">
+                <i class="bi bi-arrow-repeat animate-spin text-3xl inline-block mb-2 text-[#062a81]"></i>
+                <p class="text-sm">Loading assignment results…</p>
+            </div>
+
+            <template v-else>
+                <template v-if="scopeReady">
+
+                    <!-- Modern Results Table Container -->
+                    <div class="results-table-wrap">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-sm divide-y divide-gray-100 dark:divide-slate-800">
+                                <thead class="bg-[#f8fafc] dark:bg-slate-800/90 text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                    <tr>
+                                        <th class="px-5 py-3.5 text-left font-bold">Assessment</th>
+                                        <th class="px-5 py-3.5 text-left font-bold">Subject</th>
+                                        <th class="px-5 py-3.5 text-center font-bold w-24">Assign #</th>
+                                        <th class="px-5 py-3.5 text-center font-bold w-28">Max Marks</th>
+                                        <th class="px-5 py-3.5 text-center font-bold w-32">Class Performance</th>
+                                        <th class="px-5 py-3.5 text-left font-bold w-32">Date</th>
+                                        <th class="px-5 py-3.5 text-right font-bold w-28">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
+                                    <tr v-for="item in paginatedResults"
+                                        :key="item.id"
+                                        class="res-row">
+                                        <td class="px-5 py-4 whitespace-nowrap">
+                                            <span class="type-pill"
+                                                  :class="{
+                                                      'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-100 dark:border-blue-800': item.type === 'ClassAssignment',
+                                                      'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-100 dark:border-purple-800': item.type === 'ClassTest',
+                                                      'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800': item.type === 'HomeWork',
+                                                      'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-100 dark:border-amber-800': item.type === 'Project',
+                                                      'bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300 border border-rose-200 dark:border-rose-800': item.type === 'MidTerm',
+                                                      'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300 border border-red-200 dark:border-red-800': item.type === 'Exam'
+                                                  }">
+                                                <i class="bi" :class="{
+                                                    'bi-journal-text': item.type === 'ClassAssignment',
+                                                    'bi-pencil-square': item.type === 'ClassTest',
+                                                    'bi-house-door': item.type === 'HomeWork',
+                                                    'bi-kanban': item.type === 'Project',
+                                                    'bi-flag-fill': item.type === 'MidTerm',
+                                                    'bi-award-fill': item.type === 'Exam'
+                                                }"></i>
+                                                {{ getTypeName(item.type) }}
+                                            </span>
+                                        </td>
+                                        <td class="px-5 py-4">
+                                            <div class="font-bold text-gray-800 dark:text-white text-sm">
+                                                {{ item.subjectName }}
+                                            </div>
+                                            <div class="text-[11px] text-gray-400 mt-0.5">
+                                                {{ item.className }} · {{ item.termName }}
+                                            </div>
+                                        </td>
+                                        <td class="px-5 py-4 text-center whitespace-nowrap">
+                                            <span class="assign-badge" :class="{ 'midterm-badge': item.type === 'MidTerm' || item.type === 'Exam' }">
+                                                #{{ item.assignmentNumber }}
+                                            </span>
+                                        </td>
+                                        <td class="px-5 py-4 text-center whitespace-nowrap">
+                                            <span class="font-bold text-gray-800 dark:text-white">
+                                                {{ item.overallMark }}
+                                            </span>
+                                            <span class="text-[11px] text-gray-400 ml-1">pts</span>
+                                        </td>
+                                        <td class="px-5 py-4 text-center whitespace-nowrap">
+                                            <div class="inline-flex items-center gap-2">
+                                                <span class="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                                                    {{ (item.details || []).length }} students
+                                                </span>
+                                                <span class="text-[11px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-400 font-mono">
+                                                    Avg {{ getAverageScore(item.details, item.overallMark) }}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td class="px-5 py-4 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap font-mono text-[11px]">
+                                            {{ item.assignedDate }}
+                                        </td>
+                                        <td class="px-5 py-4 text-right whitespace-nowrap">
+                                            <div class="flex items-center justify-end gap-1">
+                                                <button type="button"
+                                                        @@click="openEditModal(item)"
+                                                        class="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg transition"
+                                                        title="Edit Marks">
+                                                    <i class="bi bi-pencil-square text-sm"></i>
+                                                </button>
+
+                                                <button type="button"
+                                                        @@click="cancelAssignment(item)"
+                                                        class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-slate-800 rounded-lg transition"
+                                                        title="Cancel Assessment">
+                                                    <i class="bi bi-slash-circle text-sm"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <tr v-if="filteredResults.length === 0">
+                                        <td colspan="7" class="py-16 text-center text-gray-400">
+                                            <i class="bi bi-clipboard2-x text-3xl block mb-2 text-gray-300 dark:text-gray-600"></i>
+                                            <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">No active assignment results match</p>
+                                            <p class="text-xs text-gray-400 mt-1">Use the "Enter Marks" button to record grades.</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Modern Pagination Footer -->
+                        <div class="px-5 py-3.5 bg-gray-50 dark:bg-slate-800/80 border-t border-gray-100 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-gray-600 dark:text-gray-300">
+                            <!-- Left: Page Size Selector & Record Count -->
+                            <div class="flex items-center gap-3">
+                                <div class="flex items-center gap-1.5">
+                                    <span>Show</span>
+                                    <select v-model.number="pageSize" class="input-control text-xs" style="width: auto; padding-top: 0.25rem; padding-bottom: 0.25rem;">
+                                        <option v-for="size in pageSizeOptions" :key="size" :value="size">{{ size }}</option>
+                                    </select>
+                                    <span>entries</span>
+                                </div>
+                                <span class="text-gray-300 dark:text-gray-600">|</span>
+                                <span>Showing <strong>{{ paginationStart }}</strong> to <strong>{{ paginationEnd }}</strong> of <strong>{{ filteredResults.length }}</strong> assessments</span>
+                            </div>
+
+                            <!-- Right: Page Navigation -->
+                            <div v-if="totalPages > 1" class="flex items-center gap-1">
+                                <button type="button"
+                                        @@click="prevPage"
+                                        :disabled="currentPage === 1"
+                                        class="px-2.5 py-1.5 rounded-md border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                                    <i class="bi bi-chevron-left text-xs"></i>
+                                </button>
+
+                                <button v-for="page in pageNumbers"
+                                        :key="page"
+                                        type="button"
+                                        @@click="setPage(page)"
+                                        :disabled="page === '...'"
+                                        :class="currentPage === page
+                                            ? 'bg-[#062a81] text-white font-bold border-[#062a81]'
+                                            : 'bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-600'"
+                                        class="min-w-[32px] px-2.5 py-1.5 rounded-md border text-xs transition">
+                                    {{ page }}
+                                </button>
+
+                                <button type="button"
+                                        @@click="nextPage"
+                                        :disabled="currentPage === totalPages"
+                                        class="px-2.5 py-1.5 rounded-md border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                                <i class="bi bi-chevron-right text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </template>
+
+                <div v-else class="py-24 text-center text-gray-400">
+                    <i class="bi bi-journal-text text-3xl block mb-2 text-gray-300 dark:text-gray-600"></i>
+                    <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Select Academic Year, Term, and Class to view results</p>
+                </div>
+            </template>
+
+            <!-- ========================================================= -->
+            <!-- MODAL: ENTER / EDIT MARKS                                 -->
+            <!-- ========================================================= -->
+            <div v-if="modalOpen"
+                 class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+                 @@click.self="closeModal">
+                <div class="w-full max-w-2xl rounded-2xl bg-white dark:bg-slate-800 shadow-2xl border border-gray-100 dark:border-slate-700 overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in duration-150">
+
+                    <!-- Modal Header -->
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-700">
+                        <div class="flex items-center gap-2.5">
+                            <div class="h-8 w-8 rounded-lg bg-blue-50 dark:bg-slate-700 flex items-center justify-center text-[#062a81] dark:text-blue-400">
+                                <i class="bi" :class="isEditing ? 'bi-pencil-square' : 'bi-journal-plus'"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-bold text-gray-800 dark:text-white">
+                                    {{ isEditing ? 'Edit Assessment Marks' : 'Enter Assessment Marks' }}
+                                </h3>
+                                <p class="text-[11px] text-gray-400">
+                                    {{ selectedClass ? selectedClass.name : '' }} · {{ selectedTerm ? selectedTerm.name : '' }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <button type="button"
+                                @@click="closeModal"
+                                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg">
+                            <i class="bi bi-x-lg text-sm"></i>
+                        </button>
+                    </div>
+
+                    <!-- Modal Body / Score Sheet -->
+                    <form  class="p-6 space-y-5 overflow-y-auto flex-1">
+                        <!-- Assessment Parameters -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div>
+                                <label class="label">Assessment Type</label>
+                                <select v-model="draft.type"
+                                        @@change="onDraftTypeOrSubjectChange"
+                                        :disabled="isEditing"
+                                        required
+                                        class="input-control">
+                                    <option v-for="t in assessmentTypes" :key="t.id" :value="t.id">{{ t.name }}</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="label">Subject</label>
+                                <select v-model="draft.subjectId"
+                                        @@change="onDraftTypeOrSubjectChange"
+                                        :disabled="isEditing"
+                                        required
+                                        class="input-control">
+                                    <option value="" disabled>Select Subject</option>
+                                    <option v-for="s in availableSubjects" :key="s.id" :value="s.id">{{ s.name }}</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="label">Assignment Number</label>
+                                <input type="number"
+                                       v-model.number="draft.assignmentNumber"
+                                       :disabled="draft.type === 'MidTerm' || draft.type === 'Exam'"
+                                       min="1"
+                                       required
+                                       class="input-control" />
+                            </div>
+
+                            <div>
+                                <label class="label">Overall Mark</label>
+                                <input type="number"
+                                       v-model.number="draft.overallMark"
+                                       min="1"
+                                       step="any"
+                                       required
+                                       class="input-control" />
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="label">Assigned Date</label>
+                                <input type="date"
+                                       v-model="draft.assignedDate"
+                                       required
+                                       class="input-control" />
+                            </div>
+
+                            <div class="flex items-center gap-4 sm:col-span-2 pt-6">
+                                <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-gray-700 dark:text-gray-200">
+                                    <input type="checkbox" v-model="draft.isRawMark" class="rounded text-[#062a81]" />
+                                    <span>Raw Mark</span>
+                                </label>
+
+                                <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-gray-700 dark:text-gray-200">
+                                    <input type="checkbox" v-model="draft.isPercentage" class="rounded text-[#062a81]" />
+                                    <span>Percentage (%)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Warning banner if any mark exceeds overallMark -->
+                        <div v-if="hasExceedingMarks"
+                             class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300 border border-red-200 dark:border-red-800 text-xs">
+                            <i class="bi bi-exclamation-octagon-fill text-red-600 text-sm"></i>
+                            <span>One or more student marks exceed the maximum overall mark of <strong>{{ draft.overallMark }}</strong>. Highlighted in red below.</span>
+                        </div>
+
+                        <!-- Student Score Sheet Table -->
+                        <div class="border-t border-gray-100 dark:border-slate-700 pt-4">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-2.5 flex items-center justify-between">
+                                <span>Student Scores (Out of {{ draft.overallMark }})</span>
+                                <span class="font-normal text-gray-400 text-[11px]">{{ (draft.details || []).length }} students</span>
+                            </h4>
+
+                            <div class="rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden max-h-72 overflow-y-auto">
+                                <table class="min-w-full text-xs divide-y divide-gray-100 dark:divide-slate-700">
+                                    <thead class="bg-gray-50 dark:bg-slate-700/50 sticky top-0 uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                        <tr>
+                                            <th class="px-4 py-2.5 text-left font-semibold w-12">#</th>
+                                            <th class="px-4 py-2.5 text-left font-semibold w-32">Student ID</th>
+                                            <th class="px-4 py-2.5 text-left font-semibold">Student Name</th>
+                                            <th class="px-4 py-2.5 text-right font-semibold w-40">Marks</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
+                                        <tr v-for="(st, sIdx) in draft.details"
+                                            :key="st.id || sIdx"
+                                            :class="{ 'mark-exceeded-row': isMarkExceeding(st.marks) }"
+                                            class="hover:bg-gray-50 dark:hover:bg-slate-700/40 transition">
+                                            <td class="px-4 py-2 text-gray-400">{{ sIdx + 1 }}</td>
+                                            <td class="px-4 py-2 font-mono text-gray-600 dark:text-gray-300">{{ st.studentIdentifier || '—' }}</td>
+                                            <td class="px-4 py-2 font-medium text-gray-800 dark:text-white">
+                                                <div class="flex items-center gap-1.5">
+                                                    <span>{{ st.studentName }}</span>
+                                                    <span v-if="isMarkExceeding(st.marks)"
+                                                          class="inline-flex items-center gap-0.5 text-[10px] font-bold text-red-600 dark:text-red-400"
+                                                          title="Mark exceeds overall maximum">
+                                                        <i class="bi bi-exclamation-circle-fill"></i> Exceeds Max
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-2 text-right">
+                                                <input type="number"
+                                                       v-model.number="st.marks"
+                                                       min="0"
+                                                       step="any"
+                                                       required
+                                                       :class="{ 'mark-exceeded-input': isMarkExceeding(st.marks) }"
+                                                       class="input-control text-right font-semibold"
+                                                       style="width: 100px; display: inline-block; padding-top: 0.25rem; padding-bottom: 0.25rem;" />
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Modal Actions -->
+                        <div class="pt-3 border-t border-gray-100 dark:border-slate-700 flex items-center justify-end gap-2.5">
+                            <button type="button"
+                                    @@click="closeModal"
+                                    class="rounded-lg px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-700 transition">
+                                Cancel
+                            </button>
+                            <button @@click="saveResult"
+                                    :disabled="saving || hasExceedingMarks"
+                                    class="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold text-white bg-[#062a81] hover:bg-blue-900 shadow-sm transition disabled:opacity-50">
+                                <i v-if="saving" class="bi bi-arrow-repeat animate-spin"></i>
+                                <i v-else class="bi bi-check2"></i>
+                                <span>{{ isEditing ? 'Update Results' : 'Save Results' }}</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div><!-- /#app -->
+    </div><!-- /.card -->
+</div><!-- /.content -->
+
+<script src="~/js/school-manager/assignment-results.js"></script>

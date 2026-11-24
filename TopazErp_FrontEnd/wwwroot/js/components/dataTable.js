@@ -12,6 +12,11 @@
     const esc = (v) => (v === null || v === undefined ? '' : String(v))
         .replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
     const DASH = '<span class="text-slate-300 dark:text-slate-600">—</span>';
+    const EMPTY_GUID = '00000000-0000-0000-0000-000000000000';
+    const isEmptyGuid = (value) => {
+        const raw = value && typeof value === 'object' ? (value.id ?? value.Id ?? value.value) : value;
+        return typeof raw === 'string' && raw.trim().toLowerCase() === EMPTY_GUID;
+    };
     const getIn = (obj, path) => String(path).split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
     const setIn = (obj, path, val) => {
         const parts = String(path).split('.'); const last = parts.pop(); let t = obj;
@@ -116,8 +121,15 @@
             return Object.assign({}, option, { value, label });
         });
     };
-    const findOption = (col, value, context) => optionList(col, context).find((o) => String(o.value) === String(value));
-    const optionLabel = (col, value, context) => { const o = findOption(col, value, context); return o ? (o.label ?? o.value) : value; };
+    const findOption = (col, value, context) => optionList(col, context).find((o) =>
+        String(o.value) === String(value) || (isEmptyGuid(o.value) && isEmptyGuid(value))
+    );
+    const optionLabel = (col, value, context) => {
+        const option = findOption(col, value, context);
+        const label = option ? (option.label ?? option.value) : value;
+        const emptyLabel = isNil(label) || (typeof label === 'string' && label.trim() === '') || isEmptyGuid(label);
+        return isEmptyGuid(value) && emptyLabel ? '' : label;
+    };
     const colorOf = (col, value, context) => {
         const o = findOption(col, value, context);
         if (o && o.color) return o.color;

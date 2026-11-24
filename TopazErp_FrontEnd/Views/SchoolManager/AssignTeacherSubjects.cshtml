@@ -1,0 +1,83 @@
+@{
+    ViewBag.Title = "Teacher Subjects";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+
+<div class="content">
+    <div class="mb-4 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-1.5 dark:text-gray-400">
+            <span>School Manager - Academic Setups</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium dark:text-blue-400">Teacher Subjects</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="page-title">
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-white">
+                    Teacher Subjects
+                </h2>
+            </div>
+          
+        </div>
+    </div>
+
+    <div class="card" data-card-title="Teacher Subjects">
+        <div id="app">
+
+            <!-- Filter row with Academic Year & Refresh -->
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-5 pb-4 border-b border-gray-100 dark:border-slate-700">
+                <div class="w-full sm:w-72">
+                    <label class="label">Filter by Academic Year</label>
+                    <w-select v-model="academicYearId"
+                              :options="academicYearOptions"
+                              display-key="name"
+                              value-key="id"
+                              placeholder="All Academic Years">
+                    </w-select>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button type="button"
+                            class="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-200 transition"
+                            @@click="getSetupData"
+                            :disabled="isShimmerLoading">
+                        <i class="bi bi-arrow-clockwise" :class="{ 'animate-spin': isShimmerLoading && setupDone }"></i>
+                        <span>Refresh</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Initial Loading -->
+            <div v-if="!setupDone" class="py-20 text-center text-gray-400">
+                <i class="bi bi-arrow-repeat animate-spin text-3xl inline-block mb-2 text-[#062a81]"></i>
+                <p class="text-sm">Loading teacher subjects…</p>
+            </div>
+
+            <!-- Data Table View -->
+            <template v-else>
+                <data-grid title="Teacher Subjects"
+                           :columns="columns"
+                           :data="filteredTeacherSubjects"
+                           :theme="theme"
+                           row-id="id"
+                           label-key="subjectName"
+                           item-label="Assignment"
+                           item-label-plural="Assignments"
+                           add-label="Assign"
+                           :page-size="10"
+                           :selectable="true"
+                           :actions="true"
+                           :loading="isShimmerLoading"
+                           density="compact"
+                           @@create="onCreate"
+                           @@update="onUpdate"
+                           @@delete="onDelete"
+                           group-header="staffName">
+                </data-grid>
+            </template>
+
+        </div><!-- /#app -->
+    </div><!-- /.card -->
+</div><!-- /.content -->
+
+<script src="~/js/school-manager/teacher-subjects.js"></script>

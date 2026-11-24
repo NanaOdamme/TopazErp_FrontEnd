@@ -1,0 +1,168 @@
+@{
+    ViewBag.Title = "Class Level Percentage";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2 dark:text-gray-400">
+            <span>School Manager - Data Entries</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium dark:text-blue-400">Class Level Percentage</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="page-title">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
+                    Class Level Percentage
+                </h2>
+            </div>
+            <span class="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-400">
+                <i class="bi bi-shield-check"></i> Exam % + Class % = 100%
+            </span>
+        </div>
+    </div>
+
+    <div class="card" data-card-title="Class Level Percentage">
+        <div id="app" style="height: 1000px;">
+
+            <!-- header row -->
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-5 border-b border-gray-200 dark:border-slate-700 pb-4">
+                <p class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                    @*<i class="bi bi-percent text-blue-600 dark:text-blue-400"></i>
+                    One record per academic year. Changes are saved automatically.*@
+                </p>
+                <button type="button"
+                        class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800 disabled:opacity-50"
+                        @@click="getSetupData"
+                        :disabled="isShimmerLoading">
+                    <i class="bi bi-arrow-clockwise" :class="{ 'animate-spin': isShimmerLoading }"></i>
+                    Refresh
+                </button>
+            </div>
+
+            <!-- scope: academic year -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <w-select v-model="academicYearId"
+                          :options="academicYears"
+                          display-key="name"
+                          value-key="id"
+                          label="Academic Year:"
+                          required>
+                </w-select>
+            </div>
+
+            <template v-if="yearSelected">
+
+                <!-- editing vs creating -->
+                <div v-if="existingRecord"
+                     class="mb-4 flex items-start justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 dark:border-amber-800 dark:bg-amber-900/20">
+                    <div class="flex items-start gap-2 text-sm text-amber-900 dark:text-amber-200">
+                        <i class="bi bi-pencil-square mt-0.5"></i>
+                        <div>
+                            <p class="font-semibold">Editing the record for “{{ nameOf(academicYears, academicYearId) }}”.</p>
+                            <p class="text-xs mt-0.5 text-amber-800 dark:text-amber-300">{{ lines.length }} level line(s).</p>
+                        </div>
+                    </div>
+                    <button type="button"
+                            class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-red-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-900 dark:bg-slate-800 dark:text-red-400 dark:hover:bg-red-900/30"
+                            @@click="deleteExistingRecord"
+                            title="Delete this record">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                </div>
+
+                <div v-else
+                     class="mb-4 flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-200">
+                    <i class="bi bi-plus-circle mt-0.5"></i>
+                    <div>
+                        <p class="font-semibold">No record yet for “{{ nameOf(academicYears, academicYearId) }}”.</p>
+                        @*<p class="text-xs mt-0.5 text-emerald-800 dark:text-emerald-300">The record will be created automatically when you add the first line.</p>*@
+                    </div>
+                </div>
+
+                <!-- add line picker -->
+                <div class="rounded-lg border border-gray-200 dark:border-slate-700 p-3 mb-4">
+                    <p class="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">
+                        <i class="bi bi-plus-square text-blue-600 dark:text-blue-400"></i> Add level line
+                    </p>
+                    <p v-if="levels.length && remainingLevels.length === 0" class="text-[11px] text-amber-700 dark:text-amber-400 mt-1.5 flex items-center gap-1.5">
+                        <i class="bi bi-info-circle"></i> Every level already has a line for this year.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                        <div class="md:col-span-5">
+                            <w-select v-model="draftLevelId"
+                                      :options="remainingLevels"
+                                      display-key="name"
+                                      value-key="id"
+                                      label="Level:"
+                                      required>
+                            </w-select>
+                           
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="label" for="examPct">Exam %:</label>
+                            <input id="examPct" type="number" class="input-control" min="0" max="100" step="any"
+                                   placeholder="50" v-model.number="draftExam" />
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="label" for="classPct">Class %:</label>
+                            <input id="classPct" type="number" class="input-control" min="0" max="100" step="any"
+                                   placeholder="50" v-model.number="draftClass" />
+                        </div>
+                        <div class="md:col-span-3">
+                            <button type="button"
+                                    class="w-full inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-blue-700 bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                    :disabled="isShimmerLoading || !draftLevelId || draftExam === '' || draftClass === '' || !draftSumOk"
+                                    @@click="addLine">
+                                <i class="bi bi-plus-circle"></i> Add Line
+                            </button>
+                        </div>
+                    </div>
+                    @*<p class="mt-2 flex items-center gap-1.5 text-xs"
+                       :class="draftSumOk || (draftExam === '' && draftClass === '') ? 'text-gray-400 dark:text-gray-500' : 'text-red-600 dark:text-red-400'">
+                        <i class="bi" :class="draftSumOk ? 'bi-check-circle-fill text-emerald-600 dark:text-emerald-400' : 'bi-exclamation-circle'"></i>
+                        <span v-if="draftExam !== '' && draftClass !== ''">
+                            Exam % + Class % = <strong>{{ Number(draftExam || 0) + Number(draftClass || 0) }}</strong> — must be exactly 100.
+                        </span>
+                        <span v-else>Exam % + Class % must add up to exactly 100 (e.g. 40 + 60, 50 + 50).</span>
+                    </p>*@
+                </div>
+
+                <!-- lines grid -->
+                <data-grid title="Level Percentages"
+                           :columns="percentageColumns"
+                           :data="lines"
+                           :theme="theme"
+                           row-id="id"
+                           label-key="levelName"
+                           item-label="Line"
+                           item-label-plural="Lines"
+                           :page-size="10"
+                           :selectable="true"
+                           :actions="true"
+                           :loading="isShimmerLoading"
+                           :stripes="true"
+                           density="compact"
+                           :allow-add="false"
+                           @@create="onCreate"
+                           @@update="onUpdate"
+                           @@delete="onDelete">
+                </data-grid>
+
+                <p class="mt-2 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+                    <i class="bi bi-info-circle"></i>
+                    Edit Exam % / Class % directly in the grid — a change that breaks the 100 total is rejected and the grid reverts. Deleting the last line removes the empty record.
+                </p>
+            </template>
+
+            <div v-else class="py-14 text-center text-gray-400 dark:text-gray-500">
+                <i class="bi bi-arrow-up-circle block text-2xl mb-2"></i>
+                <p class="text-sm">Choose an academic year to view or set the level percentages.</p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="~/js/school-manager/class-level-percentages.js"></script>
