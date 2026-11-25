@@ -61,7 +61,14 @@ const app = Vue.createApp({
                     options: this.accountHeadHierarchyList,
                     required: false,
                     searchable: true,
-                    width: 260
+                    width: 260,
+                    onChange: (val, values) => {
+                        // Auto-resolve Account Type from the selected parent
+                        const parent = this.accountHeadList.find(a => a.id === val);
+                        if (parent && parent.standardAccountType) {
+                            values.standardAccountType = Number(parent.standardAccountType);
+                        }
+                    }
                 },
                 {
                     key: 'parentName',

@@ -1,12 +1,14 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace TopazErp_FrontEnd.Controllers;
 
+[Authorize]
 public class ManageController: Controller
 {
     public IActionResult Profile()
     {
-            
+                
         return View();
     }
     public IActionResult AuditTrail()

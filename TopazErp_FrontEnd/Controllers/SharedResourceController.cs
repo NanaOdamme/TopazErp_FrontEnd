@@ -266,18 +266,12 @@ public class SharedResourceController: Controller
 
         //customers...
 
-        public async Task<ActionResult> GetCustomers(string query, int pageNo = 1, int pageSize = 500)
+        public async Task<ActionResult> GetCustomers()
         {
-            var result = await _topazErpApi.GetCustomers(pageNo, pageSize, query);
+            var result = await _topazErpApi.GetCustomers();
             return Json(result);
         }
-
-        // employees (payroll lookup used by GL employee payment vouchers)
-        public async Task<ActionResult> GetEmployees(string query, int pageNo = 1, int pageSize = 500)
-        {
-            var result = await _topazErpApi.GetEmployeeBioData(pageNo, pageSize, query);
-            return Json(result);
-        }
+        
 
         public async Task<ActionResult> GetCustomersByGroup([FromQuery] Guid groupId)
         {

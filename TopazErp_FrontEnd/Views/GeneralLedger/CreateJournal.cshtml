@@ -3,80 +3,135 @@
     Layout = "~/Views/Shared/_adminLedgerLayout.cshtml";
 }
 
-<div class="content">
+<div class="content" id="app">
     <!-- ── Page Header ───────────────────────────────────────────── -->
     <div class="mb-6 content-header">
         <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
-            <span>GL - Journal</span>
+            <a href="/GeneralLedger/Journal" class="hover:text-blue-600 transition">GL - Journal</a>
             <i class="bi bi-chevron-right text-xs"></i>
-            <span class="font-medium text-blue-600">Create Journal Entry</span>
+            <span class="font-medium text-blue-600">{{ isEditMode ? 'Edit Journal Entry' : 'Create Journal Entry' }}</span>
         </div>
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
-                <h2 class="text-2xl font-semibold text-gray-800">Create Journal Entry</h2>
-                <p class="text-sm text-gray-500 mt-0.5">Record debit and credit transactions for the general ledger.</p>
+                <h2 class="text-2xl font-semibold text-gray-800">{{ isEditMode ? 'Edit Journal Entry' : 'Create Journal Entry' }}</h2>
+                <p class="text-sm text-gray-500 mt-0.5">
+                    {{ isEditMode ? 'Update debit and credit transactions for the general ledger.' : 'Record debit and credit transactions for the general ledger.' }}
+                </p>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="/GeneralLedger/Journal"
+                   class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition">
+                    <i class="bi bi-arrow-left"></i> Back to Journals
+                </a>
             </div>
         </div>
     </div>
 
-    <div id="app">
+    <!-- ── Loading Overlay ─────────────────────────────────────── -->
+    <div v-if="isShimmerLoading" class="card flex flex-col items-center justify-center py-24 bg-white rounded-xl border border-gray-200 mb-4 shadow-xs gap-4">
+        <!-- Circular spinner -->
+        <div class="relative flex items-center justify-center" style="width:56px;height:56px">
+            <svg class="animate-spin" style="width:56px;height:56px" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Track ring -->
+                <circle cx="28" cy="28" r="22" stroke="#E5E7EB" stroke-width="5"/>
+                <!-- Spinning arc -->
+                <circle cx="28" cy="28" r="22"
+                        stroke="#2563EB"
+                        stroke-width="5"
+                        stroke-linecap="round"
+                        stroke-dasharray="100 38.8"
+                        stroke-dashoffset="0"
+                        transform="rotate(-90 28 28)"/>
+            </svg>
+            <!-- Inner dot -->
+            <span class="absolute inline-block rounded-full bg-blue-600" style="width:8px;height:8px"></span>
+        </div>
+        <div class="flex flex-col items-center gap-1">
+            <span class="text-sm font-semibold text-gray-700">{{ isEditMode ? 'Loading journal details…' : 'Initialising journal…' }}</span>
+            <span class="text-xs text-gray-400">Please wait</span>
+        </div>
+    </div>
 
-         <!-- ── Header Card ─────────────────────────────────────── -->
-            <div class="card mb-4 p-5">
-                <div class="flex flex-col sm:flex-row flex-wrap lg:flex-nowrap items-end gap-4">
+    <!-- ── Main Content (hidden while loading) ───────────────── -->
+    <template v-if="!isShimmerLoading">
 
-                    <!-- Batch No -->
-                    <div class="gl-field w-full sm:w-36 lg:w-40 flex-shrink-0">
-                        <label for="batchNumber">Batch No#</label>
-                        <input id="batchNumber" v-model="batchNumber" type="text"
-                               class="gl-input" placeholder="e.g. JNL-0001" />
-                    </div>
+    <!-- ── Header Card ─────────────────────────────────────── -->
+    <div class="card mb-4 p-5">
+        <div class="flex flex-col sm:flex-row flex-wrap lg:flex-nowrap items-end gap-4">
 
-                    <!-- Batch Date -->
-                    <div class="gl-field w-full sm:w-40 lg:w-44 flex-shrink-0">
-                        <label for="batchDate">
-                            Batch Date <span class="text-red-500">*</span>
-                        </label>
-                        <input id="batchDate" v-model="batchDate" type="date"
-                               class="gl-input" :class="{ 'border-red-400': errors.batchDate }" />
-                        <p v-if="errors.batchDate" class="mt-1 text-xs text-red-500">{{ errors.batchDate }}</p>
-                    </div>
-
-                    <!-- OU (Cost Center) - Expanded width -->
-                    <div class="gl-field w-full sm:flex-1 sm:min-w-[260px]">
-                        <label for="ouId">OU (Cost Center)</label>
-                        <select id="ouId" v-model="ouId" class="gl-input" @@change="onHeaderOuChange">
-                            <option value="">— Select OU —</option>
-                            <option v-for="cc in costCenterHierarchyList" :key="cc.id" :value="cc.id">
-                                {{ cc.name }}
-                            </option>
-                        </select>
-                    </div>
-
-                    <!-- Multi-Currency Checkbox -->
-                    <div class="flex items-center h-[38px] px-2 flex-shrink-0">
-                        <label class="inline-flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-gray-700 hover:text-gray-900 m-0">
-                            <input type="checkbox"
-                                   id="isMultiCurrency"
-                                   v-model="isMultiCurrency"
-                                   class="h-4 w-4 rounded border-gray-300 accent-blue-600 cursor-pointer focus:ring-0" />
-                            <span class="whitespace-nowrap">Multi-Currency</span>
-                        </label>
-                    </div>
-
-                    <!-- Save Button (compact width) -->
-                    <div class="w-full sm:w-auto flex-shrink-0">
-                        <button type="button"
-                                :disabled="isLoading"
-                                @@click="saveJournal()"
-                                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap h-[38px]">
-                            <i class="bi bi-floppy"></i>
-                            <span>Save Journal</span>
-                            <span v-if="isLoading" class="spinner-border" role="status" aria-hidden="true" style="width:14px;height:14px"></span>
-                        </button>
-                    </div>
-                </div>
+            <!-- Batch No -->
+            <div class="gl-field w-full sm:w-36 lg:w-40 flex-shrink-0">
+                <label for="batchNumber">Batch No#</label>
+                <input id="batchNumber" v-model="batchNumber" type="text"
+                       :readonly="isPosted"
+                       class="gl-input" placeholder="e.g. JNL-0001" />
             </div>
+
+            <!-- Batch Date -->
+            <div class="gl-field w-full sm:w-40 lg:w-44 flex-shrink-0">
+                <label for="batchDate">
+                    Batch Date <span class="text-red-500">*</span>
+                </label>
+                <input id="batchDate" v-model="batchDate" type="date"
+                       :disabled="isPosted"
+                       class="gl-input" :class="{ 'border-red-400': errors.batchDate }" />
+                <p v-if="errors.batchDate" class="mt-1 text-xs text-red-500">{{ errors.batchDate }}</p>
+            </div>
+
+            <!-- OU (Cost Center) - Expanded width -->
+            <div class="gl-field w-full sm:flex-1 sm:min-w-[260px]">
+                <label for="ouId">OU (Cost Center)</label>
+                <select id="ouId" v-model="ouId" class="gl-input" @@change="onHeaderOuChange" :disabled="isPosted">
+                    <option value="">— Select OU —</option>
+                    <option v-for="cc in costCenterHierarchyList" :key="cc.id" :value="cc.id">
+                        {{ cc.name }}
+                    </option>
+                </select>
+            </div>
+
+            <!-- Multi-Currency Checkbox -->
+            <div class="flex items-center h-[38px] px-2 flex-shrink-0">
+                <label class="inline-flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-gray-700 hover:text-gray-900 m-0">
+                    <input type="checkbox"
+                           id="isMultiCurrency"
+                           v-model="isMultiCurrency"
+                           :disabled="isPosted"
+                           class="h-4 w-4 rounded border-gray-300 accent-blue-600 cursor-pointer focus:ring-0" />
+                    <span class="whitespace-nowrap">Multi-Currency</span>
+                </label>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
+                <!-- Posted Badge -->
+                <span v-if="isPosted"
+                      class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 h-[38px]">
+                    <i class="bi bi-check-circle-fill"></i> Posted
+                </span>
+
+                <!-- Post Button (if edit mode and not posted) -->
+                <button v-if="isEditMode && journalId && !isPosted"
+                        type="button"
+                        :disabled="isLoading"
+                        @@click="postJournal"
+                        class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 transition disabled:opacity-50 h-[38px] whitespace-nowrap">
+                    <i class="bi bi-check2-circle"></i>
+                    <span>Post</span>
+                </button>
+
+                <!-- Save / Update Button -->
+                <button v-if="!isPosted"
+                        type="button"
+                        :disabled="isLoading"
+                        @@click="saveJournal()"
+                        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap h-[38px]">
+                    <i class="bi bi-floppy"></i>
+                    <span>{{ isEditMode ? 'Update Journal' : 'Save Journal' }}</span>
+                    <span v-if="isLoading" class="spinner-border" role="status" aria-hidden="true" style="width:14px;height:14px"></span>
+                </button>
+            </div>
+        </div>
+    </div>
 
             <!-- ── Balance Summary Bar ─────────────────────────────── -->
             <div class="balance-bar mb-3" :class="isBalanced ? 'balanced' : 'unbalanced'">
@@ -110,11 +165,11 @@
             <div class="card">
                 <!-- Toolbar -->
                 <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-100">
-                    <button type="button" @@click="addLine"
+                    <button type="button" v-if="!isPosted" @@click="addLine"
                             class="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 text-xs font-semibold hover:bg-blue-100 transition">
                         <i class="bi bi-plus-lg"></i> Add Row
                     </button>
-                    <button type="button" v-if="journalEntryList.length > 2" @@click="removeLastLine"
+                    <button type="button" v-if="!isPosted && journalEntryList.length > 2" @@click="removeLastLine"
                             class="inline-flex items-center gap-1.5 rounded-lg bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 text-xs font-semibold hover:bg-red-100 transition">
                         <i class="bi bi-dash-lg"></i> Remove Last
                     </button>
@@ -137,7 +192,7 @@
                             <col style="width:120px">  <!-- Local Credit -->
                             <col v-if="isMultiCurrency" style="width:120px"> <!-- Fgn Debit -->
                             <col v-if="isMultiCurrency" style="width:120px"> <!-- Fgn Credit -->
-                            <col style="width:160px">  <!-- Recipient -->
+                            <col style="width:150px">  <!-- Transaction Date -->
                             <col style="width:130px">  <!-- Cheque No -->
                             <col style="width:60px">   <!-- Action -->
                         </colgroup>
@@ -154,7 +209,7 @@
                                 <th>{{ isMultiCurrency ? 'Local Credit' : 'Credit' }}</th>
                                 <th v-if="isMultiCurrency">Fgn. Debit</th>
                                 <th v-if="isMultiCurrency">Fgn. Credit</th>
-                                <th>Recipient</th>
+                                <th>Transaction Date</th>
                                 <th>Cheque No.</th>
                                 <th></th>
                             </tr>
@@ -166,12 +221,16 @@
 
                                 <!-- Ref No -->
                                 <td>
-                                    <input type="text" class="jl-input" v-model="line.referenceNumber" />
+                                    <input type="text" class="jl-input" v-model="line.referenceNumber"
+                                           @@input="onLineFieldInput(index, 'referenceNumber')"
+                                           @@change="onLineFieldInput(index, 'referenceNumber')"
+                                           :disabled="isPosted" />
                                 </td>
 
                                 <!-- GL Account -->
                                 <td>
                                     <select class="jl-input" v-model="line.accountId"
+                                            :disabled="isPosted"
                                             @@change="onAccountChange(line.accountId, index)">
                                         <option value="">Select Account</option>
                                         <option v-for="a in accountsList" :key="a.id" :value="a.id">
@@ -182,7 +241,9 @@
 
                                 <!-- OU -->
                                 <td>
-                                    <select class="jl-input" v-model="line.ouId">
+                                    <select class="jl-input" v-model="line.ouId"
+                                            @@change="onLineFieldInput(index, 'ouId')"
+                                            :disabled="isPosted">
                                         <option value="">Select OU</option>
                                         <option v-for="cc in costCenterHierarchyList" :key="cc.id" :value="cc.id">
                                             {{ cc.name }}
@@ -207,14 +268,17 @@
 
                                 <!-- Description -->
                                 <td>
-                                    <input type="text" class="jl-input" v-model="line.description" />
+                                    <input type="text" class="jl-input" v-model="line.description"
+                                           @@input="onLineFieldInput(index, 'description')"
+                                           @@change="onLineFieldInput(index, 'description')"
+                                           :disabled="isPosted" />
                                 </td>
 
                                 <!-- Local Debit -->
                                 <td>
                                     <input type="number" class="jl-input text-right"
                                            v-model.number="line.localDebit"
-                                           :disabled="isMultiCurrency && !isLocalFieldEnabled(index)"
+                                           :disabled="isPosted || (isMultiCurrency && !isLocalFieldEnabled(index))"
                                            min="0" step="0.01" />
                                 </td>
 
@@ -222,7 +286,7 @@
                                 <td>
                                     <input type="number" class="jl-input text-right"
                                            v-model.number="line.localCredit"
-                                           :disabled="isMultiCurrency && !isLocalFieldEnabled(index)"
+                                           :disabled="isPosted || (isMultiCurrency && !isLocalFieldEnabled(index))"
                                            min="0" step="0.01" />
                                 </td>
 
@@ -230,7 +294,7 @@
                                 <td v-if="isMultiCurrency">
                                     <input type="number" class="jl-input text-right"
                                            v-model.number="line.foreignDebit"
-                                           :disabled="!isForeignFieldEnabled(index)"
+                                           :disabled="isPosted || !isForeignFieldEnabled(index)"
                                            min="0" step="0.01" />
                                 </td>
 
@@ -238,28 +302,31 @@
                                 <td v-if="isMultiCurrency">
                                     <input type="number" class="jl-input text-right"
                                            v-model.number="line.foreignCredit"
-                                           :disabled="!isForeignFieldEnabled(index)"
+                                           :disabled="isPosted || !isForeignFieldEnabled(index)"
                                            min="0" step="0.01" />
                                 </td>
 
-                                <!-- Recipient -->
+                                <!-- Transaction Date -->
                                 <td>
-                                    <input type="text" class="jl-input" v-model="line.recipient" />
+                                    <input type="date" class="jl-input" v-model="line.transactionDate"
+                                           @@input="onLineFieldInput(index, 'transactionDate')"
+                                           @@change="onLineFieldInput(index, 'transactionDate')"
+                                           :disabled="isPosted" />
                                 </td>
 
                                 <!-- Cheque No -->
                                 <td>
-                                    <input type="text" class="jl-input" v-model="line.chequeNo" />
+                                    <input type="text" class="jl-input" v-model="line.chequeNo" :disabled="isPosted" />
                                 </td>
 
                                 <!-- Action -->
                                 <td class="text-center">
-                                    <button type="button" v-if="index >= 2" @@click="removeLine(index)"
+                                    <button type="button" v-if="journalEntryList.length > 2 && !isPosted" @@click="removeLine(index)"
                                             class="row-del-btn" title="Delete row">
                                         <i class="bi bi-trash3"></i>
                                     </button>
-                                    <span v-else class="text-slate-300 inline-flex items-center justify-center w-7 h-7" title="Default rows cannot be deleted">
-                                        <i class="bi bi-lock-fill text-xs"></i>
+                                    <span v-else class="text-slate-300 inline-flex items-center justify-center w-7 h-7" :title="isPosted ? 'Journal is posted' : 'Minimum 2 rows required'">
+                                        <i class="bi" :class="isPosted ? 'bi-lock-fill text-xs' : 'bi-dash-circle text-xs'"></i>
                                     </span>
                                 </td>
                             </tr>
@@ -278,9 +345,10 @@
                     </table>
                 </div>
             </div>
-
-         
     </div>
+
+    </template><!-- end v-if="!isShimmerLoading" -->
+
 </div>
 
 <style>
@@ -345,4 +413,7 @@
     .row-del-btn:hover { background: #c3ddf8; }
 </style>
 
+<script>
+    let journalId = '@(ViewBag.JournalId ?? "")';
+</script>
 <script src="~/js/gl/create-journal.js" asp-append-version="true"></script>

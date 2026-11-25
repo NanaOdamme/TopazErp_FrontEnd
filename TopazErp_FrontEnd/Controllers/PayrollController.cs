@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TopazErp_FrontEnd.Services;
 
 namespace TopazErp_FrontEnd.Controllers;
 
+[Authorize]
 public class PayrollController : Controller
 {
     private readonly ITopazErpApi _topazErpApi;
@@ -20,9 +22,9 @@ public class PayrollController : Controller
     
     //api
     //employee bio data
-    public async Task<IActionResult> GetEmployeesBioData(int pageNo, int pageSize, string query)
+    public async Task<IActionResult> GetEmployees()
     {
-        var results = await _topazErpApi.GetEmployeeBioData(pageNo, pageSize, query);
+        var results = await _topazErpApi.GetEmployeeBioData();
         return Json(results);
     }
 
@@ -45,9 +47,9 @@ public class PayrollController : Controller
     }
     
     // employee ssnit
-    public async Task<IActionResult> GetAllEmployeesSsnitInfo(int pageNo, int pageSize, string query)
+    public async Task<IActionResult> GetAllEmployeesSsnitInfo()
     {
-        var results = await _topazErpApi.GetEmployeeBioData(pageNo, pageSize, query);
+        var results = await _topazErpApi.GetEmployeeBioData();
         return Json(results);
     }
     
@@ -76,9 +78,9 @@ public class PayrollController : Controller
     }
     
     // employee salary info
-    public async Task<IActionResult> GetAllEmployeesSalaryInfo(int pageNo, int pageSize, string query)
+    public async Task<IActionResult> GetAllEmployeesSalaryInfo()
     {
-        var results = await _topazErpApi.GetEmployeeBioData(pageNo, pageSize, query);
+        var results = await _topazErpApi.GetEmployeeBioData();
         return Json(results);
     }
     

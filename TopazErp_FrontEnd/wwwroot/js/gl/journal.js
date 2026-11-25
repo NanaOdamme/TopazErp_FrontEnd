@@ -9,8 +9,10 @@ const app = Vue.createApp({
             journalList: [],
 
             // Filter state
-            startDate: new Date(new Date().setMonth(new Date().getMonth() - 3)).toISOString().split('T')[0],
-            endDate: new Date().toISOString().split('T')[0],
+            useDateFilter: false,
+            activeDatePreset: 'all',  // 'today' | 'month' | '3months' | 'year' | 'custom' | 'all'
+            startDate: '',
+            endDate: '',
             postingStatus: 'all',    // 'all' | 'unposted' | 'posted'
             currencyFilter: 'all',   // 'all' | 'local' | 'multi'
             searchQuery: '',
@@ -187,8 +189,8 @@ const app = Vue.createApp({
                 const payload = {
                     pageNo: 1,
                     pageSize: 5000,
-                    startDate: this.startDate || null,
-                    endDate: this.endDate || null,
+                    startDate: this.useDateFilter && this.startDate ? this.startDate : null,
+                    endDate: this.useDateFilter && this.endDate ? this.endDate : null,
                     isPosted: this.postingStatus === 'posted'
                         ? true
                         : this.postingStatus === 'unposted'
@@ -272,8 +274,67 @@ const app = Vue.createApp({
             }
         },
 
-        /* ── Date Preset Helpers ───────────────────────────────── */
+        /* ── Date Filter & Preset Helpers ──────────────────────── */
+        toggleDateFilter() {
+            this.useDateFilter = !this.useDateFilter;
+            this.onDateToggleChange();
+        },
+
+        onDateToggleChange() {
+            if (this.useDateFilter) {
+                if (!this.startDate || !this.endDate) {
+                    this.setQuickDate('3months');
+                } else {
+                    if (!this.activeDatePreset || this.activeDatePreset === 'all') {
+                        this.activeDatePreset = 'custom';
+                    }
+                    this.getJournalTransactions();
+                }
+            } else {
+                this.disableDateFilter();
+            }
+        },
+
+        onDateInputChange() {
+            if (this.startDate || this.endDate) {
+                this.useDateFilter = true;
+                this.activeDatePreset = 'custom';
+                this.getJournalTransactions();
+            }
+        },
+
+        applyDateFilter() {
+            if (!this.startDate && !this.endDate) {
+                this.toastHandler('info', 'Please select a start date or end date to filter.');
+                return;
+            }
+            this.useDateFilter = true;
+            this.activeDatePreset = 'custom';
+            this.getJournalTransactions();
+        },
+
+        enableDateFilter(preset = '3months') {
+            this.useDateFilter = true;
+            this.setQuickDate(preset);
+        },
+
+        disableDateFilter() {
+            this.useDateFilter = false;
+            this.activeDatePreset = 'all';
+            this.startDate = '';
+            this.endDate = '';
+            this.getJournalTransactions();
+        },
+
         setQuickDate(preset) {
+            if (preset === 'all') {
+                this.disableDateFilter();
+                return;
+            }
+
+            this.useDateFilter = true;
+            this.activeDatePreset = preset;
+
             const today = new Date();
             const pad = (n) => String(n).padStart(2, '0');
             const fmt = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -294,11 +355,6 @@ const app = Vue.createApp({
                 const firstDay = new Date(today.getFullYear(), 0, 1);
                 this.startDate = fmt(firstDay);
                 this.endDate = fmt(today);
-            } else if (preset === 'all') {
-                const d = new Date();
-                d.setFullYear(d.getFullYear() - 3);
-                this.startDate = fmt(d);
-                this.endDate = fmt(today);
             }
 
             this.getJournalTransactions();
@@ -306,10 +362,10 @@ const app = Vue.createApp({
 
         /* ── Reset Filters ─────────────────────────────────────── */
         resetFilters() {
-            const d = new Date();
-            d.setMonth(d.getMonth() - 3);
-            this.startDate = d.toISOString().split('T')[0];
-            this.endDate = new Date().toISOString().split('T')[0];
+            this.useDateFilter = false;
+            this.activeDatePreset = 'all';
+            this.startDate = '';
+            this.endDate = '';
             this.postingStatus = 'all';
             this.currencyFilter = 'all';
             this.searchQuery = '';
@@ -339,6 +395,12 @@ const app = Vue.createApp({
 
         clearSelection() {
             this.selectedIds = [];
+        },
+
+        /* ── Edit Action ────────────────────────────────────────── */
+        editJournal(journal) {
+            if (!journal?.id) return;
+            window.location.href = `/GeneralLedger/CreateJournal?id=${encodeURIComponent(journal.id)}`;
         },
 
         /* ── Single Voucher Detail Modal ───────────────────────── */
@@ -382,10 +444,7 @@ const app = Vue.createApp({
                 }
 
                 this.toastHandler('success', `Batch "${journal.batchNumber}" posted successfully.`);
-                journal.isPosted = true;
-                if (this.selectedJournal && this.selectedJournal.id === journal.id) {
-                    this.selectedJournal.isPosted = true;
-                }
+                
                 this.getJournalTransactions();
             } catch (err) {
                 console.error('Error posting journal:', err);

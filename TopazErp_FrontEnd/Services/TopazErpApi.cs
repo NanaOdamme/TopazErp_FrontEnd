@@ -587,16 +587,11 @@ public partial class TopazErpApi: ITopazErpApi
     }
     
     //Customers
-    public async Task<CustomerResponse> GetCustomers(int pageNo, int pageSize, string query)
+    public async Task<CustomerResponse> GetCustomers()
     {
         var authToken = _claimsHelper.GetAuthToken();
         
-        string url = $"{_apiBaseUrl}Customer/ListAll?pageNo={pageNo}&pageSize={pageSize}";
-
-        if (!string.IsNullOrEmpty(query))
-        {
-            url += $"&query={query}";
-        }
+        string url = $"{_apiBaseUrl}Customer/ListAll";
         
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");
@@ -1839,18 +1834,12 @@ public partial class TopazErpApi: ITopazErpApi
     
     // employee bio data...
     
-    public async Task<EmployeeBioDataResponse> GetEmployeeBioData(int pageNo, int pageSize, string query)
+    public async Task<EmployeeBioDataResponse> GetEmployeeBioData()
     {
         var authToken = _claimsHelper.GetAuthToken();
         
-        string url = $"{_apiBaseUrl}EmployeeBioData/ListAll?pageNo={pageNo}&pageSize={pageSize}";
+        string url = $"{_apiBaseUrl}EmployeeBioData/ListAll";
 
-        //if query is not null
-        if (!string.IsNullOrEmpty(query))
-        {
-            url += $"&query={query}";
-        }
-        
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");
 
@@ -3097,6 +3086,27 @@ public partial class TopazErpApi: ITopazErpApi
 
         return new CoaDetailResponse { };
     }
+    
+    public async Task<CoaDetailResponse> GetBankGlAccounts()
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        
+        string url = $"{_apiBaseUrl}CoaDetail/ListBankGlAccounts";
+        
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<CoaDetailResponse>(json);
+        }
+
+        return new CoaDetailResponse { };
+    }
 
     public async  Task<CoaDetailResponse> CheckAccountNo(string accountNo)
     {
@@ -3394,20 +3404,16 @@ public partial class TopazErpApi: ITopazErpApi
     }
     
     //petty cash
-    public async Task<PettyCashResponse> GetPettyTransactions(int pageNo, int pageSize, string query)
+    public async Task<PettyCashResponse> GetPettyTransactions(PettyCashFilterDto dto)
     {
         var authToken = _claimsHelper.GetAuthToken();
         
-        string url = $"{_apiBaseUrl}PettyCash/GetAll?pageNo={pageNo}&pageSize={pageSize}";
-
-        if (!string.IsNullOrEmpty(query))
-        {
-            url += $"&query={query}";
-        }
-        
-        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        string url = $"{_apiBaseUrl}PettyCash/ListAll";
+ 
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");
-
+        request.Content = JsonContent.Create(dto);
+        
         var response = await _httpClient.SendAsync(request);
 
         if (response.IsSuccessStatusCode)
@@ -3418,6 +3424,58 @@ public partial class TopazErpApi: ITopazErpApi
 
         return new PettyCashResponse { };
     }
+
+    public async Task<PettyCashTransactionDetailResponse> GetPettyTransactionDetails(Guid id)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}PettyCash/GetDetails?id={id}";
+
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+            var res = JsonConvert.DeserializeObject<PettyCashTransactionDetailResponse>(json);
+            if (res?.Result != null)
+            {
+                if (res.Result.TransactionInfo != null)
+                {
+                    var tx = res.Result.TransactionInfo;
+                    if (tx.Id == Guid.Empty)
+                    {
+                        tx.Id = id;
+                    }
+                    res.Result.Id = tx.Id;
+                    res.Result.BatchDate = tx.BatchDate;
+                    res.Result.BatchNo = tx.BatchNo;
+                    res.Result.SourceDocNo = tx.SourceDocNo;
+                    res.Result.PettyCashAccountId = tx.PettyCashAccountId;
+                    res.Result.PettyCashAccountName = tx.PettyCashAccountName;
+                    res.Result.BatchOriginator = tx.BatchOriginator;
+                    res.Result.CurrencyId = tx.CurrencyId;
+                    res.Result.CurrencyName = tx.CurrencyName;
+                    res.Result.CurrencyCode = tx.CurrencyCode;
+                    res.Result.CurrencyRate = tx.CurrencyRate;
+                    res.Result.TotalAmount = tx.TotalAmount;
+                    res.Result.IsPosted = tx.IsPosted;
+                    res.Result.Details = tx.Details;
+                    res.Result.ProposedJournalEntries = tx.ProposedJournalEntries;
+                }
+
+                if (res.Result.Id == Guid.Empty)
+                {
+                    res.Result.Id = id;
+                }
+            }
+            return res ?? new PettyCashTransactionDetailResponse { };
+        }
+    
+        return new PettyCashTransactionDetailResponse { };
+    }
+
 
     public async Task<BaseApiResponse> CreatePettyCash(object dto)
     {
@@ -3444,7 +3502,7 @@ public partial class TopazErpApi: ITopazErpApi
         var authToken = _claimsHelper.GetAuthToken();
         string url = $"{_apiBaseUrl}PettyCash/Update";
 
-        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        var request = new HttpRequestMessage(HttpMethod.Put, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");
         request.Content = JsonContent.Create(dto);  
 
@@ -3476,7 +3534,36 @@ public partial class TopazErpApi: ITopazErpApi
 
         return new BaseApiResponse { };
     }
-    
+
+    public async Task<BaseApiResponse> PostPettyCash(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}PettyCash/Post";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        var errorData = await response.Content.ReadAsStringAsync();
+        try
+        {
+            var errObj = JsonConvert.DeserializeObject<BaseApiResponse>(errorData);
+            if (errObj != null) return errObj;
+        }
+        catch { }
+
+        return new BaseApiResponse { };
+    }
+
+     
     //imprest category
     public async Task<ImprestCategoryResponse> GetImprestCategories(int pageNo, int pageSize, string query)
     {
@@ -3756,9 +3843,9 @@ public partial class TopazErpApi: ITopazErpApi
     public async Task<BaseApiResponse> UpdateJournal(object dto)
     {
         var authToken = _claimsHelper.GetAuthToken();
-        string url = $"{_apiBaseUrl}Journal/Update";
+        string url = $"{_apiBaseUrl}Journal/Create";
 
-        var request = new HttpRequestMessage(HttpMethod.Put, url);
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");
         request.Content = JsonContent.Create(dto);  
 
@@ -3773,7 +3860,7 @@ public partial class TopazErpApi: ITopazErpApi
         return new BaseApiResponse { };
     }
      
-    public async Task<BaseApiResponse> GetJournalDetails(Guid id)
+    public async Task<JournalTransactionDetailResponse> GetJournalDetails(Guid id)
     {
         var authToken = _claimsHelper.GetAuthToken();
         string url = $"{_apiBaseUrl}Journal/GetDetails?id={id}";
@@ -3786,12 +3873,14 @@ public partial class TopazErpApi: ITopazErpApi
         if (response.IsSuccessStatusCode)
         {
             string json = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<BaseApiResponse>(json);
+            return JsonConvert.DeserializeObject<JournalTransactionDetailResponse>(json);
         }
 
-        return new BaseApiResponse { };
+        return new JournalTransactionDetailResponse { };
     }
 
+    
+    
     public async Task<BaseApiResponse> DeleteJournalBatch(Guid id)
     {
         var authToken = _claimsHelper.GetAuthToken();
@@ -3814,9 +3903,9 @@ public partial class TopazErpApi: ITopazErpApi
     public async Task<BaseApiResponse> PostJournal(Guid id)
     {
         var authToken = _claimsHelper.GetAuthToken();
-        string url = $"{_apiBaseUrl}Journal/Post?id={id}";
+        string url = $"{_apiBaseUrl}Journal/PostBatch?id={id}";
 
-        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");
 
         var response = await _httpClient.SendAsync(request);
@@ -3925,7 +4014,7 @@ public partial class TopazErpApi: ITopazErpApi
     {
         var authToken = _claimsHelper.GetAuthToken();
         
-        string url = $"{_apiBaseUrl}Voucher/ListAll?startDate={startDate:dd-MM-yyyy}&endDate={endDate:dd-MM-yyyy}&voucherType={voucherType}";
+        string url = $"{_apiBaseUrl}Voucher/ListAll?startDate={startDate.Date:yyyy-MM-dd}&endDate={endDate.Date:yyyy-MM-dd}&voucherType={voucherType}";
 
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");
@@ -3942,7 +4031,26 @@ public partial class TopazErpApi: ITopazErpApi
         return new VoucherResponse { };
     }
 
-    public async Task<BaseApiResponse> CreateVoucher(object dto)
+    public async Task<VoucherDetailResponse> GetVoucherDetails(Guid id)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}Voucher/GetDetails?id={id}";
+
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string json = await response.Content.ReadAsStringAsync();
+
+            return JsonConvert.DeserializeObject<VoucherDetailResponse>(json);
+        }
+
+        return new VoucherDetailResponse { };
+    }
+    
+    public async Task<VoucherDetailResponse> CreateVoucher(object dto)
     {
         var authToken = _claimsHelper.GetAuthToken();
         
@@ -3958,16 +4066,61 @@ public partial class TopazErpApi: ITopazErpApi
         {
             string responseData = await response.Content.ReadAsStringAsync();
 
-            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+            return JsonConvert.DeserializeObject<VoucherDetailResponse>(responseData);
         }
 
-        return new BaseApiResponse { };
+        return new VoucherDetailResponse { };
     }
     
-    public async Task<BaseApiResponse> UpdateVoucher(object dto)
+    public async Task<BaseApiResponse> UpdateVoucher(object dto, Guid? id = null)
     {
         var authToken = _claimsHelper.GetAuthToken();
-        string url = $"{_apiBaseUrl}Voucher/Update";
+
+        Guid voucherId = id ?? Guid.Empty;
+        if (voucherId == Guid.Empty && dto != null)
+        {
+            if (dto is Voucher v && v.Id != Guid.Empty)
+            {
+                voucherId = v.Id;
+            }
+            else
+            {
+                var prop = dto.GetType().GetProperty("Id") ?? dto.GetType().GetProperty("id");
+                if (prop != null)
+                {
+                    var val = prop.GetValue(dto);
+                    if (val is Guid g && g != Guid.Empty)
+                    {
+                        voucherId = g;
+                    }
+                    else if (val is string s && Guid.TryParse(s, out var parsedGuid) && parsedGuid != Guid.Empty)
+                    {
+                        voucherId = parsedGuid;
+                    }
+                }
+
+                if (voucherId == Guid.Empty)
+                {
+                    try
+                    {
+                        var jObj = JObject.Parse(JsonConvert.SerializeObject(dto));
+                        var idToken = jObj["id"] ?? jObj["Id"];
+                        if (idToken != null && Guid.TryParse(idToken.ToString(), out var jsonGuid) && jsonGuid != Guid.Empty)
+                        {
+                            voucherId = jsonGuid;
+                        }
+                    }
+                    catch
+                    {
+                        // ignore
+                    }
+                }
+            }
+        }
+
+        string url = voucherId != Guid.Empty
+            ? $"{_apiBaseUrl}Voucher/Update?id={voucherId}"
+            : $"{_apiBaseUrl}Voucher/Update";
 
         var request = new HttpRequestMessage(HttpMethod.Put, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");
@@ -3978,40 +4131,45 @@ public partial class TopazErpApi: ITopazErpApi
         if (response.IsSuccessStatusCode)
         {
             string responseData = await response.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(responseData))
+            {
+                return new BaseApiResponse { Success = true };
+            }
 
-            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+            try
+            {
+                var result = JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+                return result ?? new BaseApiResponse { Success = true };
+            }
+            catch
+            {
+                return new BaseApiResponse { Success = true, Result = responseData };
+            }
         }
 
-        return new BaseApiResponse { };
+        var errorData = await response.Content.ReadAsStringAsync();
+        try
+        {
+            var errObj = JsonConvert.DeserializeObject<BaseApiResponse>(errorData);
+            if (errObj != null) return errObj;
+        }
+        catch
+        {
+            // ignore
+        }
+
+        return new BaseApiResponse { Success = false, Error = errorData };
     }
     
-    public async Task<BaseApiResponse> DeleteVoucher(Guid id)
+    public async Task<BaseApiResponse> DeleteVoucher(object dto)
     {
         var authToken = _claimsHelper.GetAuthToken();
-        string url = $"{_apiBaseUrl}Voucher/Delete?id={id}";
-
-        var request = new HttpRequestMessage(HttpMethod.Delete, url);
-        request.Headers.Add("Authorization", $"Bearer {authToken}");
-
-        var response = await _httpClient.SendAsync(request);
-
-        if (response.IsSuccessStatusCode)
-        {
-            string responseData = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
-        }
-
-        return new BaseApiResponse { };
-    }
-
-    public async Task<BaseApiResponse> PostVoucher(Guid id)
-    {
-        var authToken = _claimsHelper.GetAuthToken();
-        string url = $"{_apiBaseUrl}Voucher/Post?id={id}";
+        string url = $"{_apiBaseUrl}Voucher/DeleteVouchers";
 
         var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.Add("Authorization", $"Bearer {authToken}");
-
+        request.Content = JsonContent.Create(dto);
+        
         var response = await _httpClient.SendAsync(request);
 
         if (response.IsSuccessStatusCode)
@@ -4021,6 +4179,37 @@ public partial class TopazErpApi: ITopazErpApi
         }
 
         return new BaseApiResponse { };
+    }
+
+    public async Task<BaseApiResponse> PostVoucher(object dto)
+    {
+        var authToken = _claimsHelper.GetAuthToken();
+        string url = $"{_apiBaseUrl}Voucher/PostVouchers";
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Add("Authorization", $"Bearer {authToken}");
+        request.Content = JsonContent.Create(dto);
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseData = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<BaseApiResponse>(responseData);
+        }
+
+        var errorData = await response.Content.ReadAsStringAsync();
+        try
+        {
+            var errObj = JsonConvert.DeserializeObject<BaseApiResponse>(errorData);
+            if (errObj != null) return errObj;
+        }
+        catch
+        {
+            // ignore
+        }
+
+        return new BaseApiResponse { Success = false, Error = errorData };
     }
     
 

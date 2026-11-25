@@ -93,7 +93,32 @@ public class JournalTransactionResponse: BaseApiResponseModel
 {
     [JsonProperty("result")]    
     public JournalTransactionPagedResult Result { get; set; }
-    
+}
+
+
+
+public class JournalTransactionDetailResponse: BaseApiResponseModel
+{
+    [JsonProperty("result")]    
+    public JournalTransaction Result { get; set; }
+}
+
+public class PettyCashTransactionDetailResponse: BaseApiResponseModel
+{
+    [JsonProperty("result")]
+    public PettyCashTransactionDetailPayload Result { get; set; }
+}
+
+public class PettyCashTransactionDetailPayload : PettyCashTransaction
+{
+    [JsonProperty("transactionInfo")]
+    public PettyCashTransaction? TransactionInfo { get; set; }
+
+    [JsonProperty("proposedJournalHeader")]
+    public JournalHeader? ProposedJournalHeader { get; set; }
+
+    [JsonProperty("proposedJournalDetails")]
+    public List<JournalDetail>? ProposedJournalDetails { get; set; }
 }
 
 public class VoucherResponse: BaseApiResponseModel
@@ -102,6 +127,13 @@ public class VoucherResponse: BaseApiResponseModel
     public List<Voucher> Result { get; set; }
     
 }
+
+public class VoucherDetailResponse: BaseApiResponseModel
+{
+    [JsonProperty("result")]  
+    public Voucher Result { get; set; }
+}
+
 
 public class AuditLogResponse : BaseApiResponseModel
 {
@@ -124,7 +156,7 @@ public class PettyCashRecipientResponse : BaseApiResponseModel
 public class PettyCashResponse : BaseApiResponseModel
 {
     [JsonProperty("result")]
-    public List<PettyCash> Result { get; set; }
+    public PettyCashTransactionPagedResult Result { get; set; }
 }
 
 

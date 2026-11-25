@@ -12,6 +12,7 @@ const app = Vue.createApp({
             accountHeadList: [],         // raw account heads/groups from server
             currencyList: [],            // raw currencies from server
             currencyOptions: [],         // [{ label, value, code, name }]
+            defaultCurrencyId: null,
 
             standardAccountTypes: [
                 { label: 'Asset', value: 1, color: 'blue' },
@@ -72,17 +73,40 @@ const app = Vue.createApp({
                     searchable: true,
                     width: 280,
                     wrap: true,
-                    onChange: (val, values) => {
-                        // 1. Auto-set Account Type from the selected control
-                        const acctType = this.getAccountTypeForControl(val);
-                        if (acctType && values) {
+                    onChange: (val, values, row) => {
+                        // 1. Auto-set Account Type from the selected control (full hierarchy traversal)
+                        const acctType = this.resolveStandardAccountType(val, values);
+                        if (values) {
                             values.standardAccountType = acctType;
                         }
 
                         // 2. Update reactive _controlRange → accountNo constraints re-evaluate
                         this.syncControlRange(val);
 
-                        // 3. Sync native DOM attributes for instant browser enforcement
+                        // 3. Auto-populate next available account number within range if creating or out-of-range
+                        const numEl = document.getElementById('f-accountNo');
+                        const currentVal = numEl ? parseInt(numEl.value, 10) : NaN;
+                        const r = this._controlRange;
+                        const isOutOfRange = isNaN(currentVal) || (r.min != null && currentVal < parseInt(r.min, 10)) || (r.max != null && currentVal > parseInt(r.max, 10));
+
+                        if ((!row || isOutOfRange) && val) {
+                            const nextNo = this.getNextAvailableAccountNo(val);
+                            if (nextNo !== null) {
+                                if (values) {
+                                    values.accountNo = String(nextNo);
+                                }
+                                this.$nextTick(() => {
+                                    const el = document.getElementById('f-accountNo');
+                                    if (el) {
+                                        el.value = nextNo;
+                                        el.dispatchEvent(new Event('input', { bubbles: true }));
+                                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                                    }
+                                });
+                            }
+                        }
+
+                        // 4. Sync native DOM attributes for instant browser enforcement
                         this.$nextTick(() => {
                             const el = document.getElementById('f-accountNo');
                             if (!el) return;
@@ -154,7 +178,9 @@ const app = Vue.createApp({
                     options: this.currencyOptions,
                     required: true,
                     searchable: true,
-                    width: 170
+                    width: 170,
+                    default: () => this.defaultCurrencyId,
+                    defaultValue: () => this.defaultCurrencyId
                 },
                 {
                     key: 'currentBalance',
@@ -297,7 +323,7 @@ const app = Vue.createApp({
             this.accountControlOptions = this.accountControlList.map(h => {
                 const hierarchyPath = this.buildAccountControlHierarchy(h);
                 const range = (h.minAccount || h.maxAccount) ? ` (${h.minAccount} - ${h.maxAccount})` : '';
-                const acctType = this.getAccountTypeForControl(h.id);
+                const acctType = this.resolveStandardAccountType(h.id);
                 return {
                     label: `${hierarchyPath}${range}`,
                     value: h.id,
@@ -311,29 +337,126 @@ const app = Vue.createApp({
             }).sort((a, b) => a.label.localeCompare(b.label));
         },
 
-        getAccountTypeForControl(controlId) {
-            if (!controlId) return 1;
-            const control = this.accountControlList.find(h => String(h.id) === String(controlId));
-            if (!control) return 1;
+        /* ── Name-keyword → StandardAccountType fallback ─────────────────
+           Keywords are ordered longest-first to avoid "Income" matching before
+           "Other Income", etc.                                                */
+        parseStandardAccountTypeByName(name) {
+            if (!name) return 0;
+            const n = String(name).toLowerCase();
+            if (n.includes('cost of sale') || n.includes('cost of goods')) return 9;
+            if (n.includes('selling expense'))                               return 10;
+            if (n.includes('other income'))                                  return 6;
+            if (n.includes('other expense'))                                 return 7;
+            if (n.includes('sales'))                                         return 8;
+            if (n.includes('revenue') || n.includes('income'))               return 4;
+            if (n.includes('expense'))                                       return 5;
+            if (n.includes('asset'))                                         return 1;
+            if (n.includes('liabilit'))                                      return 2;
+            if (n.includes('equity') || n.includes('capital'))               return 3;
+            return 0;
+        },
 
-            // 1. Direct standardAccountType / accountHeadType
-            if (control.standardAccountType !== undefined && control.standardAccountType !== null && Number(control.standardAccountType) > 0) {
-                return Number(control.standardAccountType);
-            }
-            if (control.accountHeadType !== undefined && control.accountHeadType !== null && Number(control.accountHeadType) > 0) {
-                return Number(control.accountHeadType);
+        /* ── Walk the AccountHead hierarchy upward ────────────────────────── */
+        getAccountTypeForHead(headId, visited = new Set()) {
+            if (!headId || headId === this.emptyGuid) return 0;
+            const idLc = String(headId).toLowerCase();
+            if (visited.has(idLc)) return 0;
+            visited.add(idLc);
+
+            const head = this.accountHeadList.find(h => String(h.id).toLowerCase() === idLc);
+            if (!head) return 0;
+
+            const direct = Number(head.standardAccountType || head.accountType || head.type || 0);
+            if (direct > 0 && direct <= 10) return direct;
+
+            // Try parent head
+            const parentId = head.parentId || head.parentAccountHeadId;
+            if (parentId && parentId !== this.emptyGuid) {
+                const fromParent = this.getAccountTypeForHead(parentId, visited);
+                if (fromParent > 0) return fromParent;
             }
 
-            // 2. Lookup via AccountGroupId / AccountHeadId in accountHeadList
-            const groupId = control.accountGroupId || control.accountHeadId;
-            if (groupId && this.accountHeadList && this.accountHeadList.length) {
-                const head = this.accountHeadList.find(a => String(a.id) === String(groupId));
-                if (head && head.standardAccountType !== undefined && head.standardAccountType !== null && Number(head.standardAccountType) > 0) {
-                    return Number(head.standardAccountType);
-                }
+            // Name fallback for this head
+            return this.parseStandardAccountTypeByName(head.name || head.accountHeadName || '');
+        },
+
+        /* ── Walk the AccountControl hierarchy upward ─────────────────────── */
+        getAccountTypeForControl(controlId, visited = new Set()) {
+            if (!controlId) return 0;
+            const idLc = String(controlId).toLowerCase();
+            if (visited.has(idLc)) return 0;
+            visited.add(idLc);
+
+            const control = this.accountControlList.find(
+                h => String(h.id).toLowerCase() === idLc
+            );
+            if (!control) return 0;
+
+            // 1. Direct type on the control row
+            const directType = Number(
+                control.standardAccountType ?? control.accountHeadType ?? control.type ?? 0
+            );
+            if (directType > 0 && directType <= 10) return directType;
+
+            // 2. Walk up to the linked AccountHead (accountGroupId / accountHeadId)
+            const groupId = (control.accountGroupId || control.accountHeadId || '');
+            if (groupId && groupId !== this.emptyGuid) {
+                const fromHead = this.getAccountTypeForHead(groupId);
+                if (fromHead > 0) return fromHead;
             }
 
-            return Number(control.type) || 1;
+            // 3. If no group id, try parent control (parentAccountHeaderId / parentControlId)
+            const parentControlId = control.parentAccountHeaderId || control.parentControlId || '';
+            if (parentControlId && parentControlId !== this.emptyGuid) {
+                const fromParent = this.getAccountTypeForControl(parentControlId, visited);
+                if (fromParent > 0) return fromParent;
+            }
+
+            // 4. Control-name keyword fallback
+            const ctrlName = control.accountControlName || control.accountHeaderName || control.name || '';
+            const fromName = this.parseStandardAccountTypeByName(ctrlName);
+            if (fromName > 0) return fromName;
+
+            // 5. Infer from account-number range (leading digit heuristic)
+            if (control.minAccount || control.maxAccount) {
+                const leading = parseInt(String(control.minAccount || control.maxAccount || '')[0], 10);
+                const rangeMap = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 9, 6: 5, 7: 6, 8: 7, 9: 10 };
+                if (rangeMap[leading]) return rangeMap[leading];
+            }
+
+            return 0;
+        },
+
+        /* ── Master resolver: user override → auto → fallback 1 ──────────── */
+        resolveStandardAccountType(controlId, rowOrValues = null) {
+            // 1. Explicit user selection (1–10)
+            const explicit = Number(
+                rowOrValues?.standardAccountType
+                ?? rowOrValues?.StandardAccountType
+                ?? 0
+            );
+            if (explicit >= 1 && explicit <= 10) return explicit;
+
+            // 2. DOM select (edit modal may already have it set)
+            const domSel = document.getElementById('f-standardAccountType');
+            if (domSel) {
+                const domVal = Number(domSel.value);
+                if (domVal >= 1 && domVal <= 10) return domVal;
+            }
+
+            // 3. Hierarchy traversal
+            const fromControl = this.getAccountTypeForControl(controlId);
+            if (fromControl >= 1 && fromControl <= 10) return fromControl;
+
+            // 4. Fallback: infer from accountNo in rowOrValues
+            const accountNo = String(rowOrValues?.accountNo ?? '').trim();
+            if (accountNo) {
+                const leading = parseInt(accountNo[0], 10);
+                const rangeMap = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 9, 6: 5, 7: 6, 8: 7, 9: 10 };
+                if (rangeMap[leading]) return rangeMap[leading];
+            }
+
+            return 1; // ultimate default → Asset
         },
 
         async getAccountControls() {
@@ -359,8 +482,14 @@ const app = Vue.createApp({
                     label: `${c.currencyCode} - ${c.currencyName}`,
                     value: c.id,
                     code: c.currencyCode,
-                    name: c.currencyName
+                    name: c.currencyName,
+                    isDefault: c.isDefault
                 }));
+                // Store the default currency id so new rows auto-select it
+                const defaultCurr = rawList.find(c => c.isDefault);
+                if (defaultCurr) {
+                    this.defaultCurrencyId = defaultCurr.id;
+                }
             } catch (error) {
                 console.error('Failed to load currencies:', error);
             }
@@ -403,7 +532,7 @@ const app = Vue.createApp({
                         currencyCode,
                         currentBalance: Number(item.currentBalance) || 0,
                         currentForeignBalance: Number(item.currentForeignBalance) || 0,
-                        standardAccountType: Number(item.standardAccountType) || this.getAccountTypeForControl(controlId) || 1
+                        standardAccountType: this.resolveStandardAccountType(controlId, item)
                     };
                 });
             } catch (error) {
@@ -434,9 +563,7 @@ const app = Vue.createApp({
 
             const accountName = String(row.accountName || row.name || '').trim();
             const accountControlName = control ? (control.accountControlName || control.accountHeaderName || control.name) : '';
-            const standardAccountType = Number(row.standardAccountType)
-                || this.getAccountTypeForControl(controlId)
-                || 1;
+            const standardAccountType = this.resolveStandardAccountType(controlId, row);
 
             const acctNoParsed = parseInt(row.accountNo, 10);
             const payload = {
@@ -453,7 +580,8 @@ const app = Vue.createApp({
                 currencyCode: currency ? currency.currencyCode : (row.currencyCode || ''),
                 currentBalance: Number(row.currentBalance) || 0,
                 currentForeignBalance: Number(row.currentForeignBalance) || 0,
-                standardAccountType
+                standardAccountType,
+                StandardAccountType: standardAccountType
             };
 
             this.isShimmerLoading = true;
@@ -490,10 +618,10 @@ const app = Vue.createApp({
             const accountControlName = control
                 ? (control.accountControlName || control.accountHeaderName || control.name)
                 : (existing.accountControlName || existing.accountHeaderName || '');
-            const standardAccountType = Number(row.standardAccountType)
-                || this.getAccountTypeForControl(controlId)
-                || Number(existing.standardAccountType)
-                || 1;
+
+            // Merge row + existing so resolveStandardAccountType sees explicit user selection
+            const mergedRow = { ...existing, ...row };
+            const standardAccountType = this.resolveStandardAccountType(controlId, mergedRow);
 
             const acctNoParsed = parseInt(row.accountNo, 10);
             const payload = {
@@ -513,7 +641,8 @@ const app = Vue.createApp({
                 currencyCode: currency ? currency.currencyCode : (row.currencyCode || existing.currencyCode || ''),
                 currentBalance: Number(row.currentBalance) || Number(existing.currentBalance) || 0,
                 currentForeignBalance: Number(row.currentForeignBalance) || Number(existing.currentForeignBalance) || 0,
-                standardAccountType
+                standardAccountType,
+                StandardAccountType: standardAccountType
             };
 
             this.isShimmerLoading = true;
@@ -618,6 +747,33 @@ const app = Vue.createApp({
         },
 
         /* ── Helpers ─────────────────────────────────────────────── */
+
+        /* ── getNextAvailableAccountNo ────────────────────────────────
+           Returns the first integer in [minAccount, maxAccount] for the
+           given controlId that is NOT already used by a loaded account
+           detail.  Uses the already-loaded coaDetailList so no extra
+           network round-trip is needed.                                */
+        getNextAvailableAccountNo(controlId) {
+            if (!controlId) return null;
+            const control = this.accountControlList.find(h => String(h.id) === String(controlId));
+            if (!control || !control.minAccount || !control.maxAccount) return null;
+
+            const min = parseInt(control.minAccount, 10);
+            const max = parseInt(control.maxAccount, 10);
+            if (isNaN(min) || isNaN(max) || min > max) return null;
+
+            // Collect all used account numbers that fall in this range
+            const usedNos = new Set(
+                this.coaDetailList
+                    .map(d => parseInt(d.accountNo, 10))
+                    .filter(n => !isNaN(n) && n >= min && n <= max)
+            );
+
+            for (let n = min; n <= max; n++) {
+                if (!usedNos.has(n)) return n;
+            }
+            return null; // entire range exhausted
+        },
 
         /* ── syncControlRange ─────────────────────────────────────────
            Single source of truth for updating _controlRange from a
@@ -803,7 +959,7 @@ const app = Vue.createApp({
                     }
 
                     // Keep Account Type dropdown in sync via DOM as well
-                    const acctType = this.getAccountTypeForControl(controlId);
+                    const acctType = this.resolveStandardAccountType(controlId);
                     if (acctType) {
                         const typeSelect = document.getElementById('f-standardAccountType');
                         if (typeSelect && String(typeSelect.value) !== String(acctType)) {
