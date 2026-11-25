@@ -228,26 +228,41 @@ public class GeneralLedgerController : Controller
     
     //api
     //save journal
+    //api
+//save journal
     public async Task<ActionResult> InitJournalEntry()
     {
-        var accounts = await _topazErpApi.GetAccountDetails(1, 5000, null, true);
-        var costCenters = await _topazErpApi.GetCostCenters(1,1000,"");
-        var businessProfile = await _topazErpApi.GetBusinessProfile();
-            
-        return Json(new { accounts, costCenters, enforceOu = businessProfile.Result is { EnforceOu: true } });
+        // Fire all independent lookups in parallel
+        var accountsTask        = _topazErpApi.GetAccountDetails(1, 5000, null, true);
+        var costCentersTask     = _topazErpApi.GetCostCenters(1, 1000, "");
+        var businessProfileTask = _topazErpApi.GetBusinessProfile();
+
+        await Task.WhenAll(accountsTask, costCentersTask, businessProfileTask);
+
+        return Json(new
+        {
+            accounts        = accountsTask.Result,
+            costCenters     = costCentersTask.Result,
+            enforceOu       = businessProfileTask.Result.Result is { EnforceOu: true }
+        });
     }
 
     public async Task<ActionResult> InitSupplierPvEntry()
     {
-        var accounts = await _topazErpApi.GetAccountDetails(1, 5000, null, true);
-        var costCenters = await _topazErpApi.GetCostCenters(1, 1000, "");
-        var defaultGl = await _topazErpApi.GetDefaultGlNumbersSetup();
-        var systemNumbers = await _topazErpApi.GetSystemNumbers("");
+        // Fire all independent lookups in parallel
+        var accountsTask       = _topazErpApi.GetAccountDetails(1, 5000, null, true);
+        var costCentersTask    = _topazErpApi.GetCostCenters(1, 1000, "");
+        var defaultGlTask      = _topazErpApi.GetDefaultGlNumbersSetup();
+        var systemNumbersTask  = _topazErpApi.GetSystemNumbers("");
+
+        await Task.WhenAll(accountsTask, costCentersTask, defaultGlTask, systemNumbersTask);
+
+        var systemNumbers = systemNumbersTask.Result;
 
         var voucherBatchSystemNumber = systemNumbers?.Result?.FirstOrDefault(s =>
-            !string.IsNullOrEmpty(s.Key) &&
-            (s.Key.Contains("gl-voucher-batch-id", StringComparison.OrdinalIgnoreCase)) )
-            ?? systemNumbers?.Result?.FirstOrDefault();
+                                           !string.IsNullOrEmpty(s.Key) &&
+                                           (s.Key.Contains("gl-voucher-batch-id", StringComparison.OrdinalIgnoreCase)))
+                                       ?? systemNumbers?.Result?.FirstOrDefault();
 
         var receiptVoucherSystemNumber = systemNumbers?.Result?.FirstOrDefault(s =>
             !string.IsNullOrEmpty(s.Key) &&
@@ -255,9 +270,9 @@ public class GeneralLedgerController : Controller
 
         return Json(new
         {
-            accounts = accounts?.Result,
-            costCenters = costCenters?.Result,
-            defaultGlNumbers = defaultGl?.Result,
+            accounts                 = accountsTask.Result?.Result,
+            costCenters              = costCentersTask.Result?.Result,
+            defaultGlNumbers         = defaultGlTask.Result?.Result,
             voucherBatchSystemNumber,
             receiptVoucherSystemNumber
         });
@@ -625,23 +640,40 @@ public class GeneralLedgerController : Controller
     }
     
     // Petty Cash Transactions
-    [HttpGet]
-    public async Task<IActionResult> GetPettyCashTransactions([FromQuery] int pageNo = 1, [FromQuery] int pageSize = 1000, [FromQuery] string query = "")
+    [HttpPost]
+    public async Task<IActionResult> GetPettyCashTransactions([FromBody] PettyCashFilterDto? dto)
     {
-        var results = await _topazErpApi.GetPettyTransactions(pageNo, pageSize, query);
+        dto ??= new PettyCashFilterDto { PageNo = 1, PageSize = 5000 };
+        var results = await _topazErpApi.GetPettyTransactions(dto);
+        return Json(results);
+    }
+
+    [HttpGet]
+    [ActionName("GetPettyCashTransactions")]
+    public async Task<IActionResult> GetPettyCashTransactionsGet([FromQuery] int pageNo = 1, [FromQuery] int pageSize = 5000, [FromQuery] string? search = null)
+    {
+        var dto = new PettyCashFilterDto { PageNo = pageNo, PageSize = pageSize, Search = search };
+        var results = await _topazErpApi.GetPettyTransactions(dto);
         return Json(results);
     }
 
     [HttpGet]
     public async Task<IActionResult> InitPettyCashEntry()
     {
-        var accounts = await _topazErpApi.GetAccountDetails(1, 5000, null, true);
-        var costCenters = await _topazErpApi.GetCostCenters(1, 1000, "");
-        var departments = await _topazErpApi.GetDepartments(1, 1000, "");
-        var recipients = await _topazErpApi.GetPettyCashRecipients(1, 1000, "");
-        var currencies = await _topazErpApi.GetCurrencies(1, 100, "");
-        var defaultGl = await _topazErpApi.GetDefaultGlNumbersSetup();
-        var systemNumbers = await _topazErpApi.GetSystemNumbers("");
+        // Fire all independent lookups in parallel
+        var accountsTask       = _topazErpApi.GetAccountDetails(1, 5000, null, true);
+        var costCentersTask    = _topazErpApi.GetCostCenters(1, 1000, "");
+        var departmentsTask    = _topazErpApi.GetDepartments(1, 1000, "");
+        var recipientsTask     = _topazErpApi.GetPettyCashRecipients(1, 1000, "");
+        var currenciesTask     = _topazErpApi.GetCurrencies(1, 100, "");
+        var defaultGlTask      = _topazErpApi.GetDefaultGlNumbersSetup();
+        var systemNumbersTask  = _topazErpApi.GetSystemNumbers("");
+
+        await Task.WhenAll(
+            accountsTask, costCentersTask, departmentsTask, recipientsTask,
+            currenciesTask, defaultGlTask, systemNumbersTask);
+
+        var systemNumbers = systemNumbersTask.Result;
 
         var pettyCashSystemNumber = systemNumbers?.Result?.FirstOrDefault(s =>
             !string.IsNullOrEmpty(s.Key) &&
@@ -654,13 +686,13 @@ public class GeneralLedgerController : Controller
         {
             success = true,
             currentUser,
-            accounts = accounts?.Result,
-            costCenters = costCenters?.Result,
-            departments = departments?.Result,
-            recipients = recipients?.Result,
-            currencies = currencies?.Result,
-            defaultGlNumbers = defaultGl?.Result,
-            systemNumbers = systemNumbers?.Result,
+            accounts        = accountsTask.Result?.Result,
+            costCenters     = costCentersTask.Result?.Result,
+            departments     = departmentsTask.Result?.Result,
+            recipients      = recipientsTask.Result?.Result,
+            currencies      = currenciesTask.Result?.Result,
+            defaultGlNumbers = defaultGlTask.Result?.Result,
+            systemNumbers   = systemNumbers?.Result,
             pettyCashSystemNumber
         });
     }
@@ -679,12 +711,47 @@ public class GeneralLedgerController : Controller
         return Json(results);
     }
 
-    [HttpDelete, HttpPost, HttpGet]
     public async Task<IActionResult> DeletePettyCash([FromQuery] Guid id)
     {
         var results = await _topazErpApi.DeletePettyCash(id);
         return Json(results);
     }
+    
+    [HttpGet]
+    public async Task<IActionResult> GetPettyCashTransactionDetails([FromQuery] Guid id)
+    {
+        var results = await _topazErpApi.GetPettyTransactionDetails(id);
+        return Json(results);
+    }
+
+    [HttpGet]
+    [ActionName("GetPettyTransactionDetails")]
+    public async Task<IActionResult> GetPettyTransactionDetailsAlias([FromQuery] Guid id)
+    {
+        return await GetPettyCashTransactionDetails(id);
+    }
+    
+    
+
+    [HttpPost]
+    public async Task<IActionResult> PostPettyCash([FromBody] PostVoucherDto? dto = null, [FromQuery] Guid? id = null)
+    {
+        dto ??= new PostVoucherDto();
+        if (id.HasValue && id.Value != Guid.Empty && !dto.Ids.Contains(id.Value))
+        {
+            dto.Ids.Add(id.Value);
+        }
+        var results = await _topazErpApi.PostPettyCash(dto);
+        return Json(results);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> PostPettyCashBatches([FromBody] PostVoucherDto dto)
+    {
+        return await PostPettyCash(dto);
+    }
+
+    
     
     //Default GL Numbers
     

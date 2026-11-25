@@ -4,7 +4,8 @@
 }
 
 <div class="content" id="app">
-    <!-- ── Page Header & Breadcrumbs ────────────────────────────────────── -->
+
+    <!-- ── Page Header ────────────────────────────────────────────── -->
     <div class="mb-6 content-header">
         <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
             <span>GL - Petty Cash</span>
@@ -13,16 +14,29 @@
         </div>
 
         <div class="flex flex-wrap items-center justify-between gap-4">
-            <div class="page-title">
-                <h2 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+            <div>
+                <h2 class="text-2xl font-semibold text-gray-800">
                     Petty Cash Transactions
                 </h2>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-gray-500 mt-0.5">
                     Manage petty cash disbursement batches, cash expense vouchers and expense ledger allocations.
                 </p>
             </div>
-
             <div class="flex items-center gap-2.5">
+                <button type="button"
+                        @@click="toggleSelectAll"
+                        :disabled="filteredPettyCashList.length === 0"
+                        class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition disabled:opacity-50">
+                    <i class="bi" :class="isAllSelected ? 'bi-check-square-fill text-blue-600' : 'bi-square'"></i>
+                    <span>{{ isAllSelected ? 'Deselect All' : 'Select All' }}</span>
+                </button>
+                <button type="button"
+                        @@click="toggleAllExpansion"
+                        :disabled="filteredPettyCashList.length === 0"
+                        class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition disabled:opacity-50">
+                    <i class="bi" :class="isAllExpanded ? 'bi-arrows-collapse' : 'bi-arrows-expand'"></i>
+                    <span>{{ isAllExpanded ? 'Collapse All' : 'Expand All' }}</span>
+                </button>
                 <a href="/GeneralLedger/CreatePettyCash"
                    class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition">
                     <i class="bi bi-plus-lg"></i>
@@ -32,82 +46,570 @@
         </div>
     </div>
 
-     
-    <!-- ── Filter Bar ───────────────────────────────────────────────────── -->
-    <div class="card mb-6 p-4">
-        <div class="flex flex-col sm:flex-row flex-wrap items-end gap-3.5">
-            <div class="gl-field w-full sm:w-44">
-                <label class="text-xs font-semibold text-gray-600 dark:text-gray-300">From Date</label>
-                <input type="date" v-model="filterParams.startDate" class="gl-input" />
+    <!-- ── KPI Summary Cards ──────────────────────────────────────── -->
+    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <!-- Total Batches -->
+        <div class="card p-4 border border-gray-200/80 rounded-xl shadow-xs bg-white">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Batches</span>
+                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600">
+                    <i class="bi bi-collection"></i>
+                </span>
+            </div>
+            <p class="text-2xl font-bold text-gray-900 mt-2">{{ totalBatches }}</p>
+            <span class="text-xs text-gray-400 mt-0.5 block">Total recorded</span>
+        </div>
+
+        <!-- Total Disbursed -->
+        <div class="card p-4 border border-gray-200/80 rounded-xl shadow-xs bg-white">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Total Disbursed</span>
+                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600">
+                    <i class="bi bi-cash-stack"></i>
+                </span>
+            </div>
+            <p class="text-2xl font-bold text-gray-900 mt-2">GHS {{ fmtCurrency(totalDisbursements) }}</p>
+            <span class="text-xs text-emerald-600 font-medium mt-0.5 block">Disbursement sum</span>
+        </div>
+
+        <!-- Posted -->
+        <div class="card p-4 border border-gray-200/80 rounded-xl shadow-xs bg-white">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Posted</span>
+                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-green-50 text-green-600">
+                    <i class="bi bi-check2-circle"></i>
+                </span>
+            </div>
+            <p class="text-2xl font-bold text-green-700 mt-2">{{ postedCount }}</p>
+            <span class="text-xs text-green-600 font-medium mt-0.5 block">General ledger active</span>
+        </div>
+
+        <!-- Draft / Unposted -->
+        <div class="card p-4 border border-gray-200/80 rounded-xl shadow-xs bg-white">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Draft / Unposted</span>
+                <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-50 text-amber-600">
+                    <i class="bi bi-clock-history"></i>
+                </span>
+            </div>
+            <p class="text-2xl font-bold text-amber-600 mt-2">{{ unpostedCount }}</p>
+            <span class="text-xs text-amber-600 font-medium mt-0.5 block">Awaiting posting</span>
+        </div>
+    </div>
+
+    <!-- ── Filter & Search Toolbar ────────────────────────────────── -->
+    <div class="card p-4 mb-5 border border-gray-200 rounded-xl bg-white shadow-xs">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+
+            <!-- Left: Search input -->
+            <div class="relative flex-1 min-w-[260px] max-w-lg">
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                    <i class="bi bi-search text-sm"></i>
+                </div>
+                <input type="text"
+                       v-model="searchQuery"
+                       placeholder="Search batch #, account, source doc, description…"
+                       class="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-8 text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                <button v-if="searchQuery"
+                        @@click="searchQuery = ''"
+                        class="absolute inset-y-0 right-0 flex items-center pr-2.5 text-gray-400 hover:text-gray-600">
+                    <i class="bi bi-x-circle-fill text-xs"></i>
+                </button>
             </div>
 
-            <div class="gl-field w-full sm:w-44">
-                <label class="text-xs font-semibold text-gray-600 dark:text-gray-300">To Date</label>
-                <input type="date" v-model="filterParams.endDate" class="gl-input" />
-            </div>
+            <!-- Right: Quick Filters -->
+            <div class="flex flex-wrap items-center gap-3">
+                <!-- Status Filter -->
+                <select v-model="postingStatus"
+                        @@change="getPettyCashList"
+                        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-xs focus:border-blue-500 focus:outline-none">
+                    <option value="all">All Statuses</option>
+                    <option value="unposted">Draft / Unposted</option>
+                    <option value="posted">Posted</option>
+                </select>
 
-            <div class="gl-field flex-1 min-w-[200px]">
-                <label class="text-xs font-semibold text-gray-600 dark:text-gray-300">Petty Cash G/L Account</label>
-                <select v-model="filterParams.accountId" class="gl-select">
-                    <option value="">All Petty Cash Accounts</option>
+                <!-- Account Filter -->
+                <select v-model="accountFilter"
+                        class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-xs focus:border-blue-500 focus:outline-none">
+                    <option value="all">All Accounts</option>
                     <option v-for="acc in pettyCashAccounts" :key="acc.id" :value="acc.id">
                         {{ acc.accountIdentifier }}
                     </option>
                 </select>
+
+                <!-- Date Filter Toggle Button -->
+                <button type="button"
+                        @@click="toggleDateFilter"
+                        :class="useDateFilter ? 'bg-blue-50 text-blue-700 border-blue-300 font-semibold ring-1 ring-blue-300/50' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'"
+                        class="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition shadow-xs">
+                    <i class="bi bi-calendar3" :class="useDateFilter ? 'text-blue-600' : 'text-gray-400'"></i>
+                    <span>Date Filter:</span>
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                          :class="useDateFilter ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'">
+                        {{ useDateFilter ? 'Active' : 'Off' }}
+                    </span>
+                </button>
+
+                <!-- Reset -->
+                <button type="button"
+                        @@click="resetFilters"
+                        title="Reset all filters"
+                        class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white p-2 text-gray-600 hover:bg-gray-50 transition">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+
+                <!-- Post Selected Button (mirroring Vouchers.cshtml) -->
+                <button v-if="selectedIds.length > 0"
+                        type="button"
+                        @@click="postSelectedBatches"
+                        :disabled="isShimmerLoading || selectedUnpostedCount === 0"
+                        class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                        title="Post selected voucher(s)">
+                    <i class="bi bi-send-check"></i>
+                    <span>POST ({{ selectedUnpostedCount }})</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ── Date Range Controls Section ────────────────────────────── -->
+        <div class="mt-3 pt-3 border-t border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+            <!-- Left: Opt-in Checkbox + Presets -->
+            <div class="flex flex-wrap items-center gap-2.5">
+                <label class="inline-flex items-center gap-2 cursor-pointer select-none text-gray-700 font-medium mr-1">
+                    <input type="checkbox"
+                           v-model="useDateFilter"
+                           @@change="onDateToggleChange"
+                           class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer">
+                    <span>Filter by Date Range</span>
+                </label>
+
+                <!-- Date Presets -->
+                <div class="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5 text-xs font-medium text-gray-600">
+                    <button type="button"
+                            @@click="setQuickDate('today')"
+                            :class="useDateFilter && activeDatePreset === 'today' ? 'bg-white text-blue-600 shadow-xs font-semibold' : 'hover:bg-white text-gray-600'"
+                            class="rounded-md px-2.5 py-1 transition">Today</button>
+                    <button type="button"
+                            @@click="setQuickDate('month')"
+                            :class="useDateFilter && activeDatePreset === 'month' ? 'bg-white text-blue-600 shadow-xs font-semibold' : 'hover:bg-white text-gray-600'"
+                            class="rounded-md px-2.5 py-1 transition">This Month</button>
+                    <button type="button"
+                            @@click="setQuickDate('3months')"
+                            :class="useDateFilter && activeDatePreset === '3months' ? 'bg-white text-blue-600 shadow-xs font-semibold' : 'hover:bg-white text-gray-600'"
+                            class="rounded-md px-2.5 py-1 transition">3 Months</button>
+                    <button type="button"
+                            @@click="setQuickDate('year')"
+                            :class="useDateFilter && activeDatePreset === 'year' ? 'bg-white text-blue-600 shadow-xs font-semibold' : 'hover:bg-white text-gray-600'"
+                            class="rounded-md px-2.5 py-1 transition">This Year</button>
+                    <button type="button"
+                            @@click="disableDateFilter"
+                            :class="!useDateFilter ? 'bg-white text-blue-600 shadow-xs font-semibold' : 'hover:bg-white text-gray-600'"
+                            class="rounded-md px-2.5 py-1 transition">All Time</button>
+                </div>
             </div>
 
-            <div class="flex gap-2 items-end">
+            <!-- Right: Start Date, End Date Inputs, Apply & Clear Buttons -->
+            <div class="flex flex-wrap items-center gap-2">
+                <div class="inline-flex items-center gap-1.5" :class="{ 'opacity-50 pointer-events-none': !useDateFilter }">
+                    <span class="text-gray-500 font-medium">From:</span>
+                    <input type="date"
+                           v-model="startDate"
+                           :disabled="!useDateFilter"
+                           @@change="onDateInputChange"
+                           class="rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs text-gray-700 shadow-xs focus:border-blue-500 focus:outline-none" />
+                </div>
+                <div class="inline-flex items-center gap-1.5" :class="{ 'opacity-50 pointer-events-none': !useDateFilter }">
+                    <span class="text-gray-500 font-medium">To:</span>
+                    <input type="date"
+                           v-model="endDate"
+                           :disabled="!useDateFilter"
+                           @@change="onDateInputChange"
+                           class="rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-xs text-gray-700 shadow-xs focus:border-blue-500 focus:outline-none" />
+                </div>
                 <button type="button"
-                        @@click="getPettyCashList()"
-                        :disabled="isShimmerLoading"
-                        class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition disabled:opacity-60 h-[38px]">
+                        v-if="useDateFilter"
+                        @@click="applyDateFilter"
+                        class="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1 text-xs font-medium text-white shadow-xs hover:bg-blue-700 transition">
                     <i class="bi bi-funnel"></i>
-                    <span>Filter</span>
+                    <span>Apply</span>
                 </button>
                 <button type="button"
-                        @@click="resetFilterParams()"
-                        class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition h-[38px] dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300">
-                    <i class="bi bi-arrow-counterclockwise"></i>
-                    <span>Reset</span>
+                        v-if="useDateFilter"
+                        @@click="disableDateFilter"
+                        title="Turn off date filter and show all"
+                        class="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 transition">
+                    <i class="bi bi-x-lg"></i>
+                    <span>Clear</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ── Batch Selection Toolbar (when rows selected) ────────── -->
+        <div v-if="selectedIds.length > 0"
+             class="mt-4 pt-3 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3 bg-blue-50/60 -mx-4 -mb-4 px-4 py-3 rounded-b-xl">
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-blue-600 text-white text-xs font-bold">
+                    {{ selectedIds.length }}
+                </span>
+                <span class="text-xs font-medium text-blue-900">batch(es) selected</span>
+                <button type="button" @@click="clearSelection" class="text-xs text-blue-700 underline hover:text-blue-900 ml-2">Deselect all</button>
+            </div>
+            <div class="flex items-center gap-2">
+                <button v-if="selectedUnpostedCount > 0"
+                        type="button"
+                        @@click="postSelectedBatches"
+                        class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 transition">
+                    <i class="bi bi-send-check"></i>
+                    <span>POST ({{ selectedUnpostedCount }})</span>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- ── Petty Cash Batches DataGrid ──────────────────────────────────── -->
-    <div class="card" data-card-title="Petty Cash Batches">
-        <data-grid
-            title="Petty Cash Directory"
-            :columns="pettyCashColumns"
-            :data="filteredPettyCashList"
-            :theme="theme"
-            row-id="id"
-            label-key="batchNo"
-            item-label="transaction"
-            item-label-plural="transactions"
-            :allow-add="false"
-            :allow-edit="true"
-            :page-size="10"
-            :selectable="true"
-            :actions="true"
-            :aggregates="false"
-            :show-row-numbers="false"
-            :loading="isShimmerLoading"
-            @@open-form="onGridOpenForm"
-            @@delete="onGridDelete">
-        </data-grid>
+    <!-- ── Loading Spinner ────────────────────────────────────────── -->
+    <div v-if="isShimmerLoading" class="card flex flex-col items-center justify-center py-24 bg-white rounded-xl border border-gray-200 mb-4 shadow-xs gap-4">
+        <div class="relative flex items-center justify-center" style="width:56px;height:56px">
+            <svg class="animate-spin" style="width:56px;height:56px" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="28" cy="28" r="22" stroke="#E5E7EB" stroke-width="5"/>
+                <circle cx="28" cy="28" r="22"
+                        stroke="#2563EB"
+                        stroke-width="5"
+                        stroke-linecap="round"
+                        stroke-dasharray="100 38.8"
+                        stroke-dashoffset="0"
+                        transform="rotate(-90 28 28)"/>
+            </svg>
+            <span class="absolute inline-block rounded-full bg-blue-600" style="width:8px;height:8px"></span>
+        </div>
+        <div class="flex flex-col items-center gap-1">
+            <span class="text-sm font-semibold text-gray-700">Loading petty cash transactions…</span>
+            <span class="text-xs text-gray-400">Please wait</span>
+        </div>
     </div>
+
+    <!-- ── Empty State ────────────────────────────────────────────── -->
+    <div v-else-if="filteredPettyCashList.length === 0" class="card text-center py-20 px-6 bg-white rounded-xl border border-gray-200 shadow-xs">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gray-100 text-gray-400 mb-3">
+            <i class="bi bi-cash text-2xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-800">No Petty Cash Transactions Found</h3>
+        <p class="text-sm text-gray-500 max-w-md mx-auto mt-1 mb-5">
+            <span v-if="useDateFilter">No transactions match your current search or date range filters ({{ fmtDate(startDate) }} – {{ fmtDate(endDate) }}).</span>
+            <span v-else>No petty cash transactions match your current search or filter criteria.</span>
+        </p>
+        <button type="button"
+                @@click="resetFilters"
+                class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition">
+            <i class="bi bi-arrow-counterclockwise"></i>
+            <span>Reset Filters</span>
+        </button>
+    </div>
+
+    <!-- ── Collapsible Petty Cash Batch List ──────────────────────── -->
+    <div v-else class="space-y-3.5">
+
+        <div v-for="batch in paginatedBatches"
+             :key="batch.id"
+             class="rounded-xl border bg-white shadow-xs transition duration-150 overflow-hidden"
+             :class="isExpanded(batch.id) ? 'border-blue-300 ring-1 ring-blue-200' : 'border-gray-200 hover:border-gray-300'">
+
+            <!-- ── Master Header Row ───────────────────────────────── -->
+            <div class="p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 cursor-pointer select-none transition bg-white hover:bg-slate-50/80"
+                 @@click="toggleExpand(batch.id)">
+
+                <!-- Left: Expand chevron, Batch No, Date, Description -->
+                <div class="flex items-start md:items-center gap-3 flex-1 min-w-0">
+
+                    <!-- Expand/Collapse Chevron -->
+                    <button type="button"
+                            @@click.stop="toggleExpand(batch.id)"
+                            class="mt-0.5 md:mt-0 flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition">
+                        <i class="bi bi-chevron-right transition-transform duration-200"
+                           :class="{ 'rotate-90 text-blue-600': isExpanded(batch.id) }"></i>
+                    </button>
+
+                    <!-- Selection Checkbox -->
+                    <div class="flex items-center" @@click.stop>
+                        <input type="checkbox"
+                               :value="batch.id"
+                               v-model="selectedIds"
+                               class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer" />
+                    </div>
+
+                    <!-- Batch Number & Badges -->
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold font-mono tracking-wide bg-blue-50 text-blue-700 border border-blue-200">
+                            <i class="bi bi-hash"></i>{{ batch.batchNo }}
+                        </span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-gray-100 text-gray-600 uppercase">
+                            Petty Cash
+                        </span>
+                    </div>
+
+                    <!-- Date & Account -->
+                    <div class="min-w-0 flex-1 ml-1">
+                        <div class="flex items-center gap-2 text-xs text-gray-500">
+                            <i class="bi bi-calendar3 text-[11px]"></i>
+                            <span>{{ fmtDate(batch.batchDate) }}</span>
+                            <span v-if="batch.pettyCashAccountName" class="text-gray-300">•</span>
+                            <span v-if="batch.pettyCashAccountName" class="truncate font-medium text-gray-700" :title="batch.pettyCashAccountName">
+                                {{ batch.pettyCashAccountName }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Amount, Status, Actions -->
+                <div class="flex items-center justify-between md:justify-end gap-4 flex-wrap pt-2 md:pt-0 border-t md:border-t-0 border-gray-100">
+
+                    <!-- Line Count Pill -->
+                    <span class="inline-flex items-center gap-1 text-xs text-gray-500 font-medium bg-gray-100 px-2.5 py-1 rounded-full">
+                        <i class="bi bi-list-nested text-[11px]"></i>
+                        {{ getProposedJournalLines(batch).length }} {{ getProposedJournalLines(batch).length === 1 ? 'line' : 'lines' }}
+                    </span>
+
+                    <!-- Total Amount -->
+                    <div class="text-right">
+                        <span class="text-[10px] uppercase font-semibold text-gray-400 block tracking-wider">Disbursed</span>
+                        <span class="text-sm font-bold text-gray-900 font-mono">
+                            {{ batch.currencyCode || 'GHS' }} {{ fmtCurrency(batch.totalAmount) }}
+                        </span>
+                    </div>
+
+                    <!-- Status Badge -->
+                    <div>
+                        <span v-if="batch.isPosted"
+                              class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
+                            <i class="bi bi-check-circle-fill text-[11px]"></i>
+                            Posted
+                        </span>
+                        <span v-else
+                              class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
+                            <i class="bi bi-clock-history text-[11px]"></i>
+                            Draft
+                        </span>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="flex items-center gap-1.5" @@click.stop>
+                        <!-- Post Button (if draft) -->
+                        <button v-if="!batch.isPosted"
+                                type="button"
+                                @@click="postSingleBatch(batch)"
+                                title="Post batch to general ledger"
+                                class="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white shadow-xs hover:bg-emerald-700 transition">
+                            <i class="bi bi-check2"></i>
+                            <span class="hidden sm:inline">Post</span>
+                        </button>
+
+                        <a :href="'/GeneralLedger/CreatePettyCash?id=' + batch.id"
+                           title="Edit petty cash batch"
+                           class="inline-flex items-center justify-center w-7 h-7 rounded-md text-blue-600 hover:bg-blue-50 hover:text-blue-800 transition">
+                            <i class="bi bi-pencil-square text-xs"></i>
+                        </a>
+                        <button v-if="!batch.isPosted"
+                                type="button"
+                                @@click="deletePettyCashBatch(batch.id, batch.batchNo)"
+                                title="Delete batch"
+                                class="inline-flex items-center justify-center w-7 h-7 rounded-md text-red-500 hover:bg-red-50 hover:text-red-700 transition">
+                            <i class="bi bi-trash3 text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Collapsible Details Section (Proposed Journal Entries) ── -->
+            <div v-if="isExpanded(batch.id)"
+                 class="border-t border-blue-100 bg-slate-50/60 p-4 animate-fadeIn">
+
+                <!-- Sub-bar -->
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-3 text-xs text-gray-500 px-1">
+                    <div class="flex items-center gap-3">
+                        <span class="font-semibold text-gray-700 flex items-center gap-1.5">
+                            <i class="bi bi-calculator text-blue-600"></i>
+                            Proposed Journal Entries:
+                        </span>
+                        <!-- Post Batch Button in Drawer (if draft) -->
+                        <button v-if="!batch.isPosted"
+                                type="button"
+                                @@click="postSingleBatch(batch)"
+                                class="inline-flex items-center gap-1 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 px-2.5 py-0.5 text-xs font-medium transition shadow-xs">
+                            <i class="bi bi-check2 text-[11px]"></i>
+                            <span>Post Batch</span>
+                        </button>
+                        <a :href="'/GeneralLedger/CreatePettyCash?id=' + batch.id"
+                           class="inline-flex items-center gap-1 rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 px-2 py-0.5 text-xs font-medium transition">
+                            <i class="bi bi-pencil-square text-[11px]"></i>
+                            <span>Edit Batch</span>
+                        </a>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <!-- Balanced Status Badge -->
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-semibold"
+                              :class="isBatchBalanced(batch) ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'">
+                            <i class="bi" :class="isBatchBalanced(batch) ? 'bi-check-circle-fill text-emerald-600' : 'bi-exclamation-triangle-fill text-red-600'"></i>
+                            {{ isBatchBalanced(batch) ? 'Balanced Batch' : 'Unbalanced Batch!' }}
+                        </span>
+                        <span class="inline-flex items-center gap-1 text-xs font-medium text-gray-600">
+                            <i class="bi bi-person text-gray-400"></i>
+                            Originator: {{ batch.batchOriginator || '—' }}
+                        </span>
+                        <span v-if="batch.sourceDocNo" class="inline-flex items-center gap-1 text-xs font-medium text-gray-600">
+                            <i class="bi bi-file-text text-gray-400"></i>
+                            Source Doc: {{ batch.sourceDocNo }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Proposed Journal Entries Table (Reference: Voucher Listings Child Table) -->
+                <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-xs">
+                    <table class="w-full text-left text-xs text-gray-700">
+                        <thead class="bg-gray-50 text-[11px] font-semibold uppercase tracking-wider text-gray-500 border-b border-gray-200">
+                            <tr>
+                                <th class="px-3.5 py-2.5 w-10 text-center">#</th>
+                                <th class="px-3.5 py-2.5">Reference No.</th>
+                                <th class="px-3.5 py-2.5">Account Name</th>
+                                <th class="px-3.5 py-2.5">Description</th>
+                                <th class="px-3.5 py-2.5">Cost Center</th>
+                                <th class="px-3.5 py-2.5">Cheque No.</th>
+                                <th class="px-3.5 py-2.5 text-right font-mono text-gray-900">Debit ({{ batch.currencyCode || 'GHS' }})</th>
+                                <th class="px-3.5 py-2.5 text-right font-mono text-gray-900">Credit ({{ batch.currencyCode || 'GHS' }})</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <tr v-if="!getProposedJournalLines(batch) || getProposedJournalLines(batch).length === 0">
+                                <td colspan="8" class="px-3.5 py-6 text-center text-gray-400 text-xs">No proposed journal entries available.</td>
+                            </tr>
+                            <tr v-for="(line, idx) in getProposedJournalLines(batch)"
+                                :key="line.id || idx"
+                                class="hover:bg-blue-50/30 transition">
+
+                                <td class="px-3.5 py-2.5 text-center text-gray-400 font-mono">{{ idx + 1 }}</td>
+
+                                <!-- Ref No -->
+                                <td class="px-3.5 py-2.5 text-gray-600 font-mono">
+                                    {{ line.referenceNumber || '—' }}
+                                </td>
+
+                                <!-- Account Name -->
+                                <td class="px-3.5 py-2.5 font-medium text-gray-900">
+                                    <div class="flex items-center gap-1.5">
+                                        <i class="bi bi-book text-blue-500 text-[11px]"></i>
+                                        <span>{{ line.accountName || line.accountDisplay || '—' }}</span>
+                                    </div>
+                                </td>
+
+                                <!-- Description -->
+                                <td class="px-3.5 py-2.5 text-gray-600 max-w-xs truncate" :title="line.description">
+                                    {{ line.description || '—' }}
+                                </td>
+
+                                <!-- Cost Center -->
+                                <td class="px-3.5 py-2.5 text-gray-600">
+                                    <span v-if="line.ouName && line.ouName !== '--' && line.ouName !== '—'" class="inline-flex items-center gap-1 text-[11px] bg-slate-100 px-2 py-0.5 rounded text-slate-700">
+                                        <i class="bi bi-diagram-3 text-[10px]"></i>
+                                        {{ line.ouName }}
+                                    </span>
+                                    <span v-else class="text-gray-400">—</span>
+                                </td>
+
+                                <!-- Cheque No -->
+                                <td class="px-3.5 py-2.5 text-gray-600 font-mono">
+                                    {{ line.chequeNo || '—' }}
+                                </td>
+
+                                <!-- Debit Amount -->
+                                <td class="px-3.5 py-2.5 text-right font-mono font-semibold"
+                                    :class="line.debitAmount > 0 ? 'text-emerald-700' : 'text-gray-400'">
+                                    {{ line.debitAmount > 0 ? fmtCurrency(line.debitAmount) : '—' }}
+                                </td>
+
+                                <!-- Credit Amount -->
+                                <td class="px-3.5 py-2.5 text-right font-mono font-semibold"
+                                    :class="line.creditAmount > 0 ? 'text-gray-900' : 'text-gray-400'">
+                                    {{ line.creditAmount > 0 ? fmtCurrency(line.creditAmount) : '—' }}
+                                </td>
+                            </tr>
+                        </tbody>
+                        <!-- Footer -->
+                        <tfoot class="bg-gray-50/80 font-semibold text-xs border-t border-gray-200">
+                            <tr>
+                                <td colspan="6" class="px-3.5 py-2.5 text-right text-gray-600">
+                                    Totals for Batch #{{ batch.batchNo }}:
+                                </td>
+                                <td class="px-3.5 py-2.5 text-right font-mono text-emerald-700 font-bold">
+                                    {{ fmtCurrency(getProposedJournalTotals(batch).debit) }}
+                                </td>
+                                <td class="px-3.5 py-2.5 text-right font-mono text-gray-900 font-bold">
+                                    {{ fmtCurrency(getProposedJournalTotals(batch).credit) }}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Pagination Footer ──────────────────────────────────────── -->
+    <div v-if="filteredPettyCashList.length > 0"
+         class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
+
+        <!-- Results count & Page size -->
+        <div class="flex items-center gap-3 text-xs text-gray-500">
+            <span>
+                Showing <strong class="text-gray-700">{{ startIndex }}</strong> to <strong class="text-gray-700">{{ endIndex }}</strong> of <strong class="text-gray-700">{{ filteredPettyCashList.length }}</strong> batches
+            </span>
+            <div class="flex items-center gap-1.5 ml-2">
+                <span>Per page:</span>
+                <select v-model.number="pageSize"
+                        class="rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 focus:outline-none">
+                    <option v-for="size in pageSizeOptions" :key="size" :value="size">{{ size }}</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Page Buttons -->
+        <div class="flex items-center gap-1 text-xs">
+            <button type="button"
+                    @@click="goToPage(currentPage - 1)"
+                    :disabled="currentPage === 1"
+                    class="rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <span class="px-3 py-1.5 font-medium text-gray-700">
+                Page {{ currentPage }} of {{ totalPages }}
+            </span>
+            <button type="button"
+                    @@click="goToPage(currentPage + 1)"
+                    :disabled="currentPage >= totalPages"
+                    class="rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
 </div>
 
 <style>
-    .gl-field { display: flex; flex-direction: column; }
-    .gl-field label { font-size: .75rem; font-weight: 600; color: #4b5563; margin-bottom: .35rem; }
-    .gl-input, .gl-select {
-        width: 100%; border-radius: .5rem; border: 1px solid #d1d5db;
-        padding: .5rem .75rem; font-size: .8125rem; color: #111827;
-        background: #fff; outline: none; transition: border-color .15s, box-shadow .15s;
+    .animate-fadeIn {
+        animation: fadeIn .18s ease-in-out;
     }
-    .gl-input:focus, .gl-select:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, .12); }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-4px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .rotate-90 {
+        transform: rotate(90deg);
+    }
 </style>
 
 <script src="~/js/gl/petty-cash.js" asp-append-version="true"></script>

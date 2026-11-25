@@ -118,26 +118,9 @@ public class PettyCash : AuditedEntity<Guid>
     public bool IsPosted { get; set; }
 
     public List<PettyCashTransactionDetail> Details { get; set; }
+    public ProposedJournalEntry ProposedJournalEntries { get; set; }
 }
 
-public class PettyCashTransactionDetail
-{
-    public Guid Id { get; set; }
-    public DateTime TransactionDate { get; set; }
-    public string RefNo { get; set; }
-
-    public Guid ExpenseAccountId { get; set; }
-    public string ExpenseAccountName { get; set; }
-
-    public string Description { get; set; }
-    public decimal Amount { get; set; }
-
-    public Guid? OuId { get; set; }
-    public string OuName { get; set; }
-
-    public Guid? RecipientId { get; set; }
-    public string RecipientName { get; set; }    
-}
 
 public class ImprestCategory : AuditedEntity<Guid>
 {
@@ -374,6 +357,20 @@ public class JournalListFilterDto
     public string Search { get; set; }
 }
 
+public class PettyCashFilterDto
+{
+    public int PageNo { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
+
+    /// <summary>Filter by posted status. Null means return all.</summary>
+    public bool? IsPosted { get; set; }
+ 
+    /// <summary>Free-text search against BatchNumber and BatchDescription.</summary>
+    public string Search { get; set; }
+}
+
 /// <summary>Paged wrapper returned by Journal/ListAll.</summary>
 public class JournalTransactionPagedResult
 {
@@ -489,4 +486,58 @@ public class JournalDetail
 public class PostVoucherDto
 {
     public List<Guid> Ids { get; set; } = new();
+}
+
+public class PettyCashTransactionPagedResult
+{
+    public int TotalCount { get; set; }
+
+    public int PageNo { get; set; }
+
+    public int PageSize { get; set; }
+
+    public List<PettyCashTransaction> Items { get; set; } = new();
+}
+
+public class PettyCashTransaction : AuditedEntity<Guid>
+{
+    public DateTime BatchDate { get; set; }
+    public string BatchNo { get; set; }
+    public string SourceDocNo { get; set; }
+
+    public Guid PettyCashAccountId { get; set; }
+    public string PettyCashAccountName { get; set; }
+
+    public string BatchOriginator { get; set; }
+
+    public Guid CurrencyId { get; set; }
+    public string CurrencyName { get; set; }
+
+    public string CurrencyCode { get; set; }
+
+    public decimal CurrencyRate { get; set; }
+    public decimal TotalAmount { get; set; }
+    public bool IsPosted { get; set; }
+    
+    public List<PettyCashTransactionDetail> Details { get; set; }
+    public ProposedJournalEntry ProposedJournalEntries { get; set; }
+}
+
+public class PettyCashTransactionDetail
+{
+    public Guid Id { get; set; }
+    public DateTime TransactionDate { get; set; }
+    public string RefNo { get; set; }
+
+    public Guid ExpenseAccountId { get; set; }
+    public string ExpenseAccountName { get; set; }
+
+    public string Description { get; set; }
+    public decimal Amount { get; set; }
+
+    public Guid? OuId { get; set; }
+    public string OuName { get; set; }
+
+    public Guid? RecipientId { get; set; }
+    public string RecipientName { get; set; }
 }

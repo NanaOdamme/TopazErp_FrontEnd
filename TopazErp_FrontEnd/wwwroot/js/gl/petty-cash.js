@@ -1,175 +1,174 @@
 /**
  * General Ledger - Petty Cash Listings (Vue 3)
- * Modern implementation matching Topaz ERP Design System
- * Directory Listings View
+ * Design matches the Journal Transactions page.
  */
 const app = Vue.createApp({
     data() {
         return {
             theme: '#0645e7',
-            isLoading: false,
             isShimmerLoading: false,
 
+            // Raw list from server
             pettyCashList: [],
             accountsList: [],
             pettyCashAccounts: [],
 
-            // Filter state
-            filterParams: {
-                startDate: '',
-                endDate: '',
-                accountId: '',
-                query: ''
-            }
+            // ── Filter state (all client-side, mirroring Journal) ──────────
+            useDateFilter: false,
+            activeDatePreset: 'all',   // 'today' | 'month' | '3months' | 'year' | 'custom' | 'all'
+            startDate: '',
+            endDate: '',
+            postingStatus: 'all',      // 'all' | 'unposted' | 'posted'
+            accountFilter: 'all',      // 'all' | <accountId>
+            searchQuery: '',
+
+            // Collapsible state
+            expandedIds: [],
+
+            // Selection state for batch operations
+            selectedIds: [],
+
+            // Pagination
+            currentPage: 1,
+            pageSize: 15,
+            pageSizeOptions: [10, 15, 25, 50, 100]
         };
     },
 
     computed: {
+        /* ── Client-side filtered list ───────────────────────────── */
+        filteredPettyCashList() {
+            let list = this.pettyCashList || [];
+
+            // Posting status
+            if (this.postingStatus === 'posted') {
+                list = list.filter(b => b.isPosted === true);
+            } else if (this.postingStatus === 'unposted') {
+                list = list.filter(b => b.isPosted === false);
+            }
+
+            // Account filter
+            if (this.accountFilter && this.accountFilter !== 'all') {
+                list = list.filter(b =>
+                    String(b.pettyCashAccountId).toLowerCase() === String(this.accountFilter).toLowerCase()
+                );
+            }
+
+            // Date range filter
+            if (this.useDateFilter) {
+                if (this.startDate) {
+                    list = list.filter(b => {
+                        const d = (b.batchDate || '').split('T')[0];
+                        return d && d >= this.startDate;
+                    });
+                }
+                if (this.endDate) {
+                    list = list.filter(b => {
+                        const d = (b.batchDate || '').split('T')[0];
+                        return d && d <= this.endDate;
+                    });
+                }
+            }
+
+            // Search query
+            if (this.searchQuery && this.searchQuery.trim() !== '') {
+                const q = this.searchQuery.toLowerCase().trim();
+                list = list.filter(b => {
+                    const batchMatch = (b.batchNo || '').toLowerCase().includes(q);
+                    const accountMatch = (b.pettyCashAccountName || '').toLowerCase().includes(q);
+                    const originatorMatch = (b.batchOriginator || '').toLowerCase().includes(q);
+                    const sourceMatch = (b.sourceDocNo || '').toLowerCase().includes(q);
+                    const detailMatch = (b.details || []).some(d =>
+                        (d.expenseAccountName || d.accountName || d.glAccountName || '').toLowerCase().includes(q) ||
+                        (d.description || '').toLowerCase().includes(q) ||
+                        (d.ouName || '').toLowerCase().includes(q) ||
+                        (d.refNo || d.referenceNo || d.referenceNumber || '').toLowerCase().includes(q)
+                    );
+                    const pjMatch = (this.getProposedJournalLines(b) || []).some(l =>
+                        (l.accountName || '').toLowerCase().includes(q) ||
+                        (l.description || '').toLowerCase().includes(q) ||
+                        (l.ouName || '').toLowerCase().includes(q) ||
+                        (l.referenceNumber || '').toLowerCase().includes(q)
+                    );
+                    return batchMatch || accountMatch || originatorMatch || sourceMatch || detailMatch || pjMatch;
+                });
+            }
+
+            return list;
+        },
+
+        /* ── Paginated ───────────────────────────────────────────── */
+        paginatedBatches() {
+            const start = (this.currentPage - 1) * this.pageSize;
+            return this.filteredPettyCashList.slice(start, start + this.pageSize);
+        },
+
+        totalPages() {
+            return Math.ceil(this.filteredPettyCashList.length / this.pageSize) || 1;
+        },
+
+        startIndex() {
+            return this.filteredPettyCashList.length === 0 ? 0 : (this.currentPage - 1) * this.pageSize + 1;
+        },
+
+        endIndex() {
+            return Math.min(this.currentPage * this.pageSize, this.filteredPettyCashList.length);
+        },
+
+        /* ── KPI metrics ─────────────────────────────────────────── */
         totalBatches() {
-            return this.pettyCashList.length;
+            return this.filteredPettyCashList.length;
         },
 
         totalDisbursements() {
-            return this.pettyCashList.reduce((sum, b) => sum + (Number(b.totalAmount) || 0), 0);
+            return this.filteredPettyCashList.reduce((sum, b) => sum + (Number(b.totalAmount) || 0), 0);
         },
 
-        totalDisbursementsFormatted() {
-            return 'GH¢ ' + this.formatNumber(this.totalDisbursements);
+        postedCount() {
+            return this.filteredPettyCashList.filter(b => b.isPosted).length;
         },
 
-        totalLineItems() {
-            return this.pettyCashList.reduce((sum, b) => sum + ((b.details && b.details.length) || 0), 0);
+        unpostedCount() {
+            return this.filteredPettyCashList.filter(b => !b.isPosted).length;
         },
 
-        pettyCashAccountsCount() {
-            return this.pettyCashAccounts.length;
+        /* ── Batch Selection Helpers ─────────────────────────────── */
+        selectedBatches() {
+            const idSet = new Set(this.selectedIds.map(String));
+            return this.filteredPettyCashList.filter(b => idSet.has(String(b.id)));
         },
 
-        filteredPettyCashList() {
-            return this.pettyCashList.filter(item => {
-                if (this.filterParams.startDate) {
-                    const itemDate = (item.batchDate || '').split('T')[0];
-                    if (itemDate && itemDate < this.filterParams.startDate) return false;
-                }
-                if (this.filterParams.endDate) {
-                    const itemDate = (item.batchDate || '').split('T')[0];
-                    if (itemDate && itemDate > this.filterParams.endDate) return false;
-                }
-                if (this.filterParams.accountId) {
-                    if (String(item.pettyCashAccountId).toLowerCase() !== String(this.filterParams.accountId).toLowerCase()) {
-                        return false;
-                    }
-                }
-                return true;
-            });
+        selectedUnpostedCount() {
+            return this.selectedBatches.filter(b => !b.isPosted).length;
         },
 
-        pettyCashColumns() {
-            return [
-                {
-                    key: 'id',
-                    label: 'ID',
-                    type: 'text',
-                    hidden: true
-                },
-                {
-                    key: 'batchNo',
-                    label: 'Batch #',
-                    type: 'text',
-                    width: 140,
-                    searchable: true,
-                    sortable: true,
-                    render: (v, row) => {
-                        const val = v || '—';
-                        const id = row?.id;
-                        if (id) {
-                            return `<a href="/GeneralLedger/CreatePettyCash?id=${encodeURIComponent(id)}" class="inline-flex items-center px-2.5 py-1 rounded font-mono text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800" title="Click to view/edit transaction batch">Batch #${val}</a>`;
-                        }
-                        return `<span class="inline-flex items-center px-2.5 py-1 rounded font-mono text-xs font-bold bg-slate-100 text-slate-700">${val}</span>`;
-                    }
-                },
-                {
-                    key: 'batchDate',
-                    label: 'Batch Date',
-                    type: 'date',
-                    width: 130,
-                    searchable: true,
-                    sortable: true,
-                    render: (v) => this.formatDate(v)
-                },
-                {
-                    key: 'sourceDocNo',
-                    label: 'Source Doc #',
-                    type: 'text',
-                    width: 140,
-                    searchable: true,
-                    render: (v) => v ? `<span class="font-mono text-xs text-gray-700 dark:text-gray-300">${v}</span>` : '<span class="text-gray-400">—</span>'
-                },
-                {
-                    key: 'pettyCashAccountName',
-                    label: 'Petty Cash G/L Account',
-                    type: 'text',
-                    width: 260,
-                    searchable: true,
-                    sortable: true,
-                    render: (v) => `<span class="font-medium text-xs text-slate-800 dark:text-slate-200">${v || 'Petty Cash'}</span>`
-                },
-                {
-                    key: 'batchOriginator',
-                    label: 'Originator',
-                    type: 'text',
-                    width: 140,
-                    searchable: true,
-                    render: (v) => `<span class="inline-flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300"><i class="bi bi-person text-gray-400"></i>${v || 'System'}</span>`
-                },
-                {
-                    key: 'currencyCode',
-                    label: 'Currency',
-                    type: 'text',
-                    width: 100,
-                    render: (v) => `<span class="font-semibold text-xs text-slate-700 dark:text-slate-300">${v || 'GHS'}</span>`
-                },
-                {
-                    key: 'linesCount',
-                    label: 'Line Items',
-                    type: 'text',
-                    width: 110,
-                    render: (v, row) => {
-                        const count = (row.details && row.details.length) || Number(v) || 0;
-                        return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">${count} line${count === 1 ? '' : 's'}</span>`;
-                    }
-                },
-                {
-                    key: 'totalAmount',
-                    label: 'Total Disbursed',
-                    type: 'number',
-                    width: 150,
-                    sortable: true,
-                    render: (v, row) => {
-                        const num = Number(v) || 0;
-                        const code = row.currencyCode || 'GHS';
-                        return `<div class="text-right font-mono text-xs font-bold text-slate-900 dark:text-white">${code} ${this.formatNumber(num)}</div>`;
-                    }
-                },
-                {
-                    key: 'isPosted',
-                    label: 'Status',
-                    type: 'text',
-                    width: 110,
-                    sortable: true,
-                    render: (v) => {
-                        if (v === true) {
-                            return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20 dark:bg-emerald-950/40 dark:text-emerald-300"><i class="bi bi-check-circle-fill mr-1 text-[10px]"></i>Posted</span>`;
-                        }
-                        return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20 dark:bg-blue-950/40 dark:text-blue-300"><i class="bi bi-pencil-fill mr-1 text-[10px]"></i>Recorded</span>`;
-                    }
-                }
-            ];
+        isAllSelected() {
+            if (this.paginatedBatches.length === 0) return false;
+            return this.paginatedBatches.every(b => this.selectedIds.includes(String(b.id)));
+        },
+
+        /* ── Expand All helper ───────────────────────────────────── */
+        isAllExpanded() {
+            return this.filteredPettyCashList.length > 0 &&
+                this.filteredPettyCashList.every(b => this.expandedIds.includes(b.id));
         }
     },
 
+    watch: {
+        // Reset to page 1 and clear selection when any filter changes
+        searchQuery()     { this.currentPage = 1; this.selectedIds = []; },
+        postingStatus()   { this.currentPage = 1; this.selectedIds = []; },
+        accountFilter()   { this.currentPage = 1; this.selectedIds = []; },
+        useDateFilter()   { this.currentPage = 1; this.selectedIds = []; },
+        startDate()       { this.currentPage = 1; this.selectedIds = []; },
+        endDate()         { this.currentPage = 1; this.selectedIds = []; },
+        pageSize()        { this.currentPage = 1; this.selectedIds = []; }
+    },
+
     methods: {
-        formatNumber(num) {
+
+        /* ── Formatting ──────────────────────────────────────────── */
+        fmtCurrency(num) {
             if (num === null || num === undefined || isNaN(num)) return '0.00';
             const val = Number(num);
             if (val < 0) {
@@ -178,31 +177,396 @@ const app = Vue.createApp({
             return val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         },
 
-        formatDate(dateVal) {
+        fmtDate(dateVal) {
             if (!dateVal) return '—';
             try {
                 const d = new Date(dateVal);
                 if (isNaN(d.getTime())) return String(dateVal).split('T')[0];
                 return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-');
-            } catch (e) {
+            } catch {
                 return String(dateVal).split('T')[0];
             }
         },
 
-        resetFilterParams() {
-            this.filterParams = {
-                startDate: '',
-                endDate: '',
-                accountId: '',
-                query: ''
-            };
+        /* ── Expand / Collapse ───────────────────────────────────── */
+        isExpanded(id) {
+            if (!id) return false;
+            return this.expandedIds.includes(String(id));
+        },
+
+        toggleExpand(id) {
+            if (!id) return;
+            const strId = String(id);
+            const idx = this.expandedIds.indexOf(strId);
+            if (idx === -1) {
+                this.expandedIds.push(strId);
+            } else {
+                this.expandedIds.splice(idx, 1);
+            }
+        },
+
+        expandAll() {
+            this.expandedIds = this.filteredPettyCashList
+                .map(b => String(b.id || b.batchNo || ''))
+                .filter(Boolean);
+        },
+
+        collapseAll() {
+            this.expandedIds = [];
+        },
+
+        toggleAllExpansion() {
+            if (this.isAllExpanded) {
+                this.collapseAll();
+            } else {
+                this.expandAll();
+            }
+        },
+
+        /* ── Selection Handling ──────────────────────────────────── */
+        toggleSelectAll() {
+            if (this.isAllSelected) {
+                const currentIds = new Set(this.paginatedBatches.map(b => String(b.id)));
+                this.selectedIds = this.selectedIds.filter(id => !currentIds.has(String(id)));
+            } else {
+                const currentIds = this.paginatedBatches.map(b => String(b.id));
+                this.selectedIds = Array.from(new Set([...this.selectedIds, ...currentIds]));
+            }
+        },
+
+        toggleSelectBatch(id) {
+            if (!id) return;
+            const strId = String(id);
+            const idx = this.selectedIds.indexOf(strId);
+            if (idx > -1) {
+                this.selectedIds.splice(idx, 1);
+            } else {
+                this.selectedIds.push(strId);
+            }
+        },
+
+        clearSelection() {
+            this.selectedIds = [];
+        },
+
+        /* ── Post Actions (mirroring Vouchers) ────────────────────── */
+        async postSingleBatch(batch) {
+            if (!batch || !batch.id) return;
+            if (batch.isPosted) {
+                this.toast('info', 'This petty cash batch is already posted.');
+                return;
+            }
+
+            const confirm = await Swal.fire({
+                title: 'Post Voucher?',
+                text: 'Posted vouchers will affect the general ledger permanently.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#059669',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes, Post',
+                cancelButtonText: 'Cancel'
+            });
+
+            if (!confirm.isConfirmed) return;
+
+            this.isShimmerLoading = true;
+            try {
+                const ids = [batch.id];
+                const payload = { ids: ids };
+
+                let resp;
+                try {
+                    resp = await axios.post('/GeneralLedger/PostPettyCash', payload);
+                } catch (_) {
+                    resp = await axios.post('/GeneralLedger/PostPettyCashBatches', payload);
+                }
+
+                if (resp?.data && (resp.data.success === false || resp.data.isSuccessful === false)) {
+                    this.toast('error', resp.data.message || resp.data.error || 'Unable to post selected voucher(s).');
+                    return;
+                }
+
+                this.toast('success', '1 voucher(s) posted successfully.');
+                await this.getPettyCashList();
+            } catch (err) {
+                console.error('Error posting petty cash batch:', err);
+                const errMsg = err?.response?.data?.message || err?.message || 'Unable to post selected vouchers.';
+                this.toast('error', errMsg);
+            } finally {
+                this.isShimmerLoading = false;
+            }
+        },
+
+        async postSelectedBatches() {
+            if (!this.selectedIds || this.selectedIds.length === 0) {
+                this.toast('warning', 'Please select at least one voucher to post.');
+                return;
+            }
+
+            const list = this.pettyCashList;
+            const idSet = new Set(this.selectedIds.map(id => String(id).toLowerCase()));
+            const toPost = list.filter(b => idSet.has(String(b.id).toLowerCase()) && !b.isPosted);
+
+            if (toPost.length === 0) {
+                this.toast('warning', 'The selected voucher(s) are already posted.');
+                return;
+            }
+
+            const isSingle = toPost.length === 1;
+            const confirm = await Swal.fire({
+                title: isSingle ? 'Post Voucher?' : `Post ${toPost.length} Vouchers?`,
+                text: 'Posted vouchers will affect the general ledger permanently.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#059669',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: isSingle ? 'Yes, Post' : `Yes, Post ${toPost.length}`,
+                cancelButtonText: 'Cancel'
+            });
+
+            if (!confirm.isConfirmed) return;
+
+            this.isShimmerLoading = true;
+            try {
+                const ids = toPost.map(b => b.id);
+                const payload = { ids: ids };
+
+                let resp;
+                try {
+                    resp = await axios.post('/GeneralLedger/PostPettyCash', payload);
+                } catch (_) {
+                    resp = await axios.post('/GeneralLedger/PostPettyCashBatches', payload);
+                }
+
+                if (resp?.data && (resp.data.success === false || resp.data.isSuccessful === false)) {
+                    this.toast('error', resp.data.message || resp.data.error || 'Unable to post selected voucher(s).');
+                    return;
+                }
+
+                this.toast('success', `${ids.length} voucher(s) posted successfully.`);
+                this.selectedIds = [];
+                await this.getPettyCashList();
+            } catch (err) {
+                console.error('Error posting selected batches:', err);
+                const errMsg = err?.response?.data?.message || err?.message || 'Unable to post selected vouchers.';
+                this.toast('error', errMsg);
+            } finally {
+                this.isShimmerLoading = false;
+            }
+        },
+
+        postSelectedVouchers() {
+            return this.postSelectedBatches();
+        },
+
+        /* ── Proposed Journal Entries Helpers (matches Voucher listings) ── */
+        getProposedJournalLines(batch) {
+            if (!batch) return [];
+
+            // 1. Check if batch.proposedJournalEntries already contains lines
+            const raw = batch.proposedJournalEntries || batch.proposedJournalEntry || batch.proposedJournal;
+            let rawLines = [];
+            if (Array.isArray(raw)) {
+                rawLines = raw;
+            } else if (raw && Array.isArray(raw.lines)) {
+                rawLines = raw.lines;
+            } else if (raw && Array.isArray(raw.items)) {
+                rawLines = raw.items;
+            }
+
+            let lines = [];
+            if (rawLines.length > 0) {
+                lines = rawLines.map((l, idx) => ({
+                    id:              l.id || `${batch.id || 'pj'}_${idx}`,
+                    batchNumber:     l.batchNumber || batch.batchNo || '',
+                    referenceNumber: l.referenceNumber || l.referenceNo || batch.batchNo || '',
+                    accountName:     l.accountDisplay || l.accountName || this._resolveAccountName(l.accountId) || '—',
+                    description:     l.description || '',
+                    debitAmount:     parseFloat(l.debitAmount || 0),
+                    creditAmount:    parseFloat(l.creditAmount || 0),
+                    ouName:          l.ouName || '--',
+                    chequeNo:        l.chequeNo || '',
+                }));
+            } else if (Array.isArray(batch.details) && batch.details.length > 0) {
+                // Synthesize proposed journal lines from expense lines and petty cash credit
+                let sumDebit = 0;
+                batch.details.forEach((d, idx) => {
+                    const amt = parseFloat(d.amount != null ? d.amount : (d.debitAmount || d.localDebitAmount || 0));
+                    sumDebit += amt;
+                    lines.push({
+                        id:              d.id || `${batch.id || 'det'}_${idx}`,
+                        batchNumber:     batch.batchNo || '',
+                        referenceNumber: d.refNo || d.referenceNo || d.referenceNumber || batch.batchNo || '',
+                        accountName:     d.expenseAccountName || d.accountName || d.glAccountName || this._resolveAccountName(d.expenseAccountId) || 'Expense Account',
+                        description:     d.description || '',
+                        debitAmount:     amt,
+                        creditAmount:    0,
+                        ouName:          d.ouName || '--',
+                        chequeNo:        d.chequeNo || '',
+                    });
+                });
+
+                // Balancing Credit line for Petty Cash Account
+                const creditAmt = parseFloat(batch.totalAmount || sumDebit || 0);
+                const firstOu = (batch.details[0] && batch.details[0].ouName) || '--';
+                lines.push({
+                    id:              `credit_${batch.id || batch.batchNo}`,
+                    batchNumber:     batch.batchNo || '',
+                    referenceNumber: batch.sourceDocNo || batch.batchNo || '',
+                    accountName:     batch.pettyCashAccountName || this._resolveAccountName(batch.pettyCashAccountId) || 'Petty Cash Account',
+                    description:     `Petty cash disbursement - Batch #${batch.batchNo || ''}`,
+                    debitAmount:     0,
+                    creditAmount:    creditAmt,
+                    ouName:          firstOu,
+                    chequeNo:        '',
+                });
+            }
+
+            return lines;
+        },
+
+        getProposedJournalTotals(batch) {
+            const lines = this.getProposedJournalLines(batch);
+            let debit = 0;
+            let credit = 0;
+            lines.forEach(l => {
+                debit += parseFloat(l.debitAmount || 0);
+                credit += parseFloat(l.creditAmount || 0);
+            });
+            debit = Math.round((debit + Number.EPSILON) * 100) / 100;
+            credit = Math.round((credit + Number.EPSILON) * 100) / 100;
+            const isBalanced = Math.abs(debit - credit) < 0.009 && debit > 0;
+            return { debit, credit, isBalanced };
+        },
+
+        isBatchBalanced(batch) {
+            return this.getProposedJournalTotals(batch).isBalanced;
+        },
+
+        _resolveAccountName(accountId) {
+            if (!accountId) return '';
+            const acc = (this.accountsList || []).find(a => String(a.id).toLowerCase() === String(accountId).toLowerCase());
+            return acc ? (acc.accountIdentifier || acc.accountName || '') : '';
+        },
+
+        /* ── Pagination ──────────────────────────────────────────── */
+        goToPage(page) {
+            if (page < 1 || page > this.totalPages) return;
+            this.currentPage = page;
+        },
+
+        /* ── Date Filter Helpers (matches Journal) ───────────────── */
+        toggleDateFilter() {
+            this.useDateFilter = !this.useDateFilter;
+            this.onDateToggleChange();
+        },
+
+        onDateToggleChange() {
+            if (this.useDateFilter) {
+                if (!this.startDate || !this.endDate) {
+                    this.setQuickDate('3months');
+                } else {
+                    if (!this.activeDatePreset || this.activeDatePreset === 'all') {
+                        this.activeDatePreset = 'custom';
+                    }
+                    this.getPettyCashList();
+                }
+            } else {
+                this.disableDateFilter();
+            }
+        },
+
+        onDateInputChange() {
+            if (this.startDate || this.endDate) {
+                this.useDateFilter = true;
+                this.activeDatePreset = 'custom';
+                this.getPettyCashList();
+            }
+        },
+
+        applyDateFilter() {
+            if (!this.startDate && !this.endDate) {
+                this.toast('info', 'Please select a start date or end date to filter.');
+                return;
+            }
+            this.useDateFilter = true;
+            this.activeDatePreset = 'custom';
+            this.currentPage = 1;
             this.getPettyCashList();
         },
 
+        disableDateFilter() {
+            this.useDateFilter = false;
+            this.activeDatePreset = 'all';
+            this.startDate = '';
+            this.endDate = '';
+            this.currentPage = 1;
+            this.getPettyCashList();
+        },
+
+        setQuickDate(preset) {
+            if (preset === 'all') {
+                this.disableDateFilter();
+                return;
+            }
+
+            this.useDateFilter = true;
+            this.activeDatePreset = preset;
+
+            const today = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+            if (preset === 'today') {
+                this.startDate = fmt(today);
+                this.endDate = fmt(today);
+            } else if (preset === 'month') {
+                const start = new Date(today.getFullYear(), today.getMonth(), 1);
+                this.startDate = fmt(start);
+                this.endDate = fmt(today);
+            } else if (preset === '3months') {
+                const start = new Date(today.getFullYear(), today.getMonth() - 2, 1);
+                this.startDate = fmt(start);
+                this.endDate = fmt(today);
+            } else if (preset === 'year') {
+                this.startDate = `${today.getFullYear()}-01-01`;
+                this.endDate = fmt(today);
+            }
+            this.currentPage = 1;
+            this.getPettyCashList();
+        },
+
+        resetFilters() {
+            this.searchQuery = '';
+            this.postingStatus = 'all';
+            this.accountFilter = 'all';
+            this.useDateFilter = false;
+            this.startDate = '';
+            this.endDate = '';
+            this.activeDatePreset = 'all';
+            this.currentPage = 1;
+            this.getPettyCashList();
+        },
+
+        /* ── Data Fetch ──────────────────────────────────────────── */
         async getPettyCashList() {
             this.isShimmerLoading = true;
             try {
-                const resp = await axios.get('/GeneralLedger/GetPettyCashTransactions?pageNo=1&pageSize=1000');
+                const payload = {
+                    pageNo: 1,
+                    pageSize: 5000,
+                    startDate: this.useDateFilter && this.startDate ? this.startDate : null,
+                    endDate: this.useDateFilter && this.endDate ? this.endDate : null,
+                    isPosted: this.postingStatus === 'posted'
+                        ? true
+                        : this.postingStatus === 'unposted'
+                            ? false
+                            : null,
+                    search: this.searchQuery && this.searchQuery.trim() !== '' ? this.searchQuery.trim() : null
+                };
+
+                const resp = await axios.post('/GeneralLedger/GetPettyCashTransactions', payload);
                 const raw = resp.data;
                 let list = [];
                 if (Array.isArray(raw)) {
@@ -216,8 +580,14 @@ const app = Vue.createApp({
                 } else if (raw?.data && Array.isArray(raw.data)) {
                     list = raw.data;
                 }
-
-                this.pettyCashList = list;
+                this.pettyCashList = list.map((item, idx) => {
+                    const id = item.id || item.Id || item.batchNo || (`pc_${idx}`);
+                    return {
+                        ...item,
+                        id: String(id)
+                    };
+                });
+                this.selectedIds = [];
             } catch (err) {
                 console.error('Error fetching petty cash transactions:', err);
                 this.toast('error', 'Unable to load petty cash transactions.');
@@ -250,22 +620,7 @@ const app = Vue.createApp({
             }
         },
 
-        onGridOpenForm(e) {
-            const targetRow = e?.row || (e?.rows && e.rows[0]) || e;
-            if (targetRow && targetRow.id) {
-                window.location.href = `/GeneralLedger/CreatePettyCash?id=${encodeURIComponent(targetRow.id)}`;
-            } else {
-                window.location.href = '/GeneralLedger/CreatePettyCash';
-            }
-        },
-
-        onGridDelete(e) {
-            const rows = e?.rows || (e?.row ? [e.row] : []);
-            if (!rows.length) return;
-            const target = rows[0];
-            this.deletePettyCashBatch(target.id, target.batchNo);
-        },
-
+        /* ── Delete ──────────────────────────────────────────────── */
         async deletePettyCashBatch(id, batchNo) {
             if (!id) return;
 
@@ -295,6 +650,7 @@ const app = Vue.createApp({
             }
         },
 
+        /* ── Toast ───────────────────────────────────────────────── */
         toast(type, message) {
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
@@ -306,10 +662,8 @@ const app = Vue.createApp({
                     timer: 3500,
                     timerProgressBar: true
                 });
-            } else if (typeof toastr !== 'undefined') {
-                toastr[type] ? toastr[type](message) : toastr.info(message);
             } else {
-                alert(message);
+                console.log(`[${type.toUpperCase()}] ${message}`);
             }
         }
     },
@@ -329,5 +683,4 @@ const app = Vue.createApp({
     }
 });
 
-app.use(DataGridPlugin);
 app.mount('#app');

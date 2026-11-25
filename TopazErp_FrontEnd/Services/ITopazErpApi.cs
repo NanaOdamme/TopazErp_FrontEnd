@@ -246,10 +246,12 @@ public interface ITopazErpApi
     Task<BaseApiResponse> DeletePettyCashRecipient(Guid id);
     
     //petty cash
-    Task<PettyCashResponse> GetPettyTransactions(int pageNo, int pageSize, string query);
+    Task<PettyCashResponse> GetPettyTransactions(PettyCashFilterDto dto);
+    Task<PettyCashTransactionDetailResponse> GetPettyTransactionDetails(Guid id);
     Task<BaseApiResponse> CreatePettyCash(object dto);
     Task<BaseApiResponse> UpdatePettyCash(object dto);
     Task<BaseApiResponse> DeletePettyCash(Guid id);
+    Task<BaseApiResponse> PostPettyCash(object dto);
     
     //imprest category
     Task<ImprestCategoryResponse> GetImprestCategories(int pageNo, int pageSize, string query);
@@ -268,7 +270,7 @@ public interface ITopazErpApi
     Task<BaseApiResponse> CreateDefaultGlNumbers(object dto);
     Task<BaseApiResponse> UpdateDefaultGlNumbers(object dto);
     
-    // Journal
+    // Journal ...
     Task<JournalTransactionResponse> GetJournalTransactions(JournalListFilterDto dto);
     Task<BaseApiResponse> CreateJournal(object dto);
     Task<BaseApiResponse> UpdateJournal(object dto);
