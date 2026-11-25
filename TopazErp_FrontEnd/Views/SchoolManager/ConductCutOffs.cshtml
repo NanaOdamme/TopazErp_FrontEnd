@@ -1,0 +1,50 @@
+@{
+    ViewBag.Title = "Conduct Cut-Offs";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>School Manager - Main Setups</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Conduct Cut-Offs</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+
+            <div class="page-title">
+                <h2 class="text-lg font-semibold text-gray-800">
+                    Conduct Cut-Offs
+                </h2>
+                
+            </div>
+        </div>
+    </div>
+    <div class="card" data-card-title="Conduct Cut-Offs">
+        <div id="app">
+            <data-grid
+                title="Cut Offs"
+                :columns="columns"
+                :data="cutOffList"
+                :theme="theme"
+                row-id="id"
+                label-key="cutOfMark"
+                item-label="Cut Off"
+                item-label-plural="Cut Offs"
+                add-label="Add Cut Off"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                @@create="onCreate"
+                @@update="onUpdate"
+                @@delete="onDelete"
+            ></data-grid>
+          
+        </div>
+       
+    </div>
+</div>
+
+<script src="~/js/school-manager/cut-offs.js" asp-append-version="true"></script>

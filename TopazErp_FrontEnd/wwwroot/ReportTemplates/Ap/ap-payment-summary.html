@@ -1,0 +1,129 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>AR Payments Report</title>
+    <style>
+        .report-sheet {
+            font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+            color: #1f2937;
+            padding: 36px 40px 28px;
+            box-sizing: border-box;
+        }
+
+        /* ---------- repeating header (logo left, rest centered) ---------- */
+        .report-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            border-bottom: 3px solid #1f1f1f;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+        }
+
+        .report-header .logo {
+            width: 120px;
+            object-fit: contain;
+            flex: 0 0 auto;
+        }
+
+        .report-header .header-center {
+            flex: 1;
+        }
+        .report-header .company-name {
+            font-size: 22px; font-weight: 700; color: #111827; letter-spacing: .2px;
+            margin: 0 0 4px;
+        }
+        .report-header .company-meta { font-size: 12px; color: #4b5563; line-height: 1.55; }
+        .report-title {
+            font-size: 20px; font-weight: 700; color: #1e1d1d; text-align: left;
+            margin: 6px 0 0; white-space: nowrap;
+        }
+        .report-header .report-title-sub { font-size: 11px; color: #6b7280; text-align: right; margin-top: 4px; }
+
+        /* ---------- table ---------- */
+        .report-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+        .report-table th {
+            text-align: left;
+            font-weight: 700;
+            padding: 6px 4px;
+            border-bottom: 1.5px solid #6b7280;
+            color: #111827;
+            white-space: nowrap;
+            background-color: #f9fafb;
+        }
+        .report-table td {
+            padding: 5px 4px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+            color: #000000;
+        }
+        .report-table tbody tr:nth-child(even) td { background: #f8fafc; }
+        .report-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+        .report-table .ctr { text-align: center; }
+        /* group header (customer + currency) */
+        .report-table .group-header td {
+            color: #2d2d2d; font-weight: 700; font-size: 11px;
+            padding: 8px 7px;
+        }
+        /* subtotal for one customer + currency group */
+        .report-table .subtotal-row td {
+            background: #e5e7eb; font-weight: 600; color: #111827;
+        }
+        .report-table .total-row td {
+            background: rgb(45 45 45 / 0.24) !important; font-weight: 700; color: #000;
+            border-top: 2px solid #1a1a1a;
+        }
+
+        /* ---------- repeating footer ---------- */
+        .report-footer {
+            display: flex; justify-content: space-between; align-items: center;
+            border-top: 1px solid #d1d5db; margin-top: 16px; padding-top: 10px;
+            font-size: 11px; color: #6b7280;
+        }
+        .report-footer .page-no { font-weight: 600; color: #374151; }
+    </style>
+</head>
+<body>
+<main class="report-sheet">
+
+    <!-- Repeats on every page, pinned to the top -->
+    <header class="report-header">
+        <img class="logo" src="{{companyLogo}}" alt="Company Logo" />
+        <div class="header-center">
+            <p class="company-name">{{companyName}}</p>
+            <div class="company-meta">
+                <div>{{primaryPhoneNo}} | {{address}} | {{email}}</div>
+            </div>
+         
+        </div>
+    </header>
+
+    <p class="report-title">{{reportTitle}}</p>
+    <table class="report-table">
+        <thead>
+        <tr>
+            <th>Invoice No</th>
+            <th class="ctr">Invoice Date</th>
+            <th class="ctr">Payment Date</th>
+            <th>Mode of Payment</th>
+            <th>Cheque No</th>
+            <th>Bank</th>
+            <th class="num">Amount Paid</th>
+            <th class="ctr">Days</th>
+        </tr>
+        </thead>
+        <tbody>{{RowsHtml}}</tbody>
+    </table>
+
+    <!-- Repeats on every page, pinned to the bottom -->
+    <footer class="report-footer">
+        <div class="report-title-sub">Generated {{CurrentDate}}</div>
+        <span>TopazAccounting Pro (AP)</span>
+        <span class="page-no">Page {{PageNumber}} of {{PageBreakCount}}</span>
+    </footer>
+
+</main>
+<script>
+    (function() {function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a58e28cfc92f033b',t:'MTc5NDQwOTE1MQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a58e28cfc92f033b',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

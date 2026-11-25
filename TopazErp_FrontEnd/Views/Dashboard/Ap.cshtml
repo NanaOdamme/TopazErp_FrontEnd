@@ -1,562 +1,718 @@
 ﻿@{
-ViewBag.Title = "Dashboard | Ap";
-Layout = "~/Views/Shared/_adminApLayout.cshtml";
+    ViewBag.Title = "Dashboard | Ap";
+    Layout = "~/Views/Shared/_adminApLayout.cshtml";
 }
 <style>
-    .hover-card:hover {
-        transform: scale(1.03); 
-        box-shadow: 0 4px 15px rgba(42, 42, 43, 0.15);
-        border: 1px solid #7cb7e8;
-        border-radius: 15px;
-      
-    }
-    .invoices{
-        border-bottom: 1px solid #7cb7e8;
-       /* border-top: 1px solid #7cb7e8;*/
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
-        margin-bottom: 2px;
-      
-    }
-    .card{
-        transition: transform 0.2s, box-shadow 0.2s;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
-    }
-    .icon-circle {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.2);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
+        [v-cloak] { display: none; }
 
-    .icon-circle i {
-        font-size: 20px;
-        color: #fff;
-    }
-    .number-cards{
-        font-family: "Inter";
-    }
-</style>
-<div class="content" id="app">
+        .ap-line {
+            stroke-dasharray: 1;
+            stroke-dashoffset: 1;
+            transition: stroke-dashoffset 1.15s cubic-bezier(.22, 1, .36, 1);
+        }
+        .ap-line.is-drawn { stroke-dashoffset: 0; }
+
+        .ap-fade { opacity: 0; transition: opacity .8s ease .25s; }
+        .ap-fade.is-drawn { opacity: 1; }
+
+        .ap-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+        .ap-scroll::-webkit-scrollbar-track { background: transparent; }
+        .ap-scroll::-webkit-scrollbar-thumb { border-radius: 9999px; background: rgba(100, 116, 139, .3); }
+        .ap-scroll::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, .5); }
+    </style>
+<div class="content" id="apDashboard">
+
+    <!-- =============================================================
+         Hero header + filters
+         ============================================================= -->
+    <section class="relative mb-6 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-700/70 dark:bg-slate-800">
+        <div class="pointer-events-none absolute -right-24 -top-32 h-72 w-72 rounded-full bg-gradient-to-br from-indigo-400/25 via-violet-300/15 to-transparent blur-3xl"></div>
+        <div class="pointer-events-none absolute -bottom-36 left-1/3 h-64 w-64 rounded-full bg-gradient-to-tr from-emerald-300/20 to-transparent blur-3xl"></div>
+        <div class="pointer-events-none absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-slate-50 to-transparent dark:from-slate-900/40 dark:to-transparent"></div>
+
+        <div class="relative flex flex-wrap items-start justify-between gap-6 p-6">
+            <div class="min-w-0">
     
-    <section id="number-cards" class="number-cards mb-5">
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-            <div class="dark:bg-none rounded-2xl bg-gradient-to-r from-sky-800 via-sky-600 to-sky-500 p-5 text-white shadow-lg dark:bg-sky-950">
-                <div class="flex items-center gap-4">
-                    <div class="icon-circle">
-                        <i class="bi bi-people-fill text-2xl"></i>
-                    </div>
-                    <div class="text-left">
-                        <h1 class="text-2xl font-bold leading-none">
-                            2150
-                        </h1>
+                <h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                    Accounts Payable
+                </h2>
+                <p class="mt-1 max-w-xl text-sm text-slate-500 dark:text-slate-400">
+                    Payables control centre — invoices, payment vouchers, supplier balances and aging at a glance.
+                </p>
 
-                        <p class="mt-2 text-sm font-medium text-white/80">
-                            Total Suppliers
-                        </p>
-                    </div>
-
-                
-
-            </div>
-            </div>
-            <div class="dark:bg-none rounded-2xl bg-gradient-to-r from-sky-500 via-sky-600 to-sky-800 p-5 text-white shadow-lg dark:bg-sky-950">
-                <div class="flex items-center gap-4">
-                    <div class="icon-circle">
-                        <i class="bi bi-card-list text-2xl"></i>
-                    </div>
-                    <div class="text-left">
-                        <h1 class="text-2xl font-bold leading-none">
-                            54
-                        </h1>
-
-                        <p class="mt-2 text-sm font-medium text-white/80">
-                            Total Invoices
-                        </p>
-                    </div>
-
-                
-
-                </div>
-            </div>
-            <div class="dark:bg-none rounded-2xl bg-gradient-to-r from-sky-800 via-sky-600 to-sky-500 p-5 text-white shadow-lg dark:bg-sky-950">
-                <div class="flex items-center gap-4">
-                    <div class="icon-circle">
-                        <i class="bi bi-box-arrow-in-up text-2xl"></i>
-                    </div>
-                    <div class="text-left">
-                        <h1 class="text-2xl font-bold leading-none">
-                            54
-                        </h1>
-
-                        <p class="mt-2 text-sm font-medium text-white/80">
-                            Posted Invoices
-                        </p>
-                    </div>
-
-                
-
-                </div>
-            </div>
-            <div class="dark:bg-none rounded-2xl bg-gradient-to-r from-sky-500 via-sky-600 to-sky-800 p-5 text-white shadow-lg dark:bg-sky-950">
-                <div class="flex items-center gap-4">
-                    <div class="icon-circle">
-                        <i class="bi bi-bank text-2xl"></i>
-                    </div>
-                    <div class="text-left">
-                        <h1 class="text-2xl font-bold leading-none">
-                            14
-                        </h1>
-
-                        <p class="mt-2 text-sm font-medium text-white/80">
-                            Posted Payments
-                        </p>
-                    </div>
-
-                
-
-                </div>
-            </div>
-    </div>
-    </section>
-   <section id="c3-pie-bar-charts">
-       <div class="grid grid-cols-1 md:grid-cols-1 xl:grid-cols-2 gap-6">
-           <div class="card " data-card-title="Invoice Analysis">
-               <div class="p-5">
-                   <canvas id="invoiceChart"></canvas>
-               </div>
-              
-           </div>
-            <div class="card " data-card-title="Invoices">
-                    <div class="p-5" style="height: 300px; overflow: auto;">
-                        <div class="grid grid-cols-1">
-                            <div v-for="invoice in paginatedInvoices" :key="invoice.id">
-                                <div class="invoices hover-card p-1 d-flex justify-content-between align-items-center"
-                                    style="cursor:pointer; transition: transform 0.2s;"
-                                    @@click="printReport(invoice.id)">
-                                    <div class="d-flex align-items-center">
-                                        <div>
-                                            <div class="text-sky-500"><strong>{{ invoice.supplierName }}</strong></div>
-                                            <div class="text-muted" style="font-size: 12px;">Inv #: {{ invoice.invoiceNumber }}</div>
-                                        </div>
-                                    </div>
-                                        <div class="text-end d-flex ">
-                                            <div class="text-success mr-1" style="font-size: 12px; ">{{ invoice.currencyCode }}</div>
-                                            <div style="font-size: 12px; font-weight: bold;">{{ parseFloat(invoice.totalInvoiceAmount).toFixed(2) }}</div>
-                                        </div>
-                                   
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Pagination Controls -->
-                        <div class="pagination-controls flex justify-center mt-5" style="font-size: 11px">
-                            <button class="text-xs bg-sky-500 text-white mx-2 py-1 px-2 rounded" @@click="prevPage" :disabled="currentPage === 1">Previous</button>
-                            <span>Page {{ currentPage }} of {{ totalPages }}</span>
-                            <button class="text-xs bg-sky-500 text-white mx-2 py-1 px-2 rounded" @@click="nextPage" :disabled="currentPage === totalPages">Next</button>
-                        </div>
-
-                    </div>
-            </div>
+                <div class="mt-4 flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300">
+                        <span class="relative flex h-1.5 w-1.5">
+                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                        </span>
+                        Live
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+                        <i class="bi bi-clock-history"></i>
+                        Updated <span v-cloak>{{ lastUpdatedLabel }}</span>
+                    </span>
             
-            <div class="card " data-card-title="Opening Balances">
-              
-<div class="max-h-[200px] overflow-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                </div>
+            </div>
 
-    <table class="w-full min-w-[600px] text-left text-xs">
+            <div class="flex flex-wrap items-end gap-2.5">
+                <label class="block">
+                    <span class="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Aging as of</span>
+                    <input id="asOfDate" type="date" v-model="asOfDate"
+                           class="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-indigo-500 dark:focus:ring-indigo-900/40" />
+                </label>
 
-        <!-- Table Header -->
-        <thead class="sticky top-0 z-10 bg-slate-100 text-[11px] uppercase tracking-wide text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-            <tr>
+                <label class="block">
+                    <span class="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Interval</span>
+                    <select id="agingInterval" v-model="agingInterval"
+                            class="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-indigo-500 dark:focus:ring-indigo-900/40">
+                        <option value="30">30 days</option>
+                        <option value="60">60 days</option>
+                        <option value="90">90 days</option>
+                    </select>
+                </label>
 
-                <th
-                    class="cursor-pointer whitespace-nowrap px-4 py-3 font-semibold transition-colors hover:text-sky-600 dark:hover:text-sky-400"
-                    @@click="sortBTable('supplierName')"
-                >
-                    <div class="flex items-center gap-1">
-                        <span>Supplier</span>
+                <button id="refreshButton" type="button" v-on:click="loadDashboard" :disabled="isLoading"
+                        class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-400 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-rose-600/20 transition hover:from-rose-400 hover:to-rose-600 hover:shadow-rose-600/30 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-60 dark:focus:ring-indigo-900/50">
+                    <i class="bi bi-arrow-clockwise" :class="{ 'animate-spin': isLoading }"></i>
+                    <span>Refresh</span>
+                </button>
+            </div>
+        </div>
+    </section>
 
-                        <span
-                            v-if="bSortKey === 'supplierName'"
-                            class="text-sky-600 dark:text-sky-400"
-                        >
-                            {{ sortOrder === 'asc' ? '↑' : '↓' }}
-                        </span>
-                    </div>
-                </th>
+    <!-- =============================================================
+         Load issues
+         ============================================================= -->
+    <div v-if="loadIssues.length" class="mb-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-800 shadow-sm dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">
+        <i class="bi bi-exclamation-triangle-fill mt-0.5"></i>
+        <p class="text-xs leading-relaxed">
+            Some data could not be loaded: <strong>{{ loadIssues.join(', ') }}</strong>. The rest of the dashboard is unaffected.
+        </p>
+    </div>
 
-                <th
-                    class="cursor-pointer whitespace-nowrap px-4 py-3 font-semibold transition-colors hover:text-sky-600 dark:hover:text-sky-400"
-                    @@click="sortBTable('amount')"
-                >
-                    <div class="flex items-center gap-1">
-                        <span>Amount</span>
+    <!-- =============================================================
+         Quick actions
+         ============================================================= -->
+    <div class="mb-6 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-700/70 dark:bg-slate-800" data-card-title="Quick Actions">
+        <div class="flex flex-wrap items-center gap-2">
+            <a id="agingAction" href="/Ap/Aging"
+               class="group inline-flex items-center gap-2 rounded-xl border border-rose-100 bg-rose-50/70 px-3.5 py-2 text-xs font-semibold text-rose-700 transition hover:-translate-y-0.5 hover:border-rose-200 hover:bg-rose-100 hover:shadow-sm dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20">
+                <i class="bi bi-hourglass-split transition group-hover:rotate-180"></i> Aging Summary
+            </a>
+            <a id="glAction" href="/Ap/GlTransactions"
+               class="group inline-flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50/70 px-3.5 py-2 text-xs font-semibold text-emerald-700 transition hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-100 hover:shadow-sm dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20">
+                <i class="bi bi-journal-text"></i> G/L Transactions
+            </a>
+            <a href="/Ap/Vouchers"
+               class="group inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300 dark:hover:bg-slate-700/60">
+                <i class="bi bi-receipt"></i> Payment Vouchers
+            </a>
+            <a href="/Ap/OpeningBalances"
+               class="group inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300 dark:hover:bg-slate-700/60">
+                <i class="bi bi-wallet2"></i> Opening Balances
+            </a>
+            <a href="/Ap/CanceledInvoices"
+               class="group inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300 dark:hover:bg-slate-700/60">
+                <i class="bi bi-x-circle"></i> Canceled Invoices
+            </a>
+            <a href="/Ap/DebitMemos"
+               class="group inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300 dark:hover:bg-slate-700/60">
+                <i class="bi bi-file-earmark-minus"></i> Debit Memos
+            </a>
+        </div>
+    </div>
 
-                        <span
-                            v-if="bSortKey === 'amount'"
-                            class="text-sky-600 dark:text-sky-400"
-                        >
-                            {{ sortOrder === 'asc' ? '↑' : '↓' }}
-                        </span>
-                    </div>
-                </th>
+    <!-- =============================================================
+         KPI cards
+         ============================================================= -->
+    <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <!-- Suppliers -->
+        <article class="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60 dark:border-slate-700/70 dark:bg-slate-800 dark:hover:shadow-slate-900/60">
+            <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-red-600 to-rose-400"></div>
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Suppliers</p>
+                    <h3 id="supplierCount" class="mt-2 text-3xl font-bold tabular-nums tracking-tight text-slate-900 dark:text-white" v-cloak>{{ formatCount(counters.suppliers) }}</h3>
+                    <p class="mt-1 truncate text-xs text-slate-400 dark:text-slate-500">All available vendors</p>
+                </div>
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600 transition duration-300 group-hover:scale-110 group-hover:bg-sky-100 dark:bg-sky-500/10 dark:text-sky-300">
+                    <i class="bi bi-truck text-lg"></i>
+                </span>
+            </div>
+        </article>
 
-                <th
-                    class="cursor-pointer whitespace-nowrap px-4 py-3 font-semibold transition-colors hover:text-sky-600 dark:hover:text-sky-400"
-                    @@click="sortBTable('transactionDate')"
-                >
-                    <div class="flex items-center gap-1">
-                        <span>Date</span>
+        <!-- Open invoices -->
+        <article class="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60 dark:border-slate-700/70 dark:bg-slate-800 dark:hover:shadow-slate-900/60">
+            <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-500 to-violet-500"></div>
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Open Invoices</p>
+                    <h3 id="openInvoiceCount" class="mt-2 text-3xl font-bold tabular-nums tracking-tight text-slate-900 dark:text-white" v-cloak>{{ formatCount(counters.openInvoices) }}</h3>
+                    <p class="mt-1 truncate text-xs text-slate-400 dark:text-slate-500">With an outstanding balance</p>
+                </div>
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 transition duration-300 group-hover:scale-110 group-hover:bg-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-300">
+                    <i class="bi bi-journal-text text-lg"></i>
+                </span>
+            </div>
+        </article>
+        <!-- Vouchers -->
+        <article class="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60 dark:border-slate-700/70 dark:bg-slate-800 dark:hover:shadow-slate-900/60">
+            <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-violet-500 to-fuchsia-500"></div>
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Vouchers</p>
+                    <h3 id="voucherCount" class="mt-2 text-3xl font-bold tabular-nums tracking-tight text-slate-900 dark:text-white" v-cloak>{{ formatCount(counters.vouchers) }}</h3>
+                    <p class="mt-1 truncate text-xs text-slate-400 dark:text-slate-500">Payment vouchers</p>
+                </div>
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600 transition duration-300 group-hover:scale-110 group-hover:bg-violet-100 dark:bg-violet-500/10 dark:text-violet-300">
+                    <i class="bi bi-receipt-cutoff text-lg"></i>
+                </span>
+            </div>
+           
+        </article>
 
-                        <span
-                            v-if="bSortKey === 'transactionDate'"
-                            class="text-sky-600 dark:text-sky-400"
-                        >
-                            {{ sortOrder === 'asc' ? '↑' : '↓' }}
-                        </span>
-                    </div>
-                </th>
+        <!-- Payments -->
+        <article class="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60 dark:border-slate-700/70 dark:bg-slate-800 dark:hover:shadow-slate-900/60">
+            <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Payments</p>
+                    <h3 id="paymentCount" class="mt-2 text-3xl font-bold tabular-nums tracking-tight text-slate-900 dark:text-white" v-cloak>{{ formatCount(counters.payments) }}</h3>
+                    <p class="mt-1 truncate text-xs text-slate-400 dark:text-slate-500">Invoice payments</p>
+                </div>
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition duration-300 group-hover:scale-110 group-hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300">
+                    <i class="bi bi-credit-card-2-front text-lg"></i>
+                </span>
+            </div>
+        </article>
 
-                <th
-                    class="cursor-pointer whitespace-nowrap px-4 py-3 font-semibold transition-colors hover:text-sky-600 dark:hover:text-sky-400"
-                    @@click="sortBTable('currencyCode')"
-                >
-                    <div class="flex items-center gap-1">
-                        <span>Currency</span>
+        <!-- Opening balances -->
+        <article class="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60 dark:border-slate-700/70 dark:bg-slate-800 dark:hover:shadow-slate-900/60">
+            <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-400 to-orange-500"></div>
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Opening Balances</p>
+                    <h3 id="openingBalanceCount" class="mt-2 text-3xl font-bold tabular-nums tracking-tight text-slate-900 dark:text-white" v-cloak>{{ formatCount(counters.openingBalances) }}</h3>
+                    <p class="mt-1 truncate text-xs text-slate-400 dark:text-slate-500">Across all statuses</p>
+                </div>
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 transition duration-300 group-hover:scale-110 group-hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-300">
+                    <i class="bi bi-cash-coin text-lg"></i>
+                </span>
+            </div>
+        </article>
+    </div>
 
-                        <span
-                            v-if="bSortKey === 'currencyCode'"
-                            class="text-sky-600 dark:text-sky-400"
-                        >
-                            {{ sortOrder === 'asc' ? '↑' : '↓' }}
-                        </span>
-                    </div>
-                </th>
+    <!-- =============================================================
+         Row 1 — hero chart + vouchers by currency
+         ============================================================= -->
+    <div class="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
 
-            </tr>
-        </thead>
+        <!-- Payment voucher trend (the hero chart) -->
+        <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:shadow-md dark:border-slate-700/70 dark:bg-slate-800 xl:col-span-2" data-card-title="Voucher Payment Trend">
+            <div class="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 p-5 dark:border-slate-700/70">
+                <div>
+                    <h4 class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                        <i class="bi bi-graph-up-arrow text-indigo-500"></i>
+                        Voucher Payment Trend
+                    </h4>
+                    <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                        <span v-cloak>{{ formatNumber(trendTotal) }}</span>
+                        paid over <span v-cloak>{{ trendPeriodLabel }}</span> · grouped by voucherEntryDate
+                    </p>
+                </div>
 
-        <!-- Table Body -->
-        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-
-            <tr
-                v-for="balance in paginatedBalances"
-                :key="balance.supplierName"
-                class="group transition-colors hover:bg-sky-50 dark:hover:bg-slate-800/70"
-            >
-
-                <!-- Supplier -->
-                <td class="px-4 py-3">
-
-                    <div class="flex items-center gap-2.5">
-
-                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-sky-200 bg-sky-50 text-sky-600 dark:border-sky-800 dark:bg-sky-950/50 dark:text-sky-400">
-                            <i class="bi bi-person-fill text-xs"></i>
-                        </div>
-
-                        <span class="max-w-[180px] truncate font-medium text-slate-700 dark:text-slate-200">
-                            {{ balance.supplierName }}
-                        </span>
-
-                    </div>
-
-                </td>
-
-                <!-- Amount -->
-                <td class="whitespace-nowrap px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">
-                    {{ parseFloat(balance.amount).toFixed(2) }}
-                </td>
-
-                <!-- Date -->
-                <td class="whitespace-nowrap px-4 py-3 text-slate-500 dark:text-slate-400">
-                    {{ balance.transactionDate }}
-                </td>
-
-                <!-- Currency -->
-                <td class="px-4 py-3">
-
-                    <span class="inline-flex rounded-md bg-emerald-50 px-2 py-1 text-[10px] font-semibold uppercase text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
-                        {{ balance.currencyCode }}
+                <div class="flex flex-wrap items-center gap-2">
+                    <span v-if="trendDelta !== null"
+                          class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold"
+                          :class="{
+                              'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300': trendDelta >= 0,
+                              'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300': trendDelta < 0
+                          }">
+                        <i class="bi" :class="trendDelta >= 0 ? 'bi-arrow-up-right' : 'bi-arrow-down-right'"></i>
+                        <span v-cloak>{{ trendDeltaLabel }}</span>
                     </span>
 
-                </td>
-
-            </tr>
-
-            <!-- Empty State -->
-            <tr v-if="paginatedBalances.length === 0">
-
-                <td
-                    colspan="4"
-                    class="px-4 py-8 text-center text-slate-500 dark:text-slate-400"
-                >
-                    <div class="flex flex-col items-center justify-center gap-2">
-
-                        <i class="bi bi-inbox text-2xl text-slate-300 dark:text-slate-600"></i>
-
-                        <span>No opening balances found.</span>
-
-                    </div>
-                </td>
-
-            </tr>
-
-        </tbody>
-
-    </table>
-
-</div>
-
-
-                        <div class="pagination-controls d-flex justify-content-center m-2">
-                            <button  class="text-xs bg-sky-500 text-white mx-2 py-1 px-2 rounded" @@click="prevBPage" :disabled="currentBPage === 1">Previous</button>
-                            <span>Page {{ currentBPage }} of {{ totalBPages }}</span>
-                            <button class="text-xs bg-sky-500 text-white mx-2 py-1 px-2 rounded" @@click="nextBPage" :disabled="currentBPage === totalBPages">Next</button>
-                        </div>
-
-            
-            </div>
-            <div class="card " data-card-title="Invoice Payments">
-                <div class="p-5" style="height: 300px">
-                    <canvas id="supplierChart"></canvas>
+                    <select v-model="trendCurrency" v-on:change="trendCurrencyLocked = true"
+                            class="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:focus:ring-indigo-900/40">
+                        <option value="">All currencies</option>
+                        <option v-for="name in trendCurrencies" :key="name" :value="name" v-cloak>{{ name }}</option>
+                    </select>
                 </div>
-                       
-                
             </div>
-       
 
+            <div class="ap-scroll relative h-[300px] w-full overflow-x-auto p-3">
+                <svg v-if="trendChart.points.length" viewBox="0 0 960 270" preserveAspectRatio="xMidYMid meet"
+                     class="h-full w-full min-w-[620px] touch-none select-none"
+                     v-on:mousemove="onTrendHover" v-on:mouseleave="hoverIndex = null">
+                    <defs>
+                        <linearGradient id="apTrendArea" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#6366f1" stop-opacity="0.32"></stop>
+                            <stop offset="55%" stop-color="#8b5cf6" stop-opacity="0.12"></stop>
+                            <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0"></stop>
+                        </linearGradient>
+                        <linearGradient id="apTrendLine" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stop-color="#6366f1"></stop>
+                            <stop offset="50%" stop-color="#8b5cf6"></stop>
+                            <stop offset="100%" stop-color="#0ea5e9"></stop>
+                        </linearGradient>
+                    </defs>
 
+                    <!-- horizontal grid + y axis -->
+                    <g>
+                        <line v-for="tick in trendChart.ticks" :key="'grid-' + tick.y"
+                              :x1="trendChart.pad.left" :x2="trendChart.width - trendChart.pad.right"
+                              :y1="tick.y" :y2="tick.y"
+                              class="stroke-slate-200 dark:stroke-slate-700"
+                              stroke-width="1" stroke-dasharray="4 6"></line>
+                        <text v-for="tick in trendChart.ticks" :key="'ytick-' + tick.y"
+                              :x="trendChart.pad.left - 12" :y="tick.y + 4" text-anchor="end"
+                              class="fill-slate-400 text-[12px] tabular-nums dark:fill-slate-500">{{ tick.label }}</text>
+                    </g>
+
+                    <!-- series -->
+                    <path :d="trendChart.area" fill="url(#apTrendArea)" class="ap-fade" :class="{ 'is-drawn': chartReady }"></path>
+                    <path :d="trendChart.line" fill="none" stroke="url(#apTrendLine)" stroke-width="3"
+                          stroke-linecap="round" stroke-linejoin="round" pathLength="1"
+                          class="ap-line" :class="{ 'is-drawn': chartReady }"></path>
+
+                    <!-- points -->
+                    <circle v-for="(point, index) in trendChart.points" :key="'dot-' + index"
+                            :cx="point.x" :cy="point.y" :r="hoverIndex === index ? 5 : 3.4"
+                            fill="#ffffff" stroke="#6366f1" stroke-width="2"
+                            class="transition-all duration-150"></circle>
+
+                    <!-- crosshair + tooltip -->
+                    <g v-if="hoverPoint" class="pointer-events-none">
+                        <line :x1="hoverPoint.x" :x2="hoverPoint.x"
+                              :y1="trendChart.pad.top" :y2="trendChart.height - trendChart.pad.bottom"
+                              stroke="#6366f1" stroke-width="1" stroke-dasharray="3 5" opacity="0.45"></line>
+                        <g :transform="'translate(' + hoverPoint.tipX + ',' + hoverPoint.tipY + ')'">
+                            <rect :width="hoverPoint.tipWidth" :height="hoverPoint.tipHeight" rx="10"
+                                  fill="#0f172a" opacity="0.94"></rect>
+                            <text x="14" y="23" class="fill-white text-[12px]" opacity="0.7">{{ hoverPoint.caption }}</text>
+                            <text x="14" y="45" class="fill-white text-[17px] font-bold tabular-nums">{{ hoverPoint.amount }}</text>
+                        </g>
+                    </g>
+
+                    <!-- x axis -->
+                    <text v-for="(label, index) in trendChart.xLabels" :key="'xtick-' + index"
+                          :x="label.x" :y="trendChart.height - 12" text-anchor="middle"
+                          class="fill-slate-400 text-[12px] dark:fill-slate-500">{{ label.label }}</text>
+                </svg>
+
+                <div v-else class="flex h-full flex-col items-center justify-center gap-2 text-center">
+                    <i class="bi bi-graph-up text-4xl text-slate-300 dark:text-slate-600"></i>
+                    <p class="text-sm font-medium text-slate-400 dark:text-slate-500">No voucher data yet</p>
+                    <p class="text-xs text-slate-400 dark:text-slate-500">Vouchers with a voucherEntryDate will appear here.</p>
+                </div>
+            </div>
+
+            <p class="border-t border-slate-100 px-5 py-3 text-[11px] text-slate-400 dark:border-slate-700/70 dark:text-slate-500">
+                paymentAmount is summed per entry month. Pick a single currency to avoid mixing currencies in one total.
+            </p>
+        </section>
+
+        <!-- Vouchers by currency (replaces "Invoices by Currency") -->
+        <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:shadow-md dark:border-slate-700/70 dark:bg-slate-800" data-card-title="Vouchers by Currency">
+            <div class="flex items-start justify-between gap-3 border-b border-slate-100 p-5 dark:border-slate-700/70">
+                <div>
+                    <h4 class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                        <i class="bi bi-pie-chart text-violet-500"></i>
+                        Vouchers by Currency
+                    </h4>
+                    <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Grouped by currencyName</p>
+                </div>
+
+                <div class="flex shrink-0 rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-[11px] font-semibold dark:border-slate-700 dark:bg-slate-900">
+                    <button type="button" v-on:click="donutMetric = 'count'"
+                            class="rounded-md px-2.5 py-1 transition"
+                            :class="donutMetric === 'count' ? 'bg-white text-indigo-600 shadow-sm dark:bg-slate-700 dark:text-indigo-300' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500'">
+                        Count
+                    </button>
+                    <button type="button" v-on:click="donutMetric = 'value'"
+                            class="rounded-md px-2.5 py-1 transition"
+                            :class="donutMetric === 'value' ? 'bg-white text-indigo-600 shadow-sm dark:bg-slate-700 dark:text-indigo-300' : 'text-slate-400 hover:text-slate-600 dark:text-slate-500'">
+                        Value
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-5">
+                <div v-if="hasDonutData" class="flex flex-col items-center">
+                    <div class="relative">
+                        <svg viewBox="0 0 42 42" class="h-40 w-40">
+                            <circle cx="21" cy="21" r="15.915" fill="none"
+                                    class="stroke-slate-100 dark:stroke-slate-700" stroke-width="3.4"></circle>
+                            <circle v-for="(segment, index) in donutSegments" :key="segment.name"
+                                    cx="21" cy="21" r="15.915" fill="none"
+                                    :stroke="segment.color"
+                                    :stroke-width="hoverSegment === index ? 4.6 : 3.4"
+                                    :stroke-dasharray="segment.length + ' ' + (100 - segment.length)"
+                                    :stroke-dashoffset="25 - segment.offset"
+                                    stroke-linecap="round"
+                                    class="cursor-pointer transition-all duration-500"
+                                    :style="{ opacity: hoverSegment === null || hoverSegment === index ? 1 : 0.3 }"
+                                    v-on:mouseenter="hoverSegment = index"
+                                    v-on:mouseleave="hoverSegment = null"></circle>
+                        </svg>
+                        <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                            <span class="text-2xl font-bold tabular-nums tracking-tight text-slate-900 dark:text-white" v-cloak>{{ donutCenterValue }}</span>
+                            <span class="text-[11px] font-medium text-slate-400 dark:text-slate-500" v-cloak>{{ donutCenterLabel }}</span>
+                        </div>
+                    </div>
+
+                    <ul class="mt-5 w-full space-y-1.5">
+                        <li v-for="(segment, index) in donutSegments" :key="'legend-' + segment.name"
+                            class="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 transition"
+                            :class="hoverSegment === index ? 'bg-slate-50 dark:bg-slate-700/50' : 'hover:bg-slate-50 dark:hover:bg-slate-700/40'"
+                            v-on:mouseenter="hoverSegment = index"
+                            v-on:mouseleave="hoverSegment = null">
+                            <span class="h-2.5 w-2.5 shrink-0 rounded-full" :style="{ backgroundColor: segment.color }"></span>
+                            <span class="min-w-0 flex-1 truncate text-xs font-semibold text-slate-600 dark:text-slate-300">{{ segment.name }}</span>
+                            <span class="shrink-0 text-xs tabular-nums text-slate-400 dark:text-slate-500">{{ formatCount(segment.count) }}×</span>
+                            <span class="w-20 shrink-0 text-right text-xs font-semibold tabular-nums text-slate-700 dark:text-slate-200">{{ formatCompact(segment.total) }}</span>
+                            <span class="w-10 shrink-0 text-right text-[11px] tabular-nums text-slate-400 dark:text-slate-500">{{ segment.share.toFixed(0) }}%</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div v-else id="currencyEmpty" class="flex flex-col items-center justify-center gap-2 py-14 text-center">
+                    <i class="bi bi-pie-chart text-4xl text-slate-300 dark:text-slate-600"></i>
+                    <p class="text-sm font-medium text-slate-400 dark:text-slate-500">No voucher currency data</p>
+                    <p class="text-xs text-slate-400 dark:text-slate-500">Vouchers are grouped by their currencyName.</p>
+                </div>
+            </div>
+        </section>
     </div>
 
-   
-  
+    <!-- =============================================================
+         Row 2 — aging + voucher activity
+         ============================================================= -->
+    <div class="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
 
+        <!-- Invoice aging -->
+        <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:shadow-md dark:border-slate-700/70 dark:bg-slate-800 xl:col-span-2" data-card-title="Invoice Aging">
+            <div class="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 p-5 dark:border-slate-700/70">
+                <div>
+                    <h4 class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                        <i class="bi bi-hourglass-split text-sky-500"></i>
+                        Invoice Aging
+                    </h4>
+                    <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                        Invoice counts by aging bucket · <span v-cloak>{{ formatCount(agingTotal) }}</span> aged in total
+                    </p>
+                </div>
+                <span class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                    <i class="bi bi-calendar3 text-indigo-500"></i>
+                    <span id="agingAsOfLabel" v-cloak>{{ formatDate(asOfDate) }}</span>
+                </span>
+            </div>
+
+            <div id="agingChart" class="flex h-[210px] items-stretch gap-3 px-6 pb-2 pt-6">
+                <div v-for="(bucket, index) in agingBuckets" :key="bucket.label"
+                     class="group/bar flex min-w-0 flex-1 flex-col items-center"
+                     v-on:mouseenter="hoverBucket = index" v-on:mouseleave="hoverBucket = null">
+                    <span class="text-sm font-bold tabular-nums text-slate-700 dark:text-slate-200" v-cloak>{{ formatCount(bucket.count) }}</span>
+                    <span class="mb-1.5 text-[10px] font-medium text-slate-400 dark:text-slate-500" v-cloak>{{ bucket.share.toFixed(0) }}%</span>
+
+                    <div class="relative flex w-full flex-1 items-end">
+                        <div class="ap-bar w-full rounded-t-xl"
+                             :style="{
+                                 height: bucket.height + '%',
+                                 backgroundImage: 'linear-gradient(to top, ' + bucket.tone.to + ', ' + bucket.tone.from + ')',
+                                 opacity: hoverBucket === null || hoverBucket === index ? 1 : 0.35
+                             }"></div>
+                        <div class="absolute inset-x-0 -top-8 flex justify-center opacity-0 transition group-hover/bar:opacity-100">
+                            <span class="whitespace-nowrap rounded-lg bg-slate-900 px-2 py-1 text-[10px] font-semibold text-white shadow-lg dark:bg-slate-700">
+                                {{ formatCount(bucket.count) }} invoices
+                            </span>
+                        </div>
+                    </div>
+
+                    <span class="mt-2 truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">{{ bucket.label }}</span>
+                </div>
+            </div>
+
+            <p class="border-t border-slate-100 px-5 py-3 text-[11px] text-slate-400 dark:border-slate-700/70 dark:text-slate-500">
+                Counts are used so invoices in different currencies are not added together.
+            </p>
+        </section>
+
+        <!-- Voucher activity -->
+        <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:shadow-md dark:border-slate-700/70 dark:bg-slate-800" data-card-title="Voucher Activity">
+            <div class="flex items-center justify-between gap-3 border-b border-slate-100 p-5 dark:border-slate-700/70">
+                <div>
+                    <h4 class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                        <i class="bi bi-lightning-charge text-amber-500"></i>
+                        Voucher Activity
+                    </h4>
+                    <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Latest entries by voucherEntryDate</p>
+                </div>
+                <a href="/Ap/Vouchers" class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
+                    View all <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+
+            <ul class="divide-y divide-slate-100 dark:divide-slate-700/60">
+                <li v-if="isLoading && !voucherActivity.length" v-for="n in 5" :key="'vsk-' + n" class="flex items-center gap-3 px-5 py-3.5">
+                    <div class="h-9 w-9 animate-pulse rounded-lg bg-slate-100 dark:bg-slate-700"></div>
+                    <div class="flex-1 space-y-1.5">
+                        <div class="h-2.5 w-2/3 animate-pulse rounded bg-slate-100 dark:bg-slate-700"></div>
+                        <div class="h-2.5 w-1/3 animate-pulse rounded bg-slate-100 dark:bg-slate-700"></div>
+                    </div>
+                </li>
+
+                <li v-if="!isLoading && !voucherActivity.length" class="px-5 py-12 text-center">
+                    <i class="bi bi-receipt mb-2 block text-3xl text-slate-300 dark:text-slate-600"></i>
+                    <span class="text-xs text-slate-400 dark:text-slate-500">No vouchers found.</span>
+                </li>
+
+                <li v-for="(row, index) in voucherActivity" :key="'vact-' + index"
+                    class="group flex items-center gap-3 px-5 py-3 transition hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                    <span class="flex h-9 w-9 shrink-0 flex-col items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition group-hover:border-indigo-200 group-hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                        <span class="text-[13px] font-bold leading-none tabular-nums">{{ dateParts(voucherDate(row)).day }}</span>
+                        <span class="text-[8px] font-semibold uppercase leading-none text-slate-400">{{ dateParts(voucherDate(row)).month }}</span>
+                    </span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block truncate text-xs font-semibold text-slate-700 dark:text-slate-200">{{ value(row, ['supplierName', 'vendorName', 'supplier', 'name']) || '—' }}</span>
+                        <span class="block truncate text-[11px] text-slate-400 dark:text-slate-500">{{ value(row, ['voucherNumber', 'voucherNo', 'paymentNumber', 'reference']) || '—' }}</span>
+                    </span>
+                    <span class="shrink-0 text-right">
+                        <span class="block text-xs font-bold tabular-nums text-slate-800 dark:text-slate-100">{{ formatNumber(voucherAmount(row)) }}</span>
+                        <span class="block text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">{{ currencyOf(row) }}</span>
+                    </span>
+                </li>
+            </ul>
+        </section>
+    </div>
+
+    <!-- =============================================================
+         Row 3 — recent invoices + recent payments
+         ============================================================= -->
+    <div class="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
+
+        <!-- Recent invoices -->
+        <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:shadow-md dark:border-slate-700/70 dark:bg-slate-800 xl:col-span-2" data-card-title="Recent Invoices">
+            <div class="flex items-center justify-between gap-3 border-b border-slate-100 p-5 dark:border-slate-700/70">
+                <div>
+                    <h4 class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                        <i class="bi bi-journal-text text-indigo-500"></i>
+                        Recent Invoices
+                    </h4>
+                    <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Latest records from the AP invoice endpoint</p>
+                </div>
+                <a href="/Ap/InvoiceReports" target="_blank" rel="noopener"
+                   class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
+                    View all <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+
+            <div class="ap-scroll max-h-[340px] overflow-auto">
+                <table class="w-full min-w-[640px] border-collapse text-left text-xs">
+                    <thead class="sticky top-0 z-10 bg-slate-50/95 backdrop-blur text-[11px] uppercase tracking-wider text-slate-500 dark:bg-slate-900/80 dark:text-slate-400">
+                        <tr>
+                            <th class="whitespace-nowrap px-5 py-3 font-semibold">Supplier</th>
+                            <th class="whitespace-nowrap px-5 py-3 font-semibold">Invoice</th>
+                            <th class="whitespace-nowrap px-5 py-3 font-semibold">Invoice date</th>
+                            <th class="whitespace-nowrap px-5 py-3 font-semibold">Currency</th>
+                            <th class="whitespace-nowrap px-5 py-3 text-right font-semibold">Balance</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="invoiceTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/60">
+                        <template v-if="isLoading && !recentInvoices.length">
+                            <tr v-for="n in 6" :key="'isk-' + n">
+                                <td v-for="c in 5" :key="'iskc-' + c" class="px-5 py-3.5">
+                                    <span class="block h-2.5 w-full animate-pulse rounded bg-slate-100 dark:bg-slate-700"></span>
+                                </td>
+                            </tr>
+                        </template>
+
+                        <tr v-else-if="hasIssue('Invoices')">
+                            <td colspan="5" class="px-5 py-10 text-center text-slate-400 dark:text-slate-500">
+                                <i class="bi bi-exclamation-triangle mb-2 block text-3xl"></i>
+                                Could not load invoices.
+                            </td>
+                        </tr>
+
+                        <tr v-else-if="!recentInvoices.length">
+                            <td colspan="5" class="px-5 py-10 text-center text-slate-400 dark:text-slate-500">
+                                <i class="bi bi-inbox mb-2 block text-3xl"></i>
+                                No invoices found.
+                            </td>
+                        </tr>
+
+                        <template v-else>
+                            <tr v-for="(row, index) in recentInvoices" :key="'inv-' + index"
+                                class="transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                                <td class="max-w-[220px] truncate px-5 py-3 text-slate-600 dark:text-slate-300">{{ value(row, ['supplierName', 'vendorName', 'supplier', 'name']) || '—' }}</td>
+                                <td class="whitespace-nowrap px-5 py-3 font-semibold text-slate-800 dark:text-slate-100">{{ value(row, ['invoiceNumber', 'invoiceNo', 'invoiceId', 'number']) || '—' }}</td>
+                                <td class="whitespace-nowrap px-5 py-3 text-slate-500 dark:text-slate-400">{{ formatDate(value(row, ['invoiceDate', 'transactionDate', 'creationTime'])) }}</td>
+                                <td class="whitespace-nowrap px-5 py-3">
+                                    <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:bg-slate-700 dark:text-slate-300">{{ value(row, ['currencyCode', 'currencyName']) || '—' }}</span>
+                                </td>
+                                <td class="whitespace-nowrap px-5 py-3 text-right font-semibold tabular-nums text-slate-800 dark:text-slate-100">{{ formatNumber(value(row, ['balance', 'invoiceBalance'])) }}</td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Recent payments -->
+        <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:shadow-md dark:border-slate-700/70 dark:bg-slate-800" data-card-title="Recent Payments">
+            <div class="flex items-center justify-between gap-3 border-b border-slate-100 p-5 dark:border-slate-700/70">
+                <div>
+                    <h4 class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                        <i class="bi bi-credit-card-2-front text-emerald-500"></i>
+                        Recent Payments
+                    </h4>
+                    <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">AP payments report activity</p>
+                </div>
+                <a href="/Ap/PaymentReports" target="_blank" rel="noopener"
+                   class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
+                    View all <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+
+            <div class="ap-scroll max-h-[340px] overflow-auto">
+                <table class="w-full min-w-[520px] border-collapse text-left text-xs">
+                    <thead class="sticky top-0 z-10 bg-slate-50/95 backdrop-blur text-[11px] uppercase tracking-wider text-slate-500 dark:bg-slate-900/80 dark:text-slate-400">
+                        <tr>
+                            <th class="whitespace-nowrap px-5 py-3 font-semibold">Supplier</th>
+                            <th class="whitespace-nowrap px-5 py-3 font-semibold">Payment / batch</th>
+                            <th class="whitespace-nowrap px-5 py-3 font-semibold">Date</th>
+                            <th class="whitespace-nowrap px-5 py-3 font-semibold">Currency</th>
+                            <th class="whitespace-nowrap px-5 py-3 text-right font-semibold">Amount</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="paymentTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/60">
+                        <template v-if="isLoading && !recentPayments.length">
+                            <tr v-for="n in 6" :key="'psk-' + n">
+                                <td v-for="c in 5" :key="'pskc-' + c" class="px-5 py-3.5">
+                                    <span class="block h-2.5 w-full animate-pulse rounded bg-slate-100 dark:bg-slate-700"></span>
+                                </td>
+                            </tr>
+                        </template>
+
+                        <tr v-else-if="hasIssue('Payments')">
+                            <td colspan="5" class="px-5 py-10 text-center text-slate-400 dark:text-slate-500">
+                                <i class="bi bi-exclamation-triangle mb-2 block text-3xl"></i>
+                                Could not load payments.
+                            </td>
+                        </tr>
+
+                        <tr v-else-if="!recentPayments.length">
+                            <td colspan="5" class="px-5 py-10 text-center text-slate-400 dark:text-slate-500">
+                                <i class="bi bi-credit-card mb-2 block text-3xl"></i>
+                                No payments found.
+                            </td>
+                        </tr>
+
+                        <template v-else>
+                            <tr v-for="(row, index) in recentPayments" :key="'pay-' + index"
+                                class="transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                                <td class="max-w-[180px] truncate px-5 py-3 text-slate-600 dark:text-slate-300">{{ value(row, ['supplierName', 'vendorName', 'supplier', 'name']) || '—' }}</td>
+                                <td class="whitespace-nowrap px-5 py-3 font-semibold text-slate-800 dark:text-slate-100">{{ value(row, ['paymentNumber', 'batchNumber', 'batchName', 'voucherNumber', 'reference', 'paymentId']) || '—' }}</td>
+                                <td class="whitespace-nowrap px-5 py-3 text-slate-500 dark:text-slate-400">{{ formatDate(value(row, ['transactionDate', 'paymentDate', 'creationTime'])) }}</td>
+                                <td class="whitespace-nowrap px-5 py-3">
+                                    <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:bg-slate-700 dark:text-slate-300">{{ value(row, ['currencyName']) || '—' }}</span>
+                                </td>
+                                <td class="whitespace-nowrap px-5 py-3 text-right font-semibold tabular-nums text-slate-800 dark:text-slate-100">{{ formatNumber(value(row, ['amountToPay'])) }}</td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- =============================================================
+         Row 4 — all vouchers (Ap/GetVouchers)
+         ============================================================= -->
+    <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:shadow-md dark:border-slate-700/70 dark:bg-slate-800" data-card-title="Recent Vouchers">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-5 dark:border-slate-700/70">
+            <div>
+                <h4 class="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                    <i class="bi bi-receipt-cutoff text-violet-500"></i>
+                    Recent Vouchers
+                </h4>
+                <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                    Ap/GetVouchers · entry date and payment amount per record
+                </p>
+            </div>
+            <a href="/Ap/Vouchers" target="_blank" rel="noopener"
+               class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300">
+                View all <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+
+        <div class="ap-scroll overflow-x-auto">
+            <table class="w-full min-w-[860px] border-collapse text-left text-xs">
+                <thead class="bg-slate-50/95 text-[11px] uppercase tracking-wider text-slate-500 dark:bg-slate-900/80 dark:text-slate-400">
+                    <tr>
+                        <th class="whitespace-nowrap px-5 py-3 font-semibold">Voucher</th>
+                        <th class="whitespace-nowrap px-5 py-3 font-semibold">Supplier</th>
+                        <th class="whitespace-nowrap px-5 py-3 font-semibold">Entry date</th>
+                        <th class="whitespace-nowrap px-5 py-3 font-semibold">Currency</th>
+                        <th class="whitespace-nowrap px-5 py-3 font-semibold">Status</th>
+                        <th class="whitespace-nowrap px-5 py-3 text-right font-semibold">Payment amount</th>
+                    </tr>
+                </thead>
+
+                <tbody id="voucherTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/60">
+                    <template v-if="isLoading && !recentVouchers.length">
+                        <tr v-for="n in 5" :key="'vskr-' + n">
+                            <td v-for="c in 6" :key="'vskrc-' + c" class="px-5 py-3.5">
+                                <span class="block h-2.5 w-full animate-pulse rounded bg-slate-100 dark:bg-slate-700"></span>
+                            </td>
+                        </tr>
+                    </template>
+
+                    <tr v-else-if="hasIssue('Vouchers')">
+                        <td colspan="6" class="px-5 py-10 text-center text-slate-400 dark:text-slate-500">
+                            <i class="bi bi-exclamation-triangle mb-2 block text-3xl"></i>
+                            Could not load vouchers.
+                        </td>
+                    </tr>
+
+                    <tr v-else-if="!recentVouchers.length">
+                        <td colspan="6" class="px-5 py-10 text-center text-slate-400 dark:text-slate-500">
+                            <i class="bi bi-receipt mb-2 block text-3xl"></i>
+                            No vouchers found.
+                        </td>
+                    </tr>
+
+                    <template v-else>
+                        <tr v-for="(row, index) in recentVouchers" :key="'vou-' + index"
+                            class="transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                            <td class="whitespace-nowrap px-5 py-3 font-semibold text-slate-800 dark:text-slate-100">{{ value(row, ['voucherNumber', 'voucherNo', 'paymentNumber', 'reference', 'voucherId']) || '—' }}</td>
+                            <td class="max-w-[260px] truncate px-5 py-3 text-slate-600 dark:text-slate-300">{{ value(row, ['supplierName', 'vendorName', 'supplier', 'name']) || '—' }}</td>
+                            <td class="whitespace-nowrap px-5 py-3 text-slate-500 dark:text-slate-400">{{ formatDate(voucherDate(row)) }}</td>
+                            <td class="whitespace-nowrap px-5 py-3">
+                                <span class="inline-flex items-center gap-1.5 rounded-md bg-violet-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-700 dark:bg-violet-500/10 dark:text-violet-300">
+                                    <i class="bi bi-cash-stack"></i>{{ currencyOf(row) }}
+                                </span>
+                            </td>
+                            <td class="whitespace-nowrap px-5 py-3">
+                                <span class="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                                      :class="{
+                                          'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300': statusKind(row) === 'cancel',
+                                          'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300': statusKind(row) === 'posted',
+                                          'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300': statusKind(row) === 'pending'
+                                      }">{{ statusText(row) }}</span>
+                            </td>
+                            <td class="whitespace-nowrap px-5 py-3 text-right font-semibold tabular-nums text-slate-800 dark:text-slate-100">{{ formatNumber(voucherAmount(row)) }}</td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
     </section>
+
 </div>
 
-
-
-
-@*<script src="~/js/Ap/Dashboard/ap.js" asp-append-version="true"></script>*@
-<script>
- 
-
-const { createApp } = Vue;
-
-// ---- Dummy data -----------------------------------------------------------
-const supplierNames = [
-"Accra Office Supplies Ltd",
-"Kumasi Steel Works",
-"Tema Logistics Co.",
-"Golden Palm Foods",
-"Takoradi Marine Services",
-"Ashanti Print House",
-"Volta Fresh Produce",
-"Cape Coast Hardware",
-"Sunyani Timber Mills",
-"Tamale Agro Traders",
-"Osu Tech Solutions",
-"Ho Water Systems"
-];
-
-const dummyInvoices = Array.from({ length: 23 }, (_, i) => ({
-id: i + 1,
-supplierName: supplierNames[i % supplierNames.length],
-invoiceNumber: `INV-2026-${String(1001 + i)}`,
-currencyCode: i % 6 === 5 ? "USD" : "GHS",
-totalInvoiceAmount: (((i * 7919) % 9000) + 350 + 0.35).toFixed(2),
-// spread invoices across Apr - Oct 2026
-invoiceDate: new Date(2026, 3 + (i % 7), 1 + ((i * 3) % 27)).toISOString().slice(0, 10),
-isPosted: i % 4 !== 0
-}));
-
-const dummyBalances = [
-{ supplierName: "Accra Office Supplies Ltd", amount: 12450.0, transactionDate: "2026-01-02", currencyCode: "GHS" },
-{ supplierName: "Kumasi Steel Works", amount: 58200.5, transactionDate: "2026-01-02", currencyCode: "GHS" },
-{ supplierName: "Tema Logistics Co.", amount: 9800.75, transactionDate: "2026-01-05", currencyCode: "GHS" },
-{ supplierName: "Golden Palm Foods", amount: 23100.0, transactionDate: "2026-01-05", currencyCode: "GHS" },
-{ supplierName: "Takoradi Marine Services", amount: 4300.0, transactionDate: "2026-01-08", currencyCode: "USD" },
-{ supplierName: "Ashanti Print House", amount: 7650.25, transactionDate: "2026-01-10", currencyCode: "GHS" },
-{ supplierName: "Volta Fresh Produce", amount: 15920.0, transactionDate: "2026-01-12", currencyCode: "GHS" },
-{ supplierName: "Cape Coast Hardware", amount: 31400.9, transactionDate: "2026-01-15", currencyCode: "GHS" },
-{ supplierName: "Sunyani Timber Mills", amount: 2750.0, transactionDate: "2026-01-15", currencyCode: "USD" },
-{ supplierName: "Tamale Agro Traders", amount: 18890.4, transactionDate: "2026-01-20", currencyCode: "GHS" },
-{ supplierName: "Osu Tech Solutions", amount: 41250.0, transactionDate: "2026-01-22", currencyCode: "GHS" },
-{ supplierName: "Ho Water Systems", amount: 6120.0, transactionDate: "2026-01-25", currencyCode: "GHS" }
-];
-
-const dummyPayments = [
-{ supplierName: "Kumasi Steel Works", amount: 48000 },
-{ supplierName: "Osu Tech Solutions", amount: 36500 },
-{ supplierName: "Cape Coast Hardware", amount: 27800 },
-{ supplierName: "Golden Palm Foods", amount: 19400 },
-{ supplierName: "Tamale Agro Traders", amount: 14250 },
-{ supplierName: "Other Suppliers", amount: 22100 }
-];
-
-// ---- App ------------------------------------------------------------------
-createApp({
-data() {
-return {
-// number cards
-stats: {
-totalSuppliers: 2150,
-totalInvoices: 54,
-postedInvoices: 54,
-postedPayments: 14
-},
-
-// invoices list
-invoices: dummyInvoices,
-currentPage: 1,
-pageSize: 5,
-
-// opening balances table
-balances: dummyBalances,
-currentBPage: 1,
-bPageSize: 5,
-bSortKey: "supplierName",
-sortOrder: "asc",
-
-// payments chart data
-payments: dummyPayments
-};
-},
-
-computed: {
-// invoices pagination
-totalPages() {
-return Math.max(1, Math.ceil(this.invoices.length / this.pageSize));
-},
-paginatedInvoices() {
-const start = (this.currentPage - 1) * this.pageSize;
-return this.invoices.slice(start, start + this.pageSize);
-},
-
-// balances sorting + pagination
-sortedBalances() {
-const key = this.bSortKey;
-const dir = this.sortOrder === "asc" ? 1 : -1;
-return [...this.balances].sort((a, b) => {
-const x = a[key];
-const y = b[key];
-if (typeof x === "number" && typeof y === "number") return (x - y) * dir;
-return String(x).localeCompare(String(y)) * dir;
-});
-},
-totalBPages() {
-return Math.max(1, Math.ceil(this.balances.length / this.bPageSize));
-},
-paginatedBalances() {
-const start = (this.currentBPage - 1) * this.bPageSize;
-return this.sortedBalances.slice(start, start + this.bPageSize);
-},
-
-// chart data: invoice totals per month, posted vs unposted
-invoiceChartData() {
-const months = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"];
-const posted = Array(7).fill(0);
-const unposted = Array(7).fill(0);
-this.invoices.forEach(inv => {
-const idx = new Date(inv.invoiceDate).getMonth() - 3;
-if (idx < 0 || idx > 6) return;
-const amt = parseFloat(inv.totalInvoiceAmount);
-if (inv.isPosted) posted[idx] += amt;
-else unposted[idx] += amt;
-});
-return { months, posted, unposted };
-}
-},
-
-methods: {
-// invoices pagination
-prevPage() {
-if (this.currentPage > 1) this.currentPage--;
-},
-nextPage() {
-if (this.currentPage < this.totalPages) this.currentPage++;
-},
-
-// balances pagination + sorting
-prevBPage() {
-if (this.currentBPage > 1) this.currentBPage--;
-},
-nextBPage() {
-if (this.currentBPage < this.totalBPages) this.currentBPage++;
-},
-sortBTable(key) {
-if (this.bSortKey === key) {
-this.sortOrder = this.sortOrder === "asc" ? "desc" : "asc";
-} else {
-this.bSortKey = key;
-this.sortOrder = "asc";
-}
-this.currentBPage = 1;
-},
-
-// replace with your real report call, e.g. window.open(`/Reports/Invoice?id=${id}`, "_blank")
-printReport(id) {
-console.log("Print report for invoice id:", id);
-},
-
-renderCharts() {
-const isDark = document.documentElement.classList.contains("dark");
-const textColor = isDark ? "#cbd5e1" : "#475569";
-const gridColor = isDark ? "rgba(148,163,184,0.15)" : "rgba(100,116,139,0.15)";
-Chart.defaults.color = textColor;
-
-// Chart instances are kept off `data` so Vue doesn't make them reactive
-this._charts = this._charts || {};
-Object.values(this._charts).forEach(c => c.destroy());
-
-const { months, posted, unposted } = this.invoiceChartData;
-
-this._charts.invoice = new Chart(document.getElementById("invoiceChart"), {
-type: "bar",
-data: {
-labels: months,
-datasets: [
-{ label: "Posted", data: posted, backgroundColor: "#0ea5e9", borderRadius: 4 },
-{ label: "Unposted", data: unposted, backgroundColor: "#f59e0b", borderRadius: 4 }
-]
-},
-options: {
-responsive: true,
-plugins: { legend: { position: "bottom" } },
-scales: {
-x: { stacked: true, grid: { color: gridColor } },
-y: { stacked: true, grid: { color: gridColor } }
-}
-}
-});
-
-this._charts.supplier = new Chart(document.getElementById("supplierChart"), {
-type: "doughnut",
-data: {
-labels: this.payments.map(p => p.supplierName),
-datasets: [{
-data: this.payments.map(p => p.amount),
-backgroundColor: ["#0ea5e9", "#06b6d4", "#10b981", "#f59e0b", "#8b5cf6", "#94a3b8"],
-borderWidth: 0
-}]
-},
-options: {
-responsive: true,
-plugins: { legend: { position: "bottom" } }
-}
-});
-}
-},
-
-mounted() {
-this.renderCharts();
-},
-
-beforeUnmount() {
-if (this._charts) Object.values(this._charts).forEach(c => c.destroy());
-}
-}).mount("#app");    
-</script>
-
+<script src="~/js/ap/Dashboard/ap.js" asp-append-version="true"></script>

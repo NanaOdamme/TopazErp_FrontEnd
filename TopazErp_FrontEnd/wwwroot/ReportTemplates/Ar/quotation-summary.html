@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Quotation Summary</title>
+    <style>
+        @page { size: A4 landscape; margin: 10mm; }
+        .report-sheet { font-family: "Segoe UI", Arial, sans-serif; color: #1f2937; padding: 28px 32px 24px; box-sizing: border-box; background: #fff; }
+        .report-header { display: flex; align-items: flex-start; gap: 16px; border-bottom: 3px solid #1f1f1f; padding-bottom: 8px; margin-bottom: 10px; }
+        .logo { width: 120px; max-height: 72px; object-fit: contain; flex: 0 0 auto; }
+        .company-name { font-size: 22px; font-weight: 700; color: #111827; margin: 0 0 4px; }
+        .company-meta { font-size: 12px; color: #4b5563; line-height: 1.55; }
+        .report-meta-bar { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #d1d5db; }
+        .title { font-size: 13px; font-weight: 700; color: #000; }
+        .report-params { font-size: 10px; color: #374151; text-align: right; }
+        .report-table { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 6px; }
+        .report-table thead { display: table-header-group; }
+        .report-table tr { page-break-inside: avoid; break-inside: avoid; }
+        .report-table th { text-align: left; font-weight: 700; padding: 7px 6px; border-bottom: 1.5px solid #6b7280; background: #f9fafb; color: #000; }
+        .report-table td { padding: 7px 6px; border-bottom: 1px solid #f1f5f9; vertical-align: top; color: #000; }
+        .report-table .date, .report-table .reference { white-space: nowrap; }
+        .report-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #d1d5db; margin-top: 18px; padding-top: 10px; font-size: 11px; color: #6b7280; }
+        .footer-date, .footer-brand, .footer-page { flex: 1; }
+        .footer-brand { text-align: center; }
+        .footer-page { text-align: right; font-weight: 600; color: #374151; }
+    </style>
+</head>
+<body>
+<div class="report-sheet">
+    <header class="report-header">
+        <img class="logo" src="{{companyLogo}}" alt="Company Logo"/>
+        <div><p class="company-name">{{companyName}}</p><div class="company-meta">{{primaryPhoneNo}} | {{address}} | {{email}}</div></div>
+    </header>
+    <div class="report-meta-bar"><div class="title">{{reportTitle}}</div><div class="report-params">Quotations: {{quotationCount}}</div></div>
+    <table class="report-table">
+        <thead><tr><th>No.</th><th>Customer</th><th>Account No.</th><th>Quotation No.</th><th>Date</th><th>Currency</th><th>Invoice Status</th></tr></thead>
+        <tbody>
+        <tr data-repeat="rows" class="{{@rowClass}}">
+            <td>{{@rowNumber}}</td><td>{{@customerName}}</td><td>{{@accountNumber}}</td><td class="reference">{{@quotationNumber}}</td><td class="date">{{@quotationDate}}</td><td>{{@currencyName}}</td><td>{{@conversionStatus}}</td>
+        </tr>
+        </tbody>
+    </table>
+    <footer class="report-footer"><div class="footer-date">{{CurrentDate}}</div><div class="footer-brand">Topaz AccountingPro (AR)</div><div class="footer-page">Page {{PageNumber}} of {{PageBreakCount}}</div></footer>
+</div>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a59f1f772c9a73fb',t:'MTc5NDU4NzAyNw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a59f1f772c9a73fb',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

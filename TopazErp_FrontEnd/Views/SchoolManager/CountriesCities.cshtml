@@ -1,0 +1,51 @@
+@{
+    ViewBag.Title = "Countries & Cities";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>School Manager - Main Setups</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Countries & Cities</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+
+            <div class="page-title">
+                <h2 class="text-lg font-semibold text-gray-800">
+                    Countries & Cities
+                </h2>
+                
+            </div>
+        </div>
+    </div>
+    <div class="card" data-card-title="Countries & Cities">
+        <div id="app">
+         
+            <data-grid
+                title="Countries & Cities"
+                :columns="columns"
+                :data="countries"
+                :child="regionCol"
+                :theme="theme"
+                row-id="id"
+                label-key="name"
+                item-label="City"
+                item-label-plural="Countries & Cities"
+                add-label="Add City"
+                :page-size="100"
+                :selectable="false"
+                :actions="false"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                :allow-add="false"
+                :allow-edit="false"
+                :allow-delete="false"
+                @*group-header="countryName"*@
+            ></data-grid>
+        </div>
+       
+    </div>
+</div>
+<script src="~/js/school-manager/cities.js" asp-append-version="true"></script>

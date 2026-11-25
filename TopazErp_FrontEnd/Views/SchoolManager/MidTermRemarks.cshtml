@@ -1,0 +1,272 @@
+@{
+    ViewBag.Title = "Mid-Term Assessment";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2 dark:text-gray-400">
+            <span>School Manager - Data Entries</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium dark:text-blue-400">Mid-Term Assessment</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="page-title">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
+                    Mid-Term Assessment
+                </h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" data-card-title="Mid-Term Assessment">
+        <div id="app" style="height: 1200px;">
+            <!-- TABS -->
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-5 border-b border-gray-200 dark:border-slate-700">
+                <div class="flex items-center gap-1" role="tablist" aria-label="Mid-term assessment sections">
+                    <button type="button"
+                            role="tab"
+                            :aria-selected="activeTab === 'headers'"
+                            :class="activeTab === 'headers'
+                                ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500'
+                                : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'"
+                            class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors"
+                            @@click="activeTab = 'headers'">
+                        <i class="bi bi-journal-text"></i>
+                        <span>Remark Headers</span>
+                    </button>
+                    <button type="button"
+                            role="tab"
+                            :aria-selected="activeTab === 'assessment'"
+                            :class="activeTab === 'assessment'
+                                ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500'
+                                : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'"
+                            class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors"
+                            @@click="activeTab = 'assessment'">
+                        <i class="bi bi-clipboard2-check"></i>
+                        <span>Mid-Term Assessment</span>
+                        <span v-if="scopeReady" class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-800 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200">{{ studentsWithSelections.length }}</span>
+                    </button>
+                </div>
+
+                <button type="button"
+                        class="mb-2 lg:mb-0 self-start lg:self-auto inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800 disabled:opacity-50"
+                        @@click="getSetupData"
+                        :disabled="isShimmerLoading">
+                    <i class="bi bi-arrow-clockwise" :class="{ 'animate-spin': isShimmerLoading }"></i>
+                    Refresh
+                </button>
+            </div>
+
+            <!-- ============ TAB 1 — REMARK HEADERS (data-grid with child Options) ============ -->
+            <section v-show="activeTab === 'headers'" role="tabpanel">
+            
+                <data-grid title="Remark Headers"
+                           :columns="headerColumns"
+                           :data="remarkHeaders"
+                           :child="optionDetailCol"
+                           :theme="theme"
+                           row-id="id"
+                           label-key="name"
+                           item-label="Remark Header"
+                           item-label-plural="Remark Headers"
+                           add-label="Add Header"
+                           :page-size="10"
+                           :selectable="true"
+                           :actions="true"
+                           :loading="isShimmerLoading"
+                           :stripes="true"
+                           density="compact"
+                           @@create="onCreate"
+                           @@update="onUpdate"
+                           @@delete="onDelete">
+                </data-grid>
+            </section>
+
+            <!-- ============ TAB 2 — MID-TERM ASSESSMENT ============ -->
+            <section v-show="activeTab === 'assessment'" role="tabpanel">
+
+                <!-- scope -->
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+                    <w-select v-model="academicYearId"
+                              :options="academicYears"
+                              display-key="name"
+                              value-key="id"
+                              label="Academic Year:"
+                              required>
+                    </w-select>
+
+                    <w-select v-model="termId"
+                              :options="terms"
+                              display-key="name"
+                              value-key="id"
+                              label="Term:"
+                              required>
+                    </w-select>
+
+                    <w-select v-model="classId"
+                              :options="classes"
+                              display-key="name"
+                              value-key="id"
+                              label="Class:"
+                              required>
+                    </w-select>
+                </div>
+
+                <template v-if="scopeReady">
+
+                    <!-- existing vs new banner -->
+                    <div v-if="existingRecord"
+                         class="mb-4 flex items-start justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 dark:border-amber-800 dark:bg-amber-900/20">
+                        <div class="flex items-start gap-2 text-sm text-amber-900 dark:text-amber-200">
+                            <i class="bi bi-pencil-square mt-0.5"></i>
+                            <div>
+                                <p class="font-semibold">An assessment record exists for this class and term.</p>
+                                <p class="text-xs mt-0.5 text-amber-800 dark:text-amber-300">
+                                    You are editing it ({{ existingRecord.assessment.length }} student line(s)).
+                            </div>
+                        </div>
+                        <button type="button"
+                                class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-red-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-900 dark:bg-slate-800 dark:text-red-400 dark:hover:bg-red-900/30"
+                                @@click="deleteAssessmentRecord(false)">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </div>
+
+                    <div v-else
+                         class="mb-4 flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-200">
+                        <i class="bi bi-plus-circle mt-0.5"></i>
+                        <div>
+                            <p class="font-semibold">New record</p>
+                            <p class="text-xs mt-0.5 text-emerald-800 dark:text-emerald-300">No assessment exists for this academic year, term and class yet — saving creates one.</p>
+                        </div>
+                    </div>
+
+                    <div v-if="remarkHeaders.length === 0"
+                         class="mb-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
+                        <i class="bi bi-exclamation-triangle mt-0.5"></i>
+                        <div>
+                            <p class="font-semibold">No remark headers yet.</p>
+                            <p class="text-xs mt-0.5 text-amber-800 dark:text-amber-300">Create at least one remark header with options in Tab 1 first.</p>
+                        </div>
+                    </div>
+
+                    <!-- students x headers matrix -->
+                    <div class="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-800 px-4 py-3">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <i class="bi bi-people-fill text-blue-600 dark:text-blue-400"></i>
+                                <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Students — {{ nameOf(classes, classId) }}</span>
+                                <span class="inline-flex items-center whitespace-nowrap rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-800 dark:bg-slate-700 dark:border-slate-900 dark:text-gray-200">{{ studentsWithSelections.length }} / {{ studentsInClass.length }} assessed</span>
+                            </div>
+                            <button type="button"
+                                    class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-1 text-[12px] font-semibold text-gray-500 hover:text-red-600 hover:bg-red-50 dark:text-gray-400 dark:hover:text-red-400 dark:hover:bg-slate-800"
+                                    @@click="clearAllStudents">
+                                <i class="bi bi-eraser"></i> Clear all remarks
+                            </button>
+                        </div>
+
+                        <div v-if="studentsInClass.length && remarkHeaders.length" class="overflow-x-auto">
+                            <table class="min-w-full text-sm border-separate border-spacing-0">
+                                <thead>
+                                    <tr class="text-left text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                        <th class="sticky left-0 z-10 bg-gray-100/95 dark:bg-slate-900/95 backdrop-blur px-4 py-2.5 font-semibold w-14 border-b border-gray-200 dark:border-slate-700">#</th>
+                                        <th class="sticky left-14 z-10 bg-gray-100/95 dark:bg-slate-900/95 backdrop-blur px-4 py-2.5 font-semibold min-w-44 border-b border-gray-200 dark:border-slate-700 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.08)]">Student</th>
+                                        <th v-for="header in remarkHeaders"
+                                            :key="header.id"
+                                            class="px-2 py-2.5 font-semibold min-w-40 border-b border-gray-200 dark:border-slate-700 bg-gray-100/70 dark:bg-slate-900/40">
+                                            {{ header.name }}
+                                        </th>
+                                        <th class="px-2 py-2.5 font-semibold w-12 border-b border-gray-200 dark:border-slate-700 bg-gray-100/70 dark:bg-slate-900/40"><span class="sr-only">Clear</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(student, index) in pagedStudents"
+                                        :key="student.id"
+                                        class="align-middle text-gray-700 dark:text-gray-200 hover:bg-blue-50/40 dark:hover:bg-slate-700/30">
+                                        <td class="sticky left-0 z-10 bg-white dark:bg-slate-800 px-4 py-2 text-gray-400 font-medium border-b border-gray-100 dark:border-slate-700">{{ studentGlobalIndex(index) }}</td>
+                                        <td class="sticky left-14 z-10 bg-white dark:bg-slate-800 px-4 py-2 border-b border-gray-100 dark:border-slate-700 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.08)]">
+                                            <div class="flex flex-col min-w-0">
+                                                <span class="font-medium truncate">{{ student.name }}</span>
+                                                <span v-if="student.identifier" class="text-[10px] text-gray-400 truncate">{{ student.identifier }}</span>
+                                            </div>
+                                        </td>
+                                        <td v-for="header in remarkHeaders"
+                                            :key="header.id"
+                                            class="px-1.5 py-1.5 border-b border-gray-100 dark:border-slate-700">
+                                            <w-select :model-value="selectionOf(student.id, header.id)"
+                                                      @@update:model-value="v => setSelection(student.id, header.id, v)"
+                                                      :options="optionsFor(header)"
+                                                      display-key="name"
+                                                      value-key="id"
+                                                      :label="' '">
+                                            </w-select>
+                                        </td>
+                                        <td class="px-1.5 py-1.5 text-center border-b border-gray-100 dark:border-slate-700">
+                                            <button type="button"
+                                                    class="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-slate-700"
+                                                    title="Clear this student's remarks"
+                                                    @@click="clearStudent(student.id)">
+                                                <i class="bi bi-eraser"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <!-- pagination -->
+                            <div class="flex items-center justify-between gap-3 border-t border-gray-100 dark:border-slate-700 bg-gray-50/80 dark:bg-slate-800/90 px-4 py-2.5">
+                                <p class="text-[11px] text-gray-500 dark:text-gray-400">
+                                    Showing <span class="font-semibold text-gray-700 dark:text-gray-200">{{ studentShowingFrom }}–{{ studentShowingTo }}</span> of <span class="font-semibold text-gray-700 dark:text-gray-200">{{ studentsInClass.length }}</span> students
+                                </p>
+                                <div class="flex items-center gap-1">
+                                    <button type="button"
+                                            class="p-1.5 rounded-md border border-gray-200 dark:border-slate-600 text-gray-500 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed dark:text-gray-400 dark:hover:text-blue-400"
+                                            :disabled="clampedStudentPage <= 1"
+                                            @@click="setStudentPage(clampedStudentPage - 1)">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </button>
+                                    <span class="text-[11px] font-semibold text-gray-500 dark:text-gray-400 px-2">Page {{ clampedStudentPage }} / {{ totalStudentPages }}</span>
+                                    <button type="button"
+                                            class="p-1.5 rounded-md border border-gray-200 dark:border-slate-600 text-gray-500 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed dark:text-gray-400 dark:hover:text-blue-400"
+                                            :disabled="clampedStudentPage >= totalStudentPages"
+                                            @@click="setStudentPage(clampedStudentPage + 1)">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p v-else-if="studentsInClass.length === 0" class="py-10 text-center text-sm text-gray-400">
+                            <i class="bi bi-inbox block text-xl mb-1"></i>
+                            No students found for this class.
+                        </p>
+                    </div>
+
+                    <!-- save -->
+                    <div class="mt-4 mb-6 flex items-center justify-end gap-3">
+                        <button type="button"
+                                class="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-blue-900 bg-blue-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                :disabled="isShimmerLoading || !anySelection"
+                                @@click="saveAssessment">
+                            <i class="bi" :class="isShimmerLoading ? 'bi-arrow-repeat animate-spin' : 'bi-check2-circle'"></i>
+                            {{ isShimmerLoading ? 'Saving…' : (existingRecord ? 'Update Assessment' : 'Save Assessment') }}
+                        </button>
+                    </div>
+
+                
+
+                </template>
+
+                <div v-else class="py-14 text-center text-gray-400 dark:text-gray-500">
+                    <i class="bi bi-arrow-up-circle block text-2xl mb-2"></i>
+                    <p class="text-sm">Choose an academic year, term and class to assess the students.</p>
+                </div>
+            </section>
+
+        </div>
+    </div>
+</div>
+
+<script src="~/js/school-manager/mid-term-assessment.js"></script>

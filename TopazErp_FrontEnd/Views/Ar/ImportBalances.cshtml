@@ -13,7 +13,7 @@
         <div class="flex items-center gap-3">
 
             <div class="page-title">
-                <h2 class="text-2xl font-semibold text-gray-800">
+                <h2 class="text-lg font-semibold text-gray-800">
                     Opening Balances
                 </h2>
                 
@@ -100,6 +100,9 @@
                     <th class="min-w-[150px] px-4 py-3 text-right font-semibold text-slate-600 dark:text-slate-300">
                         Rate
                     </th>
+                    <th class="min-w-[150px] px-4 py-3 text-right font-semibold text-slate-600 dark:text-slate-300">
+                        Ou / Cost Center
+                    </th>
                     <th class="min-w-[200px] px-4 py-3 text-right font-semibold text-slate-600 dark:text-slate-300">
                         Amount
                     </th>
@@ -131,6 +134,11 @@
                         <td class="px-4 py-3 text-right tabular-nums text-slate-600 dark:text-slate-300">
                             {{ row.currencyRate }}
                         </td>
+                    
+                        <td class="px-4 py-3 text-right tabular-nums text-slate-600 dark:text-slate-300">
+                            {{ row.ouName }}
+                        </td>
+
 
                         <td class="px-4 py-3 text-right font-semibold tabular-nums text-slate-800 dark:text-slate-100">
                             {{ Number(row.amount || 0).toLocaleString(undefined, {
@@ -242,5 +250,3 @@
     </div>
 </div>
 <script src="~/js/ar/Imports/balances.js" asp-append-version="true"></script>
-
-

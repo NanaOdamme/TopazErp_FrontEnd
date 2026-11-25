@@ -1,3 +1,13 @@
+const API_URLS = {
+    customers: '/SharedResource/GetCustomers',
+    currencies: '/SharedResource/GetCurrencies',
+    organizationalUnits: '/SharedResource/GetCostCenters/',
+    existingBalances: '/Ar/GetBalancesReport?status=all',
+    createOpeningBalance: '/Ar/CreateOpeningBalance'
+};
+
+const EMPTY_GUID = '00000000-0000-0000-0000-000000000000';
+
 const app = Vue.createApp({
     data() {
         return {
@@ -6,8 +16,6 @@ const app = Vue.createApp({
             isLoading: false,
             currentPage: 1,
             pageSize: 10,
-            
-            // normalized header text -> row property
             columnMap: {
                 customer: 'customer',
                 customername: 'customer',
@@ -19,13 +27,24 @@ const app = Vue.createApp({
                 currencyrate: 'currencyRate',
                 exchangerate: 'currencyRate',
                 amount: 'amount',
-                balance: 'amount'
+                balance: 'amount',
+                ou: 'ouName',
+                ouname: 'ouName',
+                costcenter: 'ouName',
+                costcentername: 'ouName',
+                oucostcenter: 'ouName',
+                organizationalunit: 'ouName',
+                organizationalunitname: 'ouName',
+                orgunit: 'ouName'
             }
         };
     },
+
     computed: {
         hasErrors() {
-            return this.previewData.some(r => r.errors && r.errors.length > 0);
+            return this.previewData.some(
+                row => row.errors && row.errors.length > 0
+            );
         },
         pendingRows() {
             return this.previewData.some(row => !row.imported);
@@ -43,31 +62,42 @@ const app = Vue.createApp({
             const delta = 2;
             const range = [];
             const rangeWithDots = [];
-            let l;
+            let last;
 
             for (let i = 1; i <= total; i++) {
-                if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) {
+                if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) 
+                {
                     range.push(i);
                 }
             }
-            for (let i of range) {
-                if (l) {
-                    if (i - l === 2) rangeWithDots.push(l + 1);
-                    else if (i - l > 2) rangeWithDots.push('...');
+
+            for (const page of range) {
+                if (last) {
+                    if (page - last === 2) {
+                        rangeWithDots.push(last + 1);
+                    } else if (page - last > 2) {
+                        rangeWithDots.push('...');
+                    }
                 }
-                rangeWithDots.push(i);
-                l = i;
+
+                rangeWithDots.push(page);
+                last = page;
             }
+
             return rangeWithDots;
-        },
+        }
     },
+
     methods: {
         async onFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             if (!/\.(xlsx|xls|csv)$/i.test(file.name)) {
-                this.toastHandler('warning', 'Please choose an Excel (.xlsx, .xls) or .csv file.');
+                this.toastHandler(
+                    'warning',
+                    'Please choose an Excel (.xlsx, .xls) or .csv file.'
+                );
                 event.target.value = '';
                 return;
             }
@@ -78,92 +108,354 @@ const app = Vue.createApp({
 
         async previewFile() {
             if (!this.file) {
-                this.toastHandler('warning', 'Please select a file to preview.');
+                this.toastHandler(
+                    'warning',
+                    'Please select a file to preview.'
+                );
                 return;
             }
 
             this.isLoading = true;
+
             try {
                 const buffer = await this.file.arrayBuffer();
                 const workbook = XLSX.read(buffer, { type: 'array' });
                 const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
-                // raw: true keeps dates as Excel serial numbers, which parseDate handles
-                const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: true });
+                // raw: true keeps Excel dates as serial numbers for parseDate().
+                const rawRows = XLSX.utils.sheet_to_json(sheet, {
+                    defval: '',
+                    raw: true
+                });
 
                 if (rawRows.length === 0) {
                     this.previewData = [];
-                    this.toastHandler('warning', 'The selected file has no data rows.');
+                    this.toastHandler(
+                        'warning',
+                        'The selected file has no data rows.'
+                    );
                     return;
                 }
 
-                this.previewData = rawRows.map(this.mapRow);
+                this.previewData = rawRows.map(raw => this.mapRow(raw));
                 this.currentPage = 1;
+
             } catch (error) {
                 console.error(error);
                 this.previewData = [];
-                this.toastHandler('error', 'Failed to read the file. Make sure it is a valid Excel file.');
+
+                this.toastHandler(
+                    'error',
+                    'Failed to read the file. Make sure it is a valid Excel file.'
+                );
+
             } finally {
                 this.isLoading = false;
             }
         },
 
-        normalizeHeader(h) {
-            return String(h).toLowerCase().replace(/[^a-z0-9]/g, '');
+        normalizeHeader(value) {
+            return String(value ?? '')
+                .toLowerCase()
+                .replace(/[^a-z0-9]/g, '');
         },
 
-        toText(v) {
-            return v === null || v === undefined ? '' : String(v).trim();
+        toText(value) {
+            return value === null || value === undefined
+                ? ''
+                : String(value).trim();
         },
 
-        toNumber(v) {
-            if (typeof v === 'number') return v;
-            const cleaned = String(v ?? '').replace(/[^0-9.\-]/g, '');
-            if (cleaned === '' || cleaned === '-' || cleaned === '.') return NaN;
+        toNumber(value) {
+            if (typeof value === 'number') return value;
+
+            const cleaned = String(value ?? '').replace(/[^0-9.\-]/g, '');
+
+            if (cleaned === '' || cleaned === '-' || cleaned === '.') {
+                return NaN;
+            }
+
             return parseFloat(cleaned);
         },
 
-        // Returns 'yyyy-mm-dd' or '' if it can't be understood
-        parseDate(v) {
-            if (v === '' || v === null || v === undefined) return '';
-            const pad = n => String(n).padStart(2, '0');
+        unwrapList(raw) {
+            if (!raw) return [];
+            if (Array.isArray(raw)) return raw;
 
-            // Excel serial number
-            if (typeof v === 'number') {
-                const d = XLSX.SSF.parse_date_code(v);
-                return d ? `${d.y}-${pad(d.m)}-${pad(d.d)}` : '';
+            for (const key of [
+                'result',
+                'items',
+                'data',
+                'customers',
+                'currencies',
+                'costCenters',
+                'organizationalUnits',
+                'units',
+                'balances',
+                'openingBalances',
+                'arOpeningBalances'
+            ]) {
+                if (Array.isArray(raw[key])) return raw[key];
             }
 
-            if (v instanceof Date && !isNaN(v)) {
-                return `${v.getFullYear()}-${pad(v.getMonth() + 1)}-${pad(v.getDate())}`;
+            if (raw.result && typeof raw.result === 'object') {
+                return this.unwrapList(raw.result);
             }
 
-            const s = String(v).trim();
+            if (raw.data && typeof raw.data === 'object') {
+                return this.unwrapList(raw.data);
+            }
 
-            // yyyy-mm-dd
-            let m = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/);
-            if (m) return this.buildDate(+m[1], +m[2], +m[3]);
+            if (typeof raw === 'object') {
+                const firstArray = Object.values(raw).find(v => Array.isArray(v));
+                if (firstArray) return firstArray;
+            }
 
-            // dd/mm/yyyy (day first)
-            m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})$/);
-            if (m) return this.buildDate(+m[3], +m[2], +m[1]);
+            return [];
+        },
+
+        async fetchList(url) {
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error(
+                    `Request failed (${response.status}) for ${url}`
+                );
+            }
+
+            const data = await response.json();
+            return this.unwrapList(data);
+        },
+
+        getField(item, name) {
+            if (!item) return undefined;
+
+            const pascalName =
+                name.charAt(0).toUpperCase() + name.slice(1);
+
+            return item[name] ?? item[pascalName];
+        },
+
+        normalizeName(value) {
+            return this.toText(value).toLocaleLowerCase();
+        },
+
+        normalizeOuPath(value) {
+            return this.toText(value)
+                .split('/')
+                .map(part => part.trim())
+                .filter(Boolean)
+                .join(' / ')
+                .toLocaleLowerCase();
+        },
+
+        buildOuLookups(rawUnits) {
+            const byId = new Map();
+
+            rawUnits.forEach(unit => {
+                const id = this.getField(unit, 'id');
+                if (id) {
+                    byId.set(String(id).toLowerCase(), unit);
+                }
+            });
+
+            const getPath = unit => {
+                const names = [];
+                const visited = new Set();
+                let current = unit;
+                let depth = 0;
+
+                while (current && depth < 20) {
+                    const currentId = this.getField(current, 'id');
+                    if (currentId) {
+                        visited.add(String(currentId).toLowerCase());
+                    }
+
+                    const unitName = this.toText(
+                        this.getField(current, 'name')
+                    );
+
+                    if (unitName) {
+                        names.unshift(unitName);
+                    }
+
+                    const parentId = this.getField(current, 'parentId');
+                    const parentKey = parentId
+                        ? String(parentId).toLowerCase()
+                        : '';
+
+                    if (
+                        !parentKey ||
+                        parentKey === EMPTY_GUID ||
+                        !byId.has(parentKey) ||
+                        visited.has(parentKey)
+                    ) {
+                        break;
+                    }
+
+                    current = byId.get(parentKey);
+                    depth++;
+                }
+
+                return names.join(' / ');
+            };
+
+            const byPath = new Map();
+            const byName = new Map();
+
+            rawUnits.forEach(unit => {
+                const id = this.getField(unit, 'id');
+                const originalName = this.toText(
+                    this.getField(unit, 'name')
+                );
+
+                if (!id || !originalName) return;
+
+                const path = getPath(unit);
+                const entry = {
+                    id,
+                    originalName,
+                    path
+                };
+
+                const normalizedPath = this.normalizeOuPath(path);
+                if (normalizedPath && !byPath.has(normalizedPath)) {
+                    byPath.set(normalizedPath, entry);
+                }
+
+                const normalizedName = this.normalizeName(originalName);
+                if (normalizedName) {
+                    if (!byName.has(normalizedName)) {
+                        byName.set(normalizedName, []);
+                    }
+                    byName.get(normalizedName).push(entry);
+                }
+            });
+
+            return { byPath, byName };
+        },
+
+        resolveOu(ouName, ouLookups) {
+            const text = this.toText(ouName);
+
+            // Optional: leave empty to save ouId as EMPTY_GUID.
+            if (!text) {
+                return { ou: null, error: '' };
+            }
+
+            const pathMatch = ouLookups.byPath.get(
+                this.normalizeOuPath(text)
+            );
+
+            if (pathMatch) {
+                return { ou: pathMatch, error: '' };
+            }
+
+            const nameMatches =
+                ouLookups.byName.get(this.normalizeName(text)) || [];
+
+            if (nameMatches.length === 1) {
+                return { ou: nameMatches[0], error: '' };
+            }
+
+            if (nameMatches.length > 1) {
+                const paths = nameMatches
+                    .map(match => `"${match.path}"`)
+                    .join(', ');
+
+                return {
+                    ou: null,
+                    error: `Multiple OUs match "${text}". Use the full path (${paths}).`
+                };
+            }
+
+            return {
+                ou: null,
+                error: `No matching OU / Cost Center "${text}" was found.`
+            };
+        },
+
+        makeBalanceKey(customerId, currencyId) {
+            if (!customerId || !currencyId) return '';
+
+            return `${String(customerId).toLowerCase()}|${String(currencyId).toLowerCase()}`;
+        },
+
+        // Returns YYYY-MM-DD or '' when the value cannot be parsed.
+        parseDate(value) {
+            if (value === '' || value === null || value === undefined) {
+                return '';
+            }
+
+            const pad = number => String(number).padStart(2, '0');
+
+            // Excel serial date.
+            if (typeof value === 'number') {
+                const date = XLSX.SSF.parse_date_code(value);
+
+                return date
+                    ? `${date.y}-${pad(date.m)}-${pad(date.d)}`
+                    : '';
+            }
+
+            if (value instanceof Date && !Number.isNaN(value.getTime())) {
+                return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
+            }
+
+            const text = String(value).trim();
+
+            // YYYY-MM-DD or YYYY/MM/DD.
+            let match = text.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+
+            if (match) {
+                return this.buildDate(
+                    Number(match[1]),
+                    Number(match[2]),
+                    Number(match[3])
+                );
+            }
+
+            // DD/MM/YYYY, DD-MM-YYYY, or DD.MM.YYYY.
+            match = text.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+
+            if (match) {
+                return this.buildDate(
+                    Number(match[3]),
+                    Number(match[2]),
+                    Number(match[1])
+                );
+            }
 
             return '';
         },
 
-        buildDate(y, mo, d) {
-            const dt = new Date(y, mo - 1, d);
-            if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return '';
-            return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        buildDate(year, month, day) {
+            const date = new Date(year, month - 1, day);
+
+            if (
+                date.getFullYear() !== year ||
+                date.getMonth() !== month - 1 ||
+                date.getDate() !== day
+            ) {
+                return '';
+            }
+
+            return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         },
 
-        // Used by the template: 'yyyy-mm-dd' -> '05 Mar 2026'
+        // Used by the template: YYYY-MM-DD -> 05 Mar 2026.
         formatDate(value) {
             if (!value) return '';
-            const m = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-            if (!m) return value;
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            return `${m[3]} ${months[+m[2] - 1]} ${m[1]}`;
+
+            const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (!match) return value;
+
+            const months = [
+                'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+            ];
+
+            return `${match[3]} ${months[Number(match[2]) - 1]} ${match[1]}`;
         },
 
         mapRow(raw) {
@@ -173,146 +465,408 @@ const app = Vue.createApp({
                 currencyName: '',
                 currencyRate: 0,
                 amount: 0,
+                ouName: '',
                 imported: false,
                 importError: '',
                 errors: []
             };
 
-            // Collect the raw values by property first, then validate
             const found = {};
+
             Object.keys(raw).forEach(header => {
-                const prop = this.columnMap[this.normalizeHeader(header)];
-                if (prop) found[prop] = { header, value: raw[header] };
+                const property =
+                    this.columnMap[this.normalizeHeader(header)];
+
+                if (property) {
+                    found[property] = {
+                        header,
+                        value: raw[header]
+                    };
+                }
             });
 
             row.customer = this.toText(found.customer?.value);
             row.currencyName = this.toText(found.currencyName?.value);
+            row.ouName = this.toText(found.ouName?.value);
 
-            if (!row.customer) row.errors.push('Customer is required.');
-            if (!row.currencyName) row.errors.push('Currency is required.');
+            if (!row.customer) {
+                row.errors.push('Customer is required.');
+            }
 
-            // Date
+            if (!row.currencyName) {
+                row.errors.push('Currency is required.');
+            }
+
             const rawDate = found.transactionDate?.value;
+
             if (rawDate === undefined || rawDate === '' || rawDate === null) {
                 row.errors.push('Transaction Date is required.');
             } else {
                 row.transactionDate = this.parseDate(rawDate);
+
                 if (!row.transactionDate) {
-                    row.errors.push(`Transaction Date is not valid (found "${rawDate}"). Use dd/mm/yyyy.`);
+                    row.errors.push(
+                        `Transaction Date is not valid (found "${rawDate}"). Use dd/mm/yyyy.`
+                    );
                 }
             }
 
-            // Rate
             const rawRate = found.currencyRate?.value;
+
             if (rawRate === undefined || rawRate === '' || rawRate === null) {
                 row.errors.push('Rate is required.');
             } else {
                 const rate = this.toNumber(rawRate);
-                if (isNaN(rate)) row.errors.push(`Rate must be a number (found "${rawRate}").`);
-                else if (rate <= 0) row.errors.push('Rate must be greater than zero.');
-                else row.currencyRate = rate;
+
+                if (Number.isNaN(rate)) {
+                    row.errors.push(
+                        `Rate must be a number (found "${rawRate}").`
+                    );
+                } else if (rate <= 0) {
+                    row.errors.push('Rate must be greater than zero.');
+                } else {
+                    row.currencyRate = rate;
+                }
             }
 
-            // Amount
             const rawAmount = found.amount?.value;
+
             if (rawAmount === undefined || rawAmount === '' || rawAmount === null) {
                 row.errors.push('Amount is required.');
             } else {
                 const amount = this.toNumber(rawAmount);
-                if (isNaN(amount)) row.errors.push(`Amount must be a number (found "${rawAmount}").`);
-                else row.amount = amount;
+
+                if (Number.isNaN(amount)) {
+                    row.errors.push(
+                        `Amount must be a number (found "${rawAmount}").`
+                    );
+                } else {
+                    row.amount = amount;
+                }
             }
 
             return row;
         },
 
         async importData() {
-            if (this.hasErrors || !this.pendingRows || this.isLoading) return;
+            if (this.isLoading) return;
+
+            if (this.previewData.length === 0 || !this.pendingRows) {
+                this.toastHandler(
+                    'warning',
+                    'There are no pending opening balances to import.'
+                );
+                return;
+            }
+
+            if (this.hasErrors) {
+                this.toastHandler(
+                    'warning',
+                    'Fix the preview errors before importing.'
+                );
+                return;
+            }
 
             this.isLoading = true;
+
             try {
-                const [customerResponse, currencyResponse] = await Promise.all([
-                    fetch('/SharedResource/GetCustomers'),
-                    fetch('/SharedResource/GetCurrencys')
+                // Fetch fresh data before checking duplicates.
+                const [
+                    customers,
+                    currencies,
+                    organizationalUnits,
+                    existingBalances
+                ] = await Promise.all([
+                    this.fetchList(API_URLS.customers),
+                    this.fetchList(API_URLS.currencies),
+                    this.fetchList(API_URLS.organizationalUnits),
+                    this.fetchList(API_URLS.existingBalances)
                 ]);
 
-                if (!customerResponse.ok || !currencyResponse.ok) {
-                    throw new Error('Unable to load customers or currencies.');
-                }
+                // Build customer lookup using all customers (not only active).
+                const customerByName = new Map();
 
-                const [customers, currencies] = await Promise.all([
-                    customerResponse.json(),
-                    currencyResponse.json()
-                ]);
-                const normalizeName = value => this.toText(value).toLocaleLowerCase();
-                const customerByName = new Map(
-                    (Array.isArray(customers) ? customers : [])
-                        .filter(customer => String(customer.statusName || '').trim().toLowerCase() === 'active')
-                        .map(customer => [normalizeName(customer.name), customer])
-                );
-                const currencyByName = new Map(
-                    (Array.isArray(currencies) ? currencies : [])
-                        .map(currency => [normalizeName(currency.currencyName), currency])
-                );
+                customers.forEach(customer => {
+                    const name = this.normalizeName(
+                        this.getField(customer, 'name')
+                    );
+
+                    if (!name) return;
+
+                    const existing = customerByName.get(name);
+                    if (!existing) {
+                        customerByName.set(name, customer);
+                        return;
+                    }
+
+                    // If duplicate names exist, prefer an active record.
+                    const existingStatus = this.normalizeName(
+                        this.getField(existing, 'statusName') ||
+                        this.getField(existing, 'status')
+                    );
+                    const currentStatus = this.normalizeName(
+                        this.getField(customer, 'statusName') ||
+                        this.getField(customer, 'status')
+                    );
+
+                    if (
+                        existingStatus !== 'active' &&
+                        currentStatus === 'active'
+                    ) {
+                        customerByName.set(name, customer);
+                    }
+                });
+
+                // Build currency lookup.
+                const currencyByName = new Map();
+
+                currencies.forEach(currency => {
+                    const name = this.normalizeName(
+                        this.getField(currency, 'currencyName')
+                    );
+
+                    if (name) {
+                        currencyByName.set(name, currency);
+                    }
+                });
+
+              
+                const ouLookups = this.buildOuLookups(organizationalUnits);
+                
+                const existingKeys = new Set();
+
+                existingBalances.forEach(balance => {
+                    const customerId = this.getField(balance, 'customerId');
+                    const currencyId = this.getField(balance, 'currencyId');
+
+                    const key = this.makeBalanceKey(
+                        customerId,
+                        currencyId
+                    );
+
+                    if (key) existingKeys.add(key);
+                });
+
+                // Resolve each preview row to customer, currency, and optional OU IDs.
+                const preparedRows = this.previewData.map(row => {
+                    if (row.imported) {
+                        return {
+                            row,
+                            customer: null,
+                            currency: null,
+                            ou: null,
+                            key: ''
+                        };
+                    }
+
+                    row.importError = '';
+                    const rowErrors = [];
+
+                    const customer = customerByName.get(
+                        this.normalizeName(row.customer)
+                    );
+
+                    const currency = currencyByName.get(
+                        this.normalizeName(row.currencyName)
+                    );
+
+                    if (!customer || !currency) {
+                        const missing = [];
+
+                        if (!customer) {
+                            missing.push(`customer "${row.customer}"`);
+                        }
+
+                        if (!currency) {
+                            missing.push(
+                                `currency "${row.currencyName}"`
+                            );
+                        }
+
+                        rowErrors.push(
+                            `No matching ${missing.join(' and ')} was found.`
+                        );
+                    }
+
+                    const customerId = this.getField(customer, 'id');
+                    const currencyId = this.getField(currency, 'id');
+
+                    if (
+                        customer &&
+                        currency &&
+                        (!customerId || !currencyId)
+                    ) {
+                        rowErrors.push(
+                            'The matched customer or currency is missing its ID.'
+                        );
+                    }
+
+                    const { ou, error: ouError } = this.resolveOu(
+                        row.ouName,
+                        ouLookups
+                    );
+
+                    if (ouError) {
+                        rowErrors.push(ouError);
+                    }
+
+                    if (rowErrors.length > 0) {
+                        row.importError = rowErrors.join(' ');
+                    }
+
+                    return {
+                        row,
+                        customer,
+                        currency,
+                        ou,
+                        key: this.makeBalanceKey(
+                            customerId,
+                            currencyId
+                        )
+                    };
+                });
+
+                // Find duplicate customer + currency pairs inside the preview.
+                const previewGroups = new Map();
+
+                preparedRows.forEach(item => {
+                    if (!item.key) return;
+
+                    if (!previewGroups.has(item.key)) {
+                        previewGroups.set(item.key, []);
+                    }
+
+                    previewGroups.get(item.key).push(item);
+                });
+
+                previewGroups.forEach(group => {
+                    if (group.length < 2) return;
+
+                    const description =
+                        `Duplicate customer and currency in the uploaded file: ` +
+                        `"${group[0].row.customer}" / "${group[0].row.currencyName}".`;
+
+                    group.forEach(item => {
+                        if (!item.row.imported) {
+                            item.row.importError = item.row.importError
+                                ? `${item.row.importError} ${description}`
+                                : description;
+                        }
+                    });
+                });
+
+                // Check each pending row against balances already in the system.
+                preparedRows.forEach(item => {
+                    if (item.row.imported || !item.key) return;
+                    if (!existingKeys.has(item.key)) return;
+
+                    const description =
+                        `An opening balance already exists for ` +
+                        `"${item.row.customer}" in "${item.row.currencyName}".`;
+
+                    item.row.importError = item.row.importError
+                        ? `${item.row.importError} ${description}`
+                        : description;
+                });
 
                 let importedCount = 0;
                 let failedCount = 0;
-                for (const row of this.previewData) {
-                    if (row.imported) continue;
-                    row.importError = '';
 
-                    const customer = customerByName.get(normalizeName(row.customer));
-                    const currency = currencyByName.get(normalizeName(row.currencyName));
-                    if (!customer || !currency) {
-                        const missing = [];
-                        if (!customer) missing.push(`active customer "${row.customer}"`);
-                        if (!currency) missing.push(`currency "${row.currencyName}"`);
-                        row.importError = `No matching ${missing.join(' and ')} was found.`;
+                for (const item of preparedRows) {
+                    const { row, customer, currency, ou, key } = item;
+
+                    if (row.imported) continue;
+
+                    if (
+                        row.importError ||
+                        !customer ||
+                        !currency ||
+                        !key
+                    ) {
                         failedCount++;
                         continue;
                     }
 
                     const payload = {
-                        customerId: customer.id,
-                        customerName: customer.name,
-                        accountNumber: customer.accountNumber,
-                        currencyId: currency.id,
-                        currencyName: currency.currencyName,
-                        currencyCode: currency.currencyCode,
+                        customerId: this.getField(customer, 'id'),
+                        customerName: this.getField(customer, 'name'),
+                        accountNumber: this.getField(customer, 'accountNumber'),
+
+                        currencyId: this.getField(currency, 'id'),
+                        currencyName: this.getField(currency, 'currencyName'),
+                        currencyCode: this.getField(currency, 'currencyCode'),
+
                         buyRate: row.currencyRate,
-                        sellRate: currency.sellRate ?? row.currencyRate,
+                        sellRate:
+                            this.getField(currency, 'sellRate') ??
+                            row.currencyRate,
+
                         transactionDate: row.transactionDate,
                         amount: row.amount,
-                        isPosted: false,
-                        ouId: '00000000-0000-0000-0000-000000000000',
-                        ouName: 'N/A'
+
+                        ouId: ou?.id || EMPTY_GUID,
+                        ouName: ou ? ou.originalName : 'N/A',
+                        isPosted: false
                     };
 
                     try {
-                        const response = await fetch('/ArDataEntry/CreateOpeningBalances', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
+                        const response = await fetch(
+                            API_URLS.createOpeningBalance,
+                            {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(payload)
+                            }
+                        );
+
                         const result = await response.json().catch(() => null);
-                        if (!response.ok || !result || result.code !== 200) {
-                            throw new Error(result?.message || `Request failed (${response.status}).`);
+
+                        const apiRejected =
+                            result?.success === false ||
+                            (
+                                result?.code !== undefined &&
+                                result.code !== 200
+                            );
+
+                        if (!response.ok || apiRejected) {
+                            throw new Error(
+                                result?.error?.message ||
+                                result?.message ||
+                                `Request failed (${response.status}).`
+                            );
                         }
+
                         row.imported = true;
+                        row.importError = '';
                         importedCount++;
+
+                        // Prevent another row from creating this pair during this run.
+                        existingKeys.add(key);
+
                     } catch (error) {
-                        row.importError = error.message || 'Import failed.';
+                        row.importError =
+                            error.message || 'Import failed.';
+
                         failedCount++;
                     }
                 }
 
                 if (failedCount > 0) {
-                    this.toastHandler('warning', `${importedCount} opening balances imported; ${failedCount} failed. Review the affected rows and retry.`);
+                    this.toastHandler(
+                        'warning',
+                        `${importedCount} opening balances imported; ${failedCount} failed. Review the affected rows.`
+                    );
                 } else {
-                    this.toastHandler('success', `${importedCount} opening balances imported.`);
+                    this.toastHandler(
+                        'success',
+                        `${importedCount} opening balances imported.`
+                    );
                 }
+
             } catch (error) {
-                console.error(error);
+                console.error('Opening balance import error:', error);
                 this.toastHandler('error', error.message || 'Unable to import opening balances.');
             } finally {
                 this.isLoading = false;
@@ -324,18 +878,23 @@ const app = Vue.createApp({
                 console.log(message);
                 return;
             }
+
             Swal.fire({
                 toast: true,
                 position: 'top-end',
-                icon: type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'success',
+                icon:
+                    type === 'error'
+                        ? 'error'
+                        : type === 'warning'
+                            ? 'warning'
+                            : 'success',
                 title: message,
                 showConfirmButton: false,
                 timer: 4000,
                 timerProgressBar: true
             });
-        },
-    },
+        }
+    }
 });
+
 app.mount('#app');
-
-

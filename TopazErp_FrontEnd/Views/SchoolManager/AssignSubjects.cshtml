@@ -1,0 +1,398 @@
+@{
+ViewBag.Title = "Assign Subjects";
+Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2 dark:text-gray-400">
+            <span>School Manager - Data Entries</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium dark:text-blue-400">Assign Subjects</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="page-title">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
+                    Assign Subjects
+                </h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" data-card-title="Assign Subjects">
+        <div id="app" style="height: 1000px;">
+            <!-- TABS -->
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-5 border-b border-gray-200 dark:border-slate-700">
+                <div class="flex items-center gap-1" role="tablist" aria-label="Assign subjects modes">
+                    <button type="button"
+                            role="tab"
+                            :aria-selected="activeTab === 'single'"
+                            :class="activeTab === 'single'
+                                ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500'
+                                : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'"
+                            class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors"
+                            @@click="activeTab = 'single'">
+                        <i class="bi bi-person-check"></i>
+                        <span>Single Class</span>
+                    </button>
+                    <button type="button"
+                            role="tab"
+                            :aria-selected="activeTab === 'bulk'"
+                            :class="activeTab === 'bulk'
+                                ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500'
+                                : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'"
+                            class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors"
+                            @@click="activeTab = 'bulk'">
+                        <i class="bi bi-files"></i>
+                        <span>Apply to Multiple Classes</span>
+                    </button>
+                </div>
+
+                <button type="button"
+                        class="mb-2 lg:mb-0 self-start lg:self-auto inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800 disabled:opacity-50"
+                        @@click="getSetupData"
+                        :disabled="isShimmerLoading">
+                    <i class="bi bi-arrow-clockwise" :class="{ 'animate-spin': isShimmerLoading }"></i>
+                    Refresh
+                </button>
+            </div>
+
+            <!-- loading -->
+            <div v-if="isShimmerLoading" class="py-14 text-center text-gray-400 dark:text-gray-500">
+                <i class="bi bi-arrow-repeat animate-spin text-2xl"></i>
+                <p class="text-sm mt-2">Loading data…</p>
+            </div>
+
+            <template v-else>
+
+                <!-- duplicate warning banner (duplicates already in the data) -->
+                <div v-if="duplicateGroups.length" class="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
+                    <div class="flex items-start gap-2">
+                        <i class="bi bi-exclamation-triangle-fill mt-0.5 text-amber-500"></i>
+                        <div class="w-full">
+                            <p class="font-semibold">Duplicate assignments detected ({{ duplicateGroups.length }})</p>
+                            <p class="text-amber-800 text-xs mt-0.5 mb-2 dark:text-amber-300">The same academic year, term and class are assigned more than once. Delete the extra record(s) below — new duplicates are blocked automatically.</p>
+                            <ul class="space-y-1.5">
+                                <li v-for="group in duplicateGroups" :key="group.key" class="flex flex-wrap items-center justify-between gap-2 rounded border border-amber-200 bg-white/60 px-2 py-1.5 dark:border-amber-800/60 dark:bg-slate-800/40">
+                                    <span class="font-medium text-amber-900 dark:text-amber-200">{{ group.label }} — {{ group.count }} assignments</span>
+                                    <span class="flex items-center gap-2">
+                                        <button type="button"
+                                                v-for="dup in group.items"
+                                                :key="dup.id"
+                                                class="inline-flex items-center gap-1 rounded-md border border-red-200 bg-white px-1.5 py-0.5 text-[11px] font-semibold text-red-700 hover:bg-red-50 dark:border-red-900 dark:bg-slate-800 dark:text-red-400 dark:hover:bg-red-900/30"
+                                                title="Delete this assignment"
+                                                @@click="deleteAssignmentById(dup)">
+                                            <i class="bi bi-trash"></i> {{ shortId(dup.id) }}…
+                                        </button>
+                                    </span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= TAB 1 — SINGLE CLASS ================= -->
+                <section v-show="activeTab === 'single'" role="tabpanel">
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <w-select v-model="single.academicYearId"
+                                  :options="academicYears"
+                                  display-key="name"
+                                  value-key="id"
+                                  label="Academic Year:"
+                                  required>
+                        </w-select>
+
+                        <w-select v-model="single.termId"
+                                  :options="terms"
+                                  display-key="name"
+                                  value-key="id"
+                                  label="Term:"
+                                  required>
+                        </w-select>
+
+                        <w-select v-model="single.classId"
+                                  :options="classes"
+                                  display-key="name"
+                                  value-key="id"
+                                  label="Class:"
+                                  required>
+                        </w-select>
+                    </div>
+
+                    <!-- editing vs creating -->
+                    <div v-if="singleContextReady && existingSingleAssignment"
+                         class="flex items-start justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 mb-4 dark:border-amber-800 dark:bg-amber-900/20">
+                        <div class="flex items-start gap-2 text-sm text-amber-900 dark:text-amber-200">
+                            <i class="bi bi-pencil-square mt-0.5"></i>
+                            <div>
+                                <p class="font-semibold">This class already has subjects assigned.</p>
+                                <p class="text-amber-800 text-xs mt-0.5 dark:text-amber-300">
+                                    You are editing the existing assignment ({{ existingSingleAssignment.details.length }} subject(s)).
+                                </p>
+                            </div>
+                        </div>
+                        <button type="button"
+                                class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-red-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-900 dark:bg-slate-800 dark:text-red-400 dark:hover:bg-red-900/30"
+                                @@click="deleteSingleExisting"
+                                title="Delete this assignment">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </div>
+
+                    <div v-else-if="singleContextReady"
+                         class="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 mb-4 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-200">
+                        <i class="bi bi-plus-circle mt-0.5"></i>
+                        <div>
+                            <p class="font-semibold">New assignment</p>
+                            <p class="text-emerald-800 text-xs mt-0.5 dark:text-emerald-300">This class has no subjects for the selected academic year and term yet.</p>
+                        </div>
+                    </div>
+
+                    <!-- subjects picker -->
+                    <div class="rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-3 py-2.5 bg-white border-b border-gray-200 dark:border-slate-700 dark:bg-transparent">
+                            <div class="flex items-center gap-2">
+                                <i class="bi bi-journal-bookmark text-blue-600 dark:text-blue-400"></i>
+                                <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Subjects</span>
+                                <span class="inline-flex items-center whitespace-nowrap rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-800 dark:bg-slate-700 dark:border-slate-900 dark:text-gray-200">{{ single.subjectIds.length }} selected</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="relative">
+                                    <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                                    <input type="text"
+                                           class="input-control w-full sm:w-56"
+                                           style="padding-left:2rem"
+                                           placeholder="Search subjects…"
+                                           v-model="single.subjectFilter" />
+                                </div>
+                                <button type="button" class="whitespace-nowrap px-1 py-1 text-[13px] font-semibold text-blue-600 hover:underline dark:text-blue-400" @@click="toggleSelectAllFiltered">
+                                    {{ allFilteredSelected ? 'Unselect' : 'Select' }} all
+                                </button>
+                                <button type="button" class="whitespace-nowrap px-1 py-1 text-[13px] font-semibold text-gray-500 hover:underline dark:text-gray-400" @@click="clearSubjectSelection">Clear</button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 max-h-80 overflow-y-auto p-3">
+                            <label v-for="subject in filteredSubjects"
+                                   :key="subject.id"
+                                   :class="isSubjectSelected(subject.id)
+                                        ? 'border-blue-600 bg-blue-50 dark:bg-slate-900 ring-1 ring-inset ring-blue-600'
+                                        : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-300 hover:bg-blue-50/40'"
+                                   class="flex cursor-pointer select-none items-center gap-2 rounded-lg border px-3 py-2 text-[13px] text-gray-700 dark:text-white transition">
+                                <input type="checkbox"
+                                       class="input-control"
+                                       :checked="isSubjectSelected(subject.id)"
+                                       @@change="toggleSubject(subject.id)" />
+                                <span class="truncate">{{ subject.name }}</span>
+                                <span v-if="isSubjectAlreadyAssigned(subject.id)" class="ml-auto rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">assigned</span>
+                            </label>
+
+                            <p v-if="subjects.length === 0" class="col-span-full py-8 text-center text-sm text-gray-400">
+                                <i class="bi bi-inbox block text-xl mb-1"></i>
+                                No subjects loaded. Check the GetSubjects endpoint.
+                            </p>
+                            <p v-else-if="filteredSubjects.length === 0" class="col-span-full py-8 text-center text-sm text-gray-400">
+                                <i class="bi bi-search block text-xl mb-1"></i>
+                                No subjects match “{{ single.subjectFilter }}”.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- footer actions -->
+                    <div class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            {{ selectedSubjectsSummary }}
+                            <span v-if="singleContextReady" class="text-gray-400 dark:text-gray-500">Linked to the selected class only.</span>
+                        </p>
+                        <div class="flex items-center gap-2">
+                            <button type="button"
+                                    class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-200 dark:hover:bg-slate-700 disabled:opacity-50"
+                                    @@click="resetSingleForm"
+                                    :disabled="savingSingle">
+                                Clear
+                            </button>
+                            <button type="button"
+                                    class="inline-flex items-center gap-2 rounded-lg border border-blue-700 bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                    :disabled="savingSingle || !singleContextReady || single.subjectIds.length === 0"
+                                    @@click="saveSingle">
+                                <i class="bi" :class="savingSingle ? 'bi-arrow-repeat animate-spin' : (existingSingleAssignment ? 'bi-pencil-square' : 'bi-check2-circle')"></i>
+                                {{ savingSingle ? 'Saving…' : (existingSingleAssignment ? 'Update Assignment' : 'Assign Subjects') }}
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ================= TAB 2 — APPLY TO MULTIPLE CLASSES ================= -->
+                <section v-show="activeTab === 'bulk'" role="tabpanel">
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <w-select v-model="bulk.academicYearId"
+                                  :options="academicYears"
+                                  display-key="name"
+                                  value-key="id"
+                                  label="Academic Year:"
+                                  required>
+                        </w-select>
+
+                        <w-select v-model="bulk.termId"
+                                  :options="terms"
+                                  display-key="name"
+                                  value-key="id"
+                                  label="Term:"
+                                  required>
+                        </w-select>
+                    </div>
+
+                    <div class="mb-4">
+                        <w-select v-model="bulk.sourceAssignedSubjectId"
+                                  :options="sourceClassOptions"
+                                  display-key="name"
+                                  value-key="id"
+                                  label="Source Class (already assigned):"
+                                  required>
+                        </w-select>
+                        <p v-if="bulkScopeReady && sourceClassOptions.length === 0" class="mt-1.5 flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400">
+                            <i class="bi bi-info-circle"></i>
+                            No class has subjects assigned for this academic year and term yet — assign one class first (Single Class tab).
+                        </p>
+                    </div>
+
+                    <!-- source preview -->
+                    <div v-if="sourceAssignment" class="mb-4 rounded-lg border border-blue-100 bg-blue-50/60 p-3 dark:border-slate-700 dark:bg-slate-800">
+                        <div class="mb-2 flex items-center justify-between gap-3">
+                            <p class="flex items-center gap-2 text-sm font-semibold text-blue-900 dark:text-blue-300">
+                                <i class="bi bi-clipboard-check"></i>
+                                Subjects that will be copied
+                            </p>
+                            <span class="inline-flex items-center whitespace-nowrap rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-800 dark:bg-slate-700 dark:border-slate-900 dark:text-gray-200">{{ sourceAssignment.details.length }} subject(s)</span>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">
+                            <span v-for="detail in sourceAssignment.details" :key="detail.subjectId" class="inline-flex items-center rounded-md border border-blue-200 bg-white px-2 py-0.5 text-xs font-medium text-blue-900 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-100">
+                                {{ detail.subjectName }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- target pool -->
+                    <div class="rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-transparent px-3 py-2.5">
+                            <div class="flex items-center gap-2">
+                                <i class="bi bi-building text-blue-600 dark:text-blue-400"></i>
+                                <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Classes without subjects</span>
+                                <span class="inline-flex items-center whitespace-nowrap rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-800 dark:bg-slate-700 dark:border-slate-900 dark:text-gray-200">{{ bulk.targetClassIds.length }} of {{ targetPool.length }} selected</span>
+                            </div>
+                            <label class="flex cursor-pointer select-none items-center gap-2 text-sm text-gray-600 dark:text-gray-200">
+                                <input type="checkbox"
+                                       class="input-control"
+                                       :checked="allTargetsSelected"
+                                       @@change="toggleSelectAllTargets" />
+                                Select all
+                            </label>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 max-h-80 overflow-y-auto p-3">
+                            <label v-for="cls in targetPool"
+                                   :key="cls.id"
+                                   :class="isTargetSelected(cls.id)
+                                        ? 'border-blue-600 bg-blue-50 dark:bg-slate-900 ring-1 ring-inset ring-blue-600'
+                                        : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-300 hover:bg-blue-50/40'"
+                                   class="flex cursor-pointer select-none items-center gap-2 rounded-lg border px-3 py-2 text-[13px] text-gray-700 dark:text-white transition">
+                                <input type="checkbox"
+                                       class="input-control"
+                                       :checked="isTargetSelected(cls.id)"
+                                       @@change="toggleTarget(cls.id)" />
+                                <span class="truncate">{{ cls.name }}</span>
+                            </label>
+
+                            <p v-if="bulkScopeReady && targetPool.length === 0" class="col-span-full py-8 text-center text-sm text-gray-400">
+                                <i class="bi bi-check-circle block text-xl mb-1 text-emerald-500"></i>
+                                Every class already has subjects for this academic year and term.
+                            </p>
+                            <p v-else-if="!bulkScopeReady && targetPool.length === 0" class="col-span-full py-8 text-center text-sm text-gray-400">
+                                <i class="bi bi-arrow-up-circle block text-xl mb-1"></i>
+                                Choose an academic year and a term to see the classes that still need subjects.
+                            </p>
+                        </div>
+                    </div>
+
+                    <p class="mt-2 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+                        <i class="bi bi-info-circle"></i>
+                        Classes that already have subjects for the selected academic year and term are hidden here, and skipped again on apply — they can never be duplicated.
+                    </p>
+
+                    <!-- footer actions -->
+                    <div class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            <template v-if="sourceAssignment">
+                                Copy <strong class="text-gray-700 dark:text-gray-200">{{ sourceAssignment.details.length }}</strong> subject(s) to <strong class="text-gray-700 dark:text-gray-200">{{ bulk.targetClassIds.length }}</strong> class(es).
+                            </template>
+                            <template v-else>
+                                Pick a source class to preview what will be copied.
+                            </template>
+                        </p>
+                        <button type="button"
+                                class="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-blue-700 bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                :disabled="copyingBulk || !sourceAssignment || !sourceAssignment.details.length || bulk.targetClassIds.length === 0"
+                                @@click="applyToMultipleClasses">
+                            <i class="bi" :class="copyingBulk ? 'bi-arrow-repeat animate-spin' : 'bi-files'"></i>
+                            {{ copyingBulk ? 'Applying…' : ('Apply to ' + bulk.targetClassIds.length + ' Class' + (bulk.targetClassIds.length === 1 ? '' : 'es')) }}
+                        </button>
+                    </div>
+
+                    <!-- apply results -->
+                    <div v-if="copyResults.length" class="mt-4 overflow-hidden rounded-lg border border-gray-200 dark:border-slate-700">
+                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-transparent px-3 py-2.5">
+                            <p class="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+                                <i class="bi bi-list-check"></i> Apply results
+                            </p>
+                            <div class="flex items-center gap-2 text-xs font-medium">
+                                <span class="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">{{ copySummary.Created }} created</span>
+                                <span class="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] text-amber-700 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-400">{{ copySummary.Skipped }} skipped</span>
+                                <span class="rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-[11px] text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400">{{ copySummary.Failed }} failed</span>
+                            </div>
+                        </div>
+                        <ul class="max-h-64 divide-y divide-gray-100 dark:divide-slate-700 overflow-y-auto">
+                            <li v-for="r in copyResults" :key="String(r.classId) + r.status" class="flex items-start gap-2 px-3 py-2 text-sm">
+                                <i class="bi mt-0.5"
+                                   :class="r.status === 'Created' ? 'bi-check-circle-fill text-emerald-600 dark:text-emerald-400'
+                                          : r.status === 'Skipped' ? 'bi-dash-circle-fill text-amber-500 dark:text-amber-400'
+                                          : 'bi-x-circle-fill text-red-600 dark:text-red-400'"></i>
+                                <div class="min-w-0">
+                                    <span class="font-medium text-gray-800 dark:text-gray-100">{{ r.className }}</span>
+                                    <span class="text-gray-500 dark:text-gray-400"> — {{ r.message }}</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </section>
+
+            </template>
+
+            <!-- ================= TOASTS ================= -->
+            <div class="pointer-events-none fixed top-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2" aria-live="polite">
+                <div v-for="toast in toasts"
+                     :key="toast.id"
+                     class="pointer-events-auto flex items-start gap-2 rounded-lg border border-gray-200 border-l-4 bg-white px-3 py-2.5 text-sm text-gray-800 shadow-lg dark:border-slate-700 dark:bg-slate-800 dark:text-gray-100"
+                     :class="toast.type === 'success' ? 'border-l-emerald-500'
+                            : toast.type === 'error'   ? 'border-l-red-500'
+                            : toast.type === 'warning' ? 'border-l-amber-500'
+                            : 'border-l-blue-500'">
+                    <i class="bi"
+                       :class="toast.type === 'success' ? 'bi-check-circle-fill text-emerald-600 dark:text-emerald-400'
+                              : toast.type === 'error'   ? 'bi-x-circle-fill text-red-600 dark:text-red-400'
+                              : toast.type === 'warning' ? 'bi-exclamation-triangle-fill text-amber-500 dark:text-amber-400'
+                              : 'bi-info-circle-fill text-blue-600 dark:text-blue-400'"></i>
+                    <span class="flex-1 leading-snug">{{ toast.message }}</span>
+                    <button type="button" class="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300" @@click="dismissToast(toast.id)" aria-label="Dismiss">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="~/js/school-manager/assign-subjects.js"></script>

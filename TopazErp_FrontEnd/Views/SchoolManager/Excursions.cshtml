@@ -1,0 +1,380 @@
+@{
+    ViewBag.Title = "Excursions";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2 dark:text-gray-400">
+            <span>School Manager - Data Entries</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium dark:text-blue-400">Excursions</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="page-title">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
+                    Excursions
+                </h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" data-card-title="Excursions">
+        <div id="app" style="height: 1000px;">
+
+            <!-- scope (shared by both tabs) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+                <w-select v-model="academicYearId"
+                          :options="academicYears"
+                          display-key="name"
+                          value-key="id"
+                          label="Academic Year:"
+                          required>
+                </w-select>
+
+                <w-select v-model="termId"
+                          :options="terms"
+                          display-key="name"
+                          value-key="id"
+                          label="Term:"
+                          required>
+                </w-select>
+
+                <w-select v-model="classId"
+                          :options="classes"
+                          display-key="name"
+                          value-key="id"
+                          label="Class:"
+                          required>
+                </w-select>
+            </div>
+
+            <!-- TABS -->
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-5 border-b border-gray-200 dark:border-slate-700">
+                <div class="flex items-center gap-1" role="tablist" aria-label="Excursion sections">
+                    <button type="button"
+                            role="tab"
+                            :aria-selected="activeTab === 'plan'"
+                            :class="activeTab === 'plan'
+                                ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500'
+                                : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'"
+                            class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors"
+                            @@click="activeTab = 'plan'">
+                        <i class="bi bi-bus-front"></i>
+                        <span>{{ editingId ? 'Edit Excursion' : 'Plan Excursion' }}</span>
+                    </button>
+                    <button type="button"
+                            role="tab"
+                            :aria-selected="activeTab === 'saved'"
+                            :class="activeTab === 'saved'
+                                ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500'
+                                : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'"
+                            class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors"
+                            @@click="activeTab = 'saved'">
+                        <i class="bi bi-card-checklist"></i>
+                        <span>Saved Excursions</span>
+                        <span v-if="scopeReady" class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-800 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200">{{ excursionsInScope.length }}</span>
+                    </button>
+                </div>
+
+                <button type="button"
+                        class="mb-2 lg:mb-0 self-start lg:self-auto inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800 disabled:opacity-50"
+                        @@click="getSetupData"
+                        :disabled="isShimmerLoading">
+                    <i class="bi bi-arrow-clockwise" :class="{ 'animate-spin': isShimmerLoading }"></i>
+                    Refresh
+                </button>
+            </div>
+
+            <!-- ============ TAB 1 — PLAN EXCURSION ============ -->
+            <section v-show="activeTab === 'plan'" role="tabpanel">
+
+                <!-- editing banner -->
+                <div v-if="editingId"
+                     class="mb-4 flex items-start justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 dark:border-amber-800 dark:bg-amber-900/20">
+                    <div class="flex items-start gap-2 text-sm text-amber-900 dark:text-amber-200">
+                        <i class="bi bi-pencil-square mt-0.5"></i>
+                        <div>
+                            <p class="font-semibold">You are editing an existing excursion.</p>
+                            <p class="text-xs mt-0.5 text-amber-800 dark:text-amber-300">Saving updates it in place — a duplicate will not be created.</p>
+                        </div>
+                    </div>
+                    <button type="button"
+                            class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-200 dark:hover:bg-slate-700"
+                            @@click="resetPlanForm">
+                        <i class="bi bi-x-circle"></i> New instead
+                    </button>
+                </div>
+
+                <template v-if="scopeReady">
+
+                    <!-- trip details -->
+                    <div class="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm p-4 mb-4">
+                        <p class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
+                            <i class="bi bi-signpost-split text-blue-600 dark:text-blue-400"></i> Trip details
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                            <div class="md:col-span-3">
+                                <label class="label" for="point">Point of Departure:</label>
+                                <input id="point" type="text" class="input-control" placeholder="e.g. School Main Gate" v-model="form.point" />
+                            </div>
+                            <div class="md:col-span-3">
+                                <label class="label" for="destination">Destination:</label>
+                                <input id="destination" type="text" class="input-control" placeholder="e.g. Shai Hills Resource Reserve" v-model="form.destination" />
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="label" for="departureDate">Departure Date:</label>
+                                <input id="departureDate" type="date" class="input-control" v-model="form.departureDate" />
+                            </div>
+                            <div class="md:col-span-1">
+                                <label class="label" for="departureTime">Time:</label>
+                                <input id="departureTime" type="time" class="input-control" v-model="form.departureTime" />
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="label" for="returnDate">Return Date:</label>
+                                <input id="returnDate" type="date" class="input-control" v-model="form.returnDate" />
+                            </div>
+                            <div class="md:col-span-1">
+                                <label class="label" for="returnTime">Time:</label>
+                                <input id="returnTime" type="time" class="input-control" v-model="form.returnTime" />
+                            </div>
+                        </div>
+                        <p v-if="!departureBeforeReturn" class="mt-2 flex items-center gap-1.5 text-xs font-semibold text-red-600 dark:text-red-400">
+                            <i class="bi bi-exclamation-triangle"></i> The return is before the departure — fix the dates/times.
+                        </p>
+                    </div>
+
+                    <!-- students roster -->
+                    <div class="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden mb-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 bg-gray-50/60 dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <i class="bi bi-people-fill text-blue-600 dark:text-blue-400"></i>
+                                <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Students going</span>
+                                <span class="inline-flex items-center whitespace-nowrap rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-800 dark:bg-slate-700 dark:border-slate-900 dark:text-gray-200">{{ attendingIds.length }} of {{ studentsInClass.length }} attending</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="relative">
+                                    <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                                    <input type="text"
+                                           class="input-control w-full sm:w-56"
+                                           style="padding-left:2rem"
+                                           placeholder="Search students…"
+                                           v-model="studentFilter" />
+                                </div>
+                                <button type="button" class="whitespace-nowrap px-1 py-1 text-[13px] font-semibold text-blue-600 hover:underline dark:text-blue-400" @@click="toggleAllFilteredStudents">
+                                    {{ allFilteredStudentsAttending ? 'DeSelect' : 'Select' }} all
+                                </button>
+                            </div>
+                        </div>
+
+                    
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 max-h-72 overflow-y-auto p-3">
+                            <label v-for="student in filteredStudents"
+                                   :key="student.id"
+                                   :class="isAttending(student.id)
+                                        ? 'border-blue-600 bg-blue-50 dark:bg-slate-900 ring-1 ring-inset ring-blue-600'
+                                        : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-300 hover:bg-blue-50/40'"
+                                   class="flex cursor-pointer select-none items-center gap-2 rounded-lg border px-3 py-2 text-[13px] text-gray-700 dark:text-white transition">
+                                <input type="checkbox"
+                                       class="input-control"
+                                       :checked="isAttending(student.id)"
+                                       @@change="toggleAttend(student.id)" />
+                                <span class="flex flex-col min-w-0">
+                                    <span class="truncate font-medium">{{ student.name }}</span>
+                                    <span v-if="student.identifier" class="text-[10px] text-gray-400 dark:text-gray-500 truncate">{{ student.identifier }}</span>
+                                </span>
+                            </label>
+
+                            <p v-if="studentsInClass.length === 0" class="col-span-full py-8 text-center text-sm text-gray-400">
+                                <i class="bi bi-inbox block text-xl mb-1"></i>
+                                No students found for this class.
+                            </p>
+                            <p v-else-if="filteredStudents.length === 0" class="col-span-full py-8 text-center text-sm text-gray-400">
+                                <i class="bi bi-search block text-xl mb-1"></i>
+                                No students match.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- teachers -->
+                    <div class="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden mb-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 bg-gray-50/60 dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <i class="bi bi-person-workspace text-blue-600 dark:text-blue-400"></i>
+                                <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Teachers going</span>
+                                <span class="inline-flex items-center whitespace-nowrap rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-300">{{ selectedTeacherIds.length }} selected</span>
+                            </div>
+                            <div class="relative">
+                                <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                                <input type="text"
+                                       class="input-control w-full sm:w-56"
+                                       style="padding-left:2rem"
+                                       placeholder="Search teachers…"
+                                       v-model="teacherFilter" />
+                            </div>
+                        </div>
+
+                
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 max-h-56 overflow-y-auto p-3">
+                            <label v-for="teacher in filteredTeachers"
+                                   :key="teacher.id"
+                                   :class="isTeacherSelected(teacher.id)
+                                        ? 'border-emerald-600 bg-emerald-50 dark:bg-slate-900 ring-1 ring-inset ring-emerald-600'
+                                        : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-emerald-300 hover:bg-emerald-50/40'"
+                                   class="flex cursor-pointer select-none items-center gap-2 rounded-lg border px-3 py-2 text-[13px] text-gray-700 dark:text-white transition">
+                                <input type="checkbox"
+                                       class="input-control"
+                                       :checked="isTeacherSelected(teacher.id)"
+                                       @@change="toggleTeacher(teacher.id)" />
+                                <span class="truncate font-medium">{{ teacher.name }}</span>
+                            </label>
+
+                            <p v-if="teachers.length === 0" class="col-span-full py-8 text-center text-sm text-gray-400">
+                                <i class="bi bi-inbox block text-xl mb-1"></i>
+                                No teachers found.
+                            </p>
+                            <p v-else-if="filteredTeachers.length === 0" class="col-span-full py-8 text-center text-sm text-gray-400">
+                                <i class="bi bi-search block text-xl mb-1"></i>
+                                No teachers match.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- save -->
+                    <div class="flex items-center justify-end gap-3">
+                        <button type="button"
+                                class="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-200 dark:hover:bg-slate-700"
+                                v-if="editingId"
+                                @@click="resetPlanForm">
+                            <i class="bi bi-x-circle"></i> Cancel edit
+                        </button>
+                        <button type="button"
+                                class="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-blue-700 bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                :disabled="isShimmerLoading || !canSave"
+                                @@click="saveExcursion">
+                            <i class="bi" :class="isShimmerLoading ? 'bi-arrow-repeat animate-spin' : 'bi-check2-circle'"></i>
+                            {{ isShimmerLoading ? 'Saving…' : (editingId ? 'Update Excursion' : 'Save Excursion') }}
+                        </button>
+                    </div>
+
+                </template>
+
+                <div v-else class="py-14 text-center text-gray-400 dark:text-gray-500">
+                    <i class="bi bi-arrow-up-circle block text-2xl mb-2"></i>
+                    <p class="text-sm">Choose an academic year, term and class to plan the excursion.</p>
+                </div>
+            </section>
+
+            <!-- ============ TAB 2 — SAVED EXCURSIONS ============ -->
+            <section v-show="activeTab === 'saved'" role="tabpanel">
+
+                <template v-if="scopeReady">
+                    <div class="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden">
+                        <div class="flex items-center justify-between gap-3 border-b border-gray-200 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-800 px-4 py-3">
+                            <div class="flex items-center gap-2">
+                                <i class="bi bi-card-checklist text-blue-600 dark:text-blue-400"></i>
+                                <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Excursions — {{ nameOf(classes, classId) }}, {{ nameOf(terms, termId) }}</span>
+                                <span class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-800 dark:bg-slate-700 dark:border-slate-900 dark:text-gray-200">{{ excursionsInScope.length }}</span>
+                            </div>
+                        </div>
+
+                        <div v-if="excursionsInScope.length" class="overflow-x-auto">
+                            <table class="min-w-full text-sm divide-y divide-gray-100 dark:divide-slate-700">
+                                <thead class="bg-gray-100/70 dark:bg-slate-900/40">
+                                    <tr class="text-left text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                        <th class="px-4 py-2.5 font-semibold">Trip</th>
+                                        <th class="px-4 py-2.5 font-semibold">Departs</th>
+                                        <th class="px-4 py-2.5 font-semibold">Returns</th>
+                                        <th class="px-4 py-2.5 font-semibold w-32">Students</th>
+                                        <th class="px-4 py-2.5 font-semibold">Teachers</th>
+                                        <th class="px-4 py-2.5 font-semibold w-24 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
+                                    <tr v-for="e in pagedExcursions"
+                                        :key="e.id"
+                                        class="align-middle text-gray-700 dark:text-gray-200 hover:bg-blue-50/40 dark:hover:bg-slate-700/30">
+                                        <td class="px-4 py-3">
+                                            <span class="flex items-center gap-2 font-medium">
+                                                <i class="bi bi-geo-alt text-blue-500 dark:text-blue-400"></i>
+                                                <span class="truncate max-w-[16rem]" :title="e.point + ' → ' + e.destination">{{ e.point }} <i class="bi bi-arrow-right text-[10px] text-gray-400"></i> {{ e.destination }}</span>
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap">
+                                            <span class="block text-[13px] font-semibold">{{ prettyDate(e.departureDate) }}</span>
+                                            <span class="text-[11px] text-gray-400 dark:text-gray-500">{{ e.departureTime }}</span>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap">
+                                            <span class="block text-[13px] font-semibold">{{ prettyDate(e.returnDate) }}</span>
+                                            <span class="text-[11px] text-gray-400 dark:text-gray-500">{{ e.returnTime }}</span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span class="inline-flex items-center whitespace-nowrap rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-800 dark:bg-slate-700 dark:border-slate-900 dark:text-gray-200">{{ attendCount(e) }} / {{ (e.students || []).length }} going</span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span class="block max-w-[18rem] truncate text-xs text-gray-500 dark:text-gray-400" :title="(e.teachers || []).map(t => t.teacherName).join(', ')">{{ (e.teachers || []).length ? (e.teachers || []).map(t => t.teacherName).join(', ') : '—' }}</span>
+                                        </td>
+                                        <td class="px-4 py-3 text-right whitespace-nowrap">
+                                            <button type="button"
+                                                    class="p-2 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:text-gray-500 dark:hover:text-blue-400 dark:hover:bg-slate-700"
+                                                    title="Edit this excursion"
+                                                    @@click="editExcursion(e)">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                            <button type="button"
+                                                    class="p-2 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:text-gray-500 dark:hover:text-red-400 dark:hover:bg-slate-700"
+                                                    title="Delete this excursion"
+                                                    @@click="deleteExcursion(e)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <!-- pagination -->
+                            <div class="flex items-center justify-between gap-3 border-t border-gray-100 dark:border-slate-700 bg-gray-50/80 dark:bg-slate-800/90 px-4 py-2.5">
+                                <p class="text-[11px] text-gray-500 dark:text-gray-400">
+                                    Page <span class="font-semibold text-gray-700 dark:text-gray-200">{{ clampedExcursionPage }}</span> of <span class="font-semibold text-gray-700 dark:text-gray-200">{{ totalExcursionPages }}</span>
+                                </p>
+                                <div class="flex items-center gap-1">
+                                    <button type="button"
+                                            class="p-1.5 rounded-md border border-gray-200 dark:border-slate-600 text-gray-500 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed dark:text-gray-400 dark:hover:text-blue-400"
+                                            :disabled="clampedExcursionPage <= 1"
+                                            @@click="setExcursionPage(clampedExcursionPage - 1)">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </button>
+                                    <button type="button"
+                                            class="p-1.5 rounded-md border border-gray-200 dark:border-slate-600 text-gray-500 hover:text-blue-600 disabled:opacity-40 disabled:cursor-not-allowed dark:text-gray-400 dark:hover:text-blue-400"
+                                            :disabled="clampedExcursionPage >= totalExcursionPages"
+                                            @@click="setExcursionPage(clampedExcursionPage + 1)">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p v-else class="py-12 text-center text-sm text-gray-400">
+                            <i class="bi bi-signpost block text-2xl mb-2"></i>
+                            No excursions saved for this class in this term yet.<br />
+                            <button type="button" class="mt-3 inline-flex items-center gap-1.5 text-blue-600 hover:underline dark:text-blue-400 font-semibold" @@click="activeTab = 'plan'">
+                                <i class="bi bi-plus-circle"></i> Plan the first one
+                            </button>
+                        </p>
+                    </div>
+                </template>
+
+                <div v-else class="py-14 text-center text-gray-400 dark:text-gray-500">
+                    <i class="bi bi-arrow-up-circle block text-2xl mb-2"></i>
+                    <p class="text-sm">Choose an academic year, term and class to see the saved excursions.</p>
+                </div>
+            </section>
+
+        </div>
+    </div>
+</div>
+
+<script src="~/js/school-manager/excursions.js"></script>

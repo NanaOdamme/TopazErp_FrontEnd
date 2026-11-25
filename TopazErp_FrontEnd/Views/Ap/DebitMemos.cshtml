@@ -12,14 +12,21 @@
         </div>
     </div>
 
-    <div id="app" class="space-y-6">
-        <div class="card" data-card-title="Debit Memo">
-        
+   
+        <div class="card" data-card-title="Debit Memo" id="app">
+            <div class="flex justify-end gap-1.5 mb-2 flex-wrap">
+                <button type="button" @@click="applyMemo" class="border border-blue-600 text-blue-600 px-2.5 py-1.5 text-xs rounded-lg hover:bg-blue-600 hover:text-white">
+                    <i class="bi bi-box-arrow-in-down-right mr-1"></i>Apply To Invoice
+                </button>
+                <button type="button" class="border border-sky-600 text-sky-600 px-2.5 py-1.5 text-xs rounded-lg hover:bg-sky-600 hover:text-white">
+                    <i class="bi bi-printer mr-1"></i>Print
+                </button>
+            </div>
             <data-grid
-                ref="creditMemo"
+                ref="debitMemos"
                 title="Debit Memos"
-                :columns="debitMemoColumns"
-                :data="debitMemoList"
+                :columns="memoColumns"
+                :data="debitMemos"
                 :theme="theme"
                 row-id="id"
                 label-key="supplierName"
@@ -28,13 +35,138 @@
                 item-label-plural="debit memos"
                 :page-size="10"
                 :selectable="true"
+                :row-disabled="isInvoiceDebit"
                 @@create="onCreate"
                 @@update="onUpdate"
-                @@delete="onDelete">
+                @@delete="onDelete" :loading="isShimmerLoading">
             </data-grid>
+             <div id="apply" class="my-5">
+                    <p class="my-4 text-blue-500">Apply Debit Memo to Invoice</p>
+
+                        <!-- ======================= HEADER FIELDS ======================= -->
+                        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 my-4">
+                            <div>
+                                <label for="supplierName" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                                    Supplier
+                                </label>
+                                <input id="supplierName" v-model="supplierName" type="text" disabled class="input-control"/>
+                            </div>
+                            <div>
+                                <label for="accountNo" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                                    Account Number
+                                </label>
+                                <input id="accountNo" v-model="accountNo" type="text" class="input-control" disabled/>
+                            </div>
+                               <div>                    
+                                <label for="transactionDate" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                                    Transaction Date
+                                </label>
+                                <input id="transactionDate" v-model="transactionDate" type="date" class="input-control" disabled/>
+                                </div>
+                            <div>
+                                <label for="currencyName" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                                    Currency
+                                </label>
+                                <input id="currencyName" v-model="currencyName" type="text" class="input-control" disabled/>
+                            </div>
+                    
+                            <div>
+                                <label for="buyRate" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                                    Buy Rate
+                                </label>
+                                <input id="buyRate" v-model="buyRate" type="number" step="0.0001" class="input-control" disabled/>
+                            </div>
+                            <div>
+                                
+                                <label for="amount" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                                    Amount
+                                </label>
+                                <input id="amount" v-model="amount" type="number" step="0.01" class="input-control" />
+                            </div>
+                            <div>
+                                <label for="description" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                                    Description
+                                </label>
+                                <input id="description" v-model="description" type="text" class="input-control" disabled/>
+                            </div>
+                        
+                            <div>
+                                <label for="batchNumber" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                                    Batch Number
+                                </label>
+                                <input id="batchNumber" v-model="batchNumber" type="text" class="input-control" disabled/>
+                            </div>
+                            </div>
+                 <hr>
+                 <p class="text-blue-700">Invoice Details</p>
+                 <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 my-4">
+                     <div>
+                         <w-select
+                             v-model="invoiceId"
+                             @@change="setCurrentInvoice"
+                             :options="invoiceList"
+                             display-key="displayText"
+                             value-key="id"
+                             placeholder="Supplier Invoice"
+                             label="Invoice to Apply Memo:"
+                             required>
+                         </w-select>
+                     </div>
+                                <div>
+                                    <label for="invoiceNo" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                                        Invoice Number
+                                    </label>
+                                    <input id="invoiceNo" v-model="invoiceNo" type="text" class="input-control" disabled/>
+                                </div>
+                    
+                    
+                                                           
+                                                            
+                                <div>
+                                    <label for="invoiceCurrencyName" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                                        Invoice Currency
+                                    </label>
+                                    <input id="invoiceCurrencyName" v-model="invoiceCurrencyName" type="text" class="input-control" disabled/>
+                                </div>
+                    
+                                <div>
+                                    <label for="invoiceBuyRate" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                                        Invoice Buy Rate
+                                    </label>
+                                    <input id="invoiceBuyRate" v-model="invoiceBuyRate" type="number" step="0.0001" class="input-control" disabled/>
+                                </div>
+                     <div>
+                         <label for="amountToApply" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                             Amount to Apply
+                         </label>
+                         <input id="amountToApply" v-model="amountToApply" type="number" step="0.0001" class="input-control" disabled/>
+                     </div>
+                                <div>
+                                    <label for="invoiceBalance" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                                        Invoice Balance
+                                    </label>
+                                    <input id="invoiceBalance" v-model="invoiceBalance" type="number" step="0.0001" class="input-control" disabled/>
+                                </div>
+                                
+                            </div>
+                     
+                 <div v-if="isApplying" class="flex justify-end my-2">
+                     <button
+                         type="button"
+                         @@click="applyDebitMemo"
+                         :disabled="isLoading"
+                         class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60">
+                         <i v-if="isLoading" class="la la-circle-o-notch animate-spin text-lg"></i>
+                         <i class="bi bi-box-arrow-in-down-right text-xl"></i>
+                        Apply Debit Memo
+                     </button>
+                 </div>
+                        
+            
+                </div>
         </div>
     </div>
-</div>
+
 
 
 

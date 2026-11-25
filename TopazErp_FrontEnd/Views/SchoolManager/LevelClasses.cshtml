@@ -1,0 +1,119 @@
+@{
+    ViewBag.Title = "Level Classes";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>School Manager - Main Setups</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Levels & Classes</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="page-title">
+                <h2 class="text-lg font-semibold text-gray-800">
+                    Level Classes
+                </h2>
+            </div>
+        </div>
+    </div>
+    <div class="card" data-card-title="Levels & Classes">
+        <div id="app">
+            <!-- Tabs Navigation -->
+            <div class="flex border-b border-gray-200 mb-6">
+                <button @@click="activeTab = 'classes'" 
+                        :class="activeTab === 'classes' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                        class="px-6 py-2 border-b-2 font-medium text-sm transition">
+                    Classes
+                </button>
+                <button @@click="activeTab = 'levels'" 
+                        :class="activeTab === 'levels' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                        class="px-6 py-2 border-b-2 font-medium text-sm transition">
+                    Levels
+                </button>
+                <button @@click="activeTab = 'levelClasses'" 
+                        :class="activeTab === 'levelClasses' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                        class="px-6 py-2 border-b-2 font-medium text-sm transition">
+                    Level Classes
+                </button>
+            </div>
+
+            <div id="app1">
+                <!-- Classes Tab -->
+                <div v-show="activeTab === 'classes'" class="mt-4">
+                    <data-grid
+                        title="Classes"
+                        :columns="classColumns"
+                        :data="classList"
+                        :theme="theme"
+                        row-id="id"
+                        label-key="name"
+                        item-label="Classes"
+                        item-label-plural="Classes"
+                        add-label="Add Class"
+                        :page-size="10"
+                        :selectable="true"
+                        :actions="true"
+                        :stripes="true"
+                
+                        :loading="isShimmerLoading"
+                        @@create="onClassCreate"
+                        @@update="onClassUpdate"
+                        @@delete="onClassDelete"
+                    ></data-grid>
+                </div>
+
+                <!-- Levels Tab -->
+                <div v-show="activeTab === 'levels'" class="mt-4">
+                    <data-grid
+                        title="Levels"
+                        :columns="levelColumns"
+                        :data="levelList"
+                        :theme="theme"
+                        row-id="id"
+                        label-key="levelName"
+                        item-label="Levels"
+                        item-label-plural="Levels"
+                        add-label="Add Level"
+                        :page-size="10"
+                        :selectable="true"
+                        :actions="true"
+                        :stripes="true"
+                        :loading="isShimmerLoading"
+                        @@create="onLevelCreate"
+                        @@update="onLevelUpdate"
+                        @@delete="onLevelDelete"
+                    ></data-grid>
+                </div>
+
+                <!-- Level Classes Tab -->
+                <div v-show="activeTab === 'levelClasses'" class="mt-4">
+                    <data-grid
+                        title="Level Classes"
+                        :columns="levelClassColumns"
+                        :data="levelClassList"
+                        :theme="theme"
+                        row-id="id"
+                        label-key="className"
+                        item-label="Level Classes"
+                        item-label-plural="Level Classes"
+                        add-label="Add Level Class"
+                        :page-size="10"
+                        :selectable="true"
+                        :actions="true"
+                        group-header="levelId"
+                        :stripes="true"
+                        :loading="isShimmerLoading"
+                        @@create="onLevelClassCreate"
+                        @@update="onLevelClassUpdate"
+                        @@delete="onLevelClassDelete"
+                    ></data-grid>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/school-manager/levels-and-classes.js"></script>

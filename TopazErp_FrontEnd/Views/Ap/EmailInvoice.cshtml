@@ -1,5 +1,5 @@
 @{
-    ViewBag.Title = "ImportOpeningBalance";
+    ViewBag.Title = "Email Invoices";
     Layout = "~/Views/Shared/_adminApLayout.cshtml";
 }
 <div class="content">
@@ -13,7 +13,7 @@
         <div class="flex items-center gap-3">
 
             <div class="page-title">
-                <h2 class="text-2xl font-semibold text-gray-800">
+                <h2 class="text-lg font-semibold text-gray-800">
                     Email Invoices
                 </h2>
                 
@@ -27,7 +27,7 @@
         </div>
         <data-grid
             ref="invoices"
-            title="Invoices"
+            title="Invoice List"
             :columns="invoiceColumns"
             :data="invoiceList"
             :child="invoiceDetailChild"
@@ -36,7 +36,7 @@
             label-key="invoiceNumber"
             item-label="invoice"
             item-label-plural="invoices"
-            :page-size="5"
+            :page-size="10"
             :selectable="true"
             :actions="false"
             :allow-add="false"

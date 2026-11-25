@@ -45,18 +45,10 @@ var title = ViewData["Title"] as string ?? "Topaz ERP";
         <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     </environment>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
 
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/line-awesome@1.3.0/dist/line-awesome/css/line-awesome.min.css" />
-    <script src="https://cdn.jsdelivr.net/npm/moment@2.30.1/moment.min.js"></script>
+    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="~/css/shell.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/card.css" asp-append-version="true" />
@@ -90,102 +82,95 @@ var title = ViewData["Title"] as string ?? "Topaz ERP";
 
 <body class="h-full min-h-full bg-grey-50 font-sans text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-200">
 
-  <aside class="app-sidebar hide" id="appSidebar" aria-label="Main navigation">
+<!-- TOP NAVIGATION -->
+<nav class="sticky top-0 z-40 flex h-16 items-center justify-end gap-3 border-b border-slate-200/80 bg-white/80 px-6 backdrop-blur-md shadow-sm transition-colors dark:border-slate-800/80 dark:bg-slate-900/80">
 
-        <nav class="app-nav" id="appNav" aria-label="Main menu">
-            <ul class="nav-menu" data-menu-level="0">
-                <li class="nav-section"><span class="menu-title">General</span></li>
-                @* a simple link *@
-                <li class="nav-item">
-                    <a class="menu-link" asp-area="" asp-controller="Manage" asp-action="Profile"><i class="bi bi-person" aria-hidden="true"></i>
-                        <span class="menu-title">Profile</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="menu-link" asp-area="" asp-controller="Manage" asp-action="Roles"><i class="bi bi-shield" aria-hidden="true"></i>
-                        <span class="menu-title">Roles</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="menu-link" asp-area="" asp-controller="Manage" asp-action="UpdatePassword"><i class="bi bi-key" aria-hidden="true"></i>
-                        <span class="menu-title">Update Password</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="menu-link" asp-area="" asp-controller="Manage" asp-action="AuditTrail"><i class="bi bi-card-text" aria-hidden="true"></i>
-                        <span class="menu-title">Audit Trails</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
+    <!-- QUICK ACCESS DROPDOWN -->
+    <div class="relative" id="quickAccessMenu">
 
-       
+        <!-- TRIGGER BUTTON -->
+        <button type="button"
+                id="quickAccessBtn"
+                class="group inline-flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-semibold text-slate-700 transition-all duration-200 hover:border-slate-300 hover:bg-white hover:shadow-md hover:shadow-slate-100 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-800 dark:hover:shadow-none">
 
-        <span class="sidebar-resizer" data-action="resize" role="separator" aria-orientation="vertical"
-              title="Drag to resize · double-click to reset"></span>
-    </aside>
+            <!-- Gradient background icon badge -->
+            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary-50 text-primary-600 transition-transform duration-200 group-hover:scale-110 dark:bg-primary-950/60 dark:text-primary-400">
+                <i class="bi bi-grid-3x3-gap-fill text-xs"></i>
+            </span>
 
-    <div class="sidebar-backdrop" data-action="backdrop" hidden></div>
+            <span>Quick Access</span>
 
-<header class="bg-info h-16 fixed z-40 w-full flex justify-end align-center" id="appTopbar">
-      
+            <i class="bi bi-chevron-down text-xs text-slate-400 transition-transform duration-200 group-hover:text-slate-600 dark:group-hover:text-slate-300" id="quickAccessArrow"></i>
+        </button>
 
-        <div class="topbar-actions">
-            <button type="button" class="topbar-btn md:hidden" data-action="mobile-search" aria-label="Search">
-                <i class="bi bi-search" aria-hidden="true"></i>
-            </button>
+        <!-- DROPDOWN PANEL -->
+        <div id="quickAccessDropdown"
+             class="absolute right-0 mt-3 hidden w-64 origin-top-right rounded-2xl border border-slate-100 bg-white/95 p-2 shadow-2xl ring-1 ring-slate-900/5 backdrop-blur-xl transition-all dark:border-slate-800 dark:bg-slate-900/95 dark:ring-white/10">
 
-            <button type="button" class="topbar-btn" data-action="theme" title="Dark mode" aria-label="Toggle dark mode">
-                <i class="bi bi-moon-stars" data-theme-icon aria-hidden="true"></i>
-            </button>
-            
-            <span class="topbar-divider"></span>
-
-            @* Hello Admin *@
-            <div class="dropdown" data-dropdown="user">
-                <button type="button" class="topbar-user" data-toggle aria-haspopup="menu">
-                    <span class="topbar-avatar" id="userInitials"></span>
-                    <span class="topbar-user-text">
-                        <span class="hello">Hello,</span>
-                        <span class="name" id="userFullName"> Loading user...</span>
-                       
-                    </span>
-                    <i class="bi bi-chevron-down topbar-caret" aria-hidden="true"></i>
-                </button>
-                <div class="dropdown-panel dropdown-panel-user" role="menu">
-                    <div class="dropdown-head user-head">
-                        <span class="topbar-avatar lg" id="userInitialsLg"></span>
-                        <span class="user-head-text">
-                            <span class="name" id="userFullNameLg"></span>
-                            <span class="email" id="userEmail"></span>
-                            <span class="role" id="userRole"></span>
-                        </span>
-                    </div>
-                    <ul class="dropdown-menu-list">
-                        <li><a asp-area="" asp-controller="Manage" asp-action="Profile"><i class="bi bi-person-circle"></i>My Profile</a></li>
-                        <li><a asp-area="" asp-controller="Manage" asp-action="Users"><i class="bi bi-sliders"></i>Manage Users</a></li>
-                        <li><a asp-area="" asp-controller="Manage" asp-action="UpdatePassword"><i class="bi bi-key"></i>Update Password</a></li>
-                        <li><a asp-area="" asp-controller="Manage" asp-action="Modules"><i class="bi bi-gear"></i>Modules</a></li>
-                        <li><a href="#"><i class="bi bi-question-circle"></i>Help &amp; Support</a></li>
-                    </ul>
-                    <div class="dropdown-foot signout">
-                        <a asp-area="" asp-controller="Account" asp-action="Login" >
-                            <button ><i class="bi bi-box-arrow-right"></i>Sign out</button>
-                        </a>
-                    </div>
-                </div>
+            <div class="px-3 pb-2 pt-2">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                    Navigation
+                </p>
             </div>
+
+            <a asp-area="" asp-controller="Manage" asp-action="Profile"
+               class="group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition-all duration-150 hover:bg-primary-50/60 hover:text-primary-600 dark:text-slate-200 dark:hover:bg-primary-950/40 dark:hover:text-primary-400">
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition-colors group-hover:bg-primary-100 group-hover:text-primary-600 dark:bg-slate-800 dark:text-slate-400 dark:group-hover:bg-primary-900/50 dark:group-hover:text-primary-400">
+                    <i class="bi bi-person-circle text-base"></i>
+                </div>
+                <span>My Profile</span>
+            </a>
+
+            <a asp-area="" asp-controller="Manage" asp-action="Users"
+               class="group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition-all duration-150 hover:bg-primary-50/60 hover:text-primary-600 dark:text-slate-200 dark:hover:bg-primary-950/40 dark:hover:text-primary-400">
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition-colors group-hover:bg-primary-100 group-hover:text-primary-600 dark:bg-slate-800 dark:text-slate-400 dark:group-hover:bg-primary-900/50 dark:group-hover:text-primary-400">
+                    <i class="bi bi-sliders text-base"></i>
+                </div>
+                <span>Manage Users</span>
+            </a>
+
+            <a asp-area="" asp-controller="Manage" asp-action="UpdatePassword"
+               class="group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition-all duration-150 hover:bg-primary-50/60 hover:text-primary-600 dark:text-slate-200 dark:hover:bg-primary-950/40 dark:hover:text-primary-400">
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition-colors group-hover:bg-primary-100 group-hover:text-primary-600 dark:bg-slate-800 dark:text-slate-400 dark:group-hover:bg-primary-900/50 dark:group-hover:text-primary-400">
+                    <i class="bi bi-key text-base"></i>
+                </div>
+                <span>Update Password</span>
+            </a>
+
+            <a asp-area="" asp-controller="Manage" asp-action="Modules"
+               class="group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition-all duration-150 hover:bg-primary-50/60 hover:text-primary-600 dark:text-slate-200 dark:hover:bg-primary-950/40 dark:hover:text-primary-400">
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition-colors group-hover:bg-primary-100 group-hover:text-primary-600 dark:bg-slate-800 dark:text-slate-400 dark:group-hover:bg-primary-900/50 dark:group-hover:text-primary-400">
+                    <i class="bi bi-gear text-base"></i>
+                </div>
+                <span>Modules</span>
+            </a>
+
+            <div class="my-1.5 border-t border-slate-100 dark:border-slate-800/80"></div>
+
+            <a href="#"
+               class="group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition-all duration-150 hover:bg-primary-50/60 hover:text-primary-600 dark:text-slate-200 dark:hover:bg-primary-950/40 dark:hover:text-primary-400">
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition-colors group-hover:bg-primary-100 group-hover:text-primary-600 dark:bg-slate-800 dark:text-slate-400 dark:group-hover:bg-primary-900/50 dark:group-hover:text-primary-400">
+                    <i class="bi bi-question-circle text-base"></i>
+                </div>
+                <span>Help &amp; Support</span>
+            </a>
+
         </div>
+    </div>
 
-        <div class="topbar-mobile-search" id="topbarMobileSearch" hidden>
-            <input type="search" id="topbarSearchMobile" data-search-input autocomplete="off" placeholder="Search anything…" aria-label="Search" />
-            <div class="dropdown-panel search-results" id="searchResultsMobile" hidden></div>
-        </div>
-    </header>
+    <!-- THEME TOGGLE -->
+    <button type="button"
+            id="themeToggle"
+            title="Toggle dark/light mode"
+            aria-label="Toggle dark/light mode"
+            class="group flex h-9 w-9 items-center justify-center rounded-xl text-slate-600 transition-all duration-200 hover:border-slate-300 hover:bg-white hover:text-primary-600 hover:shadow-sm dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800 dark:hover:text-primary-400">
 
+        <i id="themeToggleIcon" class="bi bi-moon-stars-fill text-sm transition-transform duration-200 group-hover:rotate-12"></i>
+    </button>
 
+</nav>
 @* ══════════════════════════════ PAGE ══════════════════════════════ *@
-<main role="main" class="pt-20 page-main">
+<main role="main">
     <div class="page-container">
         @RenderBody()
     </div>
@@ -199,7 +184,91 @@ var title = ViewData["Title"] as string ?? "Topaz ERP";
 </footer>
   
 <script>
-    
+
+    (function () {
+        'use strict';
+
+        // QUICK ACCESS DROPDOWN
+        const quickAccessBtn = document.getElementById('quickAccessBtn');
+        const quickAccessDropdown = document.getElementById('quickAccessDropdown');
+        const quickAccessArrow = document.getElementById('quickAccessArrow');
+        const quickAccessMenu = document.getElementById('quickAccessMenu');
+
+        if (quickAccessBtn && quickAccessDropdown) {
+
+            quickAccessBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+
+                const isHidden = quickAccessDropdown.classList.toggle('hidden');
+
+                quickAccessArrow?.classList.toggle('rotate-180', !isHidden);
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!quickAccessMenu.contains(e.target)) {
+                    quickAccessDropdown.classList.add('hidden');
+                    quickAccessArrow?.classList.remove('rotate-180');
+                }
+            });
+        }
+
+
+        // DARK / LIGHT MODE
+        const themeToggle = document.getElementById('themeToggle');
+        const themeToggleIcon = document.getElementById('themeToggleIcon');
+
+        const storageKey = 'shell:theme';
+
+        function applyTheme(theme) {
+            const isDark = theme === 'dark';
+
+            document.documentElement.classList.toggle('dark', isDark);
+
+            if (themeToggleIcon) {
+                themeToggleIcon.className = isDark
+                    ? 'bi bi-sun-fill text-lg'
+                    : 'bi bi-moon-stars-fill text-lg';
+            }
+
+            if (themeToggle) {
+                themeToggle.title = isDark
+                    ? 'Switch to light mode'
+                    : 'Switch to dark mode';
+
+                themeToggle.setAttribute(
+                    'aria-label',
+                    themeToggle.title
+                );
+            }
+
+            try {
+                localStorage.setItem(storageKey, theme);
+            } catch (e) {
+                // Continue without persistence if storage is unavailable.
+            }
+        }
+
+        // Read saved preference
+        let savedTheme = 'light';
+
+        try {
+            savedTheme = localStorage.getItem(storageKey) || 'light';
+        } catch (e) {
+            savedTheme = 'light';
+        }
+
+        applyTheme(savedTheme);
+
+        if (themeToggle) {
+            themeToggle.addEventListener('click', function () {
+                const isDark = document.documentElement.classList.contains('dark');
+
+                applyTheme(isDark ? 'light' : 'dark');
+            });
+        }
+
+    })();
+
 </script>
 <script src="~/js/account/user.js" asp-append-version="true"></script>
 <script src="~/js/app-shell.js" asp-append-version="true"></script>

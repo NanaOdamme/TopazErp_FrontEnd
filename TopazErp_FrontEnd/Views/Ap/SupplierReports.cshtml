@@ -13,7 +13,7 @@
         <div class="flex items-center gap-3">
 
             <div class="page-title">
-                <h2 class="text-2xl font-semibold text-gray-800">
+                <h2 class="text-lg font-semibold text-gray-800">
                     Supplier List
                 </h2>
                 
@@ -27,17 +27,28 @@
                 <option value="summary-report"> Type 1 </option>
                 <option value="supplier-group"> Type 2 </option>
             </select></label>
-            <label  class="label block text-sm">
-                Select Report Type: <select class="select" v-model="supplierGroupId" ref="supplierGroup">
-                    <option> Select Supplier Group</option>
-                    <option v-for="group in supplierGroupList" :value="group.id"> {{ group.name }} </option>
-                </select>
-            </label>
+            <w-select
+                v-if = "reportType === 'supplier-group'"
+                v-model="supplierGroupId"
+                @@change="getReportData"
+                :options="supplierGroupList"
+                display-key="name"
+                value-key="id"
+                placeholder="Select Supplier Group"
+                label="Supplier Group:"
+                required>
+            </w-select>
         
         </div>
         <hr>
-        <div class="bg-gray-50 p-4 my-4 rounded-xl dark:bg-slate-800">
-            <div style="height:auto;width:auto;min-height:500px;" id="reportView">  </div>
+        <div class="w-full mt-6" style="height: 1000px;">
+            <div style="height: 820px;" v-if="showReport">
+                <pdf-viewer :src="reportPath"
+                            :data="reportData"
+                            :color="viewerColor"
+                            :title="reportTitle"></pdf-viewer>
+            </div>
+
         </div>
     </div>
 </div>

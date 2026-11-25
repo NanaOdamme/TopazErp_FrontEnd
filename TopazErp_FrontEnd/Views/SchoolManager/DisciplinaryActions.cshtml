@@ -1,0 +1,50 @@
+@{
+    ViewBag.Title = "Disciplinary Actions";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>School Manager - Main Setups</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Disciplinary Actions</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+
+            <div class="page-title">
+                <h2 class="text-lg font-semibold text-gray-800">
+                    Disciplinary Actions
+                </h2>
+                
+            </div>
+        </div>
+    </div>
+    <div class="card" data-card-title="Disciplinary Actions">
+        <div id="app">
+            <data-grid
+                title="Disciplinary Actions"
+                :columns="columns"
+                :data="disciplinaryActionList"
+                :theme="theme"
+                row-id="id"
+                label-key="actionDescription"
+                item-label="Disciplinary Action"
+                item-label-plural="Disciplinary Actions"
+                add-label="Add Disciplinary Action"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                @@create="onCreate"
+                @@update="onUpdate"
+                @@delete="onDelete"
+            ></data-grid>
+          
+        </div>
+       
+    </div>
+</div>
+
+<script src="~/js/school-manager/disciplinary-actions.js" asp-append-version="true"></script>

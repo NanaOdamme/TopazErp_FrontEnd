@@ -1,0 +1,257 @@
+@{
+    ViewBag.Title = "Staff Setups";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2 dark:text-gray-400">
+            <span>School Manager - Data Entries</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium dark:text-blue-400">Staff Setups</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="page-title">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
+                    Staff Setups
+                </h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" data-card-title="Staff Setups">
+        <div id="app">
+            <!-- initial shimmer -->
+            <div v-if="!setupDone" class="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500">
+                <i class="bi bi-arrow-repeat animate-spin text-2xl mb-3"></i>
+                <p class="text-sm">Loading staff setups…</p>
+            </div>
+
+            <template v-else>
+                <!-- TABS -->
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-5 border-b border-gray-200 dark:border-slate-700">
+                    <div class="flex items-center gap-1" role="tablist" aria-label="Staff sections">
+                        <button type="button" role="tab" :aria-selected="activeTab === 'bios'" :class="activeTab === 'bios' ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500' : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'" class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors" @@click="activeTab = 'bios'">
+                            Staff Bios
+                            @*<span class="inline-flex items-center text-sm text-green-700 dark:text-gray-700">{{ staffBios.length }}</span>*@
+                        </button>
+                        <button type="button" role="tab" :aria-selected="activeTab === 'designations'" :class="activeTab === 'designations' ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500' : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'" class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors" @@click="activeTab = 'designations'">
+                           Designations
+                            @*<span class="inline-flex items-center text-sm text-green-700 dark:text-gray-700">{{ designations.length }}</span>*@
+                        </button>
+                        <button type="button" role="tab" :aria-selected="activeTab === 'grades'" :class="activeTab === 'grades' ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500' : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'" class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors" @@click="activeTab = 'grades'">
+                           Grades
+                            @*<span class="inline-flex items-center text-sm text-green-700 dark:text-gray-700">{{ grades.length }}</span>*@
+                        </button>
+                        <button type="button" role="tab" :aria-selected="activeTab === 'pastEmployment'" :class="activeTab === 'pastEmployment' ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500' : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'" class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors" @@click="activeTab = 'pastEmployment'">
+                           Past Employments
+                            @*<span class="inline-flex items-center text-sm text-green-700 dark:text-gray-700">{{ pastEmployments.length }}</span>*@
+                        </button>
+                        <button type="button" role="tab" :aria-selected="activeTab === 'pastPositions'" :class="activeTab === 'pastPositions' ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500' : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'" class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors" @@click="activeTab = 'pastPositions'">
+                           Past Positions
+                            @*<span class="inline-flex items-center text-sm text-green-700 dark:text-gray-700">{{ pastPositions.length }}</span>*@
+                        </button>
+                        <button type="button" role="tab" :aria-selected="activeTab === 'qualifications'" :class="activeTab === 'qualifications' ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500' : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'" class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors" @@click="activeTab = 'qualifications'">
+                          Qualifications
+                            @*<span class="inline-flex items-center text-sm text-green-700 dark:text-gray-700">{{ qualifications.length }}</span>*@
+                        </button>
+                        <button type="button" role="tab" :aria-selected="activeTab === 'relationships'" :class="activeTab === 'relationships' ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500' : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'" class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors" @@click="activeTab = 'relationships'">
+                          Relationships
+                            @*<span class="inline-flex items-center text-sm text-green-700 dark:text-gray-700">{{ staffRelationships.length }}</span>*@
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ============ TAB 1 — STAFF BIOS ============ -->
+                <section v-show="activeTab === 'bios'" role="tabpanel">
+                   
+                    <data-grid title="Staff Bios"
+                               :columns="bioColumns"
+                               :data="staffBios"
+                               :theme="theme"
+                               row-id="id"
+                               label-key="staffIdentifier"
+                               item-label="Staff Bio"
+                               item-label-plural="Staff Bios"
+                               add-label="Add"
+                               :page-size="10"
+                               :selectable="true"
+                               :actions="true"
+                               :loading="isShimmerLoading"
+                               :stripes="true"
+                               density="compact"
+                               @@create="onBioCreate"
+                               @@update="onBioUpdate"
+                               @@delete="onBioDelete">
+                    </data-grid>
+                </section>
+
+                <!-- ============ TAB 2 — DESIGNATIONS ============ -->
+                <section v-show="activeTab === 'designations'" role="tabpanel">
+                    <p class="mb-3 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+                        <i class="bi bi-info-circle"></i>
+                        Designation master list — used by the Staff Bios grid. Names must be unique.
+                    </p>
+                    <data-grid title="Designations"
+                               :columns="auxColumns"
+                               :data="designations"
+                               :theme="theme"
+                               row-id="id"
+                               label-key="name"
+                               item-label="Designation"
+                               item-label-plural="Designations"
+                               add-label="Add"
+                               :page-size="10"
+                               :selectable="true"
+                               :actions="true"
+                               :loading="isShimmerLoading"
+                               :stripes="true"
+                               density="compact"
+                               @@create="onDesignationCreate"
+                               @@update="onDesignationUpdate"
+                               @@delete="onDesignationDelete">
+                    </data-grid>
+                </section>
+
+                <!-- ============ TAB 3 — GRADES ============ -->
+                <section v-show="activeTab === 'grades'" role="tabpanel">
+                    <p class="mb-3 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+                        <i class="bi bi-info-circle"></i>
+                        Grade master list — used by the Staff Bios grid. Names must be unique.
+                    </p>
+                    <data-grid title="Grades"
+                               :columns="auxColumns"
+                               :data="grades"
+                               :theme="theme"
+                               row-id="id"
+                               label-key="name"
+                               item-label="Grade"
+                               item-label-plural="Grades"
+                               add-label="Add"
+                               :page-size="10"
+                               :selectable="true"
+                               :actions="true"
+                               :loading="isShimmerLoading"
+                               :stripes="true"
+                               density="compact"
+                               @@create="onGradeCreate"
+                               @@update="onGradeUpdate"
+                               @@delete="onGradeDelete">
+                    </data-grid>
+                </section>
+
+                <!-- ============ TAB 4 — PAST EMPLOYMENT ============ -->
+                <section v-show="activeTab === 'pastEmployment'" role="tabpanel">
+                    <p class="mb-3 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+                        <i class="bi bi-info-circle"></i>
+                        Employment history per staff member — pick the staff from the dropdown. Possible duplicates are flagged at save time.
+                    </p>
+                    <data-grid title="Past Employment"
+                               :columns="pastEmploymentColumns"
+                               :data="pastEmployments"
+                               :theme="theme"
+                               row-id="id"
+                               label-key="companyName"
+                               item-label="Employment Record"
+                               item-label-plural="Employment Records"
+                               add-label="Add"
+                               :page-size="10"
+                               :selectable="true"
+                               :actions="true"
+                               :loading="isShimmerLoading"
+                               :stripes="true"
+                               density="compact"
+                               @@create="onPastEmploymentCreate"
+                               @@update="onPastEmploymentUpdate"
+                               @@delete="onPastEmploymentDelete">
+                    </data-grid>
+                </section>
+
+                <!-- ============ TAB 5 — PAST POSITIONS ============ -->
+                <section v-show="activeTab === 'pastPositions'" role="tabpanel">
+                    <p class="mb-3 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+                        <i class="bi bi-info-circle"></i>
+                        Designation history per staff member.
+                    </p>
+                    <data-grid title="Past Positions"
+                               :columns="pastPositionColumns"
+                               :data="pastPositions"
+                               :theme="theme"
+                               row-id="id"
+                               label-key="designationName"
+                               item-label="Position Record"
+                               item-label-plural="Position Records"
+                               add-label="Add"
+                               :page-size="10"
+                               :selectable="true"
+                               :actions="true"
+                               :loading="isShimmerLoading"
+                               :stripes="true"
+                               density="compact"
+                               @@create="onPastPositionCreate"
+                               @@update="onPastPositionUpdate"
+                               @@delete="onPastPositionDelete">
+                    </data-grid>
+                </section>
+
+                <!-- ============ TAB 6 — QUALIFICATIONS ============ -->
+                <section v-show="activeTab === 'qualifications'" role="tabpanel">
+                    <p class="mb-3 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+                        <i class="bi bi-info-circle"></i>
+                        Qualifications and certificates per staff member. Certificate ID is free text.
+                    </p>
+                    <data-grid title="Qualifications"
+                               :columns="qualificationColumns"
+                               :data="qualifications"
+                               :theme="theme"
+                               row-id="id"
+                               label-key="programme"
+                               item-label="Qualification"
+                               item-label-plural="Qualifications"
+                               add-label="Add"
+                               :page-size="10"
+                               :selectable="true"
+                               :actions="true"
+                               :loading="isShimmerLoading"
+                               :stripes="true"
+                               density="compact"
+                               @@create="onQualificationCreate"
+                               @@update="onQualificationUpdate"
+                               @@delete="onQualificationDelete">
+                    </data-grid>
+                </section>
+
+                <!-- ============ TAB 7 — RELATIONSHIPS ============ -->
+                <section v-show="activeTab === 'relationships'" role="tabpanel">
+                    <p class="mb-3 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+                        <i class="bi bi-info-circle"></i>
+                        Next of kin / emergency contacts per staff member.
+                    </p>
+                    <data-grid title="Relationships"
+                               :columns="relationshipColumns"
+                               :data="staffRelationships"
+                               :theme="theme"
+                               row-id="id"
+                               label-key="name"
+                               item-label="Relationship"
+                               item-label-plural="Relationships"
+                               add-label="Add"
+                               :page-size="10"
+                               :selectable="true"
+                               :actions="true"
+                               :loading="isShimmerLoading"
+                               :stripes="true"
+                               density="compact"
+                               @@create="onRelationshipCreate"
+                               @@update="onRelationshipUpdate"
+                               @@delete="onRelationshipDelete">
+                    </data-grid>
+                </section>
+            </template>
+
+        </div>
+    </div>
+</div>
+
+<script src="~/js/school-manager/staff-setups.js"></script>

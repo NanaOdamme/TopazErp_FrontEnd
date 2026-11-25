@@ -1,524 +1,572 @@
 ﻿@{
-ViewBag.Title = "Company Profile";
-Layout = "~/Views/Shared/_adminApLayout.cshtml";
+    ViewBag.Title = "Company Profile";
+    Layout = "~/Views/Shared/_adminApLayout.cshtml";
 }
 
 <div class="content">
     <div class="mb-6 content-header">
         <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
-            <span>AP - SharedResources</span>
+            <span>AP</span>
             <i class="bi bi-chevron-right text-xs"></i>
             <span class="text-blue-600 font-medium">Company Profile</span>
         </div>
+    </div>
 
-        <div class="flex items-center gap-3">
+    <div id="app" class="space-y-6">
 
-            <div class="page-title">
-                <h2 class="text-2xl font-semibold text-gray-800 ">
-                    Company Profile
-                </h2>
-                
+        <!-- ============================================================
+             PROFILE HEADER (cover photo + avatar + identity)
+             ============================================================ -->
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+
+            <!-- Cover photo -->
+            <div class="relative h-28 w-full sm:h-36">
+                <img v-if="coverPhotoPreview"
+                     :src="coverPhotoPreview"
+                     alt="Cover photo"
+                     class="absolute inset-0 h-full w-full object-cover" />
+
+                <!-- Default cover: gradient + soft brand shapes -->
+                <div v-else class="absolute inset-0"
+                     style="background: linear-gradient(120deg, #c98f99 0%, #b98790 50%, #a97882 100%);">
+                    <svg class="h-full w-full opacity-15" viewBox="0 0 800 200" preserveAspectRatio="none" aria-hidden="true">
+                        <defs>
+                            <pattern id="coverDots" width="26" height="26" patternUnits="userSpaceOnUse">
+                                <circle cx="2" cy="2" r="1.6" fill="#ffffff"></circle>
+                            </pattern>
+                        </defs>
+                        <rect width="800" height="200" fill="url(#coverDots)"></rect>
+                        <circle cx="660" cy="30" r="120" fill="#ffffff" opacity="0.10"></circle>
+                        <circle cx="120" cy="180" r="90" fill="#ffffff" opacity="0.08"></circle>
+                        <circle cx="430" cy="150" r="60" fill="#ffffff" opacity="0.06"></circle>
+                    </svg>
+                </div>
+
+                <!-- Soften uploaded images without affecting cover controls -->
+                <div v-if="coverPhotoPreview" aria-hidden="true" class="pointer-events-none absolute inset-0" style="background: rgba(226, 232, 240, 0.28);"></div>
+
+                <!-- Cover actions -->
+                <div class="absolute right-3 top-3 flex gap-2">
+                    <button type="button"
+                            @@click="showCoverUpload"
+                            class="inline-flex items-center gap-1.5 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-sm backdrop-blur hover:bg-white">
+                        <i class="bi bi-image"></i>
+                        Change cover
+                    </button>
+
+                    <button v-if="coverPhotoPreview"
+                            type="button"
+                            @@click="removeCover"
+                            title="Remove cover photo"
+                            class="inline-flex items-center gap-1.5 rounded-lg bg-white/90 px-2.5 py-1.5 text-xs font-semibold text-rose-600 shadow-sm backdrop-blur hover:bg-white">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+
+                <input type="file" ref="coverInput" class="hidden" @@change="onCoverChange" accept="image/*" />
+            </div>
+
+            <!-- Identity row -->
+            <div class="px-5 pb-5 sm:px-8">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+
+                    <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+                        <!-- Only the avatar overlaps the cover; the company name stays below it. -->
+                        <div class="relative z-10 -mt-10 shrink-0 sm:-mt-12">
+                            <img v-if="companyLogoBase64"
+                                 :src="companyLogoBase64"
+                                 alt="Company logo"
+                                 class="h-28 w-28 rounded-full bg-white object-contain p-1.5 ring-4 ring-white shadow-lg sm:h-32 sm:w-32" />
+                            <img v-else
+                                 src="https://res.cloudinary.com/dusydqiob/image/upload/v1755769638/erp-reports/ap/profile_biwocv.jpg"
+                                 alt="Default company logo"
+                                 class="h-28 w-28 rounded-full bg-white object-cover ring-4 ring-white shadow-lg sm:h-32 sm:w-32" />
+
+                            <button v-if="companyLogoBase64"
+                                    type="button"
+                                    @@click="removeLogo"
+                                    title="Remove logo"
+                                    class="absolute bottom-1 right-1 flex h-8 w-8 items-center justify-center rounded-full bg-rose-500 text-white shadow-md ring-2 ring-white hover:bg-rose-600">
+                                <i class="bi bi-x text-sm"></i>
+                            </button>
+
+                            <button v-else
+                                    type="button"
+                                    @@click="showUpload"
+                                    title="Upload logo"
+                                    class="absolute bottom-1 right-1 flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white shadow-md ring-2 ring-white hover:bg-blue-700">
+                                <i class="bi bi-plus text-sm"></i>
+                            </button>
+
+                            <input type="file" ref="fileInput" class="hidden" @@change="onFileChange" accept="image/*" />
+                        </div>
+
+                        <!-- Name + subtitle -->
+                        <div class="min-w-0 pb-1 sm:pb-2 sm:pt-3">
+                            <h1 class="break-words text-xl font-bold text-slate-900 dark:text-white sm:text-2xl">
+                                {{ companyName || 'Company Profile' }}
+                            </h1>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                                {{ profileSubtitle }}
+                            </p>
+
+                            <div class="mt-2 flex flex-wrap items-center gap-2">
+                                <span class="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                                    <i class="bi bi-envelope"></i>
+                                    {{ email || 'No email set' }}
+                                </span>
+                                <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                                    <i class="bi bi-telephone"></i>
+                                    {{ phoneNo || 'No phone set' }}
+                                </span>
+                                <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold"
+                                      :class="companyProfileId ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">
+                                    <i class="bi bi-patch-check"></i>
+                                    {{ companyProfileId ? 'Profile saved' : 'Not saved yet' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick actions -->
+                    <div class="flex flex-wrap items-center gap-2 pb-1">
+                        <button type="button"
+                                @@click="showUpload"
+                                class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+                            <i class="bi bi-upload"></i>
+                            Logo
+                        </button>
+
+                        <button type="button"
+                                @@click="saveProfile"
+                                :disabled="isLoading"
+                                class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60">
+                            <i v-if="isLoading" class="la la-circle-o-notch animate-spin text-base"></i>
+                            <i v-else class="bi bi-check-lg"></i>
+                            {{ isLoading ? 'Saving...' : 'Save Profile' }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stat strip -->
+                <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/40">
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Default currency</p>
+                        <p class="mt-1 truncate text-sm font-bold text-slate-900 dark:text-white">{{ currencyName }}</p>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/40">
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Fiscal year starts</p>
+                        <p class="mt-1 truncate text-sm font-bold text-slate-900 dark:text-white">{{ fiscalYearLabel }}</p>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/40">
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Country</p>
+                        <p class="mt-1 truncate text-sm font-bold text-slate-900 dark:text-white">{{ countryName }}</p>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/40">
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">VAT, Getfl, Nhil...</p>
+                        <p class="mt-1 truncate text-sm font-bold text-slate-900 dark:text-white">
+                            {{ otherTaxLevyList.length }} other · {{ vatTaxLevyList.length }} VAT
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="card" data-card-title="Company Profile">
-        <div id="app">
-    <div class="mx-auto max-w-7xl space-y-6">
-    
-        <!-- Existing Tabs -->
-        <div class="border-b border-slate-200 dark:border-slate-800">
-            <nav class="-mb-px flex gap-6 overflow-x-auto" aria-label="Company settings tabs">
 
-                <button
-                    type="button"
-                    @@click="activeTab = 'profile'"
-                    :class="activeTab === 'profile'
-                ? 'border-blue-600 text-blue-700'
-                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'"
-                    :aria-selected="activeTab === 'profile'"
-                    role="tab"
-                    class="inline-flex shrink-0 items-center gap-2 border-b-2 px-1 pb-3 text-sm font-semibold transition-colors">
-
-                    <i class="la la-building text-lg"></i>
-                    Company Profile
+        <!-- ============================================================
+             TABS
+             ============================================================ -->
+        <div class="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <nav class="flex gap-2 overflow-x-auto" aria-label="Company settings tabs">
+                <button type="button"
+                        @@click="activeTab = 'profile'"
+                        :class="activeTab === 'profile'
+                            ? 'bg-slate-800 text-white shadow-sm'
+                            : 'text-slate-600 hover:bg-slate-100'"
+                        role="tab"
+                        :aria-selected="activeTab === 'profile'"
+                        class="inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors">
+                    <i class="bi bi-building"></i>
+                    Company Profile <i class="bi bi-pen text-rose-500"></i>
                 </button>
 
-                <button
-                    type="button"
-                    @@click="activeTab = 'vat'"
-                    :class="activeTab === 'vat'
-                ? 'border-blue-600 text-blue-700'
-                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700'"
-                    :aria-selected="activeTab === 'vat'"
-                    role="tab"
-                    class="inline-flex shrink-0 items-center gap-2 border-b-2 px-1 pb-3 text-sm font-semibold transition-colors">
-
-                    <i class="la la-percent text-lg"></i>
-                    Tax & VAT Details
+                <button type="button"
+                        @@click="activeTab = 'tax'"
+                        :class="activeTab === 'tax'
+                            ? 'bg-slate-800 text-white shadow-sm'
+                            : 'text-slate-600 hover:bg-slate-100'"
+                        role="tab"
+                        :aria-selected="activeTab === 'tax'"
+                        class="inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors">
+                    <i class="bi bi-percent"></i>
+                    VAT, Getfl, Nhil... <i class="bi bi-pen text-rose-500"></i>
                 </button>
-
             </nav>
         </div>
 
-        <div id="profile" class="space-y-6"  v-show="activeTab === 'profile'"
-             role="tabpanel">
-            <form>
-                <!-- BASIC INFORMATION -->
-                <section class="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <div class="border-b border-slate-100 dark:border-slate-800 px-5 py-5 sm:px-7">
-                        <div class="flex items-center gap-3">
-                            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 dark:bg-slate-800 text-blue-700">
-                                <i class="bi bi-person-vcard text-xl"></i>
-                            </div>
-                            <div>
-                                <h2 class="text-base font-bold text-slate-900 dark:text-white">Basic Information</h2>
-                                <p class="mt-1 text-sm text-slate-500">
-                                    Your company's identity and contact information.
-                                </p>
-                            </div>
-                        </div>
+        <!-- ============================================================
+             TAB 1 - COMPANY PROFILE
+             ============================================================ -->
+        <div id="profile" v-show="activeTab === 'profile'" role="tabpanel"
+             class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7 dark:border-slate-800 dark:bg-slate-900">
+            <form ref="profileForm">
+
+                <!-- Basic information -->
+                <div class="mb-5 flex items-center gap-3">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700 dark:bg-slate-800">
+                        <i class="bi bi-person-vcard text-lg"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900 dark:text-white">Basic Information</h2>
+                        <p class="text-xs text-slate-500">Company identity and contact details.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                    <div class="sm:col-span-2">
+                        <label for="companyName" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                            Company Name: <span class="text-red-500">*</span>
+                        </label>
+                        <input id="companyName"
+                               v-model.trim="companyName"
+                               type="text"
+                               required
+                               placeholder="Enter registered company name"
+                               class="input-control" />
+                        <p v-if="errors.companyName" class="mt-1 text-xs font-medium text-red-600">
+                            {{ errors.companyName }}
+                        </p>
                     </div>
 
-                    <div class="grid grid-cols-1 gap-7 p-5 sm:p-7 lg:grid-cols-12">
-
-                        <!-- Company Logo -->
-                        <div class="lg:col-span-3">
-                            <div class="flex flex-col items-center rounded-xl border border-dashed border-slate-200 bg-slate-50 dark:bg-slate-800 px-4 py-6">
-                                <div class="relative">
-                                    <img
-                                        v-if="companyLogoBase64"
-                                        :src="companyLogoBase64"
-                                        alt="Company Logo"
-                                        class="h-36 w-36 rounded-2xl border border-slate-200 bg-white object-contain p-2 shadow-sm">
-
-                                    <img
-                                        v-else
-                                        src="https://res.cloudinary.com/dusydqiob/image/upload/v1755769638/erp-reports/ap/profile_biwocv.jpg"
-                                        alt="Default Company Logo"
-                                        class="h-36 w-36 rounded-2xl border border-slate-200 bg-white object-cover shadow-sm">
-
-                                    <button
-                                        v-if="companyLogoBase64"
-                                        @@click="removeLogo"
-                                        type="button"
-                                        class="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white shadow-md transition hover:bg-red-600"
-                                        title="Remove logo">
-                                        <i class="la la-times"></i>
-                                    </button>
-
-                                    <button
-                                        v-else
-                                        @@click="showUpload"
-                                        type="button"
-                                        class="absolute -bottom-2 -right-2 flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white shadow-md transition hover:bg-blue-700"
-                                        title="Upload logo">
-                                        <i class="la la-plus"></i>
-                                    </button>
-                                </div>
-
-                                <h3 class="mt-4 text-sm font-semibold text-slate-800">
-                                    Company Logo
-                                </h3>
-                                <p class="mt-1 text-center text-xs leading-5 text-slate-500">
-                                    Upload your company brand image.
-                                </p>
-
-                                <input
-                                    type="file"
-                                    ref="fileInput"
-                                    class="hidden"
-                                    @@change="onFileChange"
-                                    accept="image/*">
-
-                                <button
-                                    type="button"
-                                    @@click="showUpload"
-                                    class="dark:text-white dark:bg-slate-800 mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100">
-                                    <i class="la la-upload text-base"></i>
-                                    Upload logo
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Company Details -->
-                        <div class="grid grid-cols-1 gap-x-5 gap-y-5 sm:grid-cols-2 lg:col-span-9">
-
-                            <div class="sm:col-span-2">
-                               <label  class="label mb-2 block text-sm font-semibold text-slate-700">
-                                    Company Name <span class="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    v-model="companyName"
-                                    ref="companyName"
-                                    placeholder="Enter registered company name"
-                                    class="input-control"  >
-                                <p v-if="errors.companyName" class="mt-1.5 text-xs font-medium text-red-600">
-                                    {{ errors.companyName }}
-                                </p>
-                            </div>
-
-                            <div>
-                               <label  class="label mb-2 block text-sm font-semibold text-slate-700">Country</label>
-                                <select
-                                    v-model="countryId"
-                                    ref="countryId"
-                                    class="select">
-                                    <option value="">Select country</option>
-                                    <option :value="country.id" v-for="country in nationalityList" :key="country.id">
-                                        {{ country.name }}
-                                    </option>
-                                </select>
-                            </div>
-
-                            <div>
-                               <label  class="label mb-2 block text-sm font-semibold text-slate-700">City / Location</label>
-                                <input
-                                    type="text"
-                                    v-model="cityName"
-                                    placeholder="Enter city or location"
-                                    class="input-control"  >
-                            </div>
-                            <div>
-                               <label  class="label mb-2 block text-sm font-semibold text-slate-700">
-                                    Phone Number <span class="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    id="phoneNo"
-                                    v-model="phoneNo"
-                                    ref="phoneNo"
-                                    placeholder="e.g. 024 000 0000"
-                                    class="input-control"  >
-                                <p v-if="errors.phoneNo" class="mt-1.5 text-xs text-red-600">
-                                    {{ errors.phoneNo }}
-                                </p>
-                            </div>
-
-                            <div>
-                               <label  class="label mb-2 block text-sm font-semibold text-slate-700">Default Currency</label>
-                                <select
-                                    v-model="defaultCurrenyId"
-                                    id="defaultCurrenyId"
-                                    class="select"  >
-                                    <option :value="currency.id" v-for="currency in currencyList" :key="currency.id">
-                                        {{ currency.currencyName }}
-                                    </option>
-                                </select>
-                            </div>
-
-                            <div>
-                               <label  class="label mb-2 block text-sm font-semibold text-slate-700">Company TIN</label>
-                                <input
-                                    type="text"
-                                    v-model="companyTin"
-                                    placeholder="Enter company TIN"
-                                    class="input-control"  >
-                            </div>
-
-                            <div>
-                               <label  class="label mb-2 block text-sm font-semibold text-slate-700">
-                                    Email Address <span class="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="email"
-                                    v-model="email"
-                                    ref="email"
-                                    placeholder="company@example.com"
-                                    class="input-control"  >
-                                <p v-if="errors.email" class="mt-1.5 text-xs text-red-600">
-                                    {{ errors.email }}
-                                </p>
-                            </div>
-
-                            <div>
-                               <label  class="label mb-2 block text-sm font-semibold text-slate-700">Company Address</label>
-                                <input
-                                    type="text"
-                                    v-model="address"
-                                    ref="address"
-                                    placeholder="Enter company address"
-                                    class="input-control"  >
-                                <p v-if="errors.address" class="mt-1.5 text-xs text-red-600">
-                                    {{ errors.address }}
-                                </p>
-                            </div>
-
-                            <div>
-                               <label  class="label mb-2 block text-sm font-semibold text-slate-700">
-                                    First Month of Fiscal Year
-                                </label>
-                                <select
-                                    id="firstMonthOfFiscalYear"
-                                    v-model="firstMonthOfFiscalYear"
-                                    class="select"  >
-                                    <option value="1">January</option>
-                                    <option value="2">February</option>
-                                    <option value="3">March</option>
-                                    <option value="4">April</option>
-                                    <option value="5">May</option>
-                                    <option value="6">June</option>
-                                    <option value="7">July</option>
-                                    <option value="8">August</option>
-                                    <option value="9">September</option>
-                                    <option value="10">October</option>
-                                    <option value="11">November</option>
-                                    <option value="12">December</option>
-                                </select>
-                            </div>
-                        </div>
+                    <div>
+                        <w-select v-model="countryId"
+                                  :options="countryList"
+                                  display-key="name"
+                                  value-key="id"
+                                  label="Country:">
+                        </w-select>
                     </div>
-                </section>
+
+                    <div>
+                        <label for="cityName" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                            City / Location
+                        </label>
+                        <input id="cityName"
+                               v-model.trim="cityName"
+                               type="text"
+                               placeholder="Enter city or location"
+                               class="input-control" />
+                    </div>
+
+                    <div>
+                        <label for="phoneNo" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                            Phone Number: <span class="text-red-500">*</span>
+                        </label>
+                        <input id="phoneNo"
+                               v-model.trim="phoneNo"
+                               type="tel"
+                               required
+                               placeholder="e.g. 024 000 0000"
+                               class="input-control" />
+                        <p v-if="errors.phoneNo" class="mt-1 text-xs font-medium text-red-600">
+                            {{ errors.phoneNo }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <w-select v-model="defaultCurrenyId"
+                                  :options="currencyList"
+                                  display-key="currencyName"
+                                  value-key="id"
+                                  label="Default Currency:">
+                        </w-select>
+                    </div>
+
+                   
+
+                    <div>
+                        <label for="email" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                            Email Address: <span class="text-red-500">*</span>
+                        </label>
+                        <input id="email"
+                               v-model.trim="email"
+                               type="email"
+                               required
+                               placeholder="company@example.com"
+                               class="input-control" />
+                        <p v-if="errors.email" class="mt-1 text-xs font-medium text-red-600">
+                            {{ errors.email }}
+                        </p>
+                    </div>
+                    <div>
+                        <w-select v-model="firstMonthOfFiscalYear"
+                                  :options="monthList"
+                                  display-key="name"
+                                  value-key="id"
+                                  label="First Month of Fiscal Year:">
+                        </w-select>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="address" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                            Company Address: <span class="text-red-500">*</span>
+                        </label>
+                        <input id="address"
+                               v-model.trim="address"
+                               type="text"
+                               required
+                               placeholder="Enter company address"
+                               class="input-control" />
+                        <p v-if="errors.address" class="mt-1 text-xs font-medium text-red-600">
+                            {{ errors.address }}
+                        </p>
+                    </div>
+
+                    
+                </div>
+
+                <hr class="my-6 border-slate-100 dark:border-slate-800" />
 
                 <!-- SSNIT -->
-                <section class="mt-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white p-5 shadow-sm sm:p-7 dark:bg-transparent">
-                    <div class="mb-6 flex items-center gap-3">
-                        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 dark:bg-slate-800 text-blue-700">
-                            <i class="la la-shield text-xl"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-base font-bold text-slate-900 dark:text-white">SSNIT Information</h2>
-                            <p class="mt-1 text-sm text-slate-500">Employer social security registration details.</p>
-                        </div>
+                <div class="mb-5 flex items-center gap-3">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700 dark:bg-slate-800">
+                        <i class="bi bi-shield-check text-lg"></i>
                     </div>
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900 dark:text-white">SSNIT Information</h2>
+                        <p class="text-xs text-slate-500">Employer social security registration.</p>
+                    </div>
+                </div>
 
-                    <div class="max-w-2xl">
-                       <label  class="label mb-2 block text-sm font-semibold text-slate-700">
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                    <div class="sm:col-span-2">
+                        <label for="employerSocialSecurityNo" class="label mb-1.5 block text-sm font-semibold text-gray-700">
                             Employer Social Security Number
                         </label>
-                        <input
-                            type="text"
-                            v-model="employerSocialSecurityNo"
-                            placeholder="Enter employer SSNIT number"
-                            class="input-control"  >
+                        <input id="employerSocialSecurityNo"
+                               v-model.trim="employerSocialSecurityNo"
+                               type="text"
+                               placeholder="Enter employer SSNIT number"
+                               class="input-control" />
                     </div>
-                </section>
+                </div>
 
-                <!-- EMAIL SETTINGS -->
-                <section class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7 dark:bg-transparent dark:border-slate-800">
-                    <div class="mb-6 flex items-center gap-3">
-                        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 dark:bg-slate-800 text-blue-700">
-                            <i class="la la-envelope text-xl"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-base font-bold text-slate-900 dark:text-white">Email Settings</h2>
-                            <p class="mt-1 text-sm text-slate-500">Configure your outgoing email server.</p>
-                        </div>
+                <hr class="my-6 border-slate-100 dark:border-slate-800" />
+
+                <!-- Email settings -->
+                <div class="mb-5 flex items-center gap-3">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700 dark:bg-slate-800">
+                        <i class="bi bi-envelope-at text-lg"></i>
                     </div>
-
-                    <div class="grid grid-cols-1 gap-x-6 gap-y-5 md:grid-cols-2">
-                        <div>
-                           <label  class="label mb-2 block text-sm font-semibold text-slate-700">Mail Host Name</label>
-                            <input
-                                type="text"
-                                v-model="mailHostName"
-                                placeholder="smtp.example.com"
-                                class="input-control"  >
-                        </div>
-
-                        <div>
-                           <label  class="label mb-2 block text-sm font-semibold text-slate-700">Port Number</label>
-                            <input
-                                type="number"
-                                v-model="portNumber"
-                                placeholder="587"
-                                class="input-control"  >
-                        </div>
-
-                        <div>
-                           <label  class="label mb-2 block text-sm font-semibold text-slate-700">Primary Email Address</label>
-                            <input
-                                type="email"
-                                v-model="primaryEmailAddress"
-                                placeholder="notifications@example.com"
-                                class="input-control"  >
-                        </div>
-
-                        <div>
-                           <label  class="label mb-2 block text-sm font-semibold text-slate-700">SSL Enabled</label>
-                            <select
-                                v-model="isSSLEnabled"
-                                class="select"  >
-                                <option :value="false">No</option>
-                                <option :value="true">Yes</option>
-                            </select>
-                        </div>
-
-                        <div class="md:col-span-2">
-                           <label  class="label mb-2 block text-sm font-semibold text-slate-700">Mail Password</label>
-                            <input
-                                type="password"
-                                v-model="emailPassword"
-                                autocomplete="new-password"
-                                placeholder="Enter mail server password"
-                                class="input-control"  >
-                            <p class="mt-2 text-xs text-slate-500">
-                                Your email credentials should be stored securely.
-                            </p>
-                        </div>
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900 dark:text-white">Email Settings</h2>
+                        <p class="text-xs text-slate-500">Outgoing mail server configuration.</p>
                     </div>
-                </section>
+                </div>
 
-                <!-- APPLY SETTINGS -->
-                <section class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7 dark:bg-transparent dark:border-slate-800">
-                    <div class="mb-6 flex items-center gap-3">
-                        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 dark:bg-slate-800 text-blue-700">
-                            <i class="la la-sliders text-xl"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-base font-bold text-slate-900 dark:text-white">Application Settings</h2>
-                            <p class="mt-1 text-sm text-slate-500">Configure tax and invoice approval behavior.</p>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                       <label  class="label flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 dark:border-slate-800 p-4 transition hover:border-blue-300 hover:bg-blue-50/40">
-                            <input
-                                type="checkbox"
-                                id="isTaxLevyInclusive"
-                                v-model="isTaxLeviesInclusive"
-                                class="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
-                            <span>
-                                <span class="block text-sm font-semibold text-slate-800">VAT Inclusive</span>
-                                <span class="mt-1 block text-xs leading-5 text-slate-500">
-                                    Include applicable tax levies, such as GETFL, in the relevant amounts.
-                                </span>
-                            </span>
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                        <label for="mailHostName" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                            Mail Host Name
                         </label>
+                        <input id="mailHostName"
+                               v-model.trim="mailHostName"
+                               type="text"
+                               placeholder="smtp.example.com"
+                               class="input-control" />
+                    </div>
 
-                       <label  class="label flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 dark:border-slate-800 p-4 transition hover:border-blue-300 hover:bg-blue-50/40">
-                            <input
-                                type="checkbox"
-                                id="approveBeforePayment"
-                                v-model="approveInvoiceBeforePayment"
-                                class="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
-                            <span>
-                                <span class="block text-sm font-semibold text-slate-800">Approval Required</span>
-                                <span class="mt-1 block text-xs leading-5 text-slate-500">
-                                    Require invoice approval before payment can proceed.
-                                </span>
-                            </span>
+                    <div>
+                        <label for="portNumber" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                            Port Number
                         </label>
-                    </div>
-                </section>
-
-                <!-- GENERAL LEDGER -->
-                <section class="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7 dark:bg-transparent dark:border-slate-800">
-                    <div class="mb-5 flex items-center gap-3">
-                        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 dark:bg-slate-800 text-blue-700">
-                            <i class="la la-sitemap text-xl"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-base font-bold text-slate-900 dark:text-white">General Ledger</h2>
-                            <p class="mt-1 text-sm text-slate-500">Configure organizational unit enforcement.</p>
-                        </div>
+                        <input id="portNumber"
+                               v-model="portNumber"
+                               type="number"
+                               placeholder="587"
+                               class="input-control" />
                     </div>
 
-                   <label  class="label flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 dark:border-slate-800 p-4 transition hover:border-blue-300 hover:bg-blue-50/40 md:max-w-xl">
-                        <input
-                            type="checkbox"
-                            id="enforceOu"
-                            v-model="enforceOu"
-                            class="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                    <div>
+                        <label for="primaryEmailAddress" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                            Primary Email Address
+                        </label>
+                        <input id="primaryEmailAddress"
+                               v-model.trim="primaryEmailAddress"
+                               type="email"
+                               placeholder="notifications@example.com"
+                               class="input-control" />
+                    </div>
+
+                    <div>
+                        <label for="isSSLEnabled" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                            SSL Enabled
+                        </label>
+                        <select id="isSSLEnabled" v-model="isSSLEnabled" class="select">
+                            <option :value="false">No</option>
+                            <option :value="true">Yes</option>
+                        </select>
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label for="emailPassword" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                            Mail Password
+                        </label>
+                        <input id="emailPassword"
+                               v-model="emailPassword"
+                               type="password"
+                               autocomplete="new-password"
+                               placeholder="Enter mail server password"
+                               class="input-control" />
+                        <p class="mt-1 text-xs text-gray-400">Credentials should be stored securely.</p>
+                    </div>
+                </div>
+
+                <hr class="my-6 border-slate-100 dark:border-slate-800" />
+
+                <!-- Application settings -->
+                <div class="mb-5 flex items-center gap-3">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700 dark:bg-slate-800">
+                        <i class="bi bi-sliders text-lg"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900 dark:text-white">Application Settings</h2>
+                        <p class="text-xs text-slate-500">Tax and invoice approval behaviour.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 px-4 py-3 transition hover:border-blue-300 hover:bg-blue-50/40 dark:border-slate-800">
+                        <input id="isTaxLeviesInclusive"
+                               v-model="isTaxLeviesInclusive"
+                               type="checkbox"
+                               class="mt-1 h-4 w-4 rounded border-gray-300 accent-blue-600" />
                         <span>
-                            <span class="block text-sm font-semibold text-slate-800">Enforce Organizational Unit (OU)</span>
+                            <span class="block text-sm font-semibold text-slate-800 dark:text-slate-100">VAT Inclusive</span>
+                            <span class="mt-1 block text-xs leading-5 text-slate-500">
+                                Include applicable tax levies, such as GETFL, in the relevant amounts.
+                            </span>
+                        </span>
+                    </label>
+
+                    <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 px-4 py-3 transition hover:border-blue-300 hover:bg-blue-50/40 dark:border-slate-800">
+                        <input id="approveInvoiceBeforePayment"
+                               v-model="approveInvoiceBeforePayment"
+                               type="checkbox"
+                               class="mt-1 h-4 w-4 rounded border-gray-300 accent-blue-600" />
+                        <span>
+                            <span class="block text-sm font-semibold text-slate-800 dark:text-slate-100">Approval Required</span>
+                            <span class="mt-1 block text-xs leading-5 text-slate-500">
+                                Require invoice approval before payment can proceed.
+                            </span>
+                        </span>
+                    </label>
+
+                    <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 px-4 py-3 transition hover:border-blue-300 hover:bg-blue-50/40 dark:border-slate-800 sm:col-span-2 md:max-w-xl">
+                        <input id="enforceOu"
+                               v-model="enforceOu"
+                               type="checkbox"
+                               class="mt-1 h-4 w-4 rounded border-gray-300 accent-blue-600" />
+                        <span>
+                            <span class="block text-sm font-semibold text-slate-800 dark:text-slate-100">Enforce Organizational Unit (OU)</span>
                             <span class="mt-1 block text-xs leading-5 text-slate-500">
                                 Apply organizational unit restrictions where configured.
                             </span>
                         </span>
                     </label>
-                </section>
-
-                <!-- STICKY ACTION BAR -->
-                <div class="sticky bottom-0 z-10 mt-6 border-t border-slate-200 dark:border-slate-800 bg-white/95 px-4 py-4 backdrop-blur sm:rounded-xl sm:border sm:px-6 dark:bg-transparent dark:border-slate-800">
-                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <p class="text-xs text-slate-500">
-                            <i class="la la-info-circle mr-1"></i>
-                            Review your changes before saving.
-                        </p>
-
-                        <button
-                            @@click="saveProfile"
-                            :disabled="isLoading"
-                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60">
-                            <i v-if="isLoading" class="la la-circle-o-notch animate-spin text-lg"></i>
-                            <i v-else class="la la-save text-lg"></i>
-                            {{ isLoading ? 'Saving Profile...' : 'Save Profile' }}
-                        </button>
-                    </div>
                 </div>
-
             </form>
+
+            <div class="mt-6 flex justify-end border-t border-slate-100 pt-5 dark:border-slate-800">
+                <button type="button"
+                        @@click="saveProfile"
+                        :disabled="isLoading"
+                        class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60">
+                    <i v-if="isLoading" class="la la-circle-o-notch animate-spin text-base"></i>
+                    <i v-else class="bi bi-check-lg"></i>
+                    {{ isLoading ? 'Saving Profile...' : 'Save Profile' }}
+                </button>
+            </div>
         </div>
 
-        <!-- TAX & VAT TAB CONTENT -->
-        <div id="vat" class="space-y-6"  v-show="activeTab === 'vat'"
-             role="tabpanel">
-            <section class="rounded-2xl border border-slate-200 bg-white dark:bg-transparent dark:border-slate-800 p-5 shadow-sm sm:p-7">
+        <!-- ============================================================
+             TAB 2 - TAX & VAT (CRUD handled by the data-grid)
+             ============================================================ -->
+        <div id="tax" v-show="activeTab === 'tax'" role="tabpanel" class="space-y-6">
+
+            <!-- Tax levies -->
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7 dark:border-slate-800 dark:bg-slate-900">
                 <div class="mb-5 flex items-center gap-3">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-700 dark:bg-slate-800">
-                        <i class="la la-percent text-xl"></i>
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-slate-800">
+                        <i class="bi bi-receipt text-lg"></i>
                     </div>
                     <div>
                         <h2 class="text-base font-bold text-slate-900 dark:text-white">Tax Levy Details</h2>
-                        <p class="mt-1 text-sm text-slate-500">Manage applicable tax levies.</p>
+                        <p class="text-xs text-slate-500">Other levies such as NHIL, GETFund and COVID-19.</p>
                     </div>
                 </div>
+
                 <div class="overflow-x-auto">
-                    @*<div class="min-w-0" id="dataTable"></div>*@
                     <data-grid
-                        title="Tax Levy Details"
-                        :columns="taxesCol"
+                        ref="taxesGrid"
+                        title="Tax Levies"
+                        :columns="taxLevyColumns"
                         :data="otherTaxLevyList"
                         :theme="theme"
                         row-id="id"
                         label-key="name"
-                        item-label="data"
-                        item-label-plural="Tax Levies"
-                        add-label="Add"
+                        storage-key="shared-tax-levies"
+                        item-label="tax levy"
+                        item-label-plural="tax levies"
+                        add-label="Add Tax Levy"
                         :page-size="10"
                         :selectable="true"
                         :actions="true"
-                    ></data-grid>
+                        :loading="isShimmerLoading"
+                        @@create="event => onCreateTaxLevy('others', event)"
+                        @@update="event => onUpdateTaxLevy('others', event)"
+                        @@delete="event => onDeleteTaxLevies('others', event)">
+                    </data-grid>
                 </div>
-            </section>
+            </div>
 
-            <section class="rounded-2xl border border-slate-200 bg-white dark:bg-transparent dark:border-slate-800  p-5 shadow-sm sm:p-7">
+            <!-- VAT -->
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7 dark:border-slate-800 dark:bg-slate-900">
                 <div class="mb-5 flex items-center gap-3">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 dark:bg-slate-800 text-blue-700">
-                        <i class="la la-receipt text-xl"></i>
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-slate-800">
+                        <i class="bi bi-percent text-lg"></i>
                     </div>
                     <div>
                         <h2 class="text-base font-bold text-slate-900 dark:text-white">VAT Details</h2>
-                        <p class="mt-1 text-sm text-slate-500">Manage VAT configuration.</p>
+                        <p class="text-xs text-slate-500">
+                            A maximum of {{ maximumVatTaxLevyRows }} VAT levy row(s) can be created.
+                        </p>
                     </div>
                 </div>
+
                 <div class="overflow-x-auto">
-                    @*<div class="min-w-0" id="dataTable1"></div>*@
                     <data-grid
-                        title="Vat Details"
-                        :columns="vatCol"
+                        ref="vatGrid"
+                        title="VAT Levies"
+                        :columns="taxLevyColumns"
                         :data="vatTaxLevyList"
                         :theme="theme"
                         row-id="id"
                         label-key="name"
-                        item-label="data"
-                        item-label-plural="Vat"
-                        add-label="Add"
+                        storage-key="shared-vat-levies"
+                        item-label="VAT levy"
+                        item-label-plural="VAT levies"
+                        add-label="Add VAT Levy"
                         :page-size="10"
                         :selectable="true"
                         :actions="true"
-                    ></data-grid>
+                        :loading="isShimmerLoading"
+                        @@create="event => onCreateTaxLevy('vat', event)"
+                        @@update="event => onUpdateTaxLevy('vat', event)"
+                        @@delete="event => onDeleteTaxLevies('vat', event)">
+                    </data-grid>
                 </div>
-            </section>
+            </div>
         </div>
-
     </div>
 </div>
-
-        </div>
-                                            
-</div>
-                                
 
 <script src="~/js/shared/vue3/company-profile.js" asp-append-version="true"></script>

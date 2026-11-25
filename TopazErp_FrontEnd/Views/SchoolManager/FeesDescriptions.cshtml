@@ -1,0 +1,45 @@
+@{
+    ViewBag.Title = "Fees Descriptions";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>School Manager - Main Setups</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Fees Descriptions</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="page-title">
+                <h2 class="text-lg font-semibold text-gray-800">
+                    Fee Items
+                </h2>
+            </div>
+        </div>
+    </div>
+    <div class="card" data-card-title="Fee Items">
+        <div id="app">
+            <data-grid
+                title="Fees Descriptions"
+                :columns="columns"
+                :data="feesDescriptionList"
+                :theme="theme"
+                row-id="id"
+                label-key="description"
+                item-label="Fees Description"
+                item-label-plural="Fees Descriptions"
+                add-label="Add Fees Description"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                @@create="onCreate"
+                @@update="onUpdate"
+                @@delete="onDelete"
+            ></data-grid>
+        </div>
+    </div>
+</div>
+<script src="~/js/school-manager/fees-descriptions.js" asp-append-version="true"></script>

@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Invoice</title>
+
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 12mm;
+        }
+
+        .report-sheet {
+            font-family: 'Times New Roman';
+            color: #1f2937;
+            padding: 36px 40px 28px;
+            box-sizing: border-box;
+            background: #ffffff;
+        }
+
+        /* ---------- repeating header (logo left, company details next to it) ---------- */
+        .report-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            border-bottom: 3px solid #1f1f1f;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+
+        .report-header .logo {
+            width: 120px;
+            max-height: 72px;
+            object-fit: contain;
+            flex: 0 0 auto;
+        }
+
+        .report-header .header-center {
+            flex: 1;
+        }
+
+        .report-header .company-name {
+            font-size: 22px;
+            font-weight: 700;
+            color: #111827;
+            letter-spacing: .2px;
+            margin: 0 0 4px;
+        }
+
+        .report-header .company-meta {
+            font-size: 12px;
+            color: #4b5563;
+            line-height: 1.55;
+        }
+
+        /* ---------- customer & invoice info ---------- */
+        .customer-section {
+            border-bottom: 3px solid #1f1f1f;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 24px;
+            margin-top: 6px;
+            padding-bottom: 14px;
+            margin-bottom: 20px;
+        }
+
+        .customer-details {
+            text-align: left;
+            flex: 1;
+        }
+
+        .customer-heading {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: #6b7280;
+            margin-bottom: 6px;
+        }
+
+        .customer-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #000000;
+            margin-bottom: 4px;
+        }
+
+        .customer-meta {
+            font-size: 10.5px;
+            color: #000000;
+            line-height: 1.6;
+        }
+
+        .customer-meta div:empty {
+            display: none;
+        }
+
+        .invoice-meta {
+            text-align: right;
+            min-width: 220px;
+        }
+
+        .invoice-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #5e5e5e;
+            letter-spacing: .6px;
+            margin: 0 0 8px;
+            font-family: "Bodoni MT";
+        }
+
+        .invoice-meta-table {
+            margin-left: auto;
+            border-collapse: collapse;
+            font-size: 10.5px;
+        }
+
+        .invoice-meta-table td {
+            padding: 2px 0;
+            color: #000000;
+        }
+
+        .invoice-meta-table td.meta-label {
+            text-align: right;
+            font-weight: 600;
+            color: #000000;
+            padding-right: 12px;
+            white-space: nowrap;
+        }
+
+        .invoice-meta-table td.meta-value {
+            text-align: right;
+            font-weight: 700;
+            color: #000000;
+            white-space: nowrap;
+        }
+
+        /* ---------- line items table ---------- */
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+            margin-top: 8px;
+        }
+
+        .report-table thead {
+            display: table-header-group;
+        }
+
+        .report-table tr {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        .report-table th {
+            text-align: left;
+            font-weight: 700;
+            padding: 7px 6px;
+            border-bottom: 1.5px solid #6b7280;
+            color: #000000;
+            white-space: nowrap;
+            background-color: #f9fafb;
+        }
+
+        .report-table td {
+            padding: 7px 6px;
+            vertical-align: top;
+            color: #000000;
+        }
+
+        .report-table th.num,
+        .report-table td.num {
+            text-align: right;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .report-table .index-col {
+            width: 30px;
+            white-space: nowrap;
+            color: #000000;
+        }
+
+        .report-table .reference {
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .report-table .desc-col {
+            text-align: left;
+            word-break: break-word;
+        }
+
+        .report-table .subtotal-col {
+            font-weight: 600;
+        }
+
+        /* ---------- summary & amount in words ---------- */
+        /*.invoice-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 24px;
+            margin-top: 22px;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }*/
+
+        .amount-words-box {
+            flex: 1;
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-left: 3px solid #1f2937;
+            padding: 10px 12px;
+            font-size: 10.5px;
+            line-height: 1.5;
+        }
+
+        .amount-words-label {
+            font-size: 9.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            color: #4b5563;
+            margin-bottom: 3px;
+        }
+
+        .amount-words-value {
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .totals-box {
+            min-width: 250px;
+        }
+
+        .totals-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10.5px;
+        }
+
+        .totals-table td {
+            padding: 5px 6px;
+        }
+
+        .totals-table td.total-label {
+            text-align: left;
+            color: #4b5563;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .totals-table td.total-value {
+            text-align: right;
+            color: #000000;
+            font-weight: 600;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .totals-table tr.grand-total td {
+            border-top: 1.5px solid #9ca3af;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #000000;
+            padding-top: 7px;
+            padding-bottom: 7px;
+        }
+
+        .totals-table tr.balance-due td {
+            border-top: 1px solid #d1d5db;
+            border-bottom: 2.5px solid #1f2937;
+            background-color: #f3f4f6;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #000000;
+            padding-top: 7px;
+            padding-bottom: 7px;
+        }
+
+        /* ---------- footer ---------- */
+        .report-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #d1d5db;
+            margin-top: 28px;
+            padding-top: 10px;
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .footer-date {
+            text-align: left;
+            flex: 1;
+        }
+
+        .footer-brand {
+            text-align: center;
+            flex: 1;
+        }
+
+        .footer-page {
+            text-align: right;
+            flex: 1;
+            font-weight: 600;
+            color: #374151;
+        }
+        .notes{
+            font-size: 11px;
+            margin-top: 12px;
+        }
+        .messages{
+            font-size: 11px;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="report-sheet">
+
+    <!-- COMPANY HEADER -->
+    <header class="report-header">
+        <img class="logo" src="{{companyLogo}}" alt="Company Logo"/>
+        <div class="header-center">
+            <p class="company-name">{{companyName}}</p>
+            <div class="company-meta">
+                <div>{{primaryPhoneNo}} | {{address}} | {{email}}</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- CUSTOMER & INVOICE DETAILS -->
+    <section class="customer-section">
+        <div class="customer-details">
+           <!-- <div class="customer-heading">Bill To</div>-->
+            <div class="customer-name">{{supplierName}}</div>
+            <div class="customer-meta">
+                <div>{{supplierAddress}}</div>
+                <div>Account No.: {{accountNumber}} &nbsp;|&nbsp; VAT No.: {{vatNumber}}</div>
+                <div>{{contactPerson}}</div>
+                <div>{{customerPhoneNo}}</div>
+                <div>{{customerEmail}}</div>
+            </div>
+        </div>
+
+        <div class="invoice-meta">
+            <div class="invoice-title">INVOICE</div>
+            <table class="invoice-meta-table">
+                <tr>
+                    <td class="meta-label">Invoice No.:</td>
+                    <td class="meta-value">{{invoiceNumber}}</td>
+                </tr>
+                <tr>
+                    <td class="meta-label">Invoice Date:</td>
+                    <td class="meta-value">{{invoiceDate}}</td>
+                </tr>
+                <tr>
+                    <td class="meta-label">Due Date:</td>
+                    <td class="meta-value">{{projectedPayDate}}</td>
+                </tr>
+                <tr>
+                    <td class="meta-label">P.O. No.:</td>
+                    <td class="meta-value">{{purchaseOrderNumber}}</td>
+                </tr>
+                <tr>
+                    <td class="meta-label">Ref. No.:</td>
+                    <td class="meta-value">{{referenceNumber}}</td>
+                </tr>
+                <tr>
+                    <td class="meta-label">Currency:</td>
+                    <td class="meta-value">{{currencyName}}</td>
+                </tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- INVOICE LINE ITEMS -->
+    <table class="report-table">
+        <thead>
+        <tr>
+            <th class="index-col">Item No.</th>
+            <th class="desc-col">Description</th>
+            <th class="num">Qty</th>
+            <th class="num">Price</th>
+            <th class="num">Discount</th>
+            <th class="num">Ext. Amount</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr data-repeat="rows" class="{{@rowClass}}">
+            <td class="index-col">{{@index}}.</td>
+            <td class="desc-col">{{@description}}</td>
+            <td class="num">{{@quantity}}</td>
+            <td class="num">{{@unitPrice}}</td>
+            <td class="num">{{@amount}}</td>
+            <td class="num subtotal-col">{{@subTotal}}</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <!-- TOTALS & AMOUNT IN WORDS -->
+    <section class="invoice-summary">
+      
+
+        <div class="totals-box">
+            <table class="totals-table">
+                <tr class="grand-total">
+                    <td class="total-label">Total Amount ({{currencyName}}):</td>
+                    <td class="total-value">{{totalInvoiceAmount}}</td>
+                </tr>
+            </table>
+        </div>
+        <div class="amount-words-box">
+            <div class="amount-words-label">Total Amount Due</div>
+            <div class="amount-words-value">{{amountInWords}}</div>
+        </div>
+    </section>
+    
+    <section>
+        <div class="notes">
+            <p>Notes: </p>
+        </div>
+    </section>
+
+    <section>
+        <div class="messages">
+            
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="report-footer">
+        <div class="footer-date">
+            {{CurrentDate}}
+        </div>
+
+        <div class="footer-brand">
+            Topaz AccountingPro (AP)
+        </div>
+
+        <div class="footer-page">
+            Page {{PageNumber}} of {{PageBreakCount}}
+        </div>
+    </footer>
+
+</div>
+
+</body>
+</html>

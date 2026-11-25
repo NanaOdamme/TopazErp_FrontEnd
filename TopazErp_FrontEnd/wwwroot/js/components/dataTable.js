@@ -12,6 +12,11 @@
     const esc = (v) => (v === null || v === undefined ? '' : String(v))
         .replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
     const DASH = '<span class="text-slate-300 dark:text-slate-600">—</span>';
+    const EMPTY_GUID = '00000000-0000-0000-0000-000000000000';
+    const isEmptyGuid = (value) => {
+        const raw = value && typeof value === 'object' ? (value.id ?? value.Id ?? value.value) : value;
+        return typeof raw === 'string' && raw.trim().toLowerCase() === EMPTY_GUID;
+    };
     const getIn = (obj, path) => String(path).split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
     const setIn = (obj, path, val) => {
         const parts = String(path).split('.'); const last = parts.pop(); let t = obj;
@@ -28,9 +33,9 @@
     const hasColumnDefault = (column) => column.defaultValue !== undefined || column.default !== undefined;
     const normalizeIds = (ids) => Array.isArray(ids)
         ? Array.from(new Set(ids.filter((id) => id !== null && id !== undefined).map(String))) : [];
-    const resolveColumnDefault = (column, row) => {
+    const resolveColumnDefault = (column, row, parentRow = null) => {
         const value = column.defaultValue !== undefined ? column.defaultValue : column.default;
-        return typeof value === 'function' ? value.call(column, row, column) : value;
+        return typeof value === 'function' ? value.call(column, row, column, parentRow) : value;
     };
     const dateInputValue = (value) => {
         if (isNil(value)) return '';
@@ -70,8 +75,6 @@
             options.minimumFractionDigits = 0;
             options.maximumFractionDigits = 0;
         }
-        if (col.useGrouping !== undefined) options.useGrouping = Boolean(col.useGrouping);
-        else if (col.grouping !== undefined) options.useGrouping = Boolean(col.grouping);
         if (options.style === 'currency' && !options.currency) options.currency = col.currency || 'GHS';
         try { return new Intl.NumberFormat(col.locale || LOCALE, options).format(Number(v)); }
         catch (e) { return fmtNum(v, decimals === null ? 0 : decimals); }
@@ -105,16 +108,30 @@
     const DOT_CLASSES = { blue:'bg-blue-500', indigo:'bg-indigo-500', violet:'bg-violet-500', emerald:'bg-emerald-500', amber:'bg-amber-500',
         orange:'bg-orange-500', rose:'bg-rose-500', pink:'bg-pink-500', teal:'bg-teal-500', cyan:'bg-cyan-500', slate:'bg-slate-400' };
     const hashStr = (s) => { let h = 0; s = String(s); for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); };
-    const optionList = (col) => (col.options || []).map((option) => {
-        if (!option || typeof option !== 'object') return { value:option, label:option };
-        const value = col.value ? getIn(option, col.value) : (option.value !== undefined ? option.value : option);
-        const label = col.display ? getIn(option, col.display) : (option.label !== undefined ? option.label : value);
-        return Object.assign({}, option, { value, label });
-    });
-    const findOption = (col, value) => optionList(col).find((o) => String(o.value) === String(value));
-    const optionLabel = (col, value) => { const o = findOption(col, value); return o ? (o.label ?? o.value) : value; };
-    const colorOf = (col, value) => {
-        const o = findOption(col, value);
+    const optionList = (col, context = {}) => {
+        let options = col.options;
+        if (typeof options === 'function') {
+            const values = context.values || context.row || {};
+            options = options(values, context.row || null, context.mode || 'view', col);
+        }
+        return (Array.isArray(options) ? options : []).map((option) => {
+            if (!option || typeof option !== 'object') return { value:option, label:option };
+            const value = col.value ? getIn(option, col.value) : (option.value !== undefined ? option.value : option);
+            const label = col.display ? getIn(option, col.display) : (option.label !== undefined ? option.label : value);
+            return Object.assign({}, option, { value, label });
+        });
+    };
+    const findOption = (col, value, context) => optionList(col, context).find((o) =>
+        String(o.value) === String(value) || (isEmptyGuid(o.value) && isEmptyGuid(value))
+    );
+    const optionLabel = (col, value, context) => {
+        const option = findOption(col, value, context);
+        const label = option ? (option.label ?? option.value) : value;
+        const emptyLabel = isNil(label) || (typeof label === 'string' && label.trim() === '') || isEmptyGuid(label);
+        return isEmptyGuid(value) && emptyLabel ? '' : label;
+    };
+    const colorOf = (col, value, context) => {
+        const o = findOption(col, value, context);
         if (o && o.color) return o.color;
         if (isNil(value)) return 'slate';
         return COLOR_KEYS[hashStr(value + (col.key || '')) % COLOR_KEYS.length];
@@ -163,8 +180,14 @@
             cell: (v) => { const d = toDate(v); return d ? '<span class="tabular-nums whitespace-nowrap">' + fmtDate(d, true) + '</span>' : DASH; } },
         time:    { kind:'text',   input:'time',     cmp:'string', cell:(v) => isNil(v) ? DASH : '<span class="tabular-nums">' + esc(v) + '</span>' },
         boolean: { kind:'bool',   input:'checkbox', cmp:'bool', align:'center', agg:'true', cell:(v) => boolIcon(v) },
-        badge:   { kind:'enum',   input:'select',   cmp:'string', cell:(v, c) => badge(optionLabel(c, v), colorOf(c, v)) },
-        select:  { kind:'enum',   input:'select',   cmp:'string', cell:(v, c) => dotPill(optionLabel(c, v), colorOf(c, v)) },
+        badge:   { kind:'enum',   input:'select',   cmp:'string', cell:(v, c, r) => {
+                const context = { values:r || {}, row:r || null, mode:'view' };
+                return badge(optionLabel(c, v, context), colorOf(c, v, context));
+            } },
+        select:  { kind:'enum',   input:'select',   cmp:'string', cell:(v, c, r) => {
+                const context = { values:r || {}, row:r || null, mode:'view' };
+                return dotPill(optionLabel(c, v, context), colorOf(c, v, context));
+            } },
         tags:    { kind:'array',  input:'tags',     cmp:'string', wrap:true, minWidth:200, cell:(v) => tagsHtml(v) },
         avatar:  { kind:'text',   input:'text',     cmp:'string', minWidth:230,
             cell: (v, c, r) => {
@@ -324,18 +347,46 @@
         name: 'DataGridForm',
         props: { columns: { type: Array, required: true }, row: { type: Object, default: null }, mode: { type: String, default: 'create' },
             itemLabel: { type: String, default: 'record' }, parentLabel: { type: String, default: '' },
-            theme: { type: String, default: '#2563eb' } },
+            parentRow: { type: Object, default: null }, theme: { type: String, default: '#2563eb' },
+            rowDisabled: { type: Function, default: null } },
         emits: ['submit', 'close'],
         data() { return { values: {}, errors: {} }; },
         created() { this.build(); },
         computed: {
             isEdit() { return this.mode === 'update'; },
+            isReadOnly() { return this.isEdit && typeof this.rowDisabled === 'function' && !!this.rowDisabled(this.row); },
             themeStyle() { return { '--dt-theme': this.theme || '#2563eb' }; }
         },
         methods: {
             t: typeOf,
-            optionList(c) { return optionList(c); },
+            optionList(c) { return optionList(c, { values:this.values, row:this.row, mode:this.mode }); },
             label(c) { return c.label ?? c.key; },
+            isDisabled(c) {
+                if (this.isReadOnly) return true;
+                return typeof c.disabled === 'function' ? !!c.disabled(this.row, this.mode, c, this.values) : c.disabled === true;
+            },
+            onSelectChange(col) {
+                this.$nextTick(() => {
+                    this.columns.forEach((dependent) => {
+                        const dependencies = Array.isArray(dependent.dependsOn) ? dependent.dependsOn : [dependent.dependsOn];
+                        if (!dependencies.includes(col.key)) return;
+
+                        if (typeof dependent.valueFrom === 'function') {
+                            const value = dependent.valueFrom(this.values, this.row, this.mode, dependent, this.parentRow);
+                            if (value !== undefined) this.values[dependent.key] = value;
+                            return;
+                        }
+
+                        // dependsOn also supports computed fields via valueFrom. Without valueFrom,
+                        // only dependent selects need stale-option validation; don't clear numbers/text.
+                        if (typeOf(dependent).input !== 'select') return;
+                        const current = this.values[dependent.key];
+                        if (isNil(current)) return;
+                        const stillValid = this.optionList(dependent).some((option) => String(option.value) === String(current));
+                        if (!stillValid) this.values[dependent.key] = '';
+                    });
+                });
+            },
             inputStep(c) {
                 if (c.step !== undefined) return c.step;
                 if (typeOf(c).step !== undefined) return typeOf(c).step;
@@ -348,13 +399,26 @@
             rawValue(c) {
                 const t = typeOf(c);
                 let v = this.row ? getIn(this.row, c.key)
-                    : (hasColumnDefault(c) ? resolveColumnDefault(c, this.row) : (t.input === 'checkbox' ? false : ''));
+                    : (hasColumnDefault(c) ? resolveColumnDefault(c, this.row, this.parentRow) : (t.input === 'checkbox' ? false : ''));
                 if (t.input === 'date') v = dateInputValue(v);
                 if (t.input === 'tags') return Array.isArray(v) ? v.join(', ') : (v ?? '');
                 if (t.input === 'checkbox') return !!v;
                 return v ?? '';
             },
-            build() { const v = {}; this.columns.forEach((c) => { v[c.key] = this.rawValue(c); }); this.values = v; this.errors = {}; },
+            build() {
+                const v = {};
+                this.columns.forEach((c) => { v[c.key] = this.rawValue(c); });
+                this.values = v;
+                this.errors = {};
+                // Derived fields are initialized for new forms; on edit, keep the saved value until a dependency changes.
+                if (this.mode === 'create') {
+                    this.columns.forEach((c) => {
+                        if (typeof c.valueFrom !== 'function') return;
+                        const value = c.valueFrom(this.values, this.row, this.mode, c, this.parentRow);
+                        if (value !== undefined) this.values[c.key] = value;
+                    });
+                }
+            },
             /* form -> typed value */
             parse(c) {
                 const t = typeOf(c); let v = this.values[c.key];
@@ -377,20 +441,12 @@
                 if (typeof c.validate === 'function') { const r = c.validate(val, this.row); if (r !== true && r) return r; }
                 return '';
             },
-            onFieldChange(c, ev) {
-                const t = typeOf(c);
-                const val = (t.input === 'checkbox' && ev?.target) ? ev.target.checked
-                    : ((ev && ev.target && ev.target.value !== undefined) ? ev.target.value : this.values[c.key]);
-                this.values[c.key] = val;
-                if (typeof c.onChange === 'function') {
-                    c.onChange(val, this.values, this.row, ev);
-                }
-            },
             submit() {
+                if (this.isReadOnly) return;
                 const data = {}; const errors = {}; let firstBad = null;
                 this.columns.forEach((c) => {
                     const val = this.parse(c);
-                    const err = this.validate(c, val);
+                    const err = this.isDisabled(c) ? '' : this.validate(c, val);
                     if (err) { errors[c.key] = err; firstBad = firstBad || this.idOf(c); }
                     setIn(data, c.key, val);
                 });
@@ -421,7 +477,7 @@
               </span>
               <div>
                 <h3 class="text-base font-semibold text-slate-900 dark:text-white">{{ isEdit ? 'Edit ' + itemLabel : 'New ' + itemLabel }}</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400">{{ isEdit ? (row && row.name ? String(row.name) : 'Update the details below') : (parentLabel || 'Fill in the details below.') }}</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">{{ isReadOnly ? 'This posted record is read-only.' : (isEdit ? (row && row.name ? String(row.name) : 'Update the details below') : (parentLabel || 'Fill in the details below.')) }}</p>
               </div>
             </div>
             <button type="button" class="grid h-8 w-8 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800" @click="$emit('close')"><i class="bi bi-x-lg text-sm"></i></button>
@@ -435,18 +491,18 @@
               </label>
 
               <!-- checkbox -->
-              <label v-if="t(c).input === 'checkbox'" class="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-                <input :id="idOf(c)" v-model="values[c.key]" @change="onFieldChange(c, $event)" type="checkbox" class="dt-check h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500">
+              <label v-if="t(c).input === 'checkbox'" class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300" :class="isDisabled(c) ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'">
+                <input :id="idOf(c)" v-model="values[c.key]" type="checkbox" :disabled="isDisabled(c)" class="dt-check h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500">
                 {{ c.checkboxLabel || 'Yes, active' }}
               </label>
 
               <!-- textarea -->
-              <textarea v-else-if="t(c).input === 'textarea'" :id="idOf(c)" v-model="values[c.key]" @change="onFieldChange(c, $event)" rows="3"
-                class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"></textarea>
+              <textarea v-else-if="t(c).input === 'textarea'" :id="idOf(c)" v-model="values[c.key]" rows="3" :disabled="isDisabled(c)"
+                class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"></textarea>
 
               <!-- select -->
-              <select v-else-if="t(c).input === 'select'" :id="idOf(c)" v-model="values[c.key]" @change="onFieldChange(c, $event)" :disabled="c.disabled"
-                class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-50 dark:disabled:bg-slate-900/50">
+              <select v-else-if="t(c).input === 'select'" :id="idOf(c)" v-model="values[c.key]" :disabled="isDisabled(c)" @change="onSelectChange(c)"
+                class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm focus:border-primary-500 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
                 <option value="">— Select —</option>
                 <option v-for="o in optionList(c)" :key="String(o.value)" :value="o.value">
                   {{ o.label ?? o.value }}
@@ -455,15 +511,15 @@
 
               <!-- number / currency -->
               <div v-else-if="t(c).input === 'number'" class="relative">
-                <input :id="idOf(c)" v-model="values[c.key]" @change="onFieldChange(c, $event)" type="number" :step="inputStep(c)" :min="c.min" :max="c.max" :disabled="c.disabled" :placeholder="c.placeholder || ''"
-                  class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-50 dark:disabled:bg-slate-900/50"
-                  :class="c.type === 'currency' ? 'pl-12' : ''">
+                <input :id="idOf(c)" v-model="values[c.key]" type="number" :step="inputStep(c)" :min="c.min" :max="c.max" :disabled="isDisabled(c)"
+                  class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                  :class="[c.type === 'currency' ? 'pl-12' : '', isDisabled(c) ? 'cursor-not-allowed opacity-60' : '']">
                 <span v-if="c.type === 'currency'" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400">{{ c.currencySymbol || 'GH₵' }}</span>
               </div>
 
               <!-- everything else (text, email, tel, url, date, datetime, time, color, tags) -->
-              <input v-else :id="idOf(c)" v-model="values[c.key]" @change="onFieldChange(c, $event)" :type="t(c).input" :disabled="c.disabled"
-                class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-50 dark:disabled:bg-slate-900/50"
+              <input v-else :id="idOf(c)" v-model="values[c.key]" :type="t(c).input" :disabled="isDisabled(c)"
+                class="w-full rounded-lg border-slate-300 bg-white text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-primary-500 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                 :placeholder="t(c).input === 'tags' ? 'Comma separated, e.g. Vue, Tailwind' : (c.placeholder || '')">
 
               <p v-if="c.help" class="mt-1 text-[11px] text-slate-400">{{ c.help }}</p>
@@ -475,8 +531,8 @@
             <p class="text-[11px] text-slate-400"><span class="text-rose-500">*</span> required fields</p>
             <div class="flex gap-2">
               <button type="button" class="h-9 rounded-lg border border-slate-300 bg-white px-3.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200" @click="$emit('close')">Cancel</button>
-              <button type="submit" class="inline-flex h-9 items-center gap-2 rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-primary-700">
-                <i class="bi bi-check-lg"></i>{{ isEdit ? 'Save changes' : 'Create' }}
+              <button type="submit" :disabled="isReadOnly" class="inline-flex h-9 items-center gap-2 rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50">
+                <i class="bi bi-check-lg"></i>{{ isReadOnly ? 'Read only' : (isEdit ? 'Save changes' : 'Create') }}
               </button>
             </div>
           </div>
@@ -495,6 +551,7 @@
             child: { type: Object, default: null },         // { key, title, columns, child }
             rowId: { type: String, default: 'id' },
             groupHeader: { type: String, default: '' }, // column/property key used to group visible rows
+            rowDisabled: { type: Function, default: null }, // identify locked rows; edit opens a read-only form
             labelKey: { type: String, default: 'name' },
             title: { type: String, default: '' },
             subtitle: { type: String, default: '' },
@@ -507,8 +564,6 @@
             filterRow: { type: Boolean, default: false },
             resizable: { type: Boolean, default: true },
             aggregates: { type: Boolean, default: true },
-            rowNumbers: { type: Boolean, default: false },
-            showChildCount: { type: Boolean, default: false },
             expandAll: { type: Boolean, default: true },
             addButton: { type: Boolean, default: true }, // legacy visibility prop; use allowAdd for CRUD permissions
             editButton: { type: Boolean, default: true }, // legacy visibility prop; use allowEdit for CRUD permissions
@@ -537,12 +592,16 @@
             densityToggle: { type: Boolean, default: true },
             exportMenu: { type: Boolean, default: true },
             refreshButton: { type: Boolean, default: true },
-            striped: { type: Boolean, default: false },
+            bordered: { type: Boolean, default: false },
+            striped: { type: Boolean, default: false }, // canonical stripe toggle
+            stripes: { type: Boolean, default: false }, // alias for callers using the plural prop name
+            stripeColor: { type: String, default: '#f8fafc' },
+            stripeDarkColor: { type: String, default: '#1e293b' },
             defaultSort: { type: Array, default: () => [] },
             stickyHeader: { type: Boolean, default: true },
             autoAdd: { type: Boolean, default: false },  // open the create form on mount (used by "add first child")
             parentLabel: { type: String, default: '' },  // subtitle shown in the create form of a nested grid
-            formColumns: { type: Array, default: null }  // optional separate column schema for create/update modal form
+            parentRow: { type: Object, default: null }  // row that owns this nested grid; available to child defaults
         },
         emits: ['create', 'update', 'delete', 'change', 'request', 'ui', 'toast', 'selection-change', 'update:selectedIds'],
         data() {
@@ -558,7 +617,7 @@
                 expanded: s.expanded || [],
                 widths: Object.assign({}, prefs.widths, s.widths || {}),
                 filters: s.filters || {},
-                hidden: prefs.hidden || this.columns.filter((c) => c.hidden && !c.formOnly && !c.hideInTable).map((c) => c.key),
+                hidden: prefs.hidden || this.columns.filter((c) => c.hidden).map((c) => c.key),
                 densityValue: prefs.density || this.density,
                 showFilters: this.filterRow,
                 openMenu: null,
@@ -580,27 +639,23 @@
             isLoading() { return this.loading || this.loadingLocal; },
             rows() { return this.serverSide ? this.rowsLocal : this.data; },
             columnsPlain() { return this.columns.filter((c) => c.type !== 'actions' && !c.internal); },
-            tableCols() { return this.columnsPlain.filter((c) => !c.formOnly && !c.hideInTable); },
-            visibleCols() { return this.tableCols.filter((c) => !this.hidden.includes(c.key)); },
-            searchableKeys() {
-                const all = (this.formColumns && this.formColumns.length)
-                    ? this.columnsPlain.concat(this.formColumns)
-                    : this.columnsPlain;
-                return Array.from(new Set(all.filter((c) => c.searchable !== false).map((c) => c.key)));
-            },
+            visibleCols() { return this.columnsPlain.filter((c) => !this.hidden.includes(c.key)); },
+            searchableKeys() { return this.columnsPlain.filter((c) => c.searchable !== false).map((c) => c.key); },
             hasChildSchema() { return !!(this.child && this.child.key); },
             showExpander() { return this.hasChildSchema; },
             canAdd() { return this.allowAdd && this.addButton; },
             canEdit() { return this.allowEdit && this.editButton; },
             canDelete() { return this.allowDelete && this.deleteButton; },
             showActionsColumn() { return this.actions && (this.canEdit || this.canDelete); },
-            editableCols() {
-                if (this.formColumns && Array.isArray(this.formColumns) && this.formColumns.length) {
-                    return this.formColumns.filter((c) => c.type !== 'actions' && !c.internal && c.editable !== false && typeOf(c).input && !c.hidden && !c.hideInForm);
-                }
-                return this.columnsPlain.filter((c) => !c.tableOnly && !c.hideInForm && (c.formOnly || c.hideInTable || !this.hidden.includes(c.key)) && c.editable !== false && typeOf(c).input);
+            editableCols() { return this.columnsPlain.filter((c) => !this.hidden.includes(c.key) && c.editable !== false && typeOf(c).input); },
+            useStripes() { return this.striped || this.stripes; },
+            themeStyle() {
+                return {
+                    '--dt-theme': this.theme || '#2563eb',
+                    '--dt-stripe-color': this.stripeColor || '#f8fafc',
+                    '--dt-stripe-dark-color': this.stripeDarkColor || '#1e293b'
+                };
             },
-            themeStyle() { return { '--dt-theme': this.theme || '#2563eb' }; },
             filtered() {
                 let out = this.rows.slice();
                 const q = (this.search || '').trim().toLowerCase();
@@ -669,7 +724,17 @@
                     isComplete: group.entries.length === group.count
                 }));
             },
-            allPageSelected() { const ids = this.pageRows.map((r, i) => this.keyOf(r, i)); return ids.length > 0 && ids.every((id) => this.selected.includes(id)); },
+            selectedCount() {
+                const disabledIds = new Set(this.rows.map((row, index) => this.isRowDisabled(row) ? this.keyOf(row, index) : null).filter((id) => id !== null));
+                return this.selected.filter((id) => !disabledIds.has(id)).length;
+            },
+            selectablePageRows() {
+                return this.pageRows.map((row, index) => ({ row, index, id:this.keyOf(row, index) })).filter((entry) => !this.isRowDisabled(entry.row));
+            },
+            allPageSelected() {
+                const ids = this.selectablePageRows.map((entry) => entry.id);
+                return ids.length > 0 && ids.every((id) => this.selected.includes(id));
+            },
             footer() {
                 if (!this.aggregates) return null;
                 const out = {}; const scope = this.sorted;
@@ -683,7 +748,7 @@
                 });
                 return Object.keys(out).length ? out : null;
             },
-            colspan() { return this.visibleCols.length + (this.showExpander ? 1 : 0) + (this.rowNumbers ? 1 : 0) + (this.selectable ? 1 : 0) + (this.showActionsColumn ? 1 : 0); },
+            colspan() { return this.visibleCols.length + (this.showExpander ? 1 : 0) + (this.selectable ? 1 : 0) + (this.showActionsColumn ? 1 : 0); },
             allExpanded() {
                 const rows = this.pageRows.map((row, index) => ({ row, index })).filter(({ row }) => this.rowHasChildren(row));
                 return rows.length > 0 && rows.every(({ row, index }) => this.expanded.includes(this.keyOf(row, index)));
@@ -716,6 +781,7 @@
             /* ---- helpers exposed to templates ---- */
             esc, typeOf, getIn, setIn, fmtNum, fmtMoney, fmtDate, optionList, optionLabel, colorOf, badge, dotPill, bar, stars, tagsHtml, truncate, isNil,
             keyOf(row, i) { return String(getIn(row, this.rowId) ?? ('__idx' + i)); },
+            isRowDisabled(row) { return typeof this.rowDisabled === 'function' && !!this.rowDisabled(row); },
             groupValueKey(value) { return isNil(value) ? 'empty:' : typeof value + ':' + String(value); },
             groupLabel(value) {
                 if (isNil(value)) return 'Unassigned';
@@ -789,28 +855,34 @@
 
             /* ---- selection ---- */
             setSelectedIds(ids) {
-                const next = normalizeIds(ids);
+                const disabledIds = new Set(this.rows.map((row, index) => this.isRowDisabled(row) ? this.keyOf(row, index) : null).filter((id) => id !== null));
+                const next = normalizeIds(ids).filter((id) => !disabledIds.has(id));
                 if (next.length !== this.selected.length || next.some((id, index) => id !== this.selected[index])) this.selected = next;
             },
             emitSelectionChange() {
-                const ids = this.selected.slice();
+                const disabledIds = new Set(this.rows.map((row, index) => this.isRowDisabled(row) ? this.keyOf(row, index) : null).filter((id) => id !== null));
+                const ids = this.selected.filter((id) => !disabledIds.has(id));
+                this.selected = ids;
                 this.$emit('update:selectedIds', ids);
                 this.emit('selection-change', { ids, rows:this.selectedRows() });
             },
             toggleRow(id, ev) {
                 id = String(id);
+                const row = this.pageRows.find((item, index) => this.keyOf(item, index) === id);
+                if (row && this.isRowDisabled(row)) { if (ev && ev.target) ev.target.checked = false; return; }
                 const checked = ev && ev.target ? ev.target.checked : !this.selected.includes(id);
                 this.selected = checked ? Array.from(new Set(this.selected.concat([id]))) : this.selected.filter((x) => x !== id);
                 this.emitSelectionChange();
             },
             toggleAll(ev) {
                 const checked = ev && ev.target ? ev.target.checked : true;
-                const ids = this.pageRows.map((r, i) => this.keyOf(r, i));
-                this.selected = checked ? normalizeIds(this.selected.concat(ids)) : this.selected.filter((id) => !ids.includes(id));
+                const pageIds = this.pageRows.map((row, index) => this.keyOf(row, index));
+                const enabledIds = this.selectablePageRows.map((entry) => entry.id);
+                this.selected = checked ? normalizeIds(this.selected.concat(enabledIds)) : this.selected.filter((id) => !pageIds.includes(id));
                 this.emitSelectionChange();
             },
             clearSelection() { this.selected = []; this.emitSelectionChange(); },
-            selectedRows() { return this.sorted.filter((r, i) => this.selected.includes(this.keyOf(r, i))); },
+            selectedRows() { return this.sorted.filter((r, i) => this.selected.includes(this.keyOf(r, i)) && !this.isRowDisabled(r)); },
 
 
             /* ---- column / density prefs ---- */
@@ -826,13 +898,13 @@
                 try { localStorage.setItem('dt:' + this.storageKey, JSON.stringify({
                     widths: this.widths, hidden: this.hidden, pageSize: this.size, density: this.densityValue })); } catch (e) {}
             },
-            resetPrefs() { this.widths = {}; this.hidden = this.tableCols.filter((c) => c.hidden).map((c) => c.key); this.densityValue = this.density; this.size = this.pageSize; },
+            resetPrefs() { this.widths = {}; this.hidden = this.columnsPlain.filter((c) => c.hidden).map((c) => c.key); this.densityValue = this.density; this.size = this.pageSize; },
             toggleColumn(key, ev) {
                 const checked = ev && ev.target ? ev.target.checked : !this.hidden.includes(key);
                 this.hidden = checked ? this.hidden.filter((k) => k !== key) : this.hidden.concat([key]);
             },
             showAllColumns() { this.hidden = []; },
-            hideAllColumns() { this.hidden = this.tableCols.slice(1).map((c) => c.key); },
+            hideAllColumns() { this.hidden = this.columnsPlain.slice(1).map((c) => c.key); },
             setDensity(d) { this.densityValue = d; this.openMenu = null; },
             toggleMenu(name) { this.openMenu = this.openMenu === name ? null : name; },
 
@@ -880,12 +952,9 @@
             },
             emptyRow() {
                 const r = {}; setIn(r, this.rowId, uid(this.rowId));
-                const allCols = (this.formColumns && this.formColumns.length)
-                    ? this.columnsPlain.concat(this.formColumns)
-                    : this.columnsPlain;
-                allCols.forEach((c) => {
+                this.columnsPlain.forEach((c) => {
                     if (!hasColumnDefault(c)) return;
-                    let value = resolveColumnDefault(c, r);
+                    let value = resolveColumnDefault(c, r, this.parentRow);
                     if (typeOf(c).input === 'date') value = dateInputValue(value);
                     setIn(r, c.key, value);
                 });
@@ -894,14 +963,12 @@
             openForm(mode, row) {
                 if (mode === 'update' && !row) return;
                 this.form = { open: true, mode, row: row || null, parentLabel: this.parentLabel || 'Fill in the details below.' };
-                this.emit('open-form', { mode, row: row || null });
             },
             closeForm() { this.form = { open: false, mode: 'create', row: null }; },
             submitForm(values) {
-                if (this.form.mode === 'update') this.updateRow(this.form.row, values);
-                else this.createRow(values);
-                const label = String(getIn(values, this.labelKey) || values[this.rowId] || '');
-                this.notifyToast({ type:'success', title: this.form.mode === 'update' ? 'Changes saved' : this.itemLabel.charAt(0).toUpperCase() + this.itemLabel.slice(1) + ' created', body: label });
+                if (this.form.mode === 'update') {
+                    if (!this.updateRow(this.form.row, values)) return;
+                } else this.createRow(values);
                 this.closeForm();
             },
             createRow(values) {
@@ -919,15 +986,17 @@
                 this.emit('change', { row, mode:'create' });
             },
             updateRow(row, values) {
-                const target = row || this.form.row; if (!target) return;
+                const target = row || this.form.row; if (!target || this.isRowDisabled(target)) return false;
                 Object.keys(values).forEach((k) => setIn(target, k, values[k]));
                 const id = String(getIn(target, this.rowId));
                 this.$nextTick(() => this.flash(id));
                 this.emit('update', { row: target, data: values });
                 this.emit('change', { row: target, mode:'update' });
+                return true;
             },
             async removeRows(rows) {
-                const targets = Array.isArray(rows) && rows.length ? Array.from(new Set(rows)) : this.selectedRows();
+                const requested = Array.isArray(rows) && rows.length ? Array.from(new Set(rows)) : this.selectedRows();
+                const targets = requested.filter((row) => !this.isRowDisabled(row));
                 if (!targets.length) return;
                 const one = targets.length === 1;
                 const firstLabel = getIn(targets[0], this.labelKey);
@@ -935,7 +1004,7 @@
                     theme: this.theme, danger: true, okText: 'Delete',
                     title: 'Delete ' + (one ? 'this ' + this.itemLabel : targets.length + ' ' + this.itemLabelPlural) + '?',
                     message: (one ? String(firstLabel || 'This ' + this.itemLabel) : 'These ' + this.itemLabelPlural) +
-                        ' will be removed' + (this.child ? ' together with their nested ' + (this.child.title || 'children').toLowerCase() : '') + '. You can undo right after.'
+                        ' will be removed' + (this.child ? ' together with their nested ' + (this.child.title || 'children').toLowerCase() : '') + '. This action cannot be undone.'
                 });
                 if (!ok) return;
 
@@ -955,19 +1024,9 @@
                 this.emit('change', { rows: removedRows, mode:'delete' });
                 const maxPage = Math.max(1, Math.ceil(this.total / this.size));
                 if (this.page > maxPage) this.page = maxPage;
-                this.notifyToast({ type:'danger', title:'Deleted ' + (one ? this.itemLabel : snapshots.length + ' ' + this.itemLabelPlural), duration: 7000,
-                    body: one ? String(firstLabel || '') : '',
-                    action: { label:'Undo', onClick: () => {
-                            snapshots.slice().sort((a, b) => a.index - b.index)
-                                .forEach((snapshot) => collection.splice(Math.min(snapshot.index, collection.length), 0, snapshot.row));
-                            if (this.serverSide) this.totalLocal += snapshots.length;
-                            const undoMaxPage = Math.max(1, Math.ceil(this.total / this.size));
-                            if (this.page > undoMaxPage) this.page = undoMaxPage;
-                            this.notifyToast({ type:'info', title:'Restored', body: snapshots.length + ' ' + this.itemLabelPlural + ' put back.' });
-                        } } });
             },
             addChild(row, index) {
-                if (!this.hasChildSchema) return;
+                if (!this.hasChildSchema || this.isRowDisabled(row)) return;
                 const id = this.keyOf(row, index);
                 if (!Array.isArray(getIn(row, this.child.key))) setIn(row, this.child.key, []);
                 this.childAddRequest = id;
@@ -1103,8 +1162,8 @@
               <template v-if="isLoading"><span class="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400"></span>Loading…</template>
               <template v-else><i class="bi bi-collection"></i>{{ total }} {{ total === 1 ? itemLabel : itemLabelPlural }}</template>
             </span>
-            <span v-if="selected.length" class="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 text-[11px] font-semibold text-primary-700 dark:bg-primary-500/10 dark:text-primary-300">
-              <i class="bi bi-check2-circle"></i>{{ selected.length }} selected
+            <span v-if="selectedCount" class="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 text-[11px] font-semibold text-primary-700 dark:bg-primary-500/10 dark:text-primary-300">
+              <i class="bi bi-check2-circle"></i>{{ selectedCount }} selected
             </span>
           </div>
 
@@ -1136,14 +1195,14 @@
             </button>
 
             <!-- columns menu -->
-            <div v-if="columnToggle && tableCols.length > 2" class="relative" data-menu="cols">
+            <div v-if="columnToggle && columnsPlain.length > 2" class="relative" data-menu="cols">
               <button class="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-slate-300 bg-white px-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                 data-action="menu" @click="toggleMenu('cols')"><i class="bi bi-layout-three-columns"></i><span class="hidden xl:inline">Columns</span><i class="bi bi-chevron-down text-[10px] opacity-60"></i></button>
               <transition name="pop">
                 <div v-show="openMenu === 'cols'" data-menu-panel class="absolute right-0 z-40 mt-1 w-56 rounded-xl border border-slate-200 bg-white shadow-card dark:border-slate-700 dark:bg-slate-900">
                   <div class="border-b border-slate-100 px-3 py-2 dark:border-slate-800"><p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Visible columns</p></div>
                   <div class="max-h-72 overflow-auto py-1">
-                    <label v-for="c in tableCols" :key="c.key" class="flex cursor-pointer items-center gap-2.5 px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800">
+                    <label v-for="c in columnsPlain" :key="c.key" class="flex cursor-pointer items-center gap-2.5 px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800">
                       <input type="checkbox" class="dt-check h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500" data-action="toggle-col" :data-key="c.key"
                         :checked="!hidden.includes(c.key)" @change="toggleColumn(c.key, $event)">
                       <span class="text-slate-700 dark:text-slate-200">{{ c.label || c.key }}</span>
@@ -1199,8 +1258,8 @@
 
         <!-- bulk selection bar -->
         <transition name="pop">
-          <div v-if="selected.length" data-bulkbar class="flex flex-wrap items-center gap-2 rounded-lg border border-primary-200 bg-primary-50/70 px-3 py-2 dark:border-primary-500/30 dark:bg-primary-500/10">
-            <span class="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-800 dark:text-primary-200"><i class="bi bi-check2-square"></i>{{ selected.length }} selected</span>
+          <div v-if="selectedCount" data-bulkbar class="flex flex-wrap items-center gap-2 rounded-lg border border-primary-200 bg-primary-50/70 px-3 py-2 dark:border-primary-500/30 dark:bg-primary-500/10">
+            <span class="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-800 dark:text-primary-200"><i class="bi bi-check2-square"></i>{{ selectedCount }} selected</span>
             <span class="mx-1 h-5 w-px bg-primary-200 dark:bg-primary-500/30"></span>
             <button data-action="bulk-export" @click="exportCsv(selectedRows())" class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-primary-300 bg-white px-2.5 text-xs font-medium text-primary-700 hover:bg-primary-50 dark:border-primary-500/40 dark:bg-slate-900 dark:text-primary-300"><i class="bi bi-download"></i>Export selected</button>
             <button v-if="canDelete" data-action="bulk-delete" @click="removeRows(selectedRows())" class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-rose-300 bg-white px-2.5 text-xs font-medium text-rose-700 hover:bg-rose-50 dark:border-rose-500/40 dark:bg-slate-900 dark:text-rose-300"><i class="bi bi-trash3"></i>Delete</button>
@@ -1214,7 +1273,6 @@
         <table class="dt-table w-full min-w-full text-sm" data-table>
           <colgroup>
             <col v-if="showExpander" :style="{ width: (widths.__exp || 44) + 'px' }">
-            <col v-if="rowNumbers" :style="{ width: (widths.__num || 54) + 'px' }">
             <col v-if="selectable" :style="{ width: (widths.__sel || 44) + 'px' }">
             <col v-for="c in visibleCols" :key="c.key" :style="{ width: colWidth(c) + 'px' }">
             <col v-if="showActionsColumn" :style="{ width: (widths.__act || 132) + 'px' }">
@@ -1222,10 +1280,9 @@
           <thead class="text-slate-600 dark:text-slate-300">
             <tr class="dt-theme-header border-b border-slate-200 backdrop-blur dark:border-slate-700">
               <th v-if="showExpander" class="dt-th"><span class="sr-only">Expand</span></th>
-              <th v-if="rowNumbers" class="dt-th whitespace-nowrap text-center text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">#</th>
               <th v-if="selectable" class="dt-th">
-                <input type="checkbox" class="dt-check h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500" data-action="select-all"
-                  :checked="allPageSelected" :indeterminate.prop="selected.length > 0 && !allPageSelected" aria-label="Select all rows on this page" @click="toggleAll($event)">
+                <input type="checkbox" class="dt-check h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-40" data-action="select-all"
+                  :checked="allPageSelected" :indeterminate.prop="selectedCount > 0 && !allPageSelected" :disabled="!selectablePageRows.length" aria-label="Select all selectable rows on this page" @click="toggleAll($event)">
               </th>
               <th v-for="c in visibleCols" :key="c.key" class="dt-th group relative whitespace-nowrap text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400"
                   :class="alignClass(c)" :data-col="c.key" :data-sortable="isSortable(c)" :tabindex="isSortable(c) ? 0 : -1" :role="isSortable(c) ? 'button' : null"
@@ -1243,7 +1300,6 @@
 
             <tr v-if="showFilters" class="dt-theme-filter border-b border-slate-200 dark:border-slate-700">
               <th v-if="showExpander"></th>
-              <th v-if="rowNumbers"></th>
               <th v-if="selectable"></th>
               <th v-for="c in visibleCols" :key="c.key" class="py-1.5 font-normal">
                 <span v-if="typeOf(c).kind === 'number'" class="flex items-center gap-1">
@@ -1274,7 +1330,6 @@
             <template v-if="isLoading">
               <tr v-for="i in skeletonRows" :key="'sk'+i" class="border-b border-slate-100 dark:border-slate-800">
                 <td v-if="showExpander"></td>
-                <td v-if="rowNumbers"><div class="dt-skel mx-auto h-4 w-4"></div></td>
                 <td v-if="selectable"><div class="dt-skel mx-auto h-4 w-4"></div></td>
                 <td v-for="c in visibleCols" :key="c.key" class="dt-cell">
                   <div class="dt-skel h-4" :class="typeOf(c).align === 'right' ? 'ml-auto' : ''" :style="{ width: (35 + ((c.key.length * 13 + i * 11) % 55)) + '%' }"></div>
@@ -1322,28 +1377,26 @@
                 <template v-if="!isGroupCollapsed(group.key)">
                   <template v-for="entry in group.entries" :key="keyOf(entry.row, entry.index)">
                     <tr class="dt-row dt-theme-row group border-b border-slate-100 transition-colors dark:border-slate-800"
-                        :data-row="keyOf(entry.row, entry.index)" :class="[ selected.includes(keyOf(entry.row, entry.index)) ? 'dt-row-selected bg-primary-50/70 dark:bg-primary-500/10' : (striped && entry.index % 2 ? 'bg-slate-50/60 dark:bg-slate-900/40' : ''), flashId === keyOf(entry.row, entry.index) ? 'dt-flash' : '' ]">
+                        :data-row="keyOf(entry.row, entry.index)" :aria-disabled="isRowDisabled(entry.row) ? 'true' : null"
+                        :class="[ selected.includes(keyOf(entry.row, entry.index)) && !isRowDisabled(entry.row) ? 'dt-row-selected bg-primary-50/70 dark:bg-primary-500/10' : (useStripes && entry.index % 2 ? 'dt-row-striped' : ''), bordered ? 'dt-row-bordered' : '', isRowDisabled(entry.row) ? 'dt-row-disabled opacity-60' : '', flashId === keyOf(entry.row, entry.index) ? 'dt-flash' : '' ]">
                       <td v-if="showExpander" class="dt-cell text-center">
                         <template v-if="rowHasChildren(entry.row)">
                           <button data-action="toggle" :data-id="keyOf(entry.row, entry.index)" :aria-expanded="isExpanded(entry.row, entry.index)" :title="isExpanded(entry.row, entry.index) ? 'Collapse' : 'Expand'"
                             class="grid h-6 w-6 place-items-center rounded-md text-slate-400 hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-500/10 dark:hover:text-primary-300" @click="toggleExpand(keyOf(entry.row, entry.index))">
                             <i class="bi text-[11px] transition-transform" :class="isExpanded(entry.row, entry.index) ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
                           </button>
-                          <span v-if="showChildCount && rowChildren(entry.row).length" class="ml-0.5 text-[10px] font-semibold tabular-nums text-slate-400">{{ rowChildren(entry.row).length }}</span>
+                          <span v-if="rowChildren(entry.row).length" class="ml-0.5 text-[10px] font-semibold tabular-nums text-slate-400">{{ rowChildren(entry.row).length }}</span>
                         </template>
-                        <button v-else-if="canAdd" data-action="add-child" :data-id="keyOf(entry.row, entry.index)"
-                          :title="'Add ' + (child.title || 'child').replace(/s$/, '').toLowerCase()"
+                        <button v-else-if="canAdd" data-action="add-child" :data-id="keyOf(entry.row, entry.index)" :disabled="isRowDisabled(entry.row)"
+                          :title="isRowDisabled(entry.row) ? 'This row is locked' : 'Add ' + (child.title || 'child').replace(/s$/, '').toLowerCase()"
                           :aria-label="'Add ' + (child.title || 'child').replace(/s$/, '').toLowerCase() + ' to ' + (getIn(entry.row, labelKey) || 'this row')"
-                          class="grid h-7 w-7 place-items-center rounded-md bg-primary-50 text-primary-700 transition hover:bg-primary-100 hover:text-primary-600 dark:bg-primary-500/10 dark:text-primary-300 dark:hover:bg-primary-500/20" @click="addChild(entry.row, entry.index)">
+                          class="grid h-7 w-7 place-items-center rounded-md bg-primary-50 text-primary-700 transition hover:bg-primary-100 hover:text-primary-600 disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-40 dark:bg-primary-500/10 dark:text-primary-300 dark:hover:bg-primary-500/20" @click="addChild(entry.row, entry.index)">
                           <i class="bi bi-plus-lg text-[11px]"></i>
                         </button>
                       </td>
-                      <td v-if="rowNumbers" class="dt-cell text-center text-xs font-medium text-slate-500 dark:text-slate-400 tabular-nums">
-                        {{ (page - 1) * size + entry.index + 1 }}
-                      </td>
                       <td v-if="selectable" class="dt-cell text-center">
-                        <input type="checkbox" class="dt-check h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500" data-action="select-row" :data-id="keyOf(entry.row, entry.index)"
-                          :checked="selected.includes(keyOf(entry.row, entry.index))" aria-label="Select row" @click="toggleRow(keyOf(entry.row, entry.index), $event)">
+                        <input type="checkbox" class="dt-check h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-40" data-action="select-row" :data-id="keyOf(entry.row, entry.index)"
+                          :checked="!isRowDisabled(entry.row) && selected.includes(keyOf(entry.row, entry.index))" :disabled="isRowDisabled(entry.row)" :aria-label="isRowDisabled(entry.row) ? 'Posted row cannot be selected' : 'Select row'" @click="toggleRow(keyOf(entry.row, entry.index), $event)">
                       </td>
                       <td v-for="c in visibleCols" :key="c.key" class="dt-cell text-sm text-slate-700 dark:text-slate-300" :class="[alignClass(c), typeOf(c).wrap ? 'whitespace-normal' : '']">
                         <component v-if="c.component" :is="c.component" :value="getIn(entry.row, c.key)" :row="entry.row" :column="c" :grid="gridApi" :search="search" />
@@ -1351,10 +1404,10 @@
                       </td>
                       <td v-if="showActionsColumn" class="dt-cell">
                         <div class="flex items-center justify-end gap-0.5">
-                          <button v-if="canEdit" data-action="edit" :data-id="keyOf(entry.row, entry.index)" title="Edit" @click="openForm('update', entry.row)"
-                            class="grid h-7 w-7 place-items-center rounded-md text-slate-400 transition hover:bg-primary-50 hover:text-primary-600 hover:shadow-sm dark:hover:bg-primary-500/10 dark:hover:text-primary-300"><i class="bi bi-pencil-square text-[13px]"></i></button>
-                          <button v-if="canDelete" data-action="delete" :data-id="keyOf(entry.row, entry.index)" title="Delete" @click="removeRows([entry.row])"
-                            class="grid h-7 w-7 place-items-center rounded-md text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 hover:shadow-sm dark:hover:bg-rose-500/10 dark:hover:text-rose-400"><i class="bi bi-trash3 text-[13px]"></i></button>
+                          <button v-if="canEdit" data-action="edit" :data-id="keyOf(entry.row, entry.index)" :title="isRowDisabled(entry.row) ? 'View read-only record' : 'Edit'" @click="openForm('update', entry.row)"
+                            class="grid h-7 w-7 place-items-center rounded-md text-slate-400 transition hover:bg-primary-50 hover:text-primary-600 hover:shadow-sm dark:hover:bg-primary-500/10 dark:hover:text-primary-300"><i class="bi text-[13px]" :class="isRowDisabled(entry.row) ? 'bi-eye' : 'bi-pencil-square'"></i></button>
+                          <button v-if="canDelete" data-action="delete" :data-id="keyOf(entry.row, entry.index)" :title="isRowDisabled(entry.row) ? 'This row is locked' : 'Delete'" :disabled="isRowDisabled(entry.row)" @click="removeRows([entry.row])"
+                            class="grid h-7 w-7 place-items-center rounded-md text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 hover:shadow-sm disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-40 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"><i class="bi bi-trash3 text-[13px]"></i></button>
                         </div>
                       </td>
                     </tr>
@@ -1366,11 +1419,11 @@
                           <div class="px-3 pb-4 pt-3 sm:px-5" :data-child-mount="keyOf(entry.row, entry.index)">
                             <data-grid v-if="hasChildSchema"
                               :columns="child.columns" :data="rowChildren(entry.row)" :child="child.child || null"
-                              :row-id="rowId" :label-key="labelKey" :level="level + 1"
+                              :row-id="rowId" :label-key="labelKey" :level="level + 1" :parent-row="entry.row"
                               :initial-state="childInitial(keyOf(entry.row, entry.index))"
                               :selectable="selectable" :actions="actions" :searchable="true" :filter-row="false"
                               :resizable="resizable" :aggregates="rowChildren(entry.row).length > 4" :expand-all="true"
-                              :add-button="canAdd" :edit-button="canEdit" :delete-button="canDelete"
+                              :add-button="canAdd && !isRowDisabled(entry.row)" :edit-button="canEdit && !isRowDisabled(entry.row)" :delete-button="canDelete && !isRowDisabled(entry.row)"
                               :column-toggle="false" :density-toggle="false" :export-menu="false" :refresh-button="false"
                               :page-size="5" :page-sizes="[5, 10, 25]"
                               max-height="none" :skeleton-rows="3"
@@ -1383,6 +1436,7 @@
                               empty-icon="bi-diagram-3"
                               :auto-add="childAddRequest === keyOf(entry.row, entry.index)"
                               :parent-label="'Adding under ' + (getIn(entry.row, labelKey) || keyOf(entry.row, entry.index))" :theme="theme"
+                              :bordered="bordered" :striped="useStripes" :stripe-color="stripeColor" :stripe-dark-color="stripeDarkColor"
                               @add-consumed="onChildAddConsumed"
                               @ui="onChildUi(keyOf(entry.row, entry.index), $event)"
                               @change="$emit('change', { reason:'nested', grid:$event.grid, payload:$event })"
@@ -1397,7 +1451,6 @@
 
                   <tr v-if="groupHeader && group.isComplete && groupHasTotals(group)" class="dt-group-total border-b border-slate-200 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200" :data-group-total="group.key">
                     <td v-if="showExpander"></td>
-                    <td v-if="rowNumbers"></td>
                     <td v-if="selectable"></td>
                     <td v-for="(c, index) in visibleCols" :key="c.key" class="dt-cell tabular-nums" :class="alignClass(c)">
                       <span v-if="index === 0" class="mr-2 text-[10px] uppercase tracking-wide text-primary-700 dark:text-primary-300">Group total</span>
@@ -1413,7 +1466,6 @@
           <tfoot v-if="footer && !isLoading">
             <tr class="dt-theme-footer border-t-2 border-slate-200 text-xs font-medium text-slate-600 dark:border-slate-700 dark:text-slate-300">
               <td v-if="showExpander"></td>
-              <td v-if="rowNumbers"></td>
               <td v-if="selectable"></td>
               <td v-for="(c, idx) in visibleCols" :key="c.key" class="tabular-nums" :class="alignClass(c)">
                 <span v-if="idx === 0" class="inline-flex items-center gap-1.5 whitespace-nowrap text-[10px] uppercase tracking-wide text-primary-700 dark:text-primary-300">
@@ -1431,7 +1483,7 @@
         @update:page="page = $event" @update:pageSize="size = $event" />
 
       <data-grid-form v-if="form.open" :columns="editableCols" :row="form.row" :mode="form.mode" :item-label="itemLabel"
-        :parent-label="form.parentLabel" :theme="theme" @submit="submitForm" @close="closeForm" />
+        :parent-label="form.parentLabel" :parent-row="parentRow" :theme="theme" :row-disabled="rowDisabled" @submit="submitForm" @close="closeForm" />
     </section>`
     };
 

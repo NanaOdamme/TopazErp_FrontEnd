@@ -1,0 +1,70 @@
+[
+  {
+    "id": "a1f82c4e-7d91-4b36-9a52-1e6c8f3d2057",
+    "name": "School Bus"
+  },
+  {
+    "id": "b2e93d5f-8a02-4c47-ab63-2f7d9a4e3168",
+    "name": "Mini Bus"
+  },
+  {
+    "id": "c3fa4e60-9b13-4d58-bc74-3a8e0b5f4279",
+    "name": "Coaster Bus"
+  },
+  {
+    "id": "d40b5f71-ac24-4e69-8d85-4b9f1c605380",
+    "name": "Van"
+  },
+  {
+    "id": "e51c6082-bd35-4f7a-9e96-5ca02d716491",
+    "name": "Private Vehicle"
+  },
+  {
+    "id": "f62d7193-ce46-408b-af07-6db13e8275a2",
+    "name": "Walking"
+  },
+  {
+    "id": "a1738294-df57-419c-8018-7ec24f9386b3",
+    "name": "Car"
+  },
+  {
+    "id": "b28493a5-e068-42ad-9129-8fd350a497c4",
+    "name": "Taxi"
+  },
+  {
+    "id": "c395a4b6-f179-43be-a23a-90e461b5a8d5",
+    "name": "Ride-Hailing Vehicle"
+  },
+  {
+    "id": "d4a6b5c7-028a-44cf-b34b-a1f572c6b9e6",
+    "name": "Motorcycle"
+  },
+  {
+    "id": "e5b7c6d8-139b-45d0-84c2-b20683d7ca17",
+    "name": "Bicycle"
+  },
+  {
+    "id": "f6c8d7e9-24ac-46e1-95d3-c31794e8db28",
+    "name": "Tricycle"
+  },
+  {
+    "id": "a7d9e8f0-35bd-4702-a6e4-d428a5f9ec39",
+    "name": "Pickup Truck"
+  },
+  {
+    "id": "b8eaf901-46ce-4813-b7f5-e539b60afd40",
+    "name": "SUV"
+  },
+  {
+    "id": "c9fb0123-57df-4924-80a6-f64ac71b0e51",
+    "name": "Truck"
+  },
+  {
+    "id": "da0c1234-68e0-4a35-91b7-075bd82c1f62",
+    "name": "Motorized School Rickshaw"
+  },
+  {
+    "id": "eb1d2345-79f1-4b46-a2c8-186ce93d2073",
+    "name": "Other"
+  }
+]

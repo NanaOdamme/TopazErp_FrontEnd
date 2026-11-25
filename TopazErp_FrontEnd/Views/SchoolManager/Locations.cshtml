@@ -1,0 +1,46 @@
+@{
+    ViewBag.Title = "Locations";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>School Manager - Main Setups</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">Locations</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="page-title">
+                <h2 class="text-lg font-semibold text-gray-800">
+                    Locations
+                </h2>
+            </div>
+        </div>
+    </div>
+    <div class="card" data-card-title="Locations">
+        <div id="app">
+            <data-grid
+                title="Locations"
+                :columns="locationColumns"
+                :data="locationList"
+                :theme="theme"
+                row-id="id"
+                label-key="name"
+                item-label="Location"
+                item-label-plural="Locations"
+                add-label="Add Location"
+                :page-size="10"
+                :selectable="true"
+                :actions="true"
+                :loading="isShimmerLoading"
+                :stripes="true"
+                density="compact"
+                @@create="onCreateLocation"
+                @@update="onUpdateLocation"
+                @@delete="onDeleteLocation"
+            ></data-grid>
+        </div>
+    </div>
+</div>
+<script src="~/js/school-manager/healths-locations-houses.js" asp-append-version="true"></script>

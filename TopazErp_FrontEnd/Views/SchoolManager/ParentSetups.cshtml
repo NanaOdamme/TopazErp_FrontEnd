@@ -1,0 +1,443 @@
+@{
+    ViewBag.Title = "Legal Guardians / Parents";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2 dark:text-gray-400">
+            <span>School Manager - Data Entries</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium dark:text-blue-400">Legal Guardians / Parents</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="page-title">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-white">
+                    Legal Guardians / Parents & Student Relationships
+                </h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" data-card-title="Legal Guardians / Parents">
+        <div id="app" style="height: 1200px;">
+        
+            <!-- TABS -->
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-5 border-b border-gray-200 dark:border-slate-700">
+                <div class="flex items-center gap-1" role="tablist" aria-label="Legal guardians sections">
+                    <button type="button"
+                            role="tab"
+                            :aria-selected="activeTab === 'student'"
+                            :class="activeTab === 'student'
+                                ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500'
+                                : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'"
+                            class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors"
+                            @@click="activeTab = 'student'">
+                    
+                        <span>By Student</span>
+                    </button>
+                    <button type="button"
+                            role="tab"
+                            :aria-selected="activeTab === 'all'"
+                            :class="activeTab === 'all'
+                                ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500'
+                                : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400'"
+                            class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors"
+                            @@click="activeTab = 'all'">
+                      
+                        <span>All Student Relations</span>
+                        <span v-if="setupDone" class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-800 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200">{{ contacts.length }}</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- initial shimmer -->
+            <div v-if="!setupDone" class="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500">
+                <i class="bi bi-arrow-repeat animate-spin text-2xl mb-3"></i>
+                <p class="text-sm">Loading students and contacts…</p>
+            </div>
+            <template v-else>
+                <!-- ============ TAB 1 — BY STUDENT ============ -->
+                <section v-show="activeTab === 'student'" role="tabpanel">
+
+                    <!-- scope -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                        <w-select v-model="classId"
+                                  :options="classes"
+                                  display-key="name"
+                                  value-key="id"
+                                  label="Class:"
+                                  required>
+                        </w-select>
+                    </div>
+
+                    <template v-if="scopeReady">
+                        <!-- summary + filters -->
+                        <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3 mb-4">
+                            <div class="flex flex-wrap items-center gap-2 text-[11px] font-semibold">
+                                <span class="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-zinc-50 px-3 py-1 text-zinc-800 dark:bg-zinc-900/30 dark:border-blue-800 dark:text-zinc-300">
+                                    <i class="bi bi-people-fill"></i>{{ withContactsInClass }} of {{ studentsInClass.length }} students have at least one contact
+                                </span>
+                                <span v-if="studentsWithoutContacts" class="inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-green-800 dark:bg-green-900/20 dark:border-amber-800 dark:text-green-300">
+                                    <i class="bi bi-exclamation-circle"></i>{{ studentsWithoutContacts }} still need one
+                                </span>
+                            </div>
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                                
+                                <div class="relative">
+                                    <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                                    <input type="text"
+                                           class="input-control w-full sm:w-52"
+                                           style="padding-left:2rem"
+                                           placeholder="Search students…"
+                                           v-model="studentFilter" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- student cards -->
+                        <div class="space-y-3">
+                            <div v-for="student in filteredStudents"
+                                 :key="student.id"
+                                 class="rounded-xl dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden">
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-b border-gray-100 dark:border-slate-700 bg-zinc-50 dark:bg-slate-800">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-[12px] font-bold text-blue-900 dark:bg-slate-700 dark:text-gray-100">
+                                            {{ student.name.trim().charAt(0).toUpperCase() || '?' }}
+                                        </span>
+                                        <div class="min-w-0">
+                                            <p class="text-sm font-semibold text-gray-800 dark:text-white truncate">{{ student.name }}</p>
+                                            <p class="text-[11px] text-gray-400 dark:text-gray-500 truncate">
+                                                {{ nameOf(classes, classId) }}<span v-if="student.identifier"> · {{ student.identifier }}</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <span class="inline-flex items-center whitespace-nowrap rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-800 dark:bg-slate-700 dark:border-slate-600 dark:text-gray-200">
+                                            {{ contactsFor(student.id).length }} contact{{ contactsFor(student.id).length === 1 ? '' : 's' }}
+                                        </span>
+                                        <button type="button"
+                                                class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-blue-800 bg-blue-900 px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-blue-800"
+                                                @@click="openAddModal(student.id)">
+                                            <i class="bi bi-plus-lg"></i> Add contact
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div v-if="contactsFor(student.id).length" class="divide-y divide-gray-100 dark:divide-slate-700">
+                                    <div v-for="c in contactsFor(student.id)"
+                                         :key="(c.id || '') + (c.legalGuardianId || '')"
+                                         class="flex flex-col lg:flex-row lg:items-center gap-3 px-4 py-3">
+                                        <!-- identity -->
+                                        <div class="flex items-center gap-3 min-w-0 lg:w-72 shrink-0">
+                                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
+                                                  :class="c.isLegalGuardian
+                                                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+                                                      : 'bg-blue-100 text-blue-900 dark:bg-slate-700 dark:text-gray-100'">
+                                                {{ initialsOf(c) }}
+                                            </span>
+                                            <div class="min-w-0">
+                                                <p class="text-[13px] font-semibold text-gray-800 dark:text-white flex items-center gap-1.5 flex-wrap">
+                                                    <span class="truncate">{{ displayName(c) }}</span>
+                                                    <span v-if="c.isLegalGuardian" class="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-800 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-300">
+                                                        <i class="bi bi-shield-check"></i>Legal Guardian
+                                                    </span>
+                                                </p>
+                                                <p class="text-[11px] text-gray-400 dark:text-gray-500 truncate">{{ c.relationshipName || '—' }}</p>
+                                            </div>
+                                        </div>
+
+                                        <!-- contact details -->
+                                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-gray-600 dark:text-gray-300 min-w-0 flex-1">
+                                            <span v-if="c.phoneNumber" class="inline-flex items-center gap-1.5 whitespace-nowrap"><i class="bi bi-telephone text-gray-400 dark:text-gray-500"></i><a :href="'tel:' + c.phoneNumber" class="hover:underline">{{ c.phoneNumber }}</a></span>
+                                            <span v-if="c.contactNumber" class="inline-flex items-center gap-1.5 whitespace-nowrap"><i class="bi bi-phone text-gray-400 dark:text-gray-500"></i><a :href="'tel:' + c.contactNumber" class="hover:underline">{{ c.contactNumber }}</a></span>
+                                            <span v-if="c.email" class="inline-flex items-center gap-1.5 min-w-0"><i class="bi bi-envelope text-gray-400 dark:text-gray-500"></i><a :href="'mailto:' + c.email" class="truncate hover:underline">{{ c.email }}</a></span>
+                                            <span v-if="c.placeOfWork" class="inline-flex items-center gap-1.5 min-w-0"><i class="bi bi-briefcase text-gray-400 dark:text-gray-500"></i><span class="truncate">{{ c.placeOfWork }}<span v-if="c.workPhone"> · {{ c.workPhone }}</span></span></span>
+                                        </div>
+
+                                        <!-- actions -->
+                                        <div class="flex items-center gap-1.5 shrink-0 lg:w-20 lg:justify-end">
+                                            <button type="button"
+                                                    class="p-2 rounded-lg border border-gray-200 dark:border-slate-600 text-gray-500 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 transition dark:text-gray-400 dark:hover:text-blue-400 dark:hover:border-blue-500"
+                                                    title="Edit contact"
+                                                    @@click="openEditModal(c)">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button type="button"
+                                                    class="p-2 rounded-lg border border-gray-200 dark:border-slate-600 text-gray-500 hover:text-red-600 hover:border-red-300 hover:bg-red-50 transition dark:text-gray-400 dark:hover:text-red-400"
+                                                    title="Delete contact"
+                                                    @@click="deleteContact(c)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p v-else class="px-4 py-4 text-center text-xs text-gray-400 dark:text-gray-500">
+                                    No contacts yet — use <span class="font-semibold">Add contact</span> to link this student's parent or guardian.
+                                </p>
+                            </div>
+
+                            <p v-if="filteredStudents.length === 0" class="py-10 text-center text-sm text-gray-400 dark:text-gray-500">
+                                <i class="bi bi-search block text-xl mb-2"></i>
+                                <template v-if="studentFilter">No students match “{{ studentFilter }}”.</template>
+                                <template v-else>No students to show. Tick off “Only students with contacts” to see everyone in this class.</template>
+                            </p>
+                        </div>
+                    </template>
+
+                    <div v-else class="py-14 text-center text-gray-400 dark:text-gray-500">
+                        <i class="bi bi-arrow-up-circle block text-2xl mb-2"></i>
+                        <p class="text-sm">Pick a class to manage student relations.</p>
+                    </div>
+                </section>
+
+                <!-- ============ TAB 2 — ALL CONTACTS ============ -->
+                <section v-show="activeTab === 'all'" role="tabpanel">
+                    <!-- toolbar -->
+                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-3 mb-4">
+                            <w-select v-model="allClassId"
+                                      :options="classes"
+                                      display-key="name"
+                                      value-key="id"
+                                      label="Filter class:">
+                            </w-select>
+                    </div>
+                    <div class="flex justify-between gap-2 mb-4">   
+                    <a 
+                            class="cursor-pointer inline-flex items-center gap-2 whitespace-nowrap  text-green-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:text-green-800"
+                            @@click="openAddModal('')">
+                        <i class="bi bi-person-plus"></i> Add New
+                    </a>
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">   
+                        <div class="relative">
+                            <i class="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                            <input type="text"
+                                   class="input-control w-full"
+                                   style="padding-left:2rem"
+                                   placeholder="Search name, phone, email, student, workplace…"
+                                   v-model="allSearch" />
+                        </div>
+                    </div>
+                    </div>
+                    <div class="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-sm divide-y divide-gray-100 dark:divide-slate-700">
+                                <thead class="bg-gray-100/70 dark:bg-slate-900/40">
+                                    <tr class="text-left text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                        <th class="px-4 py-2.5 font-semibold">Student</th>
+                                        <th class="px-4 py-2.5 font-semibold">Contact</th>
+                                        <th class="px-4 py-2.5 font-semibold">Relationship</th>
+                                        <th class="px-4 py-2.5 font-semibold">Phone</th>
+                                        <th class="px-4 py-2.5 font-semibold">Email</th>
+                                        <th class="px-4 py-2.5 font-semibold">Workplace</th>
+                                        <th class="px-4 py-2.5 font-semibold w-24 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
+                                    <tr v-for="c in pagedAll"
+                                        :key="(c.id || '') + (c.legalGuardianId || '')"
+                                        class="hover:bg-blue-50/40 dark:hover:bg-slate-700/40 transition-colors">
+                                        <td class="px-4 py-2.5 text-gray-700 dark:text-gray-200">
+                                            <p class="font-medium truncate max-w-[10rem]">{{ c.studentName || '—' }}</p>
+                                            <p v-if="classIdOfStudent(c.studentId)" class="text-[10px] text-gray-400 dark:text-gray-500 truncate">{{ nameOf(classes, classIdOfStudent(c.studentId)) }}</p>
+                                        </td>
+                                        <td class="px-4 py-2.5">
+                                            <div class="flex items-center gap-2">
+                                                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-bold"
+                                                      :class="c.isLegalGuardian
+                                                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+                                                          : 'bg-blue-100 text-blue-900 dark:bg-slate-700 dark:text-gray-100'">
+                                                    {{ initialsOf(c) }}
+                                                </span>
+                                                <div class="min-w-0">
+                                                    <p class="font-medium text-gray-800 dark:text-white truncate max-w-[12rem] flex items-center gap-1.5">
+                                                        {{ displayName(c) }}
+                                                        <i v-if="c.isLegalGuardian" class="bi bi-shield-check text-emerald-600 dark:text-emerald-400" title="Legal guardian"></i>
+                                                    </p>
+                                                    <p class="text-[10px] text-gray-400 dark:text-gray-500 truncate">{{ [c.titleName, c.otherNames ? '…' + c.otherNames : ''].filter(Boolean).join(' ') }}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-2.5 text-gray-600 dark:text-gray-300 whitespace-nowrap">{{ c.relationshipName || '—' }}</td>
+                                        <td class="px-4 py-2.5 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                                            <p>{{ c.phoneNumber || '—' }}</p>
+                                            <p v-if="c.contactNumber" class="text-[10px] text-gray-400">{{ c.contactNumber }}</p>
+                                        </td>
+                                        <td class="px-4 py-2.5 text-gray-600 dark:text-gray-300"><span class="truncate block max-w-[12rem]">{{ c.email || '—' }}</span></td>
+                                        <td class="px-4 py-2.5 text-gray-600 dark:text-gray-300"><span class="truncate block max-w-[12rem]">{{ c.placeOfWork || '—' }}</span></td>
+                                        <td class="px-4 py-2.5">
+                                            <div class="flex items-center justify-end gap-1.5">
+                                                <button type="button"
+                                                        class="p-2 rounded-lg border border-gray-200 dark:border-slate-600 text-gray-500 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50 transition dark:text-gray-400 dark:hover:text-blue-400"
+                                                        title="Edit contact"
+                                                        @@click="openEditModal(c)">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button type="button"
+                                                        class="p-2 rounded-lg border border-gray-200 dark:border-slate-600 text-gray-500 hover:text-red-600 hover:border-red-300 hover:bg-red-50 transition dark:text-gray-400 dark:hover:text-red-400"
+                                                        title="Delete contact"
+                                                        @@click="deleteContact(c)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="pagedAll.length === 0">
+                                        <td colspan="7" class="px-4 py-10 text-center text-sm text-gray-400 dark:text-gray-500">
+                                            <i class="bi bi-inbox block text-2xl mb-2"></i>
+                                            No contacts found<template v-if="allSearch || allClassId"> for this filter</template>.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- pagination -->
+                        <div class="flex items-center justify-between gap-3 border-t border-gray-200 dark:border-slate-700 px-4 py-2.5 text-[12px] text-gray-500 dark:text-gray-400">
+                            <span>Showing {{ allShowingFrom }}–{{ allShowingTo }} of {{ filteredAll.length }}</span>
+                            <div class="flex items-center gap-1">
+                                <button type="button"
+                                        class="p-1.5 rounded-md border border-gray-200 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        :disabled="clampedAllPage === 1"
+                                        @@click="setAllPage(clampedAllPage - 1)"
+                                        aria-label="Previous page">
+                                    <i class="bi bi-chevron-left"></i>
+                                </button>
+                                <button v-for="p in allPageNumbers"
+                                        :key="p"
+                                        type="button"
+                                        class="min-w-[2rem] h-8 px-2 rounded-md border text-[12px] font-semibold transition"
+                                        :class="p === clampedAllPage
+                                            ? 'border-blue-700 bg-blue-900 text-white'
+                                            : 'border-gray-200 dark:border-slate-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'"
+                                        :disabled="p === '…'"
+                                        @@click="setAllPage(p)">{{ p }}</button>
+                                <button type="button"
+                                        class="p-1.5 rounded-md border border-gray-200 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        :disabled="clampedAllPage === allTotalPages"
+                                        @@click="setAllPage(clampedAllPage + 1)"
+                                        aria-label="Next page">
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </template>
+
+            <!-- ============ MODAL — ADD / EDIT CONTACT ============ -->
+            <div v-if="modalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px]" @@click="closeModal"></div>
+                <div class="relative w-full max-w-2xl rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xl max-h-[92vh] overflow-y-auto">
+                    <div class="flex items-center justify-between gap-3 border-b border-gray-100 dark:border-slate-700 px-5 py-4">
+                        <div>
+                            <h3 class="text-base font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                                <i class="bi" :class="editingId ? 'bi-pencil-square text-blue-600 dark:text-blue-400' : 'bi-person-plus text-blue-600 dark:text-blue-400'"></i>
+                                {{ editingId ? 'Edit Contact' : 'Add Contact' }}
+                            </h3>
+                            <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">A parent, guardian or emergency contact for a student.</p>
+                        </div>
+                        <button type="button"
+                                class="p-2 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-slate-700"
+                                @@click="closeModal"
+                                aria-label="Close">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+
+                    <div class="px-5 py-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2">
+                            <w-select v-model="draft.studentId"
+                                      :options="studentOptions"
+                                      display-key="label"
+                                      value-key="id"
+                                      label="Student:"
+                                      required>
+                            </w-select>
+                        </div>
+
+                        <w-select v-model="draft.titleId"
+                                  :options="titles"
+                                  display-key="name"
+                                  value-key="id"
+                                  label="Title:"
+                                  required>
+                        </w-select>
+
+                        <w-select v-model="draft.relationshipId"
+                                  :options="relationships"
+                                  display-key="name"
+                                  value-key="id"
+                                  label="Relationship:"
+                                  required>
+                        </w-select>
+
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1.5">First Name <span class="text-red-500">*</span></label>
+                            <input type="text" class="input-control w-full" placeholder="e.g. Akosua" v-model="draft.firstName" />
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Last Name <span class="text-red-500">*</span></label>
+                            <input type="text" class="input-control w-full" placeholder="e.g. Mensah" v-model="draft.lastName" />
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Other Names</label>
+                            <input type="text" class="input-control w-full" placeholder="Middle names (optional)" v-model="draft.otherNames" />
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Phone Number</label>
+                            <input type="tel" class="input-control w-full" placeholder="e.g. 024 000 0000" v-model="draft.phoneNumber" />
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Contact Number</label>
+                            <input type="tel" class="input-control w-full" placeholder="Alternative / emergency number" v-model="draft.contactNumber" />
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Email</label>
+                            <input type="email" class="input-control w-full" placeholder="name@example.com" v-model="draft.email" />
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Place of Work</label>
+                            <input type="text" class="input-control w-full" placeholder="e.g. Korle Bu Teaching Hospital" v-model="draft.placeOfWork" />
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Work Phone</label>
+                            <input type="tel" class="input-control w-full" placeholder="Office line (optional)" v-model="draft.workPhone" />
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="flex items-start gap-3 rounded-xl border px-4 py-3 cursor-pointer select-none transition"
+                                   :class="draft.isLegalGuardian
+                                       ? 'border-emerald-500 bg-emerald-50/60 dark:bg-emerald-900/20 dark:border-emerald-700'
+                                       : 'border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800'">
+                                <input type="checkbox" class="input-control mt-0.5" v-model="draft.isLegalGuardian" />
+                                <span>
+                                    <span class="block text-[13px] font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-1.5"><i class="bi bi-shield-check" :class="draft.isLegalGuardian ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400'"></i>Is Legal Guardian</span>
+                                    <span class="block text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">Tick for the person legally responsible for this student (consent, pickup authorisation, emergencies).</span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 border-t border-gray-100 dark:border-slate-700 px-5 py-4">
+                        <button type="button"
+                                class="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition dark:border-slate-600 dark:bg-slate-800 dark:text-gray-200 dark:hover:bg-slate-700"
+                                @@click="closeModal">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </button>
+                        <button type="button"
+                                class="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-blue-800 bg-blue-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+                                :disabled="saving"
+                                @@click="saveContact">
+                            <i class="bi" :class="saving ? 'bi-arrow-repeat animate-spin' : 'bi-check2-circle'"></i>
+                            {{ saving ? 'Saving…' : (editingId ? 'Update Contact' : 'Add Contact') }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="~/js/school-manager/parents.js"></script>

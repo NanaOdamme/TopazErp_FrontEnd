@@ -9,7 +9,7 @@
     line-height: 1.25rem;
     color: #000000;
     background-color: #ffffff;
-
+    font-weight:normal;
     border: 1px solid #cbd5e1 !important;
     border-radius: 0.5rem !important;
 
@@ -54,7 +54,7 @@
     line-height: 1.25rem;
     color: #000000;
     background-color: #f8fafc;
-
+    font-weight:normal;
     border: 1px solid #cbd5e1 !important;
     border-radius: 0.5rem !important;
 

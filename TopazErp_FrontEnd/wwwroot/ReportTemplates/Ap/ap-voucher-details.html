@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>AP Payment Voucher</title>
+
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 10mm;
+        }
+
+        .report-sheet {
+            font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+            color: #1f2937;
+            padding: 28px 32px 24px;
+            box-sizing: border-box;
+            background: #ffffff;
+        }
+
+        /* ---------- repeating header ---------- */
+        .report-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            border-bottom: 3px solid #1f1f1f;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+
+        .report-header .logo {
+            width: 120px;
+            max-height: 72px;
+            object-fit: contain;
+            flex: 0 0 auto;
+        }
+
+        .report-header .header-center {
+            flex: 1;
+        }
+
+        .report-header .company-name {
+            font-size: 22px;
+            font-weight: 700;
+            color: #010203;
+            letter-spacing: .2px;
+            margin: 0 0 4px;
+        }
+
+        .report-header .company-meta {
+            font-size: 12px;
+            color: #070606;
+            line-height: 1.55;
+        }
+
+        /* ---------- report title bar ---------- */
+        .report-meta-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 16px;
+            margin-bottom: 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #d1d5db;
+        }
+
+        .title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #000000;
+            letter-spacing: .4px;
+            text-transform: uppercase;
+        }
+
+        .supplier-meta {
+            font-size: 10px;
+            color: #000000;
+            margin-top: 3px;
+        }
+
+        .supplier-meta span:not(:empty) {
+            margin-right: 12px;
+            font-weight: 600;
+        }
+
+        .report-params {
+            text-align: right;
+            font-size: 10px;
+            color: #374151;
+            white-space: nowrap;
+            line-height: 1.6;
+        }
+
+        .report-params .param-value {
+            font-weight: 700;
+            color: #000000;
+        }
+
+        /* ---------- voucher information grid ---------- */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            border: 1px solid #d1d5db;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .info-grid .cell {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 6px 10px;
+            font-size: 10px;
+            border-bottom: 1px solid #eef0f2;
+            background: #fbfbfc;
+        }
+
+        .info-grid .cell:nth-child(odd) {
+            border-right: 1px solid #eef0f2;
+        }
+
+        .info-grid .cell .label {
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: #6b7280;
+            font-weight: 700;
+            padding-top: 1px;
+        }
+
+        .info-grid .cell .value {
+            font-weight: 600;
+            color: #000000;
+            text-align: right;
+            word-break: break-word;
+        }
+        .sumCell{
+            display: flex;
+            justify-content: left;
+            gap: 12px;
+            padding: 6px 10px;
+            font-size: 10px;
+            border-bottom: 1px solid #eef0f2;
+            background: #fbfbfc;
+            margin-bottom: 12px;
+        }
+        .sumCell .label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            color: #6b7280;
+            font-weight: 700;
+            padding-top: 1px;
+        }
+        .sumCell .value {
+            font-weight: 600;
+            color: #000000;
+            text-align: right;
+            word-break: break-word;
+            font-size: 12px;
+        }
+        .text{
+            font-weight: 500;
+            color: #000000;
+            font-size:11px;
+            margin-top: 4px;
+        }
+
+        /* ---------- section ---------- */
+        .section-title {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            color: #000000;
+            margin: 14px 0 6px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #d1d5db;
+        }
+
+        /* ---------- tables ---------- */
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9px;
+            margin-top: 4px;
+        }
+
+        .report-table thead {
+            display: table-header-group;
+        }
+
+        .report-table tr {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        .report-table th {
+            text-align: left;
+            font-weight: 700;
+            padding: 6px 4px;
+            border-bottom: 1.5px solid #6b7280;
+            color: #000000;
+            white-space: nowrap;
+            background-color: #f9fafb;
+        }
+
+        .report-table td {
+            padding: 5px 4px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+            color: #000000;
+        }
+
+        .report-table th.num,
+        .report-table td.num {
+            text-align: right;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .report-table .date {
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .report-table .reference {
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .report-table .currency {
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .report-table .rate {
+            text-align: right;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+            color: #4b5563;
+        }
+
+        /* group rows (only used when the voucher has several lines) */
+        .report-table tr.group-header td {
+            font-weight: 700;
+            font-size: 10px;
+            color: #000000;
+            border-top: 1px solid #d1d5db;
+            border-bottom: 1px solid #d1d5db;
+            padding-top: 6px;
+            padding-bottom: 6px;
+        }
+
+        .report-table tr.group-total td {
+            font-weight: 700;
+            color: #000000;
+            border-top: 1px solid #9ca3af;
+            border-bottom: 2px solid #1f2937;
+            padding-top: 6px;
+            padding-bottom: 6px;
+            white-space: nowrap;
+        }
+
+        /* ---------- totals / tax tables ---------- */
+        .summary-table td {
+            font-size: 10px;
+        }
+
+        .summary-table td.label {
+            color: #000000;
+        }
+
+        .summary-table tr.net-row td {
+            font-weight: 700;
+            font-size: 12px;
+            color: #000000;
+            border-top: 2px solid #1f2937;
+            border-bottom: 2px solid #1f2937;
+            padding-top: 8px;
+            padding-bottom: 8px;
+            background: #f9fafb;
+        }
+
+        /* ---------- signature block ---------- */
+        .signature-block {
+            display: flex;
+            gap: 22px;
+            margin-top: 34px;
+        }
+
+        .signature-block .sign {
+            flex: 1;
+            font-size: 9px;
+            color: #374151;
+        }
+
+        .signature-block .sign .line {
+            border-bottom: 1px solid #6b7280;
+            height: 26px;
+        }
+
+        .signature-block .sign .role {
+            margin-top: 4px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            font-size: 8px;
+            color: #000000;
+        }
+
+        .signature-block .sign .hint {
+            color: #9ca3af;
+            font-size: 8px;
+        }
+
+        /* ---------- footer ---------- */
+        .report-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #d1d5db;
+            margin-top: 18px;
+            padding-top: 10px;
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .footer-date {
+            text-align: left;
+            flex: 1;
+        }
+
+        .footer-brand {
+            text-align: center;
+            flex: 1;
+        }
+
+        .footer-page {
+            text-align: right;
+            flex: 1;
+            font-weight: 600;
+            color: #374151;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="report-sheet">
+
+    <!-- HEADER -->
+    <header class="report-header">
+        <img class="logo" src="{{companyLogo}}" alt="Company Logo"/>
+        <div class="header-center">
+            <p class="company-name">{{companyName}}</p>
+            <div class="company-meta">
+                <div>{{primaryPhoneNo}} | {{address}} | {{email}}</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- TITLE -->
+    <div class="report-meta-bar">
+        <div>
+            <div class="title">{{reportTitle}}</div>
+            <div class="supplier-meta">
+                <span>Voucher #: {{voucherNumber}} | Batch #: {{batchNumber}}</span>
+            </div>
+        </div>
+        <div class="report-params">
+            <div>Voucher Date: <span class="param-value">{{voucherEntryDate}}</span></div>
+            <div>Printed: <span class="param-value">{{CurrentDate}}</span></div>
+        </div>
+    </div>
+
+    <!-- VOUCHER INFORMATION -->
+    <div class="info-grid">
+        <div class="cell">
+            <span class="label">Pay to the order of</span>
+            <span class="value">{{supplierName}}</span>
+        </div>
+        <div class="cell">
+            <span class="label">Account No.</span>
+            <span class="value">{{accountNumber}}</span>
+        </div>
+
+        <div class="cell">
+            <span class="label">Invoice No.</span>
+            <span class="value">{{invoiceNumber}}</span>
+        </div>
+        <div class="cell">
+            <span class="label">Currency</span>
+            <span class="value">{{currencyCode}}</span>
+        </div>
+
+        <div class="cell">
+            <span class="label">Bank</span>
+            <span class="value">{{bankName}}</span>
+        </div>
+        <div class="cell">
+            <span class="label">Mode of Payment</span>
+            <span class="value">{{modeOfPayment}}</span>
+        </div>
+
+        <div class="cell">
+            <span class="label">Cheque No.</span>
+            <span class="value">{{chequeNumber}}</span>
+        </div>
+        <div class="cell">
+            <span class="label">Ref No.</span>
+            <span class="value">{{referenceNumber}}</span>
+        </div>
+        <div class="cell">
+            <span class="label">Payment Date</span>
+            <span class="value">{{paymentDate}}</span>
+        </div>
+        <div class="cell">
+            <span class="label">Cost Center</span>
+            <span class="value">{{ouName}}</span>
+        </div>
+        <div class="cell">
+            <span class="label">Debit G/L No.</span>
+            <span class="value">{{bankAccountName}}</span>
+        </div>
+        <div class="cell">
+            <span class="label">Credit G/L No.</span>
+            <span class="value">{{liabilityAccountName}}</span>
+        </div>
+       
+        
+    </div>
+    <div class="sumCell">
+        <span class="label">The Sum Of:</span>
+        <span class="value">{{amountInWords}}</span>
+    </div>
+    <p class="text">In Settlement Of the following:</p>
+    
+    <table class="report-table">
+        <thead>
+        <tr>
+            <th>Currency</th>
+            <th>Cheque Date</th>
+            <th>Description</th>
+            <th class="num">Withheld ?</th>
+            <th class="num">Withholding Rate</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr data-repeat="rows" class="{{@rowClass}}">
+            <td class="currency">{{@currencyCode}}</td>
+            <td>{{@chequeDate}}</td>
+            <td>{{@description}}</td>
+            <td class="num">{{@isWithHolding}}</td>
+            <td class="num">{{@withHoldingRate}}</td>
+        </tr>
+        </tbody>
+    </table>
+    <!-- PAYMENT SUMMARY -->
+    <div class="section-title">Payment Summary</div>
+
+    <table class="report-table summary-table">
+        <tbody>
+        <tr>
+            <td class="label">Amount</td>
+            <td class="num">{{paymentAmount}}</td>
+        </tr>
+        <tr>
+            <td class="label">Total Inv. Amount</td>
+            <td class="num">{{invoiceAmount}}</td>
+        </tr>
+      
+        <tr>
+            <td class="label">Withheld</td>
+            <td class="num">{{withHeld}}</td>
+        </tr>
+        <tr>
+            <td class="label">VAT</td>
+            <td class="num">{{vatAmount}}</td>
+        </tr>
+        <tr>
+            <td class="label">VAT Withheld</td>
+            <td class="num">{{vatWithHeld}}</td>
+        </tr>
+        <tr class="net-row">
+            <td>Net Amount Paid</td>
+            <td class="num">{{netAmount}}</td>
+        </tr>
+        </tbody>
+    </table>
+    <!-- SIGNATURES -->
+    <div class="signature-block">
+        <div class="sign">
+            <div class="line"></div>
+            <div class="role">Prepared By</div>
+            <div class="hint">Name / Signature / Date</div>
+        </div>
+        <div class="sign">
+            <div class="line"></div>
+            <div class="role">Checked By</div>
+            <div class="hint">Name / Signature / Date</div>
+        </div>
+        <div class="sign">
+            <div class="line"></div>
+            <div class="role">Approved By</div>
+            <div class="hint">Name / Signature / Date</div>
+        </div>
+        <div class="sign">
+            <div class="line"></div>
+            <div class="role">Received By</div>
+            <div class="hint">Name / Signature / Date</div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="report-footer">
+        <div class="footer-date">
+            {{CurrentDate}}
+        </div>
+
+        <div class="footer-brand">
+            Topaz AccountingPro (AP)
+        </div>
+
+        <div class="footer-page">
+            Page {{PageNumber}} of {{PageBreakCount}}
+        </div>
+    </footer>
+
+</div>
+
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a59d9ddfaa599339',t:'MTc5NDU3MTIzMw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a59d9ddfaa599339',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

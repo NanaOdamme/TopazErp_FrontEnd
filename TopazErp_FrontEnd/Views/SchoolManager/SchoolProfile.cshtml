@@ -1,0 +1,834 @@
+@{
+    ViewBag.Title = "School Profile";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+
+<div class="content">
+    <div class="mb-6 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+            <span>School Manager - Main Setups</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium">School Profile</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="page-title">
+                <h2 class="text-lg font-semibold text-gray-800">
+                    School Profile
+                </h2>
+            </div>
+        </div>
+    </div>
+
+    <div id="app" class="space-y-6">
+
+        <!-- ============================================================
+             PROFILE HEADER (logo + identity + save)
+             ============================================================ -->
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+
+            <div class="relative h-24 w-full sm:h-28"
+                 style="background: linear-gradient(120deg, #1e3a8a 0%, #1d4ed8 55%, #2563eb 100%);">
+                <svg class="h-full w-full opacity-20" viewBox="0 0 800 160" preserveAspectRatio="none" aria-hidden="true">
+                    <defs>
+                        <pattern id="schoolHeaderDots" width="26" height="26" patternUnits="userSpaceOnUse">
+                            <circle cx="2" cy="2" r="1.6" fill="#ffffff"></circle>
+                        </pattern>
+                    </defs>
+                    <rect width="800" height="160" fill="url(#schoolHeaderDots)"></rect>
+                    <circle cx="660" cy="20" r="110" fill="#ffffff" opacity="0.10"></circle>
+                    <circle cx="120" cy="150" r="80" fill="#ffffff" opacity="0.08"></circle>
+                </svg>
+            </div>
+
+            <div class="px-5 pb-5 sm:px-8">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+
+                    <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+                        <div class="relative z-10 -mt-10 shrink-0 sm:-mt-12">
+                            <img v-if="logoPreview"
+                                 :src="logoPreview"
+                                 alt="School logo"
+                                 class="h-28 w-28 rounded-full bg-white object-contain p-1.5 ring-4 ring-white shadow-lg sm:h-32 sm:w-32" />
+
+                            <div v-else
+                                 class="flex h-28 w-28 items-center justify-center rounded-full bg-white ring-4 ring-white shadow-lg sm:h-32 sm:w-32">
+                                <div class="flex h-full w-full items-center justify-center rounded-full bg-blue-50 text-blue-700">
+                                    <i class="bi bi-mortarboard text-4xl"></i>
+                                </div>
+                            </div>
+
+                            <button v-if="logoPreview"
+                                    type="button"
+                                    @@click="removeLogo"
+                                    title="Remove logo"
+                                    class="absolute bottom-1 right-1 flex h-8 w-8 items-center justify-center rounded-full bg-rose-500 text-white shadow-md ring-2 ring-white hover:bg-rose-600">
+                                <i class="bi bi-x text-sm"></i>
+                            </button>
+
+                            <button v-else
+                                    type="button"
+                                    @@click="showUpload('logoInput')"
+                                    title="Upload logo"
+                                    class="absolute bottom-1 right-1 flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white shadow-md ring-2 ring-white hover:bg-blue-700">
+                                <i class="bi bi-plus text-sm"></i>
+                            </button>
+
+                            <input type="file" ref="logoInput" class="hidden" @@change="onLogoChange" accept="image/*" />
+                        </div>
+
+                        <div class="min-w-0 pb-1 sm:pb-2 sm:pt-3">
+                            <h1 class="break-words text-xl font-bold text-slate-900 dark:text-white sm:text-2xl">
+                                {{ schoolName || 'School Profile' }}
+                            </h1>
+                            <p v-if="profileSubtitle" class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                                {{ profileSubtitle }}
+                            </p>
+
+                            <div class="mt-2 flex flex-wrap items-center gap-2">
+                                <span class="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                                    <i class="bi bi-envelope"></i>
+                                    {{ email || 'No email set' }}
+                                </span>
+                                <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                                    <i class="bi bi-telephone"></i>
+                                    {{ phoneNo || 'No phone set' }}
+                                </span>
+                                <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold"
+                                      :class="isSaved ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">
+                                    <i class="bi bi-patch-check"></i>
+                                    {{ isSaved ? 'Profile saved' : 'Not saved yet' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2 pb-1">
+                        <button type="button"
+                                @@click="showUpload('logoInput')"
+                                class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+                            <i class="bi bi-upload"></i>
+                            Logo
+                        </button>
+
+                        <button type="button"
+                                @@click="resetForm"
+                                :disabled="isLoading"
+                                class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-60">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                            Reload
+                        </button>
+
+                        <button type="button"
+                                @@click="saveProfile"
+                                :disabled="isLoading"
+                                class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60">
+                            <i v-if="isLoading" class="la la-circle-o-notch animate-spin text-base"></i>
+                            <i v-else class="bi bi-check-lg"></i>
+                            {{ isLoading ? 'Saving...' : 'Save Profile' }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stat strip -->
+                <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/40">
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Academic year</p>
+                        <p class="mt-1 truncate text-sm font-bold text-slate-900 dark:text-white">{{ academicYearLabel }}</p>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/40">
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Current term</p>
+                        <p class="mt-1 truncate text-sm font-bold text-slate-900 dark:text-white">{{ termLabel }}</p>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/40">
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Currency</p>
+                        <p class="mt-1 truncate text-sm font-bold text-slate-900 dark:text-white">{{ currencyName }}</p>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/40">
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Country</p>
+                        <p class="mt-1 truncate text-sm font-bold text-slate-900 dark:text-white">{{ countryLabel }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             TABS
+             ============================================================ -->
+        <div class="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <nav class="flex gap-2 overflow-x-auto" aria-label="School profile tabs">
+                <button type="button"
+                        @@click="activeTab = 'school'"
+                        :class="activeTab === 'school'
+                            ? 'bg-slate-800 text-white shadow-sm'
+                            : 'text-slate-600 hover:bg-slate-100'"
+                        role="tab"
+                        :aria-selected="activeTab === 'school'"
+                        class="inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors">
+                    <i class="bi bi-building"></i>
+                    School Information
+                </button>
+
+                <button type="button"
+                        @@click="activeTab = 'academic'"
+                        :class="activeTab === 'academic'
+                            ? 'bg-slate-800 text-white shadow-sm'
+                            : 'text-slate-600 hover:bg-slate-100'"
+                        role="tab"
+                        :aria-selected="activeTab === 'academic'"
+                        class="inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors">
+                    <i class="bi bi-calendar3"></i>
+                    Academic &amp; Reports
+                </button>
+
+                <button type="button"
+                        @@click="activeTab = 'email'"
+                        :class="activeTab === 'email'
+                            ? 'bg-slate-800 text-white shadow-sm'
+                            : 'text-slate-600 hover:bg-slate-100'"
+                        role="tab"
+                        :aria-selected="activeTab === 'email'"
+                        class="inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors">
+                    <i class="bi bi-envelope-at"></i>
+                    Email Settings
+                </button>
+
+                <button type="button"
+                        @@click="activeTab = 'branding'"
+                        :class="activeTab === 'branding'
+                            ? 'bg-slate-800 text-white shadow-sm'
+                            : 'text-slate-600 hover:bg-slate-100'"
+                        role="tab"
+                        :aria-selected="activeTab === 'branding'"
+                        class="inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors">
+                    <i class="bi bi-pen"></i>
+                    Logo &amp; Signature
+                </button>
+            </nav>
+        </div>
+
+        <!-- ============================================================
+             TAB 1 - SCHOOL INFORMATION
+             ============================================================ -->
+        <div id="school" v-show="activeTab === 'school'" role="tabpanel"
+             class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7 dark:border-slate-800 dark:bg-slate-900">
+            <form ref="profileForm">
+
+                <div class="mb-5 flex items-center gap-3">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700 dark:bg-slate-800">
+                        <i class="bi bi-building text-lg"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900 dark:text-white">Basic Information</h2>
+                        <p class="text-xs text-slate-500">School identity and contact details.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                    <div class="sm:col-span-2">
+                        <label for="schoolName" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                            School Name: <span class="text-red-500">*</span>
+                        </label>
+                        <input id="schoolName"
+                               v-model.trim="schoolName"
+                               type="text"
+                               required
+                               placeholder="Enter registered school name"
+                               class="input-control" />
+                        <p v-if="errors.schoolName" class="mt-1 text-xs font-medium text-red-600">
+                            {{ errors.schoolName }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <label for="registrationNo" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                            Registration No
+                        </label>
+                        <input id="registrationNo"
+                               v-model.trim="registrationNo"
+                               type="text"
+                               placeholder="Enter registration number"
+                               class="input-control" />
+                    </div>
+
+                    <div>
+                        <label for="phoneNo" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                            Phone Number: <span class="text-red-500">*</span>
+                        </label>
+                        <input id="phoneNo"
+                               v-model.trim="phoneNo"
+                               type="tel"
+                               required
+                               placeholder="e.g. 024 000 0000"
+                               class="input-control" />
+                        <p v-if="errors.phoneNo" class="mt-1 text-xs font-medium text-red-600">
+                            {{ errors.phoneNo }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <label for="address" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                            Address: <span class="text-red-500">*</span>
+                        </label>
+                        <input id="address"
+                               v-model.trim="address"
+                               type="text"
+                               required
+                               placeholder="Enter school address"
+                               class="input-control" />
+                        <p v-if="errors.address" class="mt-1 text-xs font-medium text-red-600">
+                            {{ errors.address }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <label for="email" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                            Email Address: <span class="text-red-500">*</span>
+                        </label>
+                        <input id="email"
+                               v-model.trim="email"
+                               type="email"
+                               required
+                               placeholder="school@example.com"
+                               class="input-control" />
+                        <p v-if="errors.email" class="mt-1 text-xs font-medium text-red-600">
+                            {{ errors.email }}
+                        </p>
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label for="website" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                            Website
+                        </label>
+                        <input id="website"
+                               v-model.trim="website"
+                               type="text"
+                               placeholder="https://www.example.edu.gh"
+                               class="input-control" />
+                    </div>
+
+                
+                </div>
+
+                <hr class="my-6 border-slate-100 dark:border-slate-800" />
+
+                <div class="mb-5 flex items-center gap-3">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700 dark:bg-slate-800">
+                        <i class="bi bi-geo-alt text-lg"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900 dark:text-white">Location</h2>
+                        <p class="text-xs text-slate-500">Country, region and city of the school.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                        <w-select v-model="countryId"
+                                  :options="countryList"
+                                  display-key="name"
+                                  value-key="id"
+                                  label="Country:">
+                        </w-select>
+                    </div>
+
+                    <div>
+                        <w-select v-model="countryStateId"
+                                  :options="countryStateList"
+                                  display-key="name"
+                                  value-key="id"
+                                  label="Region / State:">
+                        </w-select>
+                        <p v-if="countryId && !countryStateList.length" class="mt-1 text-xs text-gray-400">
+                            No regions available for this country.
+                        </p>
+                    </div>
+
+                    <div>
+                        <w-select v-model="cityId"
+                                  :options="cityList"
+                                  display-key="name"
+                                  value-key="id"
+                                  label="City / Town:">
+                        </w-select>
+                        <p v-if="countryStateId && !cityList.length" class="mt-1 text-xs text-gray-400">
+                            No cities available for this region.
+                        </p>
+                    </div>
+
+                    <div>
+                        <label for="subMetro" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                            Sub Metro
+                        </label>
+                        <input id="subMetro"
+                               v-model.trim="subMetro"
+                               type="text"
+                               placeholder="Enter sub metro"
+                               class="input-control" />
+                    </div>
+
+                    <div>
+                        <label for="circuit" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                            Circuit
+                        </label>
+                        <input id="circuit"
+                               v-model.trim="circuit"
+                               type="text"
+                               placeholder="Enter circuit"
+                               class="input-control" />
+                    </div>
+                </div>
+            </form>
+
+            <div class="mt-6 flex justify-end border-t border-slate-100 pt-5 dark:border-slate-800">
+                <button type="button"
+                        @@click="saveProfile"
+                        :disabled="isLoading"
+                        class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60">
+                    <i v-if="isLoading" class="la la-circle-o-notch animate-spin text-base"></i>
+                    <i v-else class="bi bi-check-lg"></i>
+                    {{ isLoading ? 'Saving Profile...' : 'Save Profile' }}
+                </button>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             TAB 2 - ACADEMIC & REPORTS
+             ============================================================ -->
+        <div id="academic" v-show="activeTab === 'academic'" role="tabpanel"
+             class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7 dark:border-slate-800 dark:bg-slate-900">
+
+            <div class="mb-5 flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-slate-800">
+                    <i class="bi bi-calendar3 text-lg"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-bold text-slate-900 dark:text-white">Current Session</h2>
+                    <p class="text-xs text-slate-500">Active academic year, term and currency.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                <div>
+                    <w-select v-model="currentAcademicYearId"
+                              :options="academicYearList"
+                              display-key="name"
+                              value-key="id"
+                              label="Current Academic Year:">
+                    </w-select>
+                    <p v-if="!academicYearList.length" class="mt-1 text-xs text-gray-400">
+                        No academic years loaded.
+                    </p>
+                </div>
+
+                <div>
+                    <w-select v-model="currentTermId"
+                              :options="termOptions"
+                              display-key="name"
+                              value-key="id"
+                              label="Current Term:">
+                    </w-select>
+                    <p v-if="!termOptions.length" class="mt-1 text-xs text-gray-400">
+                        No terms loaded.
+                    </p>
+                </div>
+
+                <div>
+                    <w-select v-model="currencyId"
+                              :options="currencyList"
+                              display-key="currencyName"
+                              value-key="id"
+                              label="Currency:">
+                    </w-select>
+                    <p v-if="!currencyList.length" class="mt-1 text-xs text-gray-400">
+                        No currencies loaded.
+                    </p>
+                </div>
+
+                <div>
+                    <label for="schoolDays" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                        School Days
+                    </label>
+                    <input id="schoolDays"
+                           v-model.number="schoolDays"
+                           type="number"
+                           min="0"
+                           step="1"
+                           placeholder="0"
+                           class="input-control" />
+                </div>
+            </div>
+
+            <hr class="my-6 border-slate-100 dark:border-slate-800" />
+
+            <div class="mb-5 flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-slate-800">
+                    <i class="bi bi-file-earmark-text text-lg"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-bold text-slate-900 dark:text-white">Terminal Report</h2>
+                    <p class="text-xs text-slate-500">Behaviour of the terminal report and exam settings.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 px-4 py-3 transition hover:border-blue-300 hover:bg-blue-50/40 dark:border-slate-800">
+                    <input id="isClassPosition"
+                           v-model="isClassPosition"
+                           type="checkbox"
+                           class="mt-1 h-4 w-4 rounded border-gray-300 accent-blue-600" />
+                    <span>
+                        <span class="block text-sm font-semibold text-slate-800 dark:text-slate-100">Class Position</span>
+                        <span class="mt-1 block text-xs leading-5 text-slate-500">
+                            Show the student's position in the class on the terminal report.
+                        </span>
+                    </span>
+                </label>
+
+                <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 px-4 py-3 transition hover:border-blue-300 hover:bg-blue-50/40 dark:border-slate-800">
+                    <input id="isSubjectPosition"
+                           v-model="isSubjectPosition"
+                           type="checkbox"
+                           class="mt-1 h-4 w-4 rounded border-gray-300 accent-blue-600" />
+                    <span>
+                        <span class="block text-sm font-semibold text-slate-800 dark:text-slate-100">Subject Position</span>
+                        <span class="mt-1 block text-xs leading-5 text-slate-500">
+                            Show the student's position per subject on the terminal report.
+                        </span>
+                    </span>
+                </label>
+
+                <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 px-4 py-3 transition hover:border-blue-300 hover:bg-blue-50/40 dark:border-slate-800 sm:col-span-2 md:max-w-xl">
+                    <input id="enforceExamSecurity"
+                           v-model="enforceExamSecurity"
+                           type="checkbox"
+                           class="mt-1 h-4 w-4 rounded border-gray-300 accent-blue-600" />
+                    <span>
+                        <span class="block text-sm font-semibold text-slate-800 dark:text-slate-100">Enforce Exam Security</span>
+                        <span class="mt-1 block text-xs leading-5 text-slate-500">
+                            Restrict access to exam records outside the approved window.
+                        </span>
+                    </span>
+                </label>
+            </div>
+
+            <div class="mt-6 flex justify-end border-t border-slate-100 pt-5 dark:border-slate-800">
+                <button type="button"
+                        @@click="saveProfile"
+                        :disabled="isLoading"
+                        class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60">
+                    <i v-if="isLoading" class="la la-circle-o-notch animate-spin text-base"></i>
+                    <i v-else class="bi bi-check-lg"></i>
+                    {{ isLoading ? 'Saving Profile...' : 'Save Settings' }}
+                </button>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             TAB 3 - EMAIL SETTINGS
+             ============================================================ -->
+        <div id="email" v-show="activeTab === 'email'" role="tabpanel"
+             class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7 dark:border-slate-800 dark:bg-slate-900">
+
+            <div class="mb-5 flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700 dark:bg-slate-800">
+                    <i class="bi bi-envelope-at text-lg"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-bold text-slate-900 dark:text-white">Mail Server</h2>
+                    <p class="text-xs text-slate-500">Outgoing mail server configuration.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                <div class="sm:col-span-2">
+                    <label for="mailHostName" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                        Mail Host Name
+                    </label>
+                    <input id="mailHostName"
+                           v-model.trim="mailHostName"
+                           type="text"
+                           placeholder="smtp.example.com"
+                           class="input-control" />
+                </div>
+
+                <div>
+                    <label for="portNumber" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                        Port Number
+                    </label>
+                    <input id="portNumber"
+                           v-model.number="portNumber"
+                           type="number"
+                           min="0"
+                           step="1"
+                           placeholder="587"
+                           class="input-control" />
+                </div>
+
+                <div>
+                    <label for="isSSLEnabled" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                        SSL Enabled
+                    </label>
+                    <select id="isSSLEnabled" v-model="isSSLEnabled" class="select">
+                        <option :value="false">No</option>
+                        <option :value="true">Yes</option>
+                    </select>
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="primaryEmailAddress" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                        Primary Email Address
+                    </label>
+                    <input id="primaryEmailAddress"
+                           v-model.trim="primaryEmailAddress"
+                           type="email"
+                           placeholder="notifications@example.com"
+                           class="input-control" />
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="emailPassword" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                        Mail Password
+                    </label>
+                    <input id="emailPassword"
+                           v-model="emailPassword"
+                           type="password"
+                           autocomplete="new-password"
+                           placeholder="Enter mail server password"
+                           class="input-control" />
+                </div>
+            </div>
+
+            <hr class="my-6 border-slate-100 dark:border-slate-800" />
+
+            <div class="mb-5 flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-slate-800">
+                    <i class="bi bi-key text-lg"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-bold text-slate-900 dark:text-white">API Credentials</h2>
+                    <p class="text-xs text-slate-500">Sender, client and secret used for outbound messaging.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <div>
+                    <label for="senderId" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                        Sender ID
+                    </label>
+                    <input id="senderId"
+                           v-model.trim="senderId"
+                           type="text"
+                           placeholder="Enter sender id"
+                           class="input-control" />
+                </div>
+
+                <div>
+                    <label for="clientId" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                        Client ID
+                    </label>
+                    <input id="clientId"
+                           v-model.trim="clientId"
+                           type="text"
+                           placeholder="Enter client id"
+                           class="input-control" />
+                </div>
+
+                <div>
+                    <label for="clientSecret" class="label mb-1.5 block text-sm font-semibold text-gray-700">
+                        Client Secret
+                    </label>
+                    <input id="clientSecret"
+                           v-model="clientSecret"
+                           type="password"
+                           autocomplete="new-password"
+                           placeholder="Enter client secret"
+                           class="input-control" />
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end border-t border-slate-100 pt-5 dark:border-slate-800">
+                <button type="button"
+                        @@click="saveProfile"
+                        :disabled="isLoading"
+                        class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60">
+                    <i v-if="isLoading" class="la la-circle-o-notch animate-spin text-base"></i>
+                    <i v-else class="bi bi-check-lg"></i>
+                    {{ isLoading ? 'Saving Profile...' : 'Save Email Settings' }}
+                </button>
+            </div>
+        </div>
+
+        <!-- ============================================================
+             TAB 4 - LOGO & SIGNATURE
+             ============================================================ -->
+        <div id="branding" v-show="activeTab === 'branding'" role="tabpanel"
+             class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7 dark:border-slate-800 dark:bg-slate-900">
+
+            <div class="mb-5 flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-slate-800">
+                    <i class="bi bi-pen text-lg"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-bold text-slate-900 dark:text-white">Logo &amp; Signature</h2>
+                    <p class="text-xs text-slate-500">Branding images and where the signature is printed.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+
+                <!-- Logo -->
+                <div class="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">School Logo</p>
+                    <p class="mt-1 text-xs text-slate-500">Used on reports, receipts and invoices. Square or transparent PNG works best.</p>
+
+                    <div class="mt-3 flex items-center gap-4">
+                        <div class="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                            <img v-if="logoPreview" :src="logoPreview" alt="School logo" class="h-full w-full object-contain p-1" />
+                            <i v-else class="bi bi-image text-2xl text-slate-400"></i>
+                        </div>
+
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button"
+                                    @@click="showUpload('logoInput')"
+                                    class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+                                <i class="bi bi-upload"></i>
+                                Upload
+                            </button>
+                            <button v-if="logoPreview"
+                                    type="button"
+                                    @@click="removeLogo"
+                                    class="inline-flex items-center gap-2 rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-600 shadow-sm hover:bg-rose-50">
+                                <i class="bi bi-trash"></i>
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Signature -->
+                <div class="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">Signature</p>
+                    <p class="mt-1 text-xs text-slate-500">Authorised signature printed on official documents.</p>
+
+                    <div class="mt-3 flex items-center gap-4">
+                        <div class="flex h-20 w-32 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                            <img v-if="signaturePreview" :src="signaturePreview" alt="Signature" class="h-full w-full object-contain p-1" />
+                            <i v-else class="bi bi-pen text-2xl text-slate-400"></i>
+                        </div>
+
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button"
+                                    @@click="showUpload('signatureInput')"
+                                    class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+                                <i class="bi bi-upload"></i>
+                                Upload
+                            </button>
+                            <button v-if="signaturePreview"
+                                    type="button"
+                                    @@click="removeSignature"
+                                    class="inline-flex items-center gap-2 rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-600 shadow-sm hover:bg-rose-50">
+                                <i class="bi bi-trash"></i>
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+
+                    <input type="file" ref="signatureInput" class="hidden" @@change="onSignatureChange" accept="image/*" />
+                </div>
+            </div>
+
+            <hr class="my-6 border-slate-100 dark:border-slate-800" />
+
+            <div class="mb-5 flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700 dark:bg-slate-800">
+                    <i class="bi bi-sliders text-lg"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-bold text-slate-900 dark:text-white">Signature Settings</h2>
+                    <p class="text-xs text-slate-500">Choose where the signature appears.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 px-4 py-3 transition hover:border-blue-300 hover:bg-blue-50/40 dark:border-slate-800">
+                    <input id="showSignature"
+                           v-model="showSignature"
+                           type="checkbox"
+                           class="mt-1 h-4 w-4 rounded border-gray-300 accent-blue-600" />
+                    <span>
+                        <span class="block text-sm font-semibold text-slate-800 dark:text-slate-100">Show Signature</span>
+                        <span class="mt-1 block text-xs leading-5 text-slate-500">
+                            Master switch for printing the signature on documents.
+                        </span>
+                    </span>
+                </label>
+
+                <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 px-4 py-3 transition hover:border-blue-300 hover:bg-blue-50/40 dark:border-slate-800">
+                    <input id="showSignatureOnResults"
+                           v-model="showSignatureOnResults"
+                           type="checkbox"
+                           class="mt-1 h-4 w-4 rounded border-gray-300 accent-blue-600" />
+                    <span>
+                        <span class="block text-sm font-semibold text-slate-800 dark:text-slate-100">On Results</span>
+                        <span class="mt-1 block text-xs leading-5 text-slate-500">
+                            Print the signature on terminal reports and result slips.
+                        </span>
+                    </span>
+                </label>
+
+                <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 px-4 py-3 transition hover:border-blue-300 hover:bg-blue-50/40 dark:border-slate-800">
+                    <input id="showSignatureOnBills"
+                           v-model="showSignatureOnBills"
+                           type="checkbox"
+                           class="mt-1 h-4 w-4 rounded border-gray-300 accent-blue-600" />
+                    <span>
+                        <span class="block text-sm font-semibold text-slate-800 dark:text-slate-100">On Bills</span>
+                        <span class="mt-1 block text-xs leading-5 text-slate-500">
+                            Print the signature on school bills.
+                        </span>
+                    </span>
+                </label>
+
+                <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 px-4 py-3 transition hover:border-blue-300 hover:bg-blue-50/40 dark:border-slate-800">
+                    <input id="showSignatureOnStatement"
+                           v-model="showSignatureOnStatement"
+                           type="checkbox"
+                           class="mt-1 h-4 w-4 rounded border-gray-300 accent-blue-600" />
+                    <span>
+                        <span class="block text-sm font-semibold text-slate-800 dark:text-slate-100">On Statement</span>
+                        <span class="mt-1 block text-xs leading-5 text-slate-500">
+                            Print the signature on account statements.
+                        </span>
+                    </span>
+                </label>
+
+                <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 px-4 py-3 transition hover:border-blue-300 hover:bg-blue-50/40 dark:border-slate-800">
+                    <input id="showSignatureOnReceipt"
+                           v-model="showSignatureOnReceipt"
+                           type="checkbox"
+                           class="mt-1 h-4 w-4 rounded border-gray-300 accent-blue-600" />
+                    <span>
+                        <span class="block text-sm font-semibold text-slate-800 dark:text-slate-100">On Receipt</span>
+                        <span class="mt-1 block text-xs leading-5 text-slate-500">
+                            Print the signature on payment receipts.
+                        </span>
+                    </span>
+                </label>
+            </div>
+
+            <div class="mt-6 flex justify-end border-t border-slate-100 pt-5 dark:border-slate-800">
+                <button type="button"
+                        @@click="saveProfile"
+                        :disabled="isLoading"
+                        class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60">
+                    <i v-if="isLoading" class="la la-circle-o-notch animate-spin text-base"></i>
+                    <i v-else class="bi bi-check-lg"></i>
+                    {{ isLoading ? 'Saving Profile...' : 'Save Logo & Signature' }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/school-manager/school-profile.js" asp-append-version="true"></script>

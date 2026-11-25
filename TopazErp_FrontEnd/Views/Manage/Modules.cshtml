@@ -15,260 +15,536 @@
    <div  class="card" data-card-title="Topaz Applications">
  
 
-<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+ <section >
 
-    <!-- General Ledger -->
-    <a href="/Dashboard/GeneralLedger"
-       class="group block rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm
-              transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:border-emerald-200
-              dark:border-emerald-900/60 dark:bg-slate-900 dark:hover:border-emerald-700 dark:hover:bg-slate-800">
+        <!-- SEARCH AND FILTER BAR -->
+        <div class="mb-6 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
 
-        <div class="flex items-start justify-between">
-            <div class="flex h-12 w-12 items-center justify-center rounded-xl
-                        bg-emerald-50 text-emerald-600
-                        dark:bg-emerald-950/60 dark:text-emerald-400">
-                <i class="bi bi-journal-text text-2xl"></i>
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+
+                <!-- Search -->
+                <div class="relative w-full lg:max-w-md">
+                    <label for="moduleSearch" class="sr-only">
+                        Search modules
+                    </label>
+
+                    <i class="bi bi-search pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+
+                    <input type="search"
+                           id="moduleSearch"
+                           placeholder="Search modules..."
+                           class="h-11 w-full rounded-full border border-slate-200 bg-slate-50/80 pl-10 pr-10 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-primary-400 focus:bg-white focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-primary-600 dark:focus:bg-slate-800"
+                           autocomplete="off">
+
+                    <button type="button"
+                            id="clearSearch"
+                            aria-label="Clear search"
+                            class="absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-md p-1 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-slate-200">
+                        <i class="bi bi-x-lg text-xs"></i>
+                    </button>
+                </div>
+
+                <!-- Filters -->
+                <div class="flex flex-wrap items-center gap-2">
+
+                    <button type="button"
+                            data-module-filter="all"
+                            class="module-filter inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
+                        <i class="bi bi-grid text-sm"></i>
+                        All
+                    </button>
+
+                    <button type="button"
+                            data-module-filter="finance"
+                            class="module-filter inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
+                        <i class="bi bi-bank text-sm"></i>
+                        Finance
+                    </button>
+
+                    <button type="button"
+                            data-module-filter="operations"
+                            class="module-filter inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
+                        <i class="bi bi-box-seam text-sm"></i>
+                        Operations
+                    </button>
+
+                    <button type="button"
+                            data-module-filter="people"
+                            class="module-filter inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
+                        <i class="bi bi-people text-sm"></i>
+                        People
+                    </button>
+
+                    <button type="button"
+                            data-module-filter="education"
+                            class="module-filter inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
+                        <i class="bi bi-mortarboard text-sm"></i>
+                        Education
+                    </button>
+                </div>
+            </div>
+        </div>
+    
+
+        <!-- MODULE GRID -->
+        <div id="moduleGrid"
+             class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+
+            <!-- GENERAL LEDGER -->
+            <a href="/Dashboard/GeneralLedger"
+               data-module-card
+               data-module-name="general ledger accounting finance"
+               data-module-category="finance"
+               class="group relative flex min-h-[260px] flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm outline-none transition-all duration-300 hover:-translate-y-1 hover:border-emerald-200 hover:shadow-xl hover:shadow-slate-200/70 focus-visible:ring-4 focus-visible:ring-emerald-500/20 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-700 dark:hover:bg-slate-800/80 dark:hover:shadow-black/20">
+
+                <!-- Hover accent -->
+                <div class="absolute inset-x-0 top-0 h-1 origin-left scale-x-0 bg-emerald-500 transition-transform duration-300 group-hover:scale-x-100"></div>
+
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 ring-1 ring-inset ring-emerald-100 transition-transform duration-300 group-hover:scale-105 group-hover:-rotate-3 dark:bg-emerald-950/50 dark:text-emerald-400 dark:ring-emerald-900/70">
+                        <i class="bi bi-journal-text text-2xl"></i>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                            Finance
+                        </span>
+
+                        <span class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 transition-all group-hover:bg-emerald-50 group-hover:text-emerald-600 dark:text-slate-700 dark:group-hover:bg-emerald-950/50 dark:group-hover:text-emerald-400">
+                            <i class="bi bi-arrow-up-right text-lg"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="mt-5 flex-1">
+                    <h3 class="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+                        General Ledger
+                    </h3>
+
+                    <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                        Record and query accounting journal entries, then generate accurate financial statements.
+                    </p>
+                </div>
+
+                <div class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-800">
+                    <span class="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                        Open module
+                        <i class="bi bi-arrow-right transition-transform duration-200 group-hover:translate-x-1"></i>
+                    </span>
+
+                    <span class="text-xs text-slate-400">
+                        Finance
+                    </span>
+                </div>
+            </a>
+
+            <!-- PAYROLL -->
+            <a href="/Dashboard/Payroll"
+               data-module-card
+               data-module-name="payroll employees compensation salary people"
+               data-module-category="people"
+               class="group relative flex min-h-[260px] flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm outline-none transition-all duration-300 hover:-translate-y-1 hover:border-amber-200 hover:shadow-xl hover:shadow-slate-200/70 focus-visible:ring-4 focus-visible:ring-amber-500/20 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-amber-700 dark:hover:bg-slate-800/80 dark:hover:shadow-black/20">
+
+                <div class="absolute inset-x-0 top-0 h-1 origin-left scale-x-0 bg-amber-500 transition-transform duration-300 group-hover:scale-x-100"></div>
+
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-inset ring-amber-100 transition-transform duration-300 group-hover:scale-105 group-hover:-rotate-3 dark:bg-amber-950/50 dark:text-amber-400 dark:ring-amber-900/70">
+                        <i class="bi bi-people text-2xl"></i>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                            People
+                        </span>
+
+                        <span class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 transition-all group-hover:bg-amber-50 group-hover:text-amber-600 dark:text-slate-700 dark:group-hover:bg-amber-950/50 dark:group-hover:text-amber-400">
+                            <i class="bi bi-arrow-up-right text-lg"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="mt-5 flex-1">
+                    <h3 class="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+                        Payroll
+                    </h3>
+
+                    <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                        Perform payroll calculations and maintain accurate labor distribution.
+                    </p>
+                </div>
+
+                <div class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-800">
+                    <span class="inline-flex items-center gap-2 text-sm font-semibold text-amber-600 dark:text-amber-400">
+                        Open module
+                        <i class="bi bi-arrow-right transition-transform duration-200 group-hover:translate-x-1"></i>
+                    </span>
+
+                    <span class="text-xs text-slate-400">
+                        People
+                    </span>
+                </div>
+            </a>
+
+            <!-- ACCOUNTS PAYABLE -->
+            <a href="/Dashboard/Ap"
+               data-module-card
+               data-module-name="accounts payable suppliers finance bills"
+               data-module-category="finance"
+               class="group relative flex min-h-[260px] flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm outline-none transition-all duration-300 hover:-translate-y-1 hover:border-rose-200 hover:shadow-xl hover:shadow-slate-200/70 focus-visible:ring-4 focus-visible:ring-rose-500/20 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-rose-700 dark:hover:bg-slate-800/80 dark:hover:shadow-black/20">
+
+                <div class="absolute inset-x-0 top-0 h-1 origin-left scale-x-0 bg-rose-500 transition-transform duration-300 group-hover:scale-x-100"></div>
+
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 ring-1 ring-inset ring-rose-100 transition-transform duration-300 group-hover:scale-105 group-hover:-rotate-3 dark:bg-rose-950/50 dark:text-rose-400 dark:ring-rose-900/70">
+                        <i class="bi bi-credit-card text-2xl"></i>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                            Finance
+                        </span>
+
+                        <span class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 transition-all group-hover:bg-rose-50 group-hover:text-rose-600 dark:text-slate-700 dark:group-hover:bg-rose-950/50 dark:group-hover:text-rose-400">
+                            <i class="bi bi-arrow-up-right text-lg"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="mt-5 flex-1">
+                    <h3 class="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+                        Accounts Payable
+                    </h3>
+
+                    <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                        Manage supplier balances, payment due dates, and available discounts.
+                    </p>
+                </div>
+
+                <div class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-800">
+                    <span class="inline-flex items-center gap-2 text-sm font-semibold text-rose-600 dark:text-rose-400">
+                        Open module
+                        <i class="bi bi-arrow-right transition-transform duration-200 group-hover:translate-x-1"></i>
+                    </span>
+
+                    <span class="text-xs text-slate-400">
+                        Finance
+                    </span>
+                </div>
+            </a>
+
+            <!-- ACCOUNTS RECEIVABLE -->
+            <a href="/Dashboard/Ar"
+               data-module-card
+               data-module-name="accounts receivable customers finance invoices"
+               data-module-category="finance"
+               class="group relative flex min-h-[260px] flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm outline-none transition-all duration-300 hover:-translate-y-1 hover:border-sky-200 hover:shadow-xl hover:shadow-slate-200/70 focus-visible:ring-4 focus-visible:ring-sky-500/20 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-sky-700 dark:hover:bg-slate-800/80 dark:hover:shadow-black/20">
+
+                <div class="absolute inset-x-0 top-0 h-1 origin-left scale-x-0 bg-sky-500 transition-transform duration-300 group-hover:scale-x-100"></div>
+
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 ring-1 ring-inset ring-sky-100 transition-transform duration-300 group-hover:scale-105 group-hover:-rotate-3 dark:bg-sky-950/50 dark:text-sky-400 dark:ring-sky-900/70">
+                        <i class="bi bi-wallet2 text-2xl"></i>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                            Finance
+                        </span>
+
+                        <span class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 transition-all group-hover:bg-sky-50 group-hover:text-sky-600 dark:text-slate-700 dark:group-hover:bg-sky-950/50 dark:group-hover:text-sky-400">
+                            <i class="bi bi-arrow-up-right text-lg"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="mt-5 flex-1">
+                    <h3 class="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+                        Accounts Receivable
+                    </h3>
+
+                    <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                        Track receivables efficiently and identify potential collection problems in advance.
+                    </p>
+                </div>
+
+                <div class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-800">
+                    <span class="inline-flex items-center gap-2 text-sm font-semibold text-sky-600 dark:text-sky-400">
+                        Open module
+                        <i class="bi bi-arrow-right transition-transform duration-200 group-hover:translate-x-1"></i>
+                    </span>
+
+                    <span class="text-xs text-slate-400">
+                        Finance
+                    </span>
+                </div>
+            </a>
+
+            <!-- INVENTORY -->
+            <a href="/Dashboard/Stock"
+               data-module-card
+               data-module-name="inventory stock warehouse operations products"
+               data-module-category="operations"
+               class="group relative flex min-h-[260px] flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm outline-none transition-all duration-300 hover:-translate-y-1 hover:border-violet-200 hover:shadow-xl hover:shadow-slate-200/70 focus-visible:ring-4 focus-visible:ring-violet-500/20 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-violet-700 dark:hover:bg-slate-800/80 dark:hover:shadow-black/20">
+
+                <div class="absolute inset-x-0 top-0 h-1 origin-left scale-x-0 bg-violet-500 transition-transform duration-300 group-hover:scale-x-100"></div>
+
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-50 text-violet-600 ring-1 ring-inset ring-violet-100 transition-transform duration-300 group-hover:scale-105 group-hover:-rotate-3 dark:bg-violet-950/50 dark:text-violet-400 dark:ring-violet-900/70">
+                        <i class="bi bi-box-seam text-2xl"></i>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                            Operations
+                        </span>
+
+                        <span class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 transition-all group-hover:bg-violet-50 group-hover:text-violet-600 dark:text-slate-700 dark:group-hover:bg-violet-950/50 dark:group-hover:text-violet-400">
+                            <i class="bi bi-arrow-up-right text-lg"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="mt-5 flex-1">
+                    <h3 class="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+                        Inventory
+                    </h3>
+
+                    <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                        Control and analyze stock across multiple warehouses and locations.
+                    </p>
+                </div>
+
+                <div class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-800">
+                    <span class="inline-flex items-center gap-2 text-sm font-semibold text-violet-600 dark:text-violet-400">
+                        Open module
+                        <i class="bi bi-arrow-right transition-transform duration-200 group-hover:translate-x-1"></i>
+                    </span>
+
+                    <span class="text-xs text-slate-400">
+                        Operations
+                    </span>
+                </div>
+            </a>
+
+            <!-- ASSET MANAGER -->
+            <a href="/Dashboard/Asset"
+               data-module-card
+               data-module-name="asset manager organization properties equipment operations"
+               data-module-category="operations"
+               class="group relative flex min-h-[260px] flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm outline-none transition-all duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-xl hover:shadow-slate-200/70 focus-visible:ring-4 focus-visible:ring-orange-500/20 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-orange-700 dark:hover:bg-slate-800/80 dark:hover:shadow-black/20">
+
+                <div class="absolute inset-x-0 top-0 h-1 origin-left scale-x-0 bg-orange-500 transition-transform duration-300 group-hover:scale-x-100"></div>
+
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-orange-600 ring-1 ring-inset ring-orange-100 transition-transform duration-300 group-hover:scale-105 group-hover:-rotate-3 dark:bg-orange-950/50 dark:text-orange-400 dark:ring-orange-900/70">
+                        <i class="bi bi-building text-2xl"></i>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                            Operations
+                        </span>
+
+                        <span class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 transition-all group-hover:bg-orange-50 group-hover:text-orange-600 dark:text-slate-700 dark:group-hover:bg-orange-950/50 dark:group-hover:text-orange-400">
+                            <i class="bi bi-arrow-up-right text-lg"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="mt-5 flex-1">
+                    <h3 class="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+                        Asset Manager
+                    </h3>
+
+                    <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                        Manage, organize, and monitor assets owned by your organization.
+                    </p>
+                </div>
+
+                <div class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-800">
+                    <span class="inline-flex items-center gap-2 text-sm font-semibold text-orange-600 dark:text-orange-400">
+                        Open module
+                        <i class="bi bi-arrow-right transition-transform duration-200 group-hover:translate-x-1"></i>
+                    </span>
+
+                    <span class="text-xs text-slate-400">
+                        Operations
+                    </span>
+                </div>
+            </a>
+
+            <!-- SCHOOL MANAGER -->
+            <a href="/Dashboard/SchoolManager"
+               data-module-card
+               data-module-name="school manager students classes education bills payments"
+               data-module-category="education"
+               class="group relative flex min-h-[260px] flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm outline-none transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl hover:shadow-slate-200/70 focus-visible:ring-4 focus-visible:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-700 dark:hover:bg-slate-800/80 dark:hover:shadow-black/20">
+
+                <div class="absolute inset-x-0 top-0 h-1 origin-left scale-x-0 bg-blue-500 transition-transform duration-300 group-hover:scale-x-100"></div>
+
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-inset ring-blue-100 transition-transform duration-300 group-hover:scale-105 group-hover:-rotate-3 dark:bg-blue-950/50 dark:text-blue-400 dark:ring-blue-900/70">
+                        <i class="bi bi-mortarboard text-2xl"></i>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                            Education
+                        </span>
+
+                        <span class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 transition-all group-hover:bg-blue-50 group-hover:text-blue-600 dark:text-slate-700 dark:group-hover:bg-blue-950/50 dark:group-hover:text-blue-400">
+                            <i class="bi bi-arrow-up-right text-lg"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="mt-5 flex-1">
+                    <h3 class="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+                        School Manager
+                    </h3>
+
+                    <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                        Manage students, classes, billing, and payments from one centralized interface.
+                    </p>
+                </div>
+
+                <div class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-800">
+                    <span class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 dark:text-blue-400">
+                        Open module
+                        <i class="bi bi-arrow-right transition-transform duration-200 group-hover:translate-x-1"></i>
+                    </span>
+
+                    <span class="text-xs text-slate-400">
+                        Education
+                    </span>
+                </div>
+            </a>
+
+            <!-- SCHOOL PRO -->
+            <a href="/Dashboard/SchoolPro"
+               data-module-card
+               data-module-name="school pro students teachers attendance grades curriculum education"
+               data-module-category="education"
+               class="group relative flex min-h-[260px] flex-col overflow-hidden rounded-2xl border border-indigo-200/80 bg-white p-5 shadow-sm outline-none transition-all duration-300 hover:-translate-y-1 hover:border-indigo-300 hover:shadow-xl hover:shadow-indigo-100/70 focus-visible:ring-4 focus-visible:ring-indigo-500/20 dark:border-indigo-900/60 dark:bg-slate-900 dark:hover:border-indigo-700 dark:hover:bg-slate-800/80 dark:hover:shadow-black/20">
+
+                <div class="absolute inset-x-0 top-0 h-1 origin-left scale-x-0 bg-indigo-500 transition-transform duration-300 group-hover:scale-x-100"></div>
+
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 ring-1 ring-inset ring-indigo-100 transition-transform duration-300 group-hover:scale-105 group-hover:-rotate-3 dark:bg-indigo-950/50 dark:text-indigo-400 dark:ring-indigo-900/70">
+                        <i class="bi bi-mortarboard-fill text-2xl"></i>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                            Education
+                        </span>
+
+                        <span class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 transition-all group-hover:bg-indigo-50 group-hover:text-indigo-600 dark:text-slate-700 dark:group-hover:bg-indigo-950/50 dark:group-hover:text-indigo-400">
+                            <i class="bi bi-arrow-up-right text-lg"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="mt-5 flex-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h3 class="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+                            School Pro
+                        </h3>
+                    
+                    </div>
+
+                    <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                        Manage tertiary students, lecturers, grades, and curriculum with advanced school tools.
+                    </p>
+                </div>
+
+                <div class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-800">
+                    <span class="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+                        Open module
+                        <i class="bi bi-arrow-right transition-transform duration-200 group-hover:translate-x-1"></i>
+                    </span>
+
+                    <span class="text-xs text-slate-400">
+                        Education
+                    </span>
+                </div>
+            </a>
+
+            <!-- HR -->
+            <a href="/Dashboard/HR"
+               data-module-card
+               data-module-name="hr human resources employees recruitment leave attendance performance people"
+               data-module-category="people"
+               class="group relative flex min-h-[260px] flex-col overflow-hidden rounded-2xl border border-teal-200/80 bg-white p-5 shadow-sm outline-none transition-all duration-300 hover:-translate-y-1 hover:border-teal-300 hover:shadow-xl hover:shadow-teal-100/70 focus-visible:ring-4 focus-visible:ring-teal-500/20 dark:border-teal-900/60 dark:bg-slate-900 dark:hover:border-teal-700 dark:hover:bg-slate-800/80 dark:hover:shadow-black/20">
+
+                <div class="absolute inset-x-0 top-0 h-1 origin-left scale-x-0 bg-teal-500 transition-transform duration-300 group-hover:scale-x-100"></div>
+
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-teal-600 ring-1 ring-inset ring-teal-100 transition-transform duration-300 group-hover:scale-105 group-hover:-rotate-3 dark:bg-teal-950/50 dark:text-teal-400 dark:ring-teal-900/70">
+                        <i class="bi bi-person-badge text-2xl"></i>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                            People
+                        </span>
+
+                        <span class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 transition-all group-hover:bg-teal-50 group-hover:text-teal-600 dark:text-slate-700 dark:group-hover:bg-teal-950/50 dark:group-hover:text-teal-400">
+                            <i class="bi bi-arrow-up-right text-lg"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="mt-5 flex-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h3 class="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+                            HR
+                        </h3>
+                    
+                    </div>
+
+                    <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                        Manage employee records, recruitment, leave, attendance, and performance.
+                    </p>
+                </div>
+
+                <div class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-800">
+                    <span class="inline-flex items-center gap-2 text-sm font-semibold text-teal-600 dark:text-teal-400">
+                        Open module
+                        <i class="bi bi-arrow-right transition-transform duration-200 group-hover:translate-x-1"></i>
+                    </span>
+
+                    <span class="text-xs font-medium text-slate-400">
+                        People
+                    </span>
+                </div>
+            </a>
+
+        </div>
+
+        <!-- EMPTY STATE -->
+        <div id="emptyState"
+             class="hidden rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center dark:border-slate-700 dark:bg-slate-900">
+            <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 dark:bg-slate-800">
+                <i class="bi bi-search text-2xl"></i>
             </div>
 
-            <i class="bi bi-arrow-up-right text-xl text-slate-300 transition
-                      group-hover:text-emerald-500
-                      dark:text-slate-600 dark:group-hover:text-emerald-400"></i>
-        </div>
-
-        <div class="mt-5">
-            <h3 class="text-lg font-semibold text-slate-800 dark:text-white">
-                General Ledger
+            <h3 class="mt-4 text-base font-bold text-slate-900 dark:text-white">
+                No modules found
             </h3>
 
-            <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                Record, store and query accounting journal entries and generate financial statements.
+            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                Try another search term or choose a different category.
             </p>
+
+            <button type="button"
+                    id="resetFilters"
+                    class="mt-5 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200">
+                Reset filters
+            </button>
         </div>
 
-        <div class="mt-5 flex items-center gap-2 text-sm font-medium
-                    text-emerald-600 dark:text-emerald-400">
-            Open Module
-            <i class="bi bi-arrow-right transition-transform group-hover:translate-x-1"></i>
-        </div>
-    </a>
-
-
-    <!-- Payroll -->
-    <a href="/Dashboard/Payroll"
-       class="group block rounded-2xl border border-amber-100 bg-white p-6 shadow-sm
-              transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:border-amber-200
-              dark:border-amber-900/60 dark:bg-slate-900 dark:hover:border-amber-700 dark:hover:bg-slate-800">
-
-        <div class="flex items-start justify-between">
-            <div class="flex h-12 w-12 items-center justify-center rounded-xl
-                        bg-amber-50 text-amber-600
-                        dark:bg-amber-950/60 dark:text-amber-400">
-                <i class="bi bi-people text-2xl"></i>
-            </div>
-
-            <i class="bi bi-arrow-up-right text-xl text-slate-300 transition
-                      group-hover:text-amber-500
-                      dark:text-slate-600 dark:group-hover:text-amber-400"></i>
-        </div>
-
-        <div class="mt-5">
-            <h3 class="text-lg font-semibold text-slate-800 dark:text-white">
-                Payroll
-            </h3>
-
-            <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                Perform payroll calculations and maintain accurate labor distribution.
-            </p>
-        </div>
-
-        <div class="mt-5 flex items-center gap-2 text-sm font-medium
-                    text-amber-600 dark:text-amber-400">
-            Open Module
-            <i class="bi bi-arrow-right transition-transform group-hover:translate-x-1"></i>
-        </div>
-    </a>
-
-
-    <!-- Accounts Payable -->
-    <a href="/Dashboard/Ap"
-       class="group block rounded-2xl border border-rose-100 bg-white p-6 shadow-sm
-              transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:border-rose-200
-              dark:border-rose-900/60 dark:bg-slate-900 dark:hover:border-rose-700 dark:hover:bg-slate-800">
-
-        <div class="flex items-start justify-between">
-            <div class="flex h-12 w-12 items-center justify-center rounded-xl
-                        bg-rose-50 text-rose-600
-                        dark:bg-rose-950/60 dark:text-rose-400">
-                <i class="bi bi-credit-card text-2xl"></i>
-            </div>
-
-            <i class="bi bi-arrow-up-right text-xl text-slate-300 transition
-                      group-hover:text-rose-500
-                      dark:text-slate-600 dark:group-hover:text-rose-400"></i>
-        </div>
-
-        <div class="mt-5">
-            <h3 class="text-lg font-semibold text-slate-800 dark:text-white">
-                Accounts Payable
-            </h3>
-
-            <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                Manage amounts owed to suppliers, due dates and available discounts.
-            </p>
-        </div>
-
-        <div class="mt-5 flex items-center gap-2 text-sm font-medium
-                    text-rose-600 dark:text-rose-400">
-            Open Module
-            <i class="bi bi-arrow-right transition-transform group-hover:translate-x-1"></i>
-        </div>
-    </a>
-
-
-    <!-- Accounts Receivable -->
-    <a href="/Dashboard/Ar"
-       class="group block rounded-2xl border border-sky-100 bg-white p-6 shadow-sm
-              transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:border-sky-200
-              dark:border-sky-900/60 dark:bg-slate-900 dark:hover:border-sky-700 dark:hover:bg-slate-800">
-
-        <div class="flex items-start justify-between">
-            <div class="flex h-12 w-12 items-center justify-center rounded-xl
-                        bg-sky-50 text-sky-600
-                        dark:bg-sky-950/60 dark:text-sky-400">
-                <i class="bi bi-wallet2 text-2xl"></i>
-            </div>
-
-            <i class="bi bi-arrow-up-right text-xl text-slate-300 transition
-                      group-hover:text-sky-500
-                      dark:text-slate-600 dark:group-hover:text-sky-400"></i>
-        </div>
-
-        <div class="mt-5">
-            <h3 class="text-lg font-semibold text-slate-800 dark:text-white">
-                Accounts Receivable
-            </h3>
-
-            <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                Enables efficient tracking of receivables to identify potential problems in advance.
-            </p>
-        </div>
-
-        <div class="mt-5 flex items-center gap-2 text-sm font-medium
-                    text-sky-600 dark:text-sky-400">
-            Open Module
-            <i class="bi bi-arrow-right transition-transform group-hover:translate-x-1"></i>
-        </div>
-    </a>
-
-
-    <!-- Inventory -->
-    <a href="/Dashboard/Stock"
-       class="group block rounded-2xl border border-violet-100 bg-white p-6 shadow-sm
-              transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:border-violet-200
-              dark:border-violet-900/60 dark:bg-slate-900 dark:hover:border-violet-700 dark:hover:bg-slate-800">
-
-        <div class="flex items-start justify-between">
-            <div class="flex h-12 w-12 items-center justify-center rounded-xl
-                        bg-violet-50 text-violet-600
-                        dark:bg-violet-950/60 dark:text-violet-400">
-                <i class="bi bi-box-seam text-2xl"></i>
-            </div>
-
-            <i class="bi bi-arrow-up-right text-xl text-slate-300 transition
-                      group-hover:text-violet-500
-                      dark:text-slate-600 dark:group-hover:text-violet-400"></i>
-        </div>
-
-        <div class="mt-5">
-            <h3 class="text-lg font-semibold text-slate-800 dark:text-white">
-                Inventory
-            </h3>
-
-            <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                A multi-warehouse and location inventory control and analysis system.
-            </p>
-        </div>
-
-        <div class="mt-5 flex items-center gap-2 text-sm font-medium
-                    text-violet-600 dark:text-violet-400">
-            Open Module
-            <i class="bi bi-arrow-right transition-transform group-hover:translate-x-1"></i>
-        </div>
-    </a>
-
-
-    <!-- Asset Manager -->
-    <a href="/Dashboard/Asset"
-       class="group block rounded-2xl border border-orange-100 bg-white p-6 shadow-sm
-              transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:border-orange-200
-              dark:border-orange-900/60 dark:bg-slate-900 dark:hover:border-orange-700 dark:hover:bg-slate-800">
-
-        <div class="flex items-start justify-between">
-            <div class="flex h-12 w-12 items-center justify-center rounded-xl
-                        bg-orange-50 text-orange-600
-                        dark:bg-orange-950/60 dark:text-orange-400">
-                <i class="bi bi-building text-2xl"></i>
-            </div>
-
-            <i class="bi bi-arrow-up-right text-xl text-slate-300 transition
-                      group-hover:text-orange-500
-                      dark:text-slate-600 dark:group-hover:text-orange-400"></i>
-        </div>
-
-        <div class="mt-5">
-            <h3 class="text-lg font-semibold text-slate-800 dark:text-white">
-                Asset Manager
-            </h3>
-
-            <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                A module to manage any kind of asset owned by an organization.
-            </p>
-        </div>
-
-        <div class="mt-5 flex items-center gap-2 text-sm font-medium
-                    text-orange-600 dark:text-orange-400">
-            Open Module
-            <i class="bi bi-arrow-right transition-transform group-hover:translate-x-1"></i>
-        </div>
-    </a>
-
-
-    <!-- School Manager -->
-    <a href="/Dashboard/SchoolManager"
-       class="group block rounded-2xl border border-blue-100 bg-white p-6 shadow-sm
-              transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:border-blue-200
-              dark:border-blue-900/60 dark:bg-slate-900 dark:hover:border-blue-700 dark:hover:bg-slate-800">
-
-        <div class="flex items-start justify-between">
-            <div class="flex h-12 w-12 items-center justify-center rounded-xl
-                        bg-blue-50 text-blue-600
-                        dark:bg-blue-950/60 dark:text-blue-400">
-                <i class="bi bi-mortarboard text-2xl"></i>
-            </div>
-
-            <i class="bi bi-arrow-up-right text-xl text-slate-300 transition
-                      group-hover:text-blue-500
-                      dark:text-slate-600 dark:group-hover:text-blue-400"></i>
-        </div>
-
-        <div class="mt-5">
-            <h3 class="text-lg font-semibold text-slate-800 dark:text-white">
-                School Manager
-            </h3>
-
-            <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                Manage students, classes, bills and payments with a centralized, easy-to-use interface.
-            </p>
-        </div>
-
-        <div class="mt-5 flex items-center gap-2 text-sm font-medium
-                    text-blue-600 dark:text-blue-400">
-            Open Module
-            <i class="bi bi-arrow-right transition-transform group-hover:translate-x-1"></i>
-        </div>
-    </a>
-
-</div>
+    </section>
 
 
 
@@ -277,6 +553,124 @@
 </div>
 </div>
 
+@section Scripts {
+    <script>
+        (function () {
+            const searchInput = document.getElementById("moduleSearch");
+            const clearSearchButton = document.getElementById("clearSearch");
+            const filterButtons = Array.from(
+                document.querySelectorAll("[data-module-filter]")
+            );
+            const moduleCards = Array.from(
+                document.querySelectorAll("[data-module-card]")
+            );
+            const resultCount = document.getElementById("resultCount");
+            const emptyState = document.getElementById("emptyState");
+            const resetButton = document.getElementById("resetFilters");
+
+            let activeFilter = "all";
+
+            function updateModules() {
+                const searchTerm = searchInput.value.trim().toLowerCase();
+                let visibleCount = 0;
+
+                moduleCards.forEach(function (card) {
+                    const name = card.dataset.moduleName || "";
+                    const category = card.dataset.moduleCategory || "";
+                    const matchesSearch = name.includes(searchTerm);
+                    const matchesFilter =
+                        activeFilter === "all" || category === activeFilter;
+                    const isVisible = matchesSearch && matchesFilter;
+
+                    card.classList.toggle("hidden", !isVisible);
+
+                    if (isVisible) {
+                        visibleCount++;
+                    }
+                });
+
+                resultCount.textContent =
+                    visibleCount === 1 ? "1 module" : visibleCount + " modules";
+
+                emptyState.classList.toggle("hidden", visibleCount !== 0);
+                clearSearchButton.classList.toggle("hidden", searchTerm.length === 0);
+            }
+
+            function setActiveFilter(filter) {
+                activeFilter = filter;
+
+                filterButtons.forEach(function (button) {
+                    const isActive = button.dataset.moduleFilter === filter;
+
+                    button.classList.toggle(
+                        "border-primary-500",
+                        isActive
+                    );
+                    button.classList.toggle(
+                        "bg-primary-600",
+                        isActive
+                    );
+                    button.classList.toggle(
+                        "text-white",
+                        isActive
+                    );
+                    button.classList.toggle(
+                        "shadow-sm",
+                        isActive
+                    );
+                    button.classList.toggle(
+                        "border-slate-200",
+                        !isActive
+                    );
+                    button.classList.toggle(
+                        "bg-white",
+                        !isActive
+                    );
+                    button.classList.toggle(
+                        "text-slate-600",
+                        !isActive
+                    );
+                    button.classList.toggle(
+                        "dark:border-slate-700",
+                        !isActive
+                    );
+                    button.classList.toggle(
+                        "dark:bg-slate-800",
+                        !isActive
+                    );
+                    button.classList.toggle(
+                        "dark:text-slate-300",
+                        !isActive
+                    );
+                });
+
+                updateModules();
+            }
+
+            searchInput.addEventListener("input", updateModules);
+
+            clearSearchButton.addEventListener("click", function () {
+                searchInput.value = "";
+                searchInput.focus();
+                updateModules();
+            });
+
+            filterButtons.forEach(function (button) {
+                button.addEventListener("click", function () {
+                    setActiveFilter(button.dataset.moduleFilter);
+                });
+            });
+
+            resetButton.addEventListener("click", function () {
+                searchInput.value = "";
+                setActiveFilter("all");
+                searchInput.focus();
+            });
+
+            setActiveFilter("all");
+        })();
+    </script>
+}
 
                  
                         
