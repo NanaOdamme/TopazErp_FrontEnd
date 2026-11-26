@@ -42,7 +42,7 @@ public interface ITopazErpApi
     Task<BaseApiResponse> DeleteCustomerGroup(Guid id);
 
     //Customers...
-    Task<CustomerResponse> GetCustomers(int pageNo, int pageSize, string query);
+    Task<CustomerResponse> GetCustomers();
     Task<CustomerDetailResponse> GetCustomer(Guid id);
     Task<CustomersResponse> GetCustomersByGroup(Guid groupId);
     Task<BaseApiResponse> CreateCustomer(object dto);
@@ -182,7 +182,7 @@ public interface ITopazErpApi
     Task<BaseApiResponse> DeletePayCalendar(Guid id);
 
     // employee bio data ...
-    Task<EmployeeBioDataResponse> GetEmployeeBioData(int pageNo, int pageSize, string query);
+    Task<EmployeeBioDataResponse> GetEmployeeBioData();
     Task<BaseApiResponse> CreateEmployeeBioData(object dto);
     Task<BaseApiResponse> UpdateEmployeeBioData(object dto);
     Task<BaseApiResponse> DeleteEmployeeBioData(Guid id);
@@ -226,6 +226,7 @@ public interface ITopazErpApi
     //chart of account detail
 
     Task<CoaDetailResponse> GetAccountDetails(int pageNo, int pageSize, string query, bool isActive);
+    Task<CoaDetailResponse> GetBankGlAccounts();
     Task<CoaDetailResponse> CheckAccountNo(string accountNo);
     Task<CoaDetailResponse> GetLocalAccounts();
     Task<BaseApiResponse> CreateAccountDetail(object dto);
@@ -246,11 +247,13 @@ public interface ITopazErpApi
     Task<BaseApiResponse> DeletePettyCashRecipient(Guid id);
 
     //petty cash
-    Task<PettyCashResponse> GetPettyTransactions(int pageNo, int pageSize, string query);
+    Task<PettyCashResponse> GetPettyTransactions(PettyCashFilterDto dto);
+    Task<PettyCashTransactionDetailResponse> GetPettyTransactionDetails(Guid id);
     Task<BaseApiResponse> CreatePettyCash(object dto);
     Task<BaseApiResponse> UpdatePettyCash(object dto);
     Task<BaseApiResponse> DeletePettyCash(Guid id);
-
+    Task<BaseApiResponse> PostPettyCash(object dto);
+    
     //imprest category
     Task<ImprestCategoryResponse> GetImprestCategories(int pageNo, int pageSize, string query);
     Task<BaseApiResponse> CreateImprestCategory(object dto);
@@ -267,21 +270,23 @@ public interface ITopazErpApi
     Task<DefaultGLNumbersResponse> GetDefaultGlNumbersSetup();
     Task<BaseApiResponse> CreateDefaultGlNumbers(object dto);
     Task<BaseApiResponse> UpdateDefaultGlNumbers(object dto);
-
-    // Journal
+    
+    // Journal ...
     Task<JournalTransactionResponse> GetJournalTransactions(JournalListFilterDto dto);
     Task<BaseApiResponse> CreateJournal(object dto);
     Task<BaseApiResponse> UpdateJournal(object dto);
-    Task<BaseApiResponse> GetJournalDetails(Guid id);
+    Task<JournalTransactionDetailResponse> GetJournalDetails(Guid id);
     Task<BaseApiResponse> DeleteJournalBatch(Guid id);
     Task<BaseApiResponse> PostJournal(Guid id);
 
     //vouchers
     Task<VoucherResponse> GetVouchers(DateTime startDate, DateTime endDate, string voucherType);
-    Task<BaseApiResponse> CreateVoucher(object dto);
-    Task<BaseApiResponse> UpdateVoucher(object dto);
-    Task<BaseApiResponse> DeleteVoucher(Guid id);
-    Task<BaseApiResponse> PostVoucher(Guid id);
+    Task<VoucherDetailResponse> GetVoucherDetails(Guid id);
+    Task<VoucherDetailResponse> CreateVoucher(object dto);
+    Task<BaseApiResponse> UpdateVoucher(object dto, Guid? id = null);
+    Task<BaseApiResponse> DeleteVoucher(object dto);
+    Task<BaseApiResponse> PostVoucher(object dto);
+    
 
     //AP
     //opening Balance

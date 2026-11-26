@@ -32,7 +32,17 @@ const app = Vue.createApp({
                     required: true,
                     searchable: true,
                     width: 220,
-                    wrap: true   // span both columns in the modal form
+                    wrap: true,   // span both columns in the modal form
+                    onChange: (val, values) => {
+                        if (!val || val === this.emptyGuid) return;
+                        const parent = this.getParentControl(val, values?.id);
+                        if (parent) {
+                            const pMin = parent.minAccount;
+                            const pMax = parent.maxAccount;
+                            const pName = parent.accountHeaderName || parent.name || 'parent';
+                            this.toastHandler('info', `Under "${pName}": allowed account range is [${pMin} – ${pMax}].`);
+                        }
+                    }
                 },
                 {
                     key: 'minAccount',
@@ -40,7 +50,8 @@ const app = Vue.createApp({
                     type: 'text',
                     required: true,
                     searchable: true,
-                    width: 180
+                    width: 180,
+                    help: 'Must be within parent range and ≤ all child minimums'
                 },
                 {
                     key: 'maxAccount',
@@ -48,7 +59,8 @@ const app = Vue.createApp({
                     type: 'text',
                     required: true,
                     searchable: true,
-                    width: 180
+                    width: 180,
+                    help: 'Must be within parent range and ≥ all child maximums'
                 }
             ];
         }
@@ -120,27 +132,28 @@ const app = Vue.createApp({
 
         async onCreate(event) {
             const row = event?.row || event?.data;
+            if (!row) return;
 
             // Auto-derive accountHeaderName from the selected account group
             const accountGroupId = row?.accountGroupId || row?.accountHeadId;
             row.accountHeaderName = this.resolveGroupName(accountGroupId);
 
-            if (!row || !this.validateRecord(row)) return;
+            if (!this.validateRecord(row)) return;
 
-            const parentAccountHeaderId = row.parentAccountHeaderId || row.parentControlId || this.emptyGuid;
+            const parentControl = this.getParentControl(accountGroupId, row.id);
+            const parentAccountHeaderId = parentControl?.id || row.parentAccountHeaderId || row.parentControlId || this.emptyGuid;
             const headerName = String(row.accountHeaderName || '').trim();
-            const parent = this.coaControlList.find(c => c.id === parentAccountHeaderId);
 
             const payload = {
                 accountHeaderName: headerName,
                 name: headerName,
                 accountGroupId: accountGroupId,
-                parentAccountHeaderId: parentAccountHeaderId || this.emptyGuid,
-                parentControlId: parentAccountHeaderId || this.emptyGuid,
+                parentAccountHeaderId: parentAccountHeaderId,
+                parentControlId: parentAccountHeaderId,
                 minAccount: parseInt(row.minAccount, 10) || 0,
                 maxAccount: parseInt(row.maxAccount, 10) || 0,
-                parentName: parent
-                    ? `${parent.parentName}/${headerName}`
+                parentName: parentControl
+                    ? `${parentControl.parentName || parentControl.accountHeaderName}/${headerName}`
                     : headerName
             };
 
@@ -159,12 +172,13 @@ const app = Vue.createApp({
 
         async onUpdate(event) {
             const row = event?.row || event?.data;
+            if (!row) return;
 
             // Auto-derive accountHeaderName from the selected account group
             const accountGroupId = row?.accountGroupId || row?.accountHeadId;
             row.accountHeaderName = this.resolveGroupName(accountGroupId);
 
-            if (!row || !this.validateRecord(row)) return;
+            if (!this.validateRecord(row)) return;
 
             const existing = this.coaControlList.find(
                 c => String(c.id) === String(row.id)
@@ -175,9 +189,9 @@ const app = Vue.createApp({
                 return;
             }
 
-            const parentAccountHeaderId = row.parentAccountHeaderId || row.parentControlId || this.emptyGuid;
+            const parentControl = this.getParentControl(accountGroupId, row.id);
+            const parentAccountHeaderId = parentControl?.id || row.parentAccountHeaderId || row.parentControlId || existing.parentAccountHeaderId || this.emptyGuid;
             const headerName = String(row.accountHeaderName || '').trim();
-            const parent = this.coaControlList.find(c => c.id === parentAccountHeaderId);
 
             const payload = {
                 ...existing,
@@ -191,8 +205,8 @@ const app = Vue.createApp({
                 parentControlId: parentAccountHeaderId,
                 minAccount: parseInt(row.minAccount, 10) || 0,
                 maxAccount: parseInt(row.maxAccount, 10) || 0,
-                parentName: parent
-                    ? `${parent.parentName}/${headerName}`
+                parentName: parentControl
+                    ? `${parentControl.parentName || parentControl.accountHeaderName}/${headerName}`
                     : headerName
             };
 
@@ -251,7 +265,76 @@ const app = Vue.createApp({
             }
         },
 
-        /* ── Hierarchy builder ──────────────────────────────────── */
+        /* ── Hierarchy & Relationship Helpers ─────────────────────── */
+
+        /** Find the nearest parent control in coaControlList for an account group or control */
+        getParentControl(accountGroupId, controlId) {
+            // 1. Direct parent ID lookup if stored on the control record
+            if (controlId && controlId !== this.emptyGuid) {
+                const existing = this.coaControlList.find(c => String(c.id) === String(controlId));
+                const directParentId = existing?.parentAccountHeaderId || existing?.parentControlId;
+                if (directParentId && directParentId !== this.emptyGuid) {
+                    const parent = this.coaControlList.find(c => String(c.id) === String(directParentId));
+                    if (parent && String(parent.id) !== String(controlId)) return parent;
+                }
+            }
+
+            // 2. Traverse up the Account Head hierarchy to find the nearest ancestor with a control
+            if (accountGroupId && accountGroupId !== this.emptyGuid) {
+                let currentHead = this.accountGroupList.find(g => String(g.id) === String(accountGroupId));
+                const visited = new Set();
+
+                while (currentHead) {
+                    if (visited.has(currentHead.id)) break;
+                    visited.add(currentHead.id);
+
+                    const parentHeadId = currentHead.parentId || currentHead.parentAccountHeadId;
+                    if (!parentHeadId || parentHeadId === this.emptyGuid) break;
+
+                    const parentControl = this.coaControlList.find(c => {
+                        if (controlId && String(c.id) === String(controlId)) return false;
+                        const cGroupId = c.accountGroupId || c.accountHeadId;
+                        return String(cGroupId) === String(parentHeadId);
+                    });
+
+                    if (parentControl) return parentControl;
+
+                    currentHead = this.accountGroupList.find(g => String(g.id) === String(parentHeadId));
+                }
+            }
+
+            return null;
+        },
+
+        /** Find all direct and indirect child controls for an account group or control */
+        getChildControls(accountGroupId, controlId) {
+            const descendantGroupIds = new Set();
+
+            if (accountGroupId && accountGroupId !== this.emptyGuid) {
+                const collectDescendantIds = (parentId) => {
+                    for (const g of this.accountGroupList) {
+                        const pId = g.parentId || g.parentAccountHeadId;
+                        if (pId && String(pId) === String(parentId) && g.id && !descendantGroupIds.has(g.id)) {
+                            descendantGroupIds.add(g.id);
+                            collectDescendantIds(g.id);
+                        }
+                    }
+                };
+                collectDescendantIds(accountGroupId);
+            }
+
+            return this.coaControlList.filter(c => {
+                if (controlId && String(c.id) === String(controlId)) return false;
+
+                const cGroupId = c.accountGroupId || c.accountHeadId;
+                const cParentControlId = c.parentAccountHeaderId || c.parentControlId;
+
+                const isDescendantGroup = Boolean(cGroupId && descendantGroupIds.has(cGroupId));
+                const isChildByControlId = Boolean(controlId && controlId !== this.emptyGuid && String(cParentControlId) === String(controlId));
+
+                return isDescendantGroup || isChildByControlId;
+            });
+        },
 
         // Resolves the full breadcrumb path for each control account and builds
         // the parent account header dropdown options.
@@ -266,7 +349,15 @@ const app = Vue.createApp({
                 if (!item || visited.has(item.id)) return displayName;
                 visited.add(item.id);
 
-                const parentId = item.parentAccountHeaderId || item.parentControlId;
+                let parentId = item.parentAccountHeaderId || item.parentControlId;
+                if (!parentId || parentId === this.emptyGuid) {
+                    const groupId = item.accountGroupId || item.accountHeadId;
+                    const parentControl = this.getParentControl(groupId, item.id);
+                    if (parentControl && parentControl.id !== item.id) {
+                        parentId = parentControl.id;
+                    }
+                }
+
                 if (!parentId || parentId === this.emptyGuid) {
                     return displayName;
                 }
@@ -311,12 +402,9 @@ const app = Vue.createApp({
             ];
         },
 
-        /* ── Validation ─────────────────────────────────────────── */
+        /* ── Preventive Validation ───────────────────────────────── */
 
         validateRecord(row) {
-            // accountHeaderName is auto-derived — no user input needed.
-            // We only validate the fields the user actually fills in.
-
             const groupId = row.accountGroupId || row.accountHeadId;
             if (!groupId || groupId === this.emptyGuid) {
                 this.toastHandler('warning', 'Please select an Account Group.');
@@ -334,37 +422,71 @@ const app = Vue.createApp({
             const min = parseInt(minStr, 10);
             const max = parseInt(maxStr, 10);
 
-            if (!isNaN(min) && !isNaN(max) && max < min) {
+            if (isNaN(min) || isNaN(max)) {
+                this.toastHandler('warning', 'Min and Max account numbers must be valid integers.');
+                return false;
+            }
+
+            if (min < 0) {
+                this.toastHandler('warning', 'Min Account No cannot be negative.');
+                return false;
+            }
+
+            if (max < min) {
                 this.toastHandler('warning', 'Max Account No cannot be less than Min Account No.');
                 return false;
             }
 
-            const parentId = row.parentAccountHeaderId || row.parentControlId;
-            if (parentId && parentId !== this.emptyGuid) {
-                const parent = this.coaControlList.find(c => c.id === parentId);
+            // ── 1. Parent Range Check: Child must fit within parent's range ───
+            const parent = this.getParentControl(groupId, row.id);
+            if (parent && String(parent.id) !== String(row.id)) {
+                const parentMin = parseInt(parent.minAccount, 10);
+                const parentMax = parseInt(parent.maxAccount, 10);
 
-                if (!parent) {
-                    this.toastHandler('error', 'Selected parent account header does not exist.');
-                    return false;
-                }
-
-                if (row.id && parentId === row.id) {
-                    this.toastHandler('warning', 'An account header cannot be its own parent.');
-                    return false;
-                }
-
-                // Guard against circular hierarchy
-                let current = this.coaControlList.find(c => c.id === parentId);
-                const visited = new Set();
-
-                while (current && !visited.has(current.id)) {
-                    if (current.id === row.id) {
-                        this.toastHandler('warning', 'This change would create a circular hierarchy.');
+                if (!isNaN(parentMin) && !isNaN(parentMax)) {
+                    const parentName = parent.accountHeaderName || parent.name || 'parent control';
+                    if (min < parentMin) {
+                        this.toastHandler(
+                            'warning',
+                            `Min Account No (${min}) cannot be less than parent "${parentName}" minimum (${parentMin}). Allowed parent range is [${parentMin} – ${parentMax}].`
+                        );
                         return false;
                     }
-                    visited.add(current.id);
-                    const nextParentId = current.parentAccountHeaderId || current.parentControlId;
-                    current = this.coaControlList.find(c => c.id === nextParentId);
+                    if (max > parentMax) {
+                        this.toastHandler(
+                            'warning',
+                            `Max Account No (${max}) cannot be greater than parent "${parentName}" maximum (${parentMax}). Allowed parent range is [${parentMin} – ${parentMax}].`
+                        );
+                        return false;
+                    }
+                }
+            }
+
+            // ── 2. Child Controls Range Check: Parent must enclose all child controls ─
+            const childControls = this.getChildControls(groupId, row.id);
+            if (childControls.length > 0) {
+                for (const child of childControls) {
+                    const childMin = parseInt(child.minAccount, 10);
+                    const childMax = parseInt(child.maxAccount, 10);
+                    if (isNaN(childMin) || isNaN(childMax)) continue;
+
+                    const childName = child.accountHeaderName || child.name || 'child control';
+
+                    if (min > childMin) {
+                        this.toastHandler(
+                            'warning',
+                            `Cannot save Min Account No (${min}): child control "${childName}" has minimum ${childMin}. The range must encompass all child controls.`
+                        );
+                        return false;
+                    }
+
+                    if (max < childMax) {
+                        this.toastHandler(
+                            'warning',
+                            `Cannot save Max Account No (${max}): child control "${childName}" has maximum ${childMax}. The range must encompass all child controls.`
+                        );
+                        return false;
+                    }
                 }
             }
 

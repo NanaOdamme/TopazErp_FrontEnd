@@ -15,14 +15,42 @@
         </div>
         <div class="flex flex-wrap items-center justify-between gap-4">
             <h2 class="text-2xl font-semibold text-gray-800">Customer Receipt Voucher</h2>
-            <a href="/GeneralLedger/Vouchers"
+            <a href="/GeneralLedger/Vouchers?tab=customer"
                class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition">
                 <i class="bi bi-arrow-left"></i> Back to Vouchers
             </a>
         </div>
     </div>
 
-    <div id="app">
+    <div id="app" v-cloak>
+
+        <!-- ── Loading Overlay ─────────────────────────────────────── -->
+        <div v-if="isShimmerLoading" class="card flex flex-col items-center justify-center py-24 bg-white rounded-xl border border-gray-200 mb-4 shadow-xs gap-4">
+            <!-- Circular spinner -->
+            <div class="relative flex items-center justify-center" style="width:56px;height:56px">
+                <svg class="animate-spin" style="width:56px;height:56px" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Track ring -->
+                    <circle cx="28" cy="28" r="22" stroke="#E5E7EB" stroke-width="5"/>
+                    <!-- Spinning arc -->
+                    <circle cx="28" cy="28" r="22"
+                            stroke="#2563EB"
+                            stroke-width="5"
+                            stroke-linecap="round"
+                            stroke-dasharray="100 38.8"
+                            stroke-dashoffset="0"
+                            transform="rotate(-90 28 28)"/>
+                </svg>
+                <!-- Inner dot -->
+                <span class="absolute inline-block rounded-full bg-blue-600" style="width:8px;height:8px"></span>
+            </div>
+            <div class="flex flex-col items-center gap-1">
+                <span class="text-sm font-semibold text-gray-700">{{ isEditMode ? 'Loading voucher details…' : 'Initialising voucher…' }}</span>
+                <span class="text-xs text-gray-400">Please wait</span>
+            </div>
+        </div>
+
+        <!-- ── Main Content (hidden while loading) ───────────────── -->
+        <template v-if="!isShimmerLoading">
 
         <!-- ── Header Card ───────────────────────────────────── -->
         <div class="card mb-4 p-5">
@@ -47,7 +75,7 @@
                     <label>Bank G/L <span class="text-red-500">*</span></label>
                     <select v-model="bankAccountId" class="gl-select">
                         <option value="" disabled>Select Account...</option>
-                        <option v-for="a in accountsList" :value="a.id">{{ a.accountIdentifier }}</option>
+                        <option v-for="a in bankGlAccountsList" :key="a.id" :value="a.id">{{ a.accountIdentifier }}</option>
                     </select>
                     <span class="text-red-500 text-xs" v-if="errors.bankAccountId">Required</span>
                 </div>
@@ -90,22 +118,84 @@
                     <input type="text" v-model="batchNo" class="gl-input" placeholder="Batch No." />
                 </div>
 
+                <div class="gl-field w-36">
+                    <label>Receipt No#</label>
+                    <input type="text" v-model="receiptNo" class="gl-input" placeholder="Receipt No." />
+                </div>
+
                 <div class="gl-field w-36" v-if="modePayment === 'Cheque'">
                     <label>Cheque No#</label>
                     <input type="text" v-model="chequeNo" class="gl-input" placeholder="Cheque No." />
                 </div>
 
                 <div class="ml-auto flex gap-2 items-end">
-                    <button type="button" @@click="saveVoucher()" :disabled="isLoading"
-                            class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition disabled:opacity-60">
-                        <i class="bi bi-floppy" v-if="!isLoading"></i>
-                        <i class="bi bi-arrow-repeat animate-spin" v-else></i>
-                        {{ saveButtonText }}
+                    <!-- Posted status badge -->
+                    <span v-if="isPosted" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        <i class="bi bi-check-circle-fill text-emerald-600"></i> Posted
+                    </span>
+
+                    <!-- Post button (when voucher is saved/loaded and not posted) -->
+                    <button type="button"
+                            v-if="voucherId && !isPosted"
+                            @@click="postVoucher()"
+                            :disabled="isLoading"
+                            class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 transition disabled:opacity-60">
+                        <i class="bi bi-send-check"></i> Post
                     </button>
+
                     <button type="button" v-if="voucherId" @@click="previewVoucher()"
                             class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition">
                         <i class="bi bi-eye"></i> Preview
                     </button>
+
+                    <!-- Save Dropdown -->
+                    <div class="relative" id="saveMenuWrapper">
+                        <button type="button"
+                                @@click.stop="showSaveMenu = !showSaveMenu"
+                                :disabled="isLoading"
+                                class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition disabled:opacity-60">
+                            <i class="bi bi-arrow-repeat animate-spin" v-if="isLoading"></i>
+                            <i class="bi bi-floppy" v-else></i>
+                            <span>{{ saveButtonText }}</span>
+                            <i class="bi bi-chevron-down text-xs transition-transform duration-200"
+                               :class="{ 'rotate-180': showSaveMenu }"></i>
+                        </button>
+
+                        <transition name="fade">
+                            <div v-if="showSaveMenu"
+                                 class="absolute right-0 mt-2 w-52 rounded-xl border border-gray-200 bg-white shadow-xl ring-1 ring-black/5 z-50 overflow-hidden py-1">
+                                <button type="button"
+                                        @@click="saveVoucher(false)"
+                                        class="w-full text-left px-4 py-2.5 text-sm text-gray-800 hover:bg-blue-50/70 flex items-center gap-2.5 transition border-b border-gray-100">
+                                    <i class="bi bi-floppy text-blue-600"></i>
+                                    <span class="font-medium">Save</span>
+                                </button>
+                                <button type="button"
+                                        @@click="saveVoucher(true)"
+                                        class="w-full text-left px-4 py-2.5 text-sm text-gray-800 hover:bg-blue-50/70 flex items-center gap-2.5 transition"
+                                        :class="(!isPosted) ? 'border-b border-gray-100' : ''">
+                                    <i class="bi bi-printer text-emerald-600"></i>
+                                    <span class="font-medium">Save and Preview</span>
+                                </button>
+                                <!-- Post Voucher option -->
+                                <button type="button"
+                                        v-if="voucherId && !isPosted"
+                                        @@click="postVoucher()"
+                                        class="w-full text-left px-4 py-2.5 text-sm text-gray-800 hover:bg-emerald-50/70 flex items-center gap-2.5 transition">
+                                    <i class="bi bi-send-check text-emerald-600"></i>
+                                    <span class="font-medium">Post Voucher</span>
+                                </button>
+                                <!-- Delete Voucher option -->
+                                <button type="button"
+                                        v-if="voucherId && !isPosted"
+                                        @@click="deleteVoucher()"
+                                        class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50/70 flex items-center gap-2.5 transition border-t border-gray-100">
+                                    <i class="bi bi-trash3 text-red-600"></i>
+                                    <span class="font-medium">Delete Voucher</span>
+                                </button>
+                            </div>
+                        </transition>
+                    </div>
                 </div>
 
             </div>
@@ -188,6 +278,141 @@
             </div>
         </div>
 
+        <!-- ── Proposed Journal Entries ────────────────────── -->
+        <div class="card mb-6 p-6 rounded-xl border border-gray-200/80 bg-white shadow-sm mt-4">
+            <div class="flex items-start justify-between pb-4 border-b border-gray-100">
+                <div class="flex items-start gap-3">
+                    <div class="mt-0.5 text-gray-600 text-lg">
+                        <i class="bi bi-calculator"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-900">Proposed journal entry</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">
+                            A balanced draft posts debits to cash / bank and credits to the selected receivable accounts.
+                        </p>
+                    </div>
+                </div>
+                <div>
+                    <span v-if="proposedJournalTotals.isBalanced"
+                          class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200/80 shadow-sm">
+                        <i class="bi bi-check2 text-emerald-600"></i> Balanced
+                    </span>
+                    <span v-else
+                          class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 border border-amber-200/80 shadow-sm">
+                        <i class="bi bi-exclamation-triangle text-amber-600"></i> Unbalanced
+                    </span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto mt-2">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-gray-100">
+                            <th class="py-3 px-3 text-left font-semibold text-[11px] text-gray-400 tracking-wider uppercase">Account</th>
+                            <th class="py-3 px-3 text-left font-semibold text-[11px] text-gray-400 tracking-wider uppercase">Description</th>
+                            <th class="py-3 px-3 text-right font-semibold text-[11px] text-gray-400 tracking-wider uppercase">Debit &middot; {{ currencyCode }}</th>
+                            <th class="py-3 px-3 text-right font-semibold text-[11px] text-gray-400 tracking-wider uppercase">Credit &middot; {{ currencyCode }}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        <tr v-for="(row, idx) in proposedJournalEntries" :key="idx" class="hover:bg-gray-50/50 transition-colors">
+                            <td class="py-3 px-3 text-sm text-gray-800 font-normal">{{ row.accountDisplay }}</td>
+                            <td class="py-3 px-3 text-sm text-gray-500 font-normal">{{ row.description || '—' }}</td>
+                            <td class="py-3 px-3 text-sm text-right font-semibold text-gray-800 whitespace-nowrap">
+                                {{ row.debitAmount ? (currencySymbol + fmtNum(row.debitAmount)) : '—' }}
+                            </td>
+                            <td class="py-3 px-3 text-sm text-right font-semibold text-gray-800 whitespace-nowrap">
+                                {{ row.creditAmount ? (currencySymbol + fmtNum(row.creditAmount)) : '—' }}
+                            </td>
+                        </tr>
+                        <tr v-if="!proposedJournalEntries.length">
+                            <td colspan="4" class="py-8 text-center text-sm text-gray-400">
+                                No journal lines to propose yet. Enter receipt lines above.
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot v-if="proposedJournalEntries.length" class="border-t border-gray-100">
+                        <tr>
+                            <td colspan="2" class="py-3 px-3 text-right text-sm font-semibold text-gray-600">Totals</td>
+                            <td class="py-3 px-3 text-right text-sm font-bold text-gray-900 whitespace-nowrap">
+                                {{ currencySymbol }}{{ fmtNum(proposedJournalTotals.debit) }}
+                            </td>
+                            <td class="py-3 px-3 text-right text-sm font-bold text-gray-900 whitespace-nowrap">
+                                {{ currencySymbol }}{{ fmtNum(proposedJournalTotals.credit) }}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- ── Voucher Preview Modal (Standardized Topaz ERP Modal) ── -->
+        <teleport to="body">
+            <div v-if="showPreviewModal"
+                 class="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/60 backdrop-blur-sm p-3 sm:p-6"
+                 @@keydown.esc="closePreviewModal"
+                 tabindex="-1">
+                <section role="dialog" aria-modal="true" aria-labelledby="voucher-preview-title"
+                         class="relative flex max-h-[92vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl border border-gray-200">
+                    <!-- Header -->
+                    <header class="flex items-center justify-between gap-4 border-b border-gray-200 px-6 py-4 bg-white">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center ring-1 ring-inset ring-blue-100 flex-shrink-0">
+                                <i class="bi bi-file-earmark-text text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 id="voucher-preview-title" class="text-base font-semibold text-gray-800">Official Receipt Preview</h3>
+                            </div>
+                        </div>
+                        <button type="button" aria-label="Close voucher preview"
+                                class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition duration-150"
+                                @@click="closePreviewModal">
+                            <i class="bi bi-x-lg text-sm"></i>
+                        </button>
+                    </header>
+
+                    <!-- Body with ReportViewer -->
+                    <div class="min-h-0 flex-1 overflow-auto p-4 sm:p-6 bg-gray-50/70">
+                        <div v-if="isPreviewLoading" role="status" class="py-20 text-center text-sm text-gray-500">
+                            <div class="w-12 h-12 mx-auto rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+                                <i class="bi bi-arrow-repeat animate-spin text-2xl"></i>
+                            </div>
+                            <p class="font-medium text-gray-700">Preparing voucher preview…</p>
+                            <p class="text-xs text-gray-400 mt-1">Generating printable layout and document pages</p>
+                        </div>
+                        <div v-else-if="previewError" role="alert" class="rounded-xl bg-red-50 p-4 text-sm text-red-700 border border-red-200">
+                            <div class="flex items-start gap-3">
+                                <i class="bi bi-exclamation-triangle-fill text-red-500 text-lg flex-shrink-0 mt-0.5"></i>
+                                <div class="flex-1">
+                                    <p class="font-semibold text-red-800">Unable to load voucher preview</p>
+                                    <p class="mt-0.5 text-red-700 text-xs">{{ previewError }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <report-viewer v-else-if="previewReport" :report="previewReport" :exporters="previewExporters"></report-viewer>
+                    </div>
+
+                    <!-- Footer -->
+                    <footer class="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 border-t border-gray-200 px-6 py-3.5 bg-gray-50">
+                        <button type="button"
+                                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 shadow-sm transition"
+                                @@click="closePreviewModal">
+                            <i class="bi bi-x-lg text-xs"></i> Close
+                        </button>
+                        <div class="w-full sm:w-auto flex items-center justify-end gap-2">
+                            <button type="button"
+                                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 px-5 py-2 text-sm font-semibold text-white shadow-sm transition"
+                                    @@click="onBackToVouchers">
+                                <i class="bi bi-arrow-left"></i> Back to Vouchers
+                            </button>
+                        </div>
+                    </footer>
+                </section>
+            </div>
+        </teleport>
+
+        </template><!-- end v-if="!isShimmerLoading" -->
+
     </div>
 </div>
 
@@ -205,10 +430,12 @@
     .summary-row { display:flex; justify-content:space-between; font-size:.8125rem; padding:.25rem 0; }
     @@keyframes spin { to { transform:rotate(360deg); } }
     .animate-spin { display:inline-block; animation:spin .7s linear infinite; }
+    .fade-enter-active, .fade-leave-active { transition: opacity .15s, transform .15s; }
+    .fade-enter-from, .fade-leave-to { opacity:0; transform:translateY(-4px); }
 </style>
 
 <script>
     let withHoldingVatPercentage = @withHoldingVatPct;
-    let voucherId = '';
+    let voucherId = '@(ViewBag.VoucherId ?? "")';
 </script>
 <script src="~/js/gl/customer-receipt-voucher.js" asp-append-version="true"></script>
