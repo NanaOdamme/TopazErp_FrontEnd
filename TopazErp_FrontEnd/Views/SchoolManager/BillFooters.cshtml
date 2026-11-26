@@ -1,0 +1,65 @@
+@{
+    ViewBag.Title = "Bill Footers";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+
+<div class="content">
+    <div class="mb-5 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-1 dark:text-gray-400">
+            <span>School Manager - Billing & Setups</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium dark:text-blue-400">Bill Footers</span>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-bold text-gray-800 dark:text-white tracking-tight flex items-center gap-2.5">
+                    Bill Footers
+                </h2>
+        
+            </div>
+
+          
+        </div>
+    </div>
+    <!-- Main Card -->
+    <div class="card" data-card-title="Bill Footers">
+        <div id="app">
+
+            <!-- Initial Shimmer Loader -->
+            <div v-if="!setupDone" class="py-24 text-center text-gray-400">
+                <i class="text-blue-800 bi bi-arrow-repeat animate-spin text-3xl inline-block mb-2 text-[#062a81]"></i>
+                <p class="text-sm">Loading academic years, terms, classes, and bill footers…</p>
+            </div>
+
+            <template v-else>
+            
+
+                <!-- Interactive Data Grid with Child Subgrid (like MidTerm Remarks Headers) -->
+                <data-grid title="Bill Footers"
+                           :columns="footerColumns"
+                           :child="detailSubgrid"
+                           :data="billFooters"
+                           :theme="theme"
+                           row-id="id"
+                           label-key="message"
+                           item-label="Bill Footer"
+                           item-label-plural="Bill Footers"
+                           add-label="Add"
+                           :page-size="10"
+                           :selectable="true"
+                           :actions="true"
+                           :loading="isShimmerLoading"
+                           :stripes="true"
+                           density="compact"
+                           @@create="onCreate"
+                           @@update="onUpdate"
+                           @@delete="onDelete">
+                </data-grid>
+            </template>
+
+        </div><!-- /#app -->
+    </div><!-- /.card -->
+</div><!-- /.content -->
+
+<script src="~/js/school-manager/bill-footers.js"></script>

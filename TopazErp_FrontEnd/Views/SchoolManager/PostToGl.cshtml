@@ -1,0 +1,196 @@
+@{
+    ViewBag.Title = "Post to G/L";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+
+<div class="content">
+    <div class="mb-5 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-1 dark:text-gray-400">
+            <span>School Manager - Billing &amp; Payments</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium dark:text-blue-400">Post to G/L</span>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-bold text-gray-800 dark:text-white tracking-tight flex items-center gap-2.5">
+                    Post Bills, Payments &amp; Credit Memos
+                </h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" data-card-title="Post to G/L">
+        <div id="app">
+
+            <!-- Loader -->
+            <div v-if="!setupDone" class="py-24 text-center text-gray-400">
+                <i class="text-blue-800 bi bi-arrow-repeat animate-spin text-3xl inline-block mb-2"></i>
+                <p class="text-sm">Loading unposted records, G/L mappings and the school profile…</p>
+            </div>
+
+            <template v-else>
+                <!-- Currency guard banner -->
+                <div v-if="!currencyConfigured"
+                     class="mb-4 p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs flex items-start gap-2">
+                    <i class="bi bi-exclamation-octagon-fill mt-0.5"></i>
+                    <span>
+                        {{ currencyWarning || "The school's local currency is not set (empty or null). Set the local currency in the School Profile before posting to G/L." }}
+                    </span>
+                </div>
+
+                <!-- Tabs: Bills | Payments | Credit Memos -->
+                <div class="flex items-center gap-2 mb-5 border-b border-gray-200 dark:border-slate-700">
+                    <button type="button"
+                            class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors"
+                            :class="activeTab === 'bills'
+                                ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500'
+                                : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400'"
+                            @@click="activeTab = 'bills'">
+                        <i class="bi bi-file-earmark-spreadsheet"></i>
+                        <span>Bills</span>
+                    </button>
+
+                    <button type="button"
+                            class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors"
+                            :class="activeTab === 'payments'
+                                ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500'
+                                : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400'"
+                            @@click="activeTab = 'payments'">
+                        <i class="bi bi-cash-stack"></i>
+                        <span>Payments</span>
+                    </button>
+
+                    <button type="button"
+                            class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-4 py-2.5 text-sm font-semibold transition-colors"
+                            :class="activeTab === 'memos'
+                                ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500'
+                                : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400'"
+                            @@click="activeTab = 'memos'">
+                        <i class="bi bi-journal-check"></i>
+                        <span>Credit Memos</span>
+                    </button>
+                </div>
+
+                <!-- ============ TAB 1: BILLS ============ -->
+                <div v-show="activeTab === 'bills'">
+                    <div v-if="billsMissingGl.length"
+                         class="mb-3 p-3 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-xs">
+                        <div class="font-semibold flex items-center gap-1.5">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <span>{{ billsMissingGl.length }} bill(s) contain fee items without a G/L account</span>
+                        </div>
+                        <ul class="mt-1.5 list-disc list-inside space-y-0.5">
+                            <li v-for="m in missingGlSummary" :key="m.key">
+                                {{ m.billTypeName }} — {{ m.name }}
+                                <span class="text-amber-600">({{ m.billCount }} bill{{ m.billCount === 1 ? '' : 's' }})</span>
+                            </li>
+                        </ul>
+                        <p class="mt-1.5 text-[11px] text-amber-700">
+                            Configure them in G/L Accounts → Bill Accounts before posting.
+                        </p>
+                    </div>
+
+                    <div class="flex justify-end gap-1.5 mb-2 flex-wrap">
+                        <button type="button"
+                                @@click="postSelectedBills"
+                                :disabled="busy || !currencyConfigured"
+                                class="border border-indigo-600 text-white bg-indigo-600 px-2.5 py-1.5 text-xs rounded-lg hover:bg-indigo-500 disabled:opacity-60">
+                            <i class="bi bi-send-check mr-1"></i>Post Bills
+                        </button>
+                    </div>
+
+                    <data-grid ref="billsGrid"
+                               title="Unposted Bills"
+                               :columns="billColumns"
+                               :data="bills"
+                               :theme="theme"
+                               row-id="id"
+                               label-key="billNumber"
+                               storage-key="school-manager-post-bills"
+                               item-label="Bill"
+                               item-label-plural="Bills"
+                               :page-size="10"
+                               :selectable="true"
+                               :actions="false"
+                               :allow-add="false"
+                               :allow-edit="false"
+                               :allow-delete="false"
+                               :loading="isShimmerLoading"
+                               :stripes="true"
+                               density="compact">
+                    </data-grid>
+                </div>
+
+                <!-- ============ TAB 2: PAYMENTS ============ -->
+                <div v-show="activeTab === 'payments'">
+                    <div class="flex justify-end gap-1.5 mb-2 flex-wrap">
+                        <button type="button"
+                                @@click="postSelectedPayments"
+                                :disabled="busy || !currencyConfigured"
+                                class="border border-indigo-600 text-white bg-indigo-600 px-2.5 py-1.5 text-xs rounded-lg hover:bg-indigo-500 disabled:opacity-60">
+                            <i class="bi bi-send-check mr-1"></i>Post Payments
+                        </button>
+                    </div>
+
+                    <data-grid ref="paymentsGrid"
+                               title="Unposted Student Payments"
+                               :columns="paymentColumns"
+                               :data="payments"
+                               :theme="theme"
+                               row-id="id"
+                               label-key="receiptNumber"
+                               storage-key="school-manager-post-payments"
+                               item-label="Payment"
+                               item-label-plural="Payments"
+                               :page-size="10"
+                               :selectable="true"
+                               :actions="false"
+                               :allow-add="false"
+                               :allow-edit="false"
+                               :allow-delete="false"
+                               :loading="isShimmerLoading"
+                               :stripes="true"
+                               density="compact">
+                    </data-grid>
+                </div>
+
+                <!-- ============ TAB 3: CREDIT MEMOS ============ -->
+                <div v-show="activeTab === 'memos'">
+                    <div class="flex justify-end gap-1.5 mb-2 flex-wrap">
+                        <button type="button"
+                                @@click="postSelectedMemos"
+                                :disabled="busy || !currencyConfigured"
+                                class="border border-indigo-600 text-white bg-indigo-600 px-2.5 py-1.5 text-xs rounded-lg hover:bg-indigo-500 disabled:opacity-60">
+                            <i class="bi bi-send-check mr-1"></i>Post Credit Memos
+                        </button>
+                    </div>
+
+                    <data-grid ref="memosGrid"
+                               title="Unposted Credit Memos"
+                               :columns="memoColumns"
+                               :data="memos"
+                               :theme="theme"
+                               row-id="id"
+                               label-key="receiptNumber"
+                               storage-key="school-manager-post-memos"
+                               item-label="Credit Memo"
+                               item-label-plural="Credit Memos"
+                               :page-size="10"
+                               :selectable="true"
+                               :actions="false"
+                               :allow-add="false"
+                               :allow-edit="false"
+                               :allow-delete="false"
+                               :loading="isShimmerLoading"
+                               :stripes="true"
+                               density="compact">
+                    </data-grid>
+                </div>
+            </template>
+
+        </div>
+    </div>
+</div>
+
+<script src="~/js/school-manager/post-to-gl.js" asp-append-version="true"></script>

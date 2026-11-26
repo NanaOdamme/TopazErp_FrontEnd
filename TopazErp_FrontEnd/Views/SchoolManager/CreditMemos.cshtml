@@ -1,0 +1,399 @@
+@{
+    ViewBag.Title = "Credit Memos";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+
+<div class="content">
+    <div class="mb-5 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-1 dark:text-gray-400">
+            <span>School Manager - Billing &amp; Payments</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium dark:text-blue-400">Credit Memos</span>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-bold text-gray-800 dark:text-white tracking-tight flex items-center gap-2.5">
+                    Student Credit Memos
+                </h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" data-card-title="Credit Memos">
+        <div id="app">
+
+            <!-- Loader -->
+            <div v-if="!setupDone" class="py-24 text-center text-gray-400">
+                <i class="text-blue-800 bi bi-arrow-repeat animate-spin text-3xl inline-block mb-2"></i>
+                <p class="text-sm">Loading credit memos, students and lookups…</p>
+            </div>
+
+            <template v-else>
+                <!-- Toolbar -->
+                <div class="flex justify-end gap-1.5 mb-2 flex-wrap">
+                    <button type="button"
+                            @@click="openMemoModal()"
+                            class="border border-[#062a81] text-white px-2.5 py-1.5 text-xs rounded-lg bg-[#062a81] hover:bg-blue-800">
+                        <i class="bi bi-plus-lg mr-1"></i>New Credit Memo
+                    </button>
+
+                    <button type="button"
+                            @@click="editSelectedMemo"
+                            class="border border-slate-500 text-white px-2.5 py-1.5 text-xs rounded-lg bg-slate-700 hover:bg-slate-600">
+                        <i class="bi bi-pencil-square mr-1"></i>Edit
+                    </button>
+
+                    <button type="button"
+                            @@click="cancelSelectedMemos"
+                            :disabled="busy"
+                            class="border border-rose-600 text-white bg-rose-600 px-2.5 py-1.5 text-xs rounded-lg hover:bg-rose-500 disabled:opacity-60">
+                        <i class="bi bi-x-circle mr-1"></i>Cancel
+                    </button>
+                </div>
+
+                <data-grid ref="memosGrid"
+                           title="Credit Memos"
+                           :columns="memoColumns"
+                           :data="creditMemos"
+                           :theme="theme"
+                           row-id="id"
+                           label-key="receiptNumber"
+                           storage-key="school-manager-credit-memos"
+                           item-label="Credit Memo"
+                           item-label-plural="Credit Memos"
+                           :page-size="10"
+                           :selectable="true"
+                           :actions="false"
+                           :allow-add="false"
+                           :allow-edit="false"
+                           :allow-delete="false"
+                           :loading="isShimmerLoading"
+                           :stripes="true"
+                           density="compact">
+                </data-grid>
+            </template>
+
+            <!-- ===================== MODAL: Create / Edit Credit Memo ===================== -->
+            <div v-if="memoModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                <div class="w-full max-w-4xl rounded-2xl bg-white dark:bg-slate-800 shadow-2xl border border-gray-100 dark:border-slate-700 overflow-hidden flex flex-col max-h-[92vh]">
+
+                    <!-- Header -->
+                    <div class="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800/80">
+                        <div>
+                            <h3 class="font-bold text-sm text-gray-800 dark:text-white flex items-center gap-2">
+                                <i class="bi bi-journal-check"></i>
+                                <span>{{ editMode ? 'Edit Credit Memo' : 'New Credit Memo' }}</span>
+                            </h3>
+
+                        </div>
+                        <button type="button" @@click="closeMemoModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="p-6 space-y-5 overflow-y-auto flex-1">
+
+                        <!-- Read-only notice -->
+                        <div v-if="form.isLocked"
+                             class="p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs flex items-start gap-2">
+                            <i class="bi bi-lock-fill mt-0.5"></i>
+                            <span>Read Only</span>
+                        </div>
+
+                        <!-- Student + Memo identity -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <w-select v-model="form.studentId"
+                                          :options="studentOptions"
+                                          display-key="name"
+                                          value-key="studentId"
+                                          label="Student:"
+                                          :disabled="editMode || form.isLocked"
+                                          @@update:model-value="onStudentChanged"
+                                          required>
+                                </w-select>
+                            </div>
+
+                            <div>
+                                <label class="label">
+                                    Date <span class="text-rose-500">*</span>
+                                </label>
+                                <input type="date"
+                                       v-model="form.date"
+                                       :disabled="form.isLocked"
+                                       class="input-control" />
+                            </div>
+
+                            <div>
+                                <label class="label">
+                                    Memo No.
+                                </label>
+                                <div class="flex items-center gap-1">
+                                    <input type="text"
+                                           v-model="form.receiptNumber"
+                                           readonly
+                                           class="input-control" />
+                                    <button v-if="!form.isLocked"
+                                            type="button"
+                                            title="Regenerate memo number"
+                                            @@click="regenerateMemoNumber"
+                                            class="shrink-0 rounded-md px-2 py-1.5 text-gray-500 hover:text-blue-600 hover:border-blue-300 transition">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="label">
+                                    Payment Method <span class="text-rose-500">*</span>
+                                </label>
+                                <select v-model.number="form.paymentMethod"
+                                        :disabled="form.isLocked"
+                                        @@change="onPaymentMethodChanged"
+                                        class="select text-xs">
+                                    <option v-for="m in paymentMethods" :key="m.id" :value="m.id">{{ m.name }}</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="label">
+                                    Batch Number
+                                </label>
+                                <input type="text"
+                                       v-model="form.batchNumber"
+                                       :disabled="form.isLocked"
+                                       class="input-control" />
+                            </div>
+
+                            <div>
+                                <w-select v-model="form.academicYearId"
+                                          :options="academicYears"
+                                          display-key="name"
+                                          value-key="id"
+                                          label="Academic Year:"
+                                          :disabled="form.isLocked"
+                                          required>
+                                </w-select>
+                            </div>
+
+                            <div>
+                                <w-select v-model="form.termId"
+                                          :options="terms"
+                                          display-key="name"
+                                          value-key="id"
+                                          label="Term:"
+                                          :disabled="form.isLocked"
+                                          required>
+                                </w-select>
+                            </div>
+
+                            <div>
+                                <w-select v-model="form.classId"
+                                          :options="classes"
+                                          display-key="name"
+                                          value-key="id"
+                                          label="Class:"
+                                          :disabled="form.isLocked"
+                                          required>
+                                </w-select>
+                            </div>
+                        </div>
+
+                        <!-- Amounts -->
+                        <div class="rounded-xl border border-gray-200 dark:border-slate-700 p-4">
+                            <h4 class="text-xs font-bold text-gray-700 dark:text-gray-200 flex items-center gap-1.5 mb-3">
+                                <i class="bi bi-calculator text-blue-600"></i>
+                                <span>Credit Details</span>
+                            </h4>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="label">
+                                        Currency
+                                    </label>
+                                    <w-select v-model="form.currencyId"
+                                              :options="currencies"
+                                              display-key="currencyName"
+                                              value-key="id"
+                                              :disabled="form.isLocked"
+                                              @@update:model-value="onCurrencyChanged">
+                                    </w-select>
+                                    <p class="mt-1 text-[11px] flex items-center gap-1"
+                                       :class="isMemoMultiCurrency ? 'text-amber-600 font-semibold' : 'text-gray-400'">
+                                        <i class="bi" :class="isMemoMultiCurrency ? 'bi-globe2' : 'bi-check-circle'"></i>
+                                        <span v-if="isMemoMultiCurrency">Foreign currency — amount converts to {{ currencyCode }}</span>
+                                        <span v-else>School local currency</span>
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label class="label">
+                                        Currency Rate
+                                    </label>
+                                    <input type="number"
+                                           step="0.0001"
+                                           v-model.number="form.rate"
+                                           :disabled="form.isLocked || !isMemoMultiCurrency"
+                                           class="input-control" />
+                                </div>
+
+                                <div>
+                                    <label class="label">
+                                        Amount (Due) · {{ currencyCode }}
+                                    </label>
+                                    <input type="number"
+                                           step="0.01"
+                                           v-model.number="form.amountDue"
+                                           :disabled="form.isLocked"
+                                           class="input-control" />
+                                </div>
+
+                                <div>
+                                    <label class="label">
+                                        Amount to Credit ({{ paymentCurrencyCode }}) <span class="text-rose-500">*</span>
+                                    </label>
+                                    <input type="number"
+                                           step="0.01"
+                                           min="0"
+                                           v-model.number="form.amountToCredit"
+                                           :disabled="form.isLocked"
+                                           class="input-control" />
+
+                                    <!-- Always show the converted amount -->
+                                    <p class="mt-1 text-[11px] leading-tight"
+                                       :class="isMemoMultiCurrency ? 'text-emerald-600 font-semibold' : 'text-gray-400'">
+                                        <i class="bi bi-arrow-left-right mr-0.5"></i>
+                                        {{ formatConverted(amountToCreditInLocalCurrency) }} · {{ currencyCode }}
+                                        <span v-if="isMemoMultiCurrency" class="font-normal text-gray-500">
+                                            @@ {{ effectiveRate }} ({{ paymentCurrencyCode }} → {{ currencyCode }})
+                                        </span>
+                                    </p>
+                                </div>
+
+                                <div class="sm:col-span-2">
+                                    <label class="label">
+                                        Student Outstanding · {{ currencyCode }}
+                                    </label>
+                                    <input type="text"
+                                           :value="formatMoney(studentOutstanding)"
+                                           readonly
+                                           class="input-control" />
+                                    <p v-if="creditSettlesPartOfBalance" class="mt-1 text-[11px] text-amber-600 flex items-center gap-1">
+                                        <i class="bi bi-info-circle"></i>
+                                        This credit covers part of the outstanding balance.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                                <div>
+                                    <w-select v-model="form.bankId"
+                                              :options="banks"
+                                              display-key="name"
+                                              value-key="id"
+                                              label="Bank:"
+                                              :disabled="form.isLocked || !requiresBank"
+                                              @@update:model-value="onBankChanged">
+                                    </w-select>
+                                </div>
+
+                                <div>
+                                    <w-select v-model="form.bankBranchId"
+                                              :options="bankBranchChoices"
+                                              display-key="name"
+                                              value-key="id"
+                                              label="Bank Branch:"
+                                              :disabled="form.isLocked || !requiresBank || !form.bankId">
+                                    </w-select>
+                                </div>
+
+                                <div>
+                                    <w-select v-model="form.creditGlId"
+                                              :options="glAccounts"
+                                              display-key="name"
+                                              value-key="id"
+                                              label="Credit G/L Account:"
+                                              :disabled="form.isLocked">
+                                    </w-select>
+                                </div>
+
+                                <div>
+                                    <w-select v-model="form.debitGlId"
+                                              :options="glAccounts"
+                                              display-key="name"
+                                              value-key="id"
+                                              label="Debit G/L Account:"
+                                              :disabled="form.isLocked">
+                                    </w-select>
+                                </div>
+                            </div>
+
+                            <div v-if="isCheque" class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                                <div>
+                                    <label class="label">
+                                        Cheque Number <span class="text-rose-500">*</span>
+                                    </label>
+                                    <input type="text"
+                                           v-model="form.chequeNumber"
+                                           :disabled="form.isLocked"
+                                           class="input-control" />
+                                </div>
+                                <div>
+                                    <label class="label">
+                                        Cheque Date
+                                    </label>
+                                    <input type="date"
+                                           v-model="form.chequeDate"
+                                           :disabled="form.isLocked"
+                                           class="input-control" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div>
+                            <label class="label">
+                                Description
+                            </label>
+                            <textarea v-model="form.description"
+                                      rows="2"
+                                      :disabled="form.isLocked"
+                                      placeholder="Reason / remarks for this credit memo"
+                                      class="input-control"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="px-6 py-3.5 border-t border-gray-100 dark:border-slate-700 flex items-center justify-between bg-gray-50/50 dark:bg-slate-800/80">
+                        <div class="text-xs text-gray-500">
+                            <span v-if="form.isLocked" class="text-rose-600 font-semibold flex items-center gap-1">
+                                <i class="bi bi-lock-fill"></i> Read only
+                            </span>
+
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button"
+                                    @@click="closeMemoModal"
+                                    class="rounded-lg px-4 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-200 transition">
+                                Close
+                            </button>
+                            <button v-if="!form.isLocked"
+                                    type="button"
+                                    @@click="saveMemo"
+                                    :disabled="saving"
+                                    class="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition shadow-sm disabled:opacity-60">
+                                <i class="bi" :class="saving ? 'bi-arrow-repeat animate-spin' : 'bi-save'"></i>
+                                <span>{{ saving ? 'Saving…' : (editMode ? 'Update Memo' : 'Save Memo') }}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="~/js/school-manager/credit-memos.js" asp-append-version="true"></script>

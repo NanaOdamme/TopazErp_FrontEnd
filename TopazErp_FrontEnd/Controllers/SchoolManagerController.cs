@@ -320,6 +320,26 @@ public IActionResult PostToGl()
 {
     return View();
 }
+public IActionResult BehavioralAssessments()
+{
+    return View();
+}
+public IActionResult ImportBehavioralAssessments()
+{
+    return View();
+}
+public IActionResult Attendance()
+{
+    return View();
+}
+public IActionResult PromoteStudents()
+{
+    return View();
+}
+public IActionResult PerformanceSkills()
+{
+    return View();
+}
 public IActionResult StudentReports()
 {
     return View();
@@ -643,33 +663,6 @@ public async Task<ActionResult> DeleteLevelClass([FromQuery] Guid id)
 }
 
 
-// CutOff
-public async Task<ActionResult> GetCutOffs()
-{
-    var result = await _topazErpApi.GetCutOffs();
-    return Json(result);
-}
-
-public async Task<IActionResult> CreateCutOff([FromBody] object input)
-{
-    var response = await _topazErpApi.CreateCutOff(input);
-
-    return Content(
-        JsonConvert.SerializeObject(response),
-        "application/json");
-}
-
-public async Task<IActionResult> UpdateCutOff([FromBody] object input)
-{
-    var result = await _topazErpApi.UpdateCutOff(input);
-    return Json(result);
-}
-
-public async Task<ActionResult> DeleteCutOff([FromQuery] Guid id)
-{
-    await _topazErpApi.DeleteCutOff(id);
-    return Json(200);
-}
 
 // DisciplinaryAction
 public async Task<ActionResult> GetDisciplinaryActions()
@@ -754,33 +747,6 @@ public async Task<ActionResult> DeleteOffence([FromQuery] Guid id)
     return Json(200);
 }
 
-// NurseryGrading
-public async Task<ActionResult> GetNurseryGradings()
-{
-    var result = await _topazErpApi.GetNurseryGradings();
-    return Json(result);
-}
-
-public async Task<IActionResult> CreateNurseryGrading([FromBody] object input)
-{
-    var response = await _topazErpApi.CreateNurseryGrading(input);
-
-    return Content(
-        JsonConvert.SerializeObject(response),
-        "application/json");
-}
-
-public async Task<IActionResult> UpdateNurseryGrading([FromBody] object input)
-{
-    var result = await _topazErpApi.UpdateNurseryGrading(input);
-    return Json(result);
-}
-
-public async Task<ActionResult> DeleteNurseryGrading([FromQuery] Guid id)
-{
-    await _topazErpApi.DeleteNurseryGrading(id);
-    return Json(200);
-}
 
 // PerformanceArea
 public async Task<ActionResult> GetPerformanceAreas()
@@ -1318,33 +1284,6 @@ public async Task<IActionResult> CancelSchCreditMemo([FromBody] List<Guid> memoI
     return Json(result);
 }
 
-// DistanceGroup
-public async Task<ActionResult> GetDistanceGroups()
-{
-    var result = await _topazErpApi.GetDistanceGroups();
-    return Json(result);
-}
-
-public async Task<IActionResult> CreateDistanceGroup([FromBody] object input)
-{
-    var response = await _topazErpApi.CreateDistanceGroup(input);
-
-    return Content(
-        JsonConvert.SerializeObject(response),
-        "application/json");
-}
-
-public async Task<IActionResult> UpdateDistanceGroup([FromBody] object input)
-{
-    var result = await _topazErpApi.UpdateDistanceGroup(input);
-    return Json(result);
-}
-
-public async Task<ActionResult> DeleteDistanceGroup([FromQuery] Guid id)
-{
-    await _topazErpApi.DeleteDistanceGroup(id);
-    return Json(200);
-}
 
 // Excursion
 public async Task<ActionResult> GetExcursions()
@@ -1799,7 +1738,13 @@ public async Task<IActionResult> UpdateBill([FromBody] object input)
     return Json(result);
 }
 
-public async Task<IActionResult> ProcessBills([FromBody] object input)
+
+public async Task<IActionResult> CancelStudentBills([FromBody] object input)
+{
+    var result = await _topazErpApi.CancelStudentBills(input);
+    return Content(JsonConvert.SerializeObject(result), "application/json");
+}
+/*public async Task<IActionResult> ProcessBills([FromBody] object input)
 {
     var result = await _topazErpApi.ProcessBills(input);
     return Json(result);
@@ -1809,13 +1754,9 @@ public async Task<IActionResult> CancelStudentBills([FromBody] object input)
 {
     var result = await _topazErpApi.CancelStudentBills(input);
     return Json(result);
-}
+}*/
 
-public async Task<ActionResult> GetExistingBill()
-{
-    var result = await _topazErpApi.GetExistingBill();
-    return Json(result);
-}
+
 
 // PtaExecutive
 public async Task<ActionResult> GetPtaExecutives()
@@ -2769,62 +2710,6 @@ public async Task<IActionResult> UpdateTimeTable([FromBody] object input)
 public async Task<ActionResult> DeleteTimeTable([FromQuery] Guid id)
 {
     await _topazErpApi.DeleteTimeTable(id);
-    return Json(200);
-}
-
-// TransportationLocation
-public async Task<ActionResult> GetTransportationLocations()
-{
-    var result = await _topazErpApi.GetTransportationLocations();
-    return Json(result);
-}
-
-public async Task<IActionResult> CreateTransportationLocation([FromBody] object input)
-{
-    var response = await _topazErpApi.CreateTransportationLocation(input);
-
-    return Content(
-        JsonConvert.SerializeObject(response),
-        "application/json");
-}
-
-public async Task<IActionResult> UpdateTransportationLocation([FromBody] object input)
-{
-    var result = await _topazErpApi.UpdateTransportationLocation(input);
-    return Json(result);
-}
-
-public async Task<ActionResult> DeleteTransportationLocation([FromQuery] Guid id)
-{
-    await _topazErpApi.DeleteTransportationLocation(id);
-    return Json(200);
-}
-
-// TransportationUnit
-public async Task<ActionResult> GetTransportationUnits()
-{
-    var result = await _topazErpApi.GetTransportationUnits();
-    return Json(result);
-}
-
-public async Task<IActionResult> CreatTransportationUnit([FromBody] object input)
-{
-    var response = await _topazErpApi.CreatTransportationUnit(input);
-
-    return Content(
-        JsonConvert.SerializeObject(response),
-        "application/json");
-}
-
-public async Task<IActionResult> UpdateTransportationUnit([FromBody] object input)
-{
-    var result = await _topazErpApi.UpdateTransportationUnit(input);
-    return Json(result);
-}
-
-public async Task<ActionResult> DeleteTransportationUnit([FromQuery] Guid id)
-{
-    await _topazErpApi.DeleteTransportationUnit(id);
     return Json(200);
 }
 

@@ -100,7 +100,7 @@ var title = ViewData["Title"] as string ?? "TopazERP";
 
 </head>
 
-<body class="h-full min-h-full bg-grey-50 font-sans text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-200 bg-neutral-50">
+<body class="h-full min-h-full  font-sans text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-200 ">
 
 @* ══════════════════════════════ SIDEBAR ══════════════════════════════ *@
 <aside class="app-sidebar" id="appSidebar" aria-label="Main navigation">
@@ -220,12 +220,7 @@ var title = ViewData["Title"] as string ?? "TopazERP";
             <span class="menu-title">Class Rooms</span>
         </a>
     </li>
-    <li class="nav-item">
-        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ConductCutOffs">
-            <i class="bi bi-sliders"></i>
-            <span class="menu-title">Conduct Cut-Offs</span>
-        </a>
-    </li>
+   
     <li class="nav-item">
         <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="DisciplinaryActions">
             <i class="bi bi-shield-exclamation"></i>
@@ -281,24 +276,14 @@ var title = ViewData["Title"] as string ?? "TopazERP";
             <span class="menu-title">Locations</span>
         </a>
     </li>
-    <li class="nav-item">
-        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="NurseryGradings">
-            <i class="bi bi-award"></i>
-            <span class="menu-title">Nursery Gradings</span>
-        </a>
-    </li>
+   
     <li class="nav-item">
         <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="Offences">
             <i class="bi bi-exclamation-triangle"></i>
             <span class="menu-title">Offences</span>
         </a>
     </li>
-    @*<li class="nav-item">
-        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ParentProfessions">
-            <i class="bi bi-briefcase"></i>
-            <span class="menu-title">Parent Professions</span>
-        </a>
-    </li>*@
+   
     <li class="nav-item">
         <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="PaymentMethods">
             <i class="bi bi-credit-card"></i>
@@ -347,18 +332,7 @@ var title = ViewData["Title"] as string ?? "TopazERP";
             <span class="menu-title">Terms</span>
         </a>
     </li>
-    <li class="nav-item">
-        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="TransportationLocations">
-            <i class="bi bi-signpost-split"></i>
-            <span class="menu-title">Transportation Locations</span>
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="TransportationUnits">
-            <i class="bi bi-bus-front"></i>
-            <span class="menu-title">Transportation Units</span>
-        </a>
-    </li>
+    
 </ul>
             </li>
 
@@ -389,6 +363,12 @@ var title = ViewData["Title"] as string ?? "TopazERP";
                         <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="AssignTeacherSubjects">
                             <i class="bi bi-journal-plus"></i>
                             <span class="menu-title">Assign Subject To Teachers</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="Attendance">
+                            <i class="bi bi-people"></i>
+                            <span class="menu-title">Attendance</span>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -430,6 +410,12 @@ var title = ViewData["Title"] as string ?? "TopazERP";
                         <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ParentSetups">
                             <i class="bi bi-person-lines-fill"></i>
                             <span class="menu-title">Parent / Legal Guardians Setups</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="PerformanceSkills">
+                            <i class="bi bi-person-lines-fill"></i>
+                            <span class="menu-title">Performance Skills</span>
                         </a>
                     </li>
 
@@ -490,6 +476,14 @@ var title = ViewData["Title"] as string ?? "TopazERP";
                 </a>
 
                 <ul class="menu-content">
+
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ImportBehavioralAssessments">
+                            <i class="bi bi-people"></i>
+                            <span class="menu-title">Conducts, Attitudes & Interests</span>
+                        </a>
+                    </li>
+
                     <li class="nav-item">
                         <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ImportOpeningBalances">
                             <i class="bi bi-wallet2"></i>
@@ -512,13 +506,6 @@ var title = ViewData["Title"] as string ?? "TopazERP";
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ImportStudentEvaluations">
-                            <i class="bi bi-clipboard-check"></i>
-                            <span class="menu-title">Student Evaluations</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
                         <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ImportStudents">
                             <i class="bi bi-person-plus"></i>
                             <span class="menu-title">Students</span>
@@ -526,11 +513,12 @@ var title = ViewData["Title"] as string ?? "TopazERP";
                     </li>
 
                     <li class="nav-item">
-                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ImportTeacherRemarks">
-                            <i class="bi bi-chat-square-text"></i>
-                            <span class="menu-title">Teacher Remarks</span>
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ImportStudentEvaluations">
+                            <i class="bi bi-clipboard-check"></i>
+                            <span class="menu-title">Teacher / HeadMaster Remarks</span>
                         </a>
                     </li>
+
                 </ul>
             </li>
             @* Results and Promotions *@
@@ -538,10 +526,23 @@ var title = ViewData["Title"] as string ?? "TopazERP";
             <li class="nav-item has-sub">
                 <a href="#" class="menu-link">
                     <i class="bi bi-mortarboard"></i>
-                    <span class="menu-title">Promotions & Results</span>
+                    <span class="menu-title">Promotions, Results & Assessments</span>
                 </a>
 
                 <ul class="menu-content">
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="BehavioralAssessments">
+                            <i class="bi bi-people"></i>
+                            <span class="menu-title">Conducts, Attitudes & Interests</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="PromoteStudents">
+                            <i class="bi bi-people"></i>
+                            <span class="menu-title">Promote Students</span>
+                        </a>
+                    </li>
+
                     <li class="nav-item">
                         <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="ResultEntryPeriod">
                             <i class="bi bi-calendar-range"></i>
@@ -559,7 +560,7 @@ var title = ViewData["Title"] as string ?? "TopazERP";
                     <li class="nav-item">
                         <a class="menu-link" asp-area="" asp-controller="SchoolManager" asp-action="StudentEvaluations">
                             <i class="bi bi-clipboard-check"></i>
-                            <span class="menu-title">Student Evaluations</span>
+                            <span class="menu-title">Teacher / HeadMaster Remarks</span>
                         </a>
                     </li>
                 </ul>
@@ -634,15 +635,9 @@ var title = ViewData["Title"] as string ?? "TopazERP";
           
 @* reports *@
 <li class="nav-section">
-    <span class="menu-title">Students & Class Reports</span>
+    <span class="menu-title">Reports</span>
 </li>
-            <li class="nav-item has-sub">
-            <a href="#" class="menu-link">
-                <i class="bi bi-people-fill"></i>
-                <span class="menu-title">Reports</span>
-            </a>
-            <ul class="menu-content">
-            @* Student & Staff Reports *@
+ @* Student & Staff Reports *@
 <li class="nav-item has-sub">
     <a href="#" class="menu-link">
         <i class="bi bi-people-fill"></i>
@@ -860,8 +855,8 @@ var title = ViewData["Title"] as string ?? "TopazERP";
         </li>
     </ul>
 </li>
-            </ul>
-            </li>
+        
+         
 
 
 

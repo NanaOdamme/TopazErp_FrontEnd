@@ -473,11 +473,7 @@ public interface ITopazErpApi
     Task<BaseApiResponse> CreateLevelClass(object dto);
     Task<BaseApiResponse> UpdateLevelClass(object dto);
     Task<BaseApiResponse> DeleteLevelClass(Guid id);
-    //CutOff
-    Task<ConductCutOfResponse> GetCutOffs();
-    Task<BaseApiResponse> CreateCutOff(object dto);
-    Task<BaseApiResponse> UpdateCutOff(object dto);
-    Task<BaseApiResponse> DeleteCutOff(Guid id);
+   
     //DisciplinaryAction
     Task<DisciplinaryActionResponse> GetDisciplinaryActions();
     Task<BaseApiResponse> CreateDisciplinaryAction(object dto);
@@ -494,11 +490,7 @@ public interface ITopazErpApi
     Task<BaseApiResponse> CreateOffence(object dto);
     Task<BaseApiResponse> UpdateOffence(object dto);
     Task<BaseApiResponse> DeleteOffence(Guid id);
-    // NurseryGrading
-    Task<SmSimpleInputResponse> GetNurseryGradings();
-    Task<BaseApiResponse> CreateNurseryGrading(object dto);
-    Task<BaseApiResponse> UpdateNurseryGrading(object dto);
-    Task<BaseApiResponse> DeleteNurseryGrading(Guid id);
+ 
     //PerformanceArea
     Task<SmSimpleInputResponse> GetPerformanceAreas();
     Task<BaseApiResponse> CreatePerformanceArea(object dto);
@@ -609,13 +601,7 @@ public interface ITopazErpApi
      Task<BaseApiResponse> CreateSchCreditMemo(object dto);
      Task<BaseApiResponse> UpdateSchCreditMemo(object dto);
      Task<BaseApiResponse> CancelSchCreditMemo(List<Guid> memoIds);
-     
-     //DistanceGroup
-     Task<DistanceGroupResponse> GetDistanceGroups();
-     Task<BaseApiResponse> CreateDistanceGroup(object dto);
-     Task<BaseApiResponse> UpdateDistanceGroup(object dto);
-     Task<BaseApiResponse> DeleteDistanceGroup(Guid id);
-     
+ 
      //Excursion
      Task<ExcursionResponse> GetExcursions();
      Task<BaseApiResponse> CreateExcursion(object dto);
@@ -709,9 +695,8 @@ public interface ITopazErpApi
      Task<StudentBillInfoResponse> GetStudentBills();
      Task<BaseApiResponse> CreateBill(object dto);
      Task<BaseApiResponse> UpdateBill(object dto);
-     Task<BaseApiResponse> ProcessBills(object dto);
      Task<BaseApiResponse> CancelStudentBills(object dto);
-     Task<ExistingBillResponse> GetExistingBill();
+ 
      
      //PtaExecutive
      Task<PtaExecutiveResponse> GetPtaExecutives();
@@ -913,18 +898,7 @@ public interface ITopazErpApi
      Task<BaseApiResponse> UpdateTimeTable(object dto);
      Task<BaseApiResponse> DeleteTimeTable(Guid id);  
      
-     // TransportationLocation
-     Task<TransportationLocationResponse> GetTransportationLocations();
-     Task<BaseApiResponse> CreateTransportationLocation(object dto);
-     Task<BaseApiResponse> UpdateTransportationLocation(object dto);
-     Task<BaseApiResponse> DeleteTransportationLocation(Guid id);       
-          
-     //TransportationUnit     
-     Task<TransportationUnitResponse> GetTransportationUnits();
-     Task<BaseApiResponse> CreatTransportationUnit(object dto);
-     Task<BaseApiResponse> UpdateTransportationUnit(object dto);
-     Task<BaseApiResponse> DeleteTransportationUnit(Guid id);     
-     
+    
           
           
 }

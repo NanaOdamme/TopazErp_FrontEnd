@@ -23,33 +23,9 @@
 
     <div class="card" data-card-title="Teacher Subjects">
         <div id="app">
-
-            <!-- Filter row with Academic Year & Refresh -->
-            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-5 pb-4 border-b border-gray-100 dark:border-slate-700">
-                <div class="w-full sm:w-72">
-                    <label class="label">Filter by Academic Year</label>
-                    <w-select v-model="academicYearId"
-                              :options="academicYearOptions"
-                              display-key="name"
-                              value-key="id"
-                              placeholder="All Academic Years">
-                    </w-select>
-                </div>
-
-                <div class="flex items-center gap-2">
-                    <button type="button"
-                            class="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-200 transition"
-                            @@click="getSetupData"
-                            :disabled="isShimmerLoading">
-                        <i class="bi bi-arrow-clockwise" :class="{ 'animate-spin': isShimmerLoading && setupDone }"></i>
-                        <span>Refresh</span>
-                    </button>
-                </div>
-            </div>
-
             <!-- Initial Loading -->
             <div v-if="!setupDone" class="py-20 text-center text-gray-400">
-                <i class="bi bi-arrow-repeat animate-spin text-3xl inline-block mb-2 text-[#062a81]"></i>
+                <i class="text-blue-800 bi bi-arrow-repeat animate-spin text-3xl inline-block mb-2 text-[#062a81]"></i>
                 <p class="text-sm">Loading teacher subjects…</p>
             </div>
 

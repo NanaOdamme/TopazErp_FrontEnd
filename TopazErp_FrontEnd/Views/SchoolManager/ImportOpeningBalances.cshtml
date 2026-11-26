@@ -1,0 +1,404 @@
+@{
+    ViewBag.Title = "Import Student Opening Balances";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+
+<!-- SheetJS for client-side Excel template generation (.xlsx / .csv) and parsing -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+    .import-card {
+        border-radius: 1rem;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+    .dark .import-card {
+        background: #0f172a;
+        border-color: #334155;
+    }
+    .dropzone-box {
+        border: 2px dashed #cbd5e1;
+        transition: all 0.2s ease;
+    }
+    .dropzone-box:hover, .dropzone-box.drag-over {
+        border-color: #062a81;
+        background-color: #f8fafc;
+    }
+    .dark .dropzone-box {
+        border-color: #334155;
+    }
+    .dark .dropzone-box:hover, .dark .dropzone-box.drag-over {
+        border-color: #3b82f6;
+        background-color: rgb(30 41 59 / 0.56);
+    }
+    .tag-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.2rem 0.55rem;
+        border-radius: 9999px;
+        font-size: 0.72rem;
+        font-weight: 600;
+    }
+</style>
+
+<div class="content">
+    <div class="mb-4 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-1 dark:text-gray-400">
+            <span>School Manager - Import Data</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium dark:text-blue-400">Opening Balances</span>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-bold text-gray-800 dark:text-white tracking-tight flex items-center gap-2.5">
+                    Import Student Opening Balances
+                </h2>
+               
+            </div>
+        </div>
+    </div>
+
+    <div class="card" data-card-title="Import Opening Balances">
+        <div id="app">
+            
+            <!-- Save Button Row -->
+            <div class="flex justify-end gap-5">
+                <button v-if="importedRows.length > 0"
+                        type="button"
+                        @@click="saveImportedBalances"
+                        :disabled="saving || validRowCount === 0 || hasInvalidRows"
+                        class="mb-4 inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold text-white bg-[#062a81] hover:bg-blue-900 shadow-sm transition disabled:opacity-50">
+                    <i v-if="saving" class="bi bi-arrow-repeat animate-spin"></i>
+                    <i v-else class="bi bi-check"></i>
+                    <span>Save {{ validRowCount }} Opening Balance(s)</span>
+                </button>
+            </div>
+
+            <!-- Initial Loading -->
+            <div v-if="!setupDone" class="py-24 text-center text-gray-400">
+                <i class="text-blue-800 bi bi-arrow-repeat animate-spin text-3xl inline-block mb-2 text-[#062a81]"></i>
+                <p class="text-sm">Loading student database, currencies, and classes…</p>
+            </div>
+
+            <template v-else>
+
+                <!-- HEADER DROPDOWNS: Scope & Configuration Parameters -->
+                <div class="p-4 mb-5 rounded-2xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-sm">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                        
+                        <!-- 1. Academic Year Dropdown -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                Academic Year <span class="text-red-500">*</span>
+                            </label>
+                            <select v-model="selectedAcademicYearId" class="select text-xs">
+                                <option value="" disabled>Select Year</option>
+                                <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.name }}</option>
+                            </select>
+                        </div>
+
+                        <!-- 2. Class Dropdown -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                Class <span class="text-red-500">*</span>
+                            </label>
+                            <select v-model="selectedClassId" class="select text-xs">
+                                <option value="" disabled>Select Class</option>
+                                <option v-for="c in classes" :key="c.id" :value="c.id">{{ c.name }}</option>
+                            </select>
+                        </div>
+
+                        <!-- 3. Currency Dropdown -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                Currency <span class="text-red-500">*</span>
+                            </label>
+                            <select v-model="selectedCurrencyId" class="select text-xs">
+                                <option value="" disabled>Select Currency</option>
+                                <option v-for="cur in currencies" :key="cur.id" :value="cur.id">{{ cur.name }}</option>
+                            </select>
+                        </div>
+
+                        <!-- 4. Exchange Rate -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                Exchange Rate
+                            </label>
+                            <input type="number"
+                                   step="0.0001"
+                                   v-model.number="selectedRate"
+                                   class="input-control text-xs" />
+                        </div>
+
+                        <!-- 5. Default Date -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                                Default Date
+                            </label>
+                            <input type="date"
+                                   v-model="defaultDate"
+                                   class="input-control text-xs" />
+                        </div>
+                    </div>
+
+                    <!-- Enrolled students in class hint -->
+                    <div class="mt-3 pt-3 border-t border-gray-100 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs">
+                        <span class="text-gray-500 dark:text-gray-400">
+                            Selected Class: <strong>{{ selectedClass ? selectedClass.name : 'None' }}</strong> (<strong>{{ studentsInClass.length }}</strong> student members enrolled)
+                        </span>
+
+                        <button type="button"
+                                @@click="downloadTemplate"
+                                :disabled="!selectedClassId || studentsInClass.length === 0"
+                                class="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-300 transition disabled:opacity-40">
+                            <i class="bi bi-file-earmark-spreadsheet-fill text-emerald-600"></i>
+                            <span>Download Class Members Sheet</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ERROR BANNER FOR INVALID LOOKUPS OR DUPLICATES -->
+                <div v-if="hasInvalidRows"
+                     class="mb-4 p-4 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/60 flex items-start gap-3 text-xs text-red-900 dark:text-red-200">
+                    <i class="bi bi-exclamation-octagon-fill text-red-600 text-lg shrink-0 mt-0.5"></i>
+                    <div>
+                        <p class="font-bold text-sm">Import Blocked: Errors or Duplicate Balances Detected!</p>
+                        <p class="text-red-800 dark:text-red-300 mt-0.5">
+                            <strong>{{ invalidRowCount }}</strong> row(s) contain errors (e.g. unknown student Reg No, invalid amount, or student already has an opening balance for this currency).
+                            All errors must be resolved in your spreadsheet before importing.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- FILE UPLOAD DROPZONE -->
+                <div class="mb-5 p-6 rounded-2xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-center dropzone-box"
+                     @@dragover.prevent="isDragging = true"
+                     @@dragleave.prevent="isDragging = false"
+                     @@drop.prevent="handleFileDrop"
+                     :class="{ 'drag-over': isDragging }">
+                    
+                    <input type="file"
+                           ref="fileInput"
+                           accept=".xlsx, .xls, .csv"
+                           class="hidden"
+                           @@change="handleFileSelect" />
+
+                    <div class="flex flex-col items-center justify-center space-y-2">
+                        <div class="h-12 w-12 rounded-full bg-blue-50 dark:bg-slate-700 flex items-center justify-center text-[#062a81] dark:text-blue-400">
+                            <i class="bi bi-cloud-arrow-up text-2xl"></i>
+                        </div>
+
+                        <p class="text-sm font-bold text-gray-800 dark:text-white">
+                            Select or drag & drop the filled Excel file (.xlsx, .xls) or CSV
+                        </p>
+                        <p class="text-xs text-gray-400 max-w-xl">
+                            Expected Sheet Headers: <code>No.</code>, <code>Reg No</code>, <code>StudentName</code>, <code>Date</code>, <code>Amount</code>
+                        </p>
+
+                        <div class="pt-2 flex flex-wrap items-center justify-center gap-2">
+                            <button type="button"
+                                    @@click="$refs.fileInput.click()"
+                                    :disabled="!scopeReady"
+                                    class="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold text-white bg-[#062a81] hover:bg-blue-900 transition shadow-sm disabled:opacity-40">
+                                <i class="bi bi-folder2-open"></i>
+                                <span>Browse Excel File</span>
+                            </button>
+
+                            <button type="button"
+                                    @@click="downloadTemplate"
+                                    :disabled="!selectedClassId || studentsInClass.length === 0"
+                                    class="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 transition disabled:opacity-40">
+                                <i class="bi bi-download"></i>
+                                <span>Download Class Members Sheet</span>
+                            </button>
+                        </div>
+
+                        <p v-if="!scopeReady" class="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                            Please select Academic Year, Class, and Currency before browsing or uploading.
+                        </p>
+
+                        <p v-if="fileName" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-2 flex items-center gap-1">
+                            <i class="bi bi-check2-circle"></i>
+                            <span>Loaded: <strong>{{ fileName }}</strong> ({{ importedRows.length }} rows found)</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- PREVIEW TABLE SECTION -->
+                <div v-if="importedRows.length > 0" class="import-card">
+                    <div class="px-5 py-3.5 bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-xs text-gray-800 dark:text-white uppercase tracking-wider">
+                                Preview Opening Balances
+                            </span>
+                            <span class="text-xs text-emerald-700 dark:text-emerald-400 font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                                {{ validRowCount }} valid balance(s) ready
+                            </span>
+                            <span v-if="invalidRowCount > 0"
+                                  class="text-xs text-red-700 dark:text-red-400 font-semibold px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800">
+                                {{ invalidRowCount }} error row(s)
+                            </span>
+                        </div>
+
+                        <button type="button"
+                                @@click="clearImport"
+                                class="text-xs text-red-600 dark:text-red-400 hover:underline flex items-center gap-1 self-start sm:self-auto">
+                            <i class="bi bi-x-circle"></i> Clear preview
+                        </button>
+                    </div>
+
+                    <div class="flex items-center gap-2.5 self-start lg:self-end mx-4 my-2">
+                        <div class="w-48">
+                            <input type="text"
+                                   v-model="searchQuery"
+                                   placeholder="Search preview..."
+                                   class="input-control text-xs" />
+                        </div>
+                    </div>
+
+                    <p class="text-slate-500 mx-4 my-2 text-xs">Note: Date format in Excel - <code>dd-mm-yyyy</code> or <code>yyyy-mm-dd</code> (empty dates default to selected Default Date).</p>
+
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm divide-y divide-gray-100 dark:divide-slate-800">
+                            <thead class="bg-white dark:bg-slate-800/90 text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                <tr>
+                                    <th class="px-4 py-3 text-left font-bold w-12">No.</th>
+                                    <th class="px-4 py-3 text-left font-bold w-32">Reg No</th>
+                                    <th class="px-4 py-3 text-left font-bold w-48">Student Name</th>
+                                    <th class="px-4 py-3 text-left font-bold w-36">Class</th>
+                                    <th class="px-4 py-3 text-left font-bold w-32">Currency</th>
+                                    <th class="px-4 py-3 text-right font-bold w-20">Rate</th>
+                                    <th class="px-4 py-3 text-right font-bold w-28">Amount</th>
+                                    <th class="px-4 py-3 text-left font-bold w-28">Date</th>
+                                    <th class="px-4 py-3 text-right font-bold w-28">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
+                                <tr v-for="(row, idx) in paginatedImported"
+                                    :key="idx"
+                                    :class="{ 'bg-red-50/50 dark:bg-red-950/20': !row.isValid }"
+                                    class="hover:bg-gray-50 dark:hover:bg-slate-800/60 transition">
+                                    
+                                    <!-- No. -->
+                                    <td class="px-4 py-3 text-xs font-mono text-gray-400">
+                                        {{ (currentPage - 1) * pageSize + idx + 1 }}
+                                    </td>
+
+                                    <!-- Reg No -->
+                                    <td class="px-4 py-3 text-xs font-mono">
+                                        <span :class="row.studentId ? 'text-blue-700 dark:text-blue-400 font-semibold' : 'text-red-600 font-bold'">
+                                            {{ row.studentRegNo || '—' }}
+                                        </span>
+                                    </td>
+
+                                    <!-- Student Name -->
+                                    <td class="px-4 py-3 text-xs font-semibold text-gray-800 dark:text-white">
+                                        {{ row.studentName || '—' }}
+                                    </td>
+
+                                    <!-- Class -->
+                                    <td class="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                                        {{ row.className || '—' }}
+                                    </td>
+
+                                    <!-- Currency -->
+                                    <td class="px-4 py-3 text-xs">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium">
+                                            {{ row.currencyCode || row.currencyName }}
+                                        </span>
+                                    </td>
+
+                                    <!-- Rate -->
+                                    <td class="px-4 py-3 text-xs text-right font-mono text-gray-600 dark:text-gray-300">
+                                        {{ row.rate }}
+                                    </td>
+
+                                    <!-- Amount -->
+                                    <td class="px-4 py-3 text-xs text-right font-mono font-bold text-gray-800 dark:text-white">
+                                        {{ Number(row.amount).toFixed(2) }}
+                                    </td>
+
+                                    <!-- Date -->
+                                    <td class="px-4 py-3 text-xs font-mono text-gray-600 dark:text-gray-300">
+                                        {{ row.date }}
+                                    </td>
+
+                                    <!-- Status -->
+                                    <td class="px-4 py-3 text-right whitespace-nowrap">
+                                        <span v-if="row.isValid"
+                                              class="tag-pill bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                            <i class="bi bi-check-circle-fill text-[10px]"></i> Ready
+                                        </span>
+                                        <span v-else
+                                              class="tag-pill bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 border border-red-300 dark:border-red-800"
+                                              :title="row.validationMessage">
+                                            <i class="bi bi-exclamation-triangle-fill text-[10px]"></i> {{ row.validationMessage.slice(0, 30) }}...
+                                        </span>
+                                    </td>
+                                </tr>
+
+                                <tr v-if="filteredImported.length === 0">
+                                    <td colspan="9" class="py-12 text-center text-gray-400">
+                                        <i class="bi bi-search text-2xl block mb-1"></i>
+                                        <span>No matching rows found</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination Footer -->
+                    <div class="px-5 py-3.5 bg-gray-50 dark:bg-slate-800/80 border-t border-gray-100 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-gray-600 dark:text-gray-300">
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-1.5">
+                                <span>Show</span>
+                                <select v-model.number="pageSize" class="input-control text-xs" style="width: auto; padding-top: 0.25rem; padding-bottom: 0.25rem;">
+                                    <option v-for="size in pageSizeOptions" :key="size" :value="size">{{ size }}</option>
+                                </select>
+                                <span>entries</span>
+                            </div>
+                            <span class="text-gray-300 dark:text-gray-600">|</span>
+                            <span>Showing <strong>{{ paginationStart }}</strong> to <strong>{{ paginationEnd }}</strong> of <strong>{{ filteredImported.length }}</strong> rows</span>
+                        </div>
+
+                        <div v-if="totalPages > 1" class="flex items-center gap-1">
+                            <button type="button"
+                                    @@click="prevPage"
+                                    :disabled="currentPage === 1"
+                                    class="px-2.5 py-1.5 rounded-md border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                                <i class="bi bi-chevron-left text-xs"></i>
+                            </button>
+
+                            <button v-for="page in pageNumbers"
+                                    :key="page"
+                                    type="button"
+                                    @@click="setPage(page)"
+                                    :disabled="page === '...'"
+                                    :class="currentPage === page
+                                        ? 'bg-[#062a81] text-white font-bold border-[#062a81]'
+                                        : 'bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-600'"
+                                    class="min-w-[32px] px-2.5 py-1.5 rounded-md border text-xs transition">
+                                {{ page }}
+                            </button>
+
+                            <button type="button"
+                                    @@click="nextPage"
+                                    :disabled="currentPage === totalPages"
+                                    class="px-2.5 py-1.5 rounded-md border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                                <i class="bi bi-chevron-right text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </template>
+
+        </div><!-- /#app -->
+    </div><!-- /.card -->
+</div><!-- /.content -->
+
+<script src="~/js/school-manager/student-opening-balances-import.js"></script>

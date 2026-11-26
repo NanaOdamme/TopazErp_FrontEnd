@@ -171,7 +171,7 @@
                     { key: 'isPreClassStudent', label: 'Pre-Class?', type: 'boolean', width: 105, searchable: false },
                     { key: 'isAlumni', label: 'Alumni?', type: 'boolean', width: 90, searchable: false, hidden: true },
                     { key: 'billAs', label: 'Bill As', type: 'text', width: 120, editable: true, searchable: false, hidden: true },
-                    { key: 'balanceDue', label: 'Balance Due', type: 'number', width: 120, editable: true, decimals: 2, defaultValue: 0, hidden: true },
+                    { key: 'balanceDue', label: 'Balance Due', type: 'number', width: 120, editable: true, decimals: 2, defaultValue: 0, disabled: true },
                     { key: 'balanceDueDate', label: 'Balance Due Date', type: 'date', width: 135, editable: true, defaultValue: today, hidden: true },
                     { key: 'notes', label: 'Notes', type: 'text', width: 250, editable: true, searchable: true },
                     { key: 'tenantId', label: 'Tenant', type: 'number', hidden: true, editable: false, searchable: false }

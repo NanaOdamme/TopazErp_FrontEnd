@@ -1,0 +1,426 @@
+@{
+    ViewBag.Title = "Behavioral Assessment";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+
+<style>
+    .modal-backdrop {
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(4px);
+    }
+
+    /* Elevated table container */
+    .eval-card {
+        border-radius: 1rem;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+    .dark .eval-card {
+        background: #0f172a;
+        border-color: #334155;
+    }
+    .tag-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.2rem 0.55rem;
+        border-radius: 9999px;
+        font-size: 0.72rem;
+        font-weight: 600;
+    }
+</style>
+
+<div class="content">
+    <div class="mb-4 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-1 dark:text-gray-400">
+            <span>School Manager - Promotions & Results</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium dark:text-blue-400">Behavioral Assessment</span>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <h2 class="text-lg font-bold text-gray-800 dark:text-white tracking-tight flex items-center gap-2.5">
+                Behavioral Assessment
+            </h2>
+
+          
+        </div>
+    </div>
+
+    <div class="card" data-card-title="Behavioral Assessment">
+        <div id="app">
+           
+            <!-- Filter Controls Header (Academic Year, Term, Class) -->
+            <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-5 pb-5 border-b border-gray-100 dark:border-slate-700">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-1">
+                    <div>
+                        <label class="label">Academic Year</label>
+                        <w-select v-model="academicYearId"
+                                  :options="academicYears"
+                                  display-key="name"
+                                  value-key="id"
+                                  placeholder="Academic Year">
+                        </w-select>
+                    </div>
+
+                    <div>
+                        <label class="label">Term</label>
+                        <w-select v-model="termId"
+                                  :options="terms"
+                                  display-key="name"
+                                  value-key="id"
+                                  placeholder="Term">
+                        </w-select>
+                    </div>
+
+                    <div>
+                        <label class="label">Class</label>
+                        <w-select v-model="classId"
+                                  :options="classes"
+                                  display-key="name"
+                                  value-key="id"
+                                  placeholder="Class">
+                        </w-select>
+                    </div>
+                </div>
+
+               
+            </div>
+
+            <!-- Initial Loading -->
+            <div v-if="!setupDone" class="py-24 text-center text-gray-400">
+                <i class="text-blue-800 bi bi-arrow-repeat animate-spin text-3xl inline-block mb-2 text-[#062a81]"></i>
+                <p class="text-sm">Loading student records…</p>
+            </div>
+
+            <template v-else>
+                <template v-if="scopeReady">
+
+                    <!-- THREE TABS: Conduct, Attitude, Interest -->
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 border-b border-gray-200 dark:border-slate-700">
+                        <div class="flex items-center gap-1" role="tablist">
+                            <!-- TAB 1: Conduct -->
+                            <button type="button"
+                                    role="tab"
+                                    :aria-selected="activeType === 'Conduct'"
+                                    @@click="setActiveType('Conduct')"
+                                    :class="activeType === 'Conduct'
+                                        ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500 font-bold'
+                                        : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400 font-medium'"
+                                    class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-5 py-3 text-sm transition-colors">
+                                <i class="bi bi-shield-check"></i>
+                                <span>Conducts</span>
+                              
+                            </button>
+
+                            <!-- TAB 2: Attitude -->
+                            <button type="button"
+                                    role="tab"
+                                    :aria-selected="activeType === 'Attitude'"
+                                    @@click="setActiveType('Attitude')"
+                                    :class="activeType === 'Attitude'
+                                        ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500 font-bold'
+                                        : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400 font-medium'"
+                                    class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-5 py-3 text-sm transition-colors">
+                                <i class="bi bi-emoji-smile"></i>
+                                <span>Attitudes</span>
+                              
+                            </button>
+
+                            <!-- TAB 3: Interest -->
+                            <button type="button"
+                                    role="tab"
+                                    :aria-selected="activeType === 'Interest'"
+                                    @@click="setActiveType('Interest')"
+                                    :class="activeType === 'Interest'
+                                        ? 'text-blue-700 border-blue-600 dark:text-blue-400 dark:border-blue-500 font-bold'
+                                        : 'text-gray-500 border-transparent hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400 font-medium'"
+                                    class="inline-flex items-center gap-2 whitespace-nowrap border-b-2 -mb-px px-5 py-3 text-sm transition-colors">
+                                <i class="bi bi-star"></i>
+                                <span>Interests</span>
+                               
+                            </button>
+                        </div>
+
+                        <!-- Top Quick Action for Suggestions -->
+                        <div class="flex items-center gap-3 self-start sm:self-auto pb-2 sm:pb-0">
+                            <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                                Assessed: <strong>{{ activeCompletedCount }}</strong> of <strong>{{ studentsInClass.length }}</strong>
+                            </span>
+
+                            <button type="button"
+                                    @@click="openSuggestionsFor(null)"
+                                    class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-800 dark:text-blue-300 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 transition shadow-sm">
+                                <i class="bi bi-lightbulb-fill"></i>
+                                <span>Browse Suggestions Library</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Record Status Banner -->
+                    <div v-if="existingRecord" class="mb-3 px-4 py-2 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 flex items-center justify-between text-xs text-blue-900 dark:text-blue-300">
+                        <div class="flex items-center gap-2">
+                            <i class="bi bi-info-circle-fill text-blue-600 dark:text-blue-400"></i>
+                            <span>Existing assessment record found for <strong>{{ activeType }}</strong> ({{ selectedClass ? selectedClass.name : '' }}, {{ selectedTerm ? selectedTerm.name : '' }}). Saving will update it.</span>
+                        </div>
+                        <span class="font-mono text-[11px] opacity-75">Record ID: {{ existingRecord.id.substring(0, 8) }}…</span>
+                    </div>
+
+                    <div v-else class="mb-3 px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/40 flex items-center gap-2 text-xs text-emerald-900 dark:text-emerald-300">
+                        <i class="bi bi-plus-circle-fill text-emerald-600 dark:text-emerald-400"></i>
+                        <span>New assessment record for <strong>{{ activeType }}</strong>. Enter descriptions below and save.</span>
+                    </div>
+
+                    <div v-if="scopeReady" class="flex items-center gap-2.5 self-start lg:self-end">
+                        <!-- Search Student -->
+                        <div class="w-48">
+                    
+                            <input type="text"
+                                   v-model="searchQuery"
+                                   placeholder="Filter student..."
+                                   class="input-control text-xs" />
+                        </div>
+                    </div>
+                    <!-- Students Table for Active Behavioral Type -->
+                    <div class="flex justify-end gap-2 my-4">
+                        <button v-if="scopeReady && existingRecord"
+                                type="button"
+                                @@click="deleteCurrentAssessment"
+                                :disabled="saving"
+                                class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 dark:bg-red-950/30 dark:border-red-800 dark:text-red-400 transition disabled:opacity-50">
+                            <i class="bi bi-trash"></i>
+                            <span>Delete Record</span>
+                        </button>
+
+                        <button v-if="scopeReady"
+                                type="button"
+                                @@click="saveAssessment"
+                                :disabled="saving || isShimmerLoading || studentsInClass.length === 0"
+                                class="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold text-white bg-[#062a81] hover:bg-blue-900 shadow-sm transition disabled:opacity-50">
+                            <i v-if="saving" class="bi bi-arrow-repeat animate-spin"></i>
+                            <i v-else class="bi bi-check2-all"></i>
+                            <span>{{ existingRecord ? 'Update Assessment' : 'Save Assessment' }}</span>
+                        </button>
+                    </div>
+                    <div class="eval-card">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-sm divide-y divide-gray-100 dark:divide-slate-800">
+                                <thead class="bg-white dark:bg-slate-800/90 text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                    <tr>
+                                        <th class="px-5 py-3.5 text-left font-bold w-14">#</th>
+                                        <th class="px-5 py-3.5 text-left font-bold w-64">Student</th>
+                                        <th class="px-5 py-3.5 text-left font-bold">
+                                            <span>{{ activeType }}</span>
+                                        </th>
+                                        <th class="px-5 py-3.5 text-right font-bold w-28">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
+                                    <tr v-for="(row, idx) in paginatedStudents"
+                                        :key="row.studentId"
+                                        :class="{ 'bg-blue-50/20 dark:bg-slate-800/40': row.dirty }"
+                                        class="hover:bg-gray-50 dark:hover:bg-slate-800/60 transition">
+                                        
+                                        <!-- Row number -->
+                                        <td class="px-5 py-4 text-xs font-mono text-gray-400 align-top">
+                                            {{ (currentPage - 1) * pageSize + idx + 1 }}
+                                        </td>
+
+                                        <!-- Student Info -->
+                                        <td class="px-5 py-4 align-top">
+                                            <div class="font-bold text-gray-800 dark:text-white text-sm">
+                                                {{ row.studentName }}
+                                            </div>
+                                            <div class="text-[11px] font-mono text-gray-400 mt-0.5">
+                                                ID: {{ row.studentIdentifier || '—' }}
+                                            </div>
+                                        </td>
+
+                                        <!-- Description input with inline Suggestions button -->
+                                        <td class="px-5 py-3 align-top">
+                                            <div class="relative">
+                                                <input v-model="row.description"
+                                                       @@input="onDescriptionChange(row)"
+                                                       :placeholder="'Enter ' + activeType.toLowerCase() + ' description for ' + row.studentName + '...'"
+                                                       class="input-control pr-28 bg-white" />
+
+                                                <button type="button"
+                                                        @@click="openSuggestionsFor(row)"
+                                                        title="Quick suggestions"
+                                                        class="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[#062a81] dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all duration-200">
+                                                    <i class="bi bi-lightbulb text-base text-yellow-500"></i>
+                                                    <span class="text-xs font-semibold hidden lg:block md:block">Suggestions</span>
+                                                </button>
+                                            </div>
+                                        </td>
+
+                                        <!-- Status Badge -->
+                                        <td class="px-5 py-4 align-top text-right whitespace-nowrap">
+                                            <span v-if="row.description && row.description.trim() && !row.dirty"
+                                                  class="tag-pill bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                                <i class="bi bi-check-circle-fill text-[10px]"></i> Saved
+                                            </span>
+                                            <span v-else-if="row.dirty"
+                                                  class="tag-pill bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                                <i class="bi bi-pencil-fill text-[10px]"></i> Unsaved
+                                            </span>
+                                            <span v-else
+                                                  class="tag-pill bg-gray-100 text-gray-400 dark:bg-slate-800 dark:text-gray-500">
+                                                Pending
+                                            </span>
+                                        </td>
+                                    </tr>
+
+                                    <tr v-if="filteredStudents.length === 0">
+                                        <td colspan="4" class="py-16 text-center text-gray-400">
+                                            <i class="bi bi-people text-3xl block mb-2 text-gray-300 dark:text-gray-600"></i>
+                                            <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">No students found</p>
+                                            <p class="text-xs text-gray-400 mt-1">Check that students are enrolled in this class.</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination Footer -->
+                        <div class="px-5 py-3.5 bg-gray-50 dark:bg-slate-800/80 border-t border-gray-100 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-gray-600 dark:text-gray-300">
+                            <!-- Left: Page Size Selector & Record Count -->
+                            <div class="flex items-center gap-3">
+                                <div class="flex items-center gap-1.5">
+                                    <span>Show</span>
+                                    <select v-model.number="pageSize" class="input-control text-xs" style="width: auto; padding-top: 0.25rem; padding-bottom: 0.25rem;">
+                                        <option v-for="size in pageSizeOptions" :key="size" :value="size">{{ size }}</option>
+                                    </select>
+                                    <span>entries</span>
+                                </div>
+                                <span class="text-gray-300 dark:text-gray-600">|</span>
+                                <span>Showing <strong>{{ paginationStart }}</strong> to <strong>{{ paginationEnd }}</strong> of <strong>{{ filteredStudents.length }}</strong> students</span>
+                            </div>
+
+                            <!-- Right: Page Navigation -->
+                            <div v-if="totalPages > 1" class="flex items-center gap-1">
+                                <button type="button"
+                                        @@click="prevPage"
+                                        :disabled="currentPage === 1"
+                                        class="px-2.5 py-1.5 rounded-md border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                                    <i class="bi bi-chevron-left text-xs"></i>
+                                </button>
+
+                                <button v-for="page in pageNumbers"
+                                        :key="page"
+                                        type="button"
+                                        @@click="setPage(page)"
+                                        :disabled="page === '...'"
+                                        :class="currentPage === page
+                                            ? 'bg-[#062a81] text-white font-bold border-[#062a81]'
+                                            : 'bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-600'"
+                                        class="min-w-[32px] px-2.5 py-1.5 rounded-md border text-xs transition">
+                                    {{ page }}
+                                </button>
+
+                                <button type="button"
+                                        @@click="nextPage"
+                                        :disabled="currentPage === totalPages"
+                                        class="px-2.5 py-1.5 rounded-md border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                                    <i class="bi bi-chevron-right text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </template>
+
+                <div v-else class="py-24 text-center text-gray-400">
+                    <i class="bi bi-clipboard2-check text-3xl block mb-2 text-gray-300 dark:text-gray-600"></i>
+                    <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Select Academic Year, Term, and Class to manage behavioral assessments</p>
+                </div>
+            </template>
+
+            <!-- ========================================================= -->
+            <!-- MODERN QUICK SUGGESTIONS PANEL / MODAL                    -->
+            <!-- ========================================================= -->
+            <div v-if="showSuggestionsPanel"
+                 class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+                 @@click.self="closeSuggestionsPanel">
+                <div class="w-full max-w-2xl rounded-2xl bg-white dark:bg-slate-800 shadow-2xl border border-gray-100 dark:border-slate-700 overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in duration-150">
+                    
+                    <!-- Panel Header -->
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800">
+                        <div class="flex items-center gap-2.5">
+                            <div class="h-8 w-8 rounded-lg bg-blue-50 dark:bg-slate-700 flex items-center justify-center text-[#062a81] dark:text-blue-400">
+                                <i class="bi bi-lightbulb-fill text-amber-500"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-bold text-gray-800 dark:text-white">
+                                    {{ activeType }} Suggestions Library
+                                </h3>
+                                <p class="text-[11px] text-gray-400">
+                                    <span v-if="activeStudentForSuggestion">
+                                        Applying to: <strong>{{ activeStudentForSuggestion.studentName }}</strong>
+                                    </span>
+                                    <span v-else>
+                                        Browse templates or apply a preset description to all empty student entries
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <button type="button"
+                                @@click="closeSuggestionsPanel"
+                                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg">
+                            <i class="bi bi-x-lg text-sm"></i>
+                        </button>
+                    </div>
+
+                    <!-- Panel Body: Categorized Suggestion Cards for Active Behavioral Type -->
+                    <div class="p-6 space-y-5 overflow-y-auto flex-1">
+                        <div v-for="cat in currentCategorySuggestions" :key="cat.category" class="space-y-2">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
+                                <i class="bi" :class="cat.icon"></i>
+                                <span>{{ cat.category }}</span>
+                            </h4>
+
+                            <div class="grid grid-cols-1 gap-2">
+                                <div v-for="(desc, dIdx) in cat.items"
+                                     :key="dIdx"
+                                     class="p-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:border-blue-300 hover:bg-blue-50/30 dark:hover:bg-slate-700/50 transition flex items-center justify-between gap-3">
+                                    <p class="text-xs text-gray-700 dark:text-gray-200 flex-1">{{ desc }}</p>
+
+                                    <div class="flex items-center gap-1.5 shrink-0">
+                                        <button v-if="activeStudentForSuggestion"
+                                                type="button"
+                                                @@click="selectSuggestion(desc)"
+                                                class="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-[#062a81] text-white hover:bg-blue-900 transition">
+                                            Apply
+                                        </button>
+                                        <button v-else
+                                                type="button"
+                                                @@click="applyPresetToAllEmpty(desc)"
+                                                class="px-2.5 py-1 rounded-md text-[11px] font-semibold border border-blue-200 text-[#062a81] hover:bg-blue-50 dark:border-slate-600 dark:text-blue-300 transition">
+                                            Apply to Empty
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Panel Footer -->
+                    <div class="px-6 py-3 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800 flex justify-end">
+                        <button type="button"
+                                @@click="closeSuggestionsPanel"
+                                class="rounded-lg px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-700 transition">
+                            Close
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="~/js/school-manager/behavioral-assessment.js"></script>

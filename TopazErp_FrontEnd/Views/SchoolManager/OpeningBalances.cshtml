@@ -1,0 +1,107 @@
+@{
+    ViewBag.Title = "Student Opening Balances";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+
+<div class="content" id="app">
+    <div class="mb-5 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-1 dark:text-gray-400">
+            <span>School Manager - Billing & Payments</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium dark:text-blue-400">Student Opening Balances</span>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-bold text-gray-800 dark:text-white tracking-tight flex items-center gap-2.5">
+                  Opening Balances
+                </h2>
+              
+            </div>
+
+           
+        </div>
+    </div>
+
+    <!-- KPI Summary Pills -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+        <div class="p-3.5 rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 flex items-center justify-between">
+            <div>
+                <p class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Total Entries</p>
+                <p class="text-lg font-bold text-gray-800 dark:text-white mt-0.5">{{ totalBalancesCount }}</p>
+            </div>
+            <div class="h-9 w-9 rounded-lg bg-blue-50 dark:bg-slate-700 flex items-center justify-center text-[#062a81] dark:text-blue-400">
+                <i class="bi bi-journal-text text-base"></i>
+            </div>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 flex items-center justify-between">
+            <div>
+                <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Posted Balances</p>
+                <p class="text-lg font-bold text-emerald-700 dark:text-emerald-300 mt-0.5">{{ postedBalancesCount }}</p>
+            </div>
+            <div class="h-9 w-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                <i class="bi bi-check2-circle text-base"></i>
+            </div>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 flex items-center justify-between">
+            <div>
+                <p class="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Unposted Drafts</p>
+                <p class="text-lg font-bold text-amber-700 dark:text-amber-300 mt-0.5">{{ unpostedBalancesCount }}</p>
+            </div>
+            <div class="h-9 w-9 rounded-lg bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                <i class="bi bi-pencil-square text-base"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Card -->
+    <div class="card" data-card-title="Student Opening Balances">
+        <div >
+            <!-- Header Action Controls -->
+            <div class="flex justify-end my-4 items-center gap-2">
+                <button type="button"
+                        @@click="postBalances"
+                        class="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold text-white bg-[#062a81] hover:bg-blue-900 shadow-sm transition">
+                    <i class="bi bi-send-check"></i>
+                    <span>Post Selected Balances</span>
+                </button>
+            </div>
+            <!-- Initial Shimmer Loader -->
+            <div v-if="!setupDone" class="py-24 text-center text-gray-400">
+                <i class="text-blue-800 bi bi-arrow-repeat animate-spin text-3xl inline-block mb-2 text-[#062a81]"></i>
+                <p class="text-sm">Loading students, currencies, classes, and balances…</p>
+            </div>
+
+            <template v-else>
+              
+                <!-- Interactive Data Grid -->
+                <data-grid ref="balancesGrid"
+                           title="Student Opening Balances"
+                           :columns="columns"
+                           :data="filteredOpeningBalances"
+                           :theme="theme"
+                           row-id="id"
+                           label-key="studentName"
+                           item-label="Opening Balance"
+                           item-label-plural="Opening Balances"
+                           add-label="Add"
+                           :page-size="10"
+                           :selectable="true"
+                           :actions="true"
+                           :loading="isShimmerLoading"
+                           :stripes="true"
+                           density="compact"
+                           @@create="onCreate"
+                           @@update="onUpdate"
+                           @@delete="onDelete"
+                           :row-disabled="isPosted">
+                </data-grid>
+            </template>
+
+        </div><!-- /#app -->
+    </div><!-- /.card -->
+</div><!-- /.content -->
+
+<script src="~/js/school-manager/student-opening-balances.js"></script>

@@ -1,0 +1,322 @@
+@{
+ViewBag.Title = "Import Parents / Legal Guardians";
+Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+
+<!-- SheetJS for client-side Excel template generation (.xlsx / .csv) and parsing -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+    .import-card {
+        border-radius: 1rem;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+    .dark .import-card {
+        background: #0f172a;
+        border-color: #334155;
+    }
+    .dropzone-box {
+        border: 2px dashed #cbd5e1;
+        transition: all 0.2s ease;
+    }
+    .dropzone-box:hover, .dropzone-box.drag-over {
+        border-color: #062a81;
+        background-color: #f8fafc;
+    }
+    .dark .dropzone-box {
+        border-color: #334155;
+    }
+    .dark .dropzone-box:hover, .dark .dropzone-box.drag-over {
+        border-color: #3b82f6;
+        background-color: rgb(30 41 59 / 0.56);
+    }
+    .tag-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.2rem 0.55rem;
+        border-radius: 9999px;
+        font-size: 0.72rem;
+        font-weight: 600;
+    }
+</style>
+
+<div class="content">
+    <div class="mb-4 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-1 dark:text-gray-400">
+            <span>School Manager - Import Data</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium dark:text-blue-400">Parents / Legal Guardians</span>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <h2 class="text-lg font-bold text-gray-800 dark:text-white tracking-tight flex items-center gap-2.5">
+                Import Parents & Legal Guardians
+            </h2>
+
+           
+        </div>
+    </div>
+
+    <div class="card" data-card-title="Parents / Legal Guardians Import">
+        <div id="app">
+            <div class="flex justify-end my-4 items-center gap-2">
+              
+                <button v-if="importedRows.length > 0"
+                        type="button"
+                        @@click="saveImportedGuardians"
+                        :disabled="saving || validRowCount === 0"
+                        class="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold text-white bg-[#062a81] hover:bg-blue-900 shadow-sm transition disabled:opacity-50">
+                    <i v-if="saving" class="bi bi-arrow-repeat animate-spin"></i>
+                    <i v-else class="bi bi-check"></i>
+                    <span>Save {{ validRowCount }} Guardian(s)</span>
+                </button>
+            </div>
+            <!-- Initial Loading -->
+            <div v-if="!setupDone" class="py-24 text-center text-gray-400">
+                <i class="text-blue-800 bi bi-arrow-repeat animate-spin text-3xl inline-block mb-2 text-[#062a81]"></i>
+                <p class="text-sm">Loading student database and relationship setups…</p>
+            </div>
+
+            <template v-else>
+
+                <!-- FILE UPLOAD DROPZONE -->
+                <div class="mb-5 p-6 rounded-2xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-center dropzone-box"
+                     @@dragover.prevent="isDragging = true"
+                     @@dragleave.prevent="isDragging = false"
+                     @@drop.prevent="handleFileDrop"
+                     :class="{ 'drag-over': isDragging }">
+
+                    <input type="file"
+                           ref="fileInput"
+                           accept=".xlsx, .xls, .csv"
+                           class="hidden"
+                           @@change="handleFileSelect" />
+
+                    <div class="flex flex-col items-center justify-center space-y-2">
+                        <div class="h-12 w-12 rounded-full bg-blue-50 dark:bg-slate-700 flex items-center justify-center text-[#062a81] dark:text-blue-400">
+                            <i class="bi bi-cloud-arrow-up text-2xl"></i>
+                        </div>
+
+                        <p class="text-sm font-bold text-gray-800 dark:text-white">
+                            Select or drag & drop an Excel file (.xlsx, .xls) or CSV
+                        </p>
+                        <p class="text-xs text-gray-400 max-w-2xl">
+                            Headers: <code>No.</code>, <code>student Reg No</code>, <code>Last Name</code>, <code>First Name</code>, <code>OtherName</code>, <code>Title</code>, <code>Relationship</code>, <code>Profession</code>, <code>Position</code>, <code>Is PTA Executive</code>, <code>Is Guardian</code>, <code>Address</code>, <code>Phone No</code>, <code>Mobile No</code>, <code>E-mail</code>, <code>Notes</code>, <code>Gender</code>
+                        </p>
+
+                        <div class="pt-2 flex flex-wrap items-center justify-center gap-2">
+                            <button type="button"
+                                    @@click="$refs.fileInput.click()"
+                                    class="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold text-white bg-[#062a81] hover:bg-blue-900 transition shadow-sm">
+                                <i class="bi bi-folder2-open"></i>
+                                <span>Browse Excel File</span>
+                            </button>
+
+                            <button type="button"
+                                    @@click="downloadTemplate"
+                                    class="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 transition">
+                                <i class="bi bi-download"></i>
+                                <span>Download Blank Template</span>
+                            </button>
+                        </div>
+
+                        <p v-if="fileName" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-2 flex items-center gap-1">
+                            <i class="bi bi-check2-circle"></i>
+                            <span>Loaded: <strong>{{ fileName }}</strong> ({{ importedRows.length }} rows found)</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- PREVIEW TABLE SECTION -->
+                <div v-if="importedRows.length > 0" class="import-card">
+                    <div class="px-5 py-3.5 bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-xs text-gray-800 dark:text-white uppercase tracking-wider">
+                                Preview Imported Parents & Legal Guardians
+                            </span>
+                            <span class="text-xs text-emerald-700 dark:text-emerald-400 font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                                {{ validRowCount }} valid guardian(s) ready
+                            </span>
+                            <span v-if="invalidRowCount > 0"
+                                  class="text-xs text-amber-700 dark:text-amber-400 font-semibold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800">
+                                {{ invalidRowCount }} warning/unmatched row(s)
+                            </span>
+                        </div>
+
+                        <button type="button"
+                                @@click="clearImport"
+                                class="text-xs text-red-600 dark:text-red-400 hover:underline flex items-center gap-1 self-start sm:self-auto">
+                            <i class="bi bi-x-circle"></i> Clear preview
+                        </button>
+                    </div>
+
+                    <div class="flex items-center gap-2.5 self-start lg:self-end mx-4 my-2">
+                        <div class="w-48">
+                            <input type="text"
+                                   v-model="searchQuery"
+                                   placeholder="Search preview..."
+                                   class="input-control text-xs" />
+                        </div>
+                    </div>
+                    <p class="text-slate-600 m-5 text-sm">Note: Date format for excel sheet - dd-mm-yyyy </p>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm divide-y divide-gray-100 dark:divide-slate-800">
+                            <thead class="bg-white dark:bg-slate-800/90 text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                            <tr>
+                                <th class="px-4 py-3 text-left font-bold w-12">No.</th>
+                                <th class="px-4 py-3 text-left font-bold w-32">Student Reg No</th>
+                                <th class="px-4 py-3 text-left font-bold w-48">Matched Student</th>
+                                <th class="px-4 py-3 text-left font-bold w-44">Guardian Name</th>
+                                <th class="px-4 py-3 text-left font-bold w-24">Relationship</th>
+                                <th class="px-4 py-3 text-left font-bold w-32">Phone / Mobile</th>
+                                <th class="px-4 py-3 text-left font-bold w-36">E-mail</th>
+                                <th class="px-4 py-3 text-left font-bold w-36">Profession / Position</th>
+                                <th class="px-4 py-3 text-center font-bold w-20">Guardian?</th>
+                                <th class="px-4 py-3 text-right font-bold w-28">Status</th>
+                            </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
+                            <tr v-for="(row, idx) in paginatedImported"
+                                :key="idx"
+                                :class="{ 'bg-amber-50/50 dark:bg-amber-950/20': !row.isValid }"
+                                class="hover:bg-gray-50 dark:hover:bg-slate-800/60 transition">
+
+                                <!-- No. -->
+                                <td class="px-4 py-3 text-xs font-mono text-gray-400">
+                                    {{ (currentPage - 1) * pageSize + idx + 1 }}
+                                </td>
+
+                                <!-- Student Reg No -->
+                                <td class="px-4 py-3 text-xs font-mono">
+                                        <span :class="row.studentId ? 'text-blue-700 dark:text-blue-400 font-semibold' : 'text-red-600 font-bold'">
+                                            {{ row.studentRegNo || '—' }}
+                                        </span>
+                                </td>
+
+                                <!-- Matched Student -->
+                                <td class="px-4 py-3 text-xs">
+                                    <div v-if="row.studentId">
+                                        <p class="font-semibold text-gray-800 dark:text-white">{{ row.studentName }}</p>
+                                        <p v-if="row.className" class="text-[11px] text-gray-400">{{ row.className }}</p>
+                                    </div>
+                                    <div v-else class="text-red-500 italic text-[11px] flex items-center gap-1">
+                                        <i class="bi bi-x-circle-fill"></i>
+                                        <span>Student not found</span>
+                                    </div>
+                                </td>
+
+                                <!-- Guardian Name -->
+                                <td class="px-4 py-3 text-xs font-semibold text-gray-800 dark:text-white">
+                                    {{ row.parentFullName || (row.lastName + ' ' + row.firstName) }}
+                                </td>
+
+                                <!-- Relationship -->
+                                <td class="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                                            {{ row.relationshipName || '—' }}
+                                        </span>
+                                </td>
+
+                                <!-- Phone / Mobile -->
+                                <td class="px-4 py-3 text-xs text-gray-600 dark:text-gray-300 font-mono">
+                                    <p v-if="row.phoneNo">{{ row.phoneNo }}</p>
+                                    <p v-if="row.mobileNo && row.mobileNo !== row.phoneNo" class="text-[11px] text-gray-400">{{ row.mobileNo }}</p>
+                                    <span v-if="!row.phoneNo && !row.mobileNo" class="text-gray-400 font-sans">—</span>
+                                </td>
+
+                                <!-- Email -->
+                                <td class="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                                    {{ row.email || '—' }}
+                                </td>
+
+                                <!-- Profession / Position -->
+                                <td class="px-4 py-3 text-xs text-gray-600 dark:text-gray-300">
+                                    <span v-if="row.profession || row.position">{{ [row.profession, row.position].filter(Boolean).join(' · ') }}</span>
+                                    <span v-else class="text-gray-400">—</span>
+                                </td>
+
+                                <!-- Guardian? -->
+                                <td class="px-4 py-3 text-center text-xs">
+                                    <span v-if="row.isGuardian" class="text-emerald-600 font-bold"><i class="bi bi-check-lg"></i></span>
+                                    <span v-else class="text-gray-400"><i class="bi bi-dash"></i></span>
+                                </td>
+
+                                <!-- Status Match -->
+                                <td class="px-4 py-3 text-right whitespace-nowrap">
+                                        <span v-if="row.isValid"
+                                              class="tag-pill bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                            <i class="bi bi-check-circle-fill text-[10px]"></i> Ready
+                                        </span>
+                                    <span v-else
+                                          class="tag-pill bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 border border-red-300 dark:border-red-800"
+                                          :title="row.validationMessage">
+                                            <i class="bi bi-exclamation-triangle-fill text-[10px]"></i> Unresolved
+                                        </span>
+                                </td>
+                            </tr>
+
+                            <tr v-if="filteredImported.length === 0">
+                                <td colspan="10" class="py-12 text-center text-gray-400">
+                                    <i class="bi bi-search text-2xl block mb-1"></i>
+                                    <span>No matching rows found</span>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination Footer -->
+                    <div class="px-5 py-3.5 bg-gray-50 dark:bg-slate-800/80 border-t border-gray-100 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-gray-600 dark:text-gray-300">
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-1.5">
+                                <span>Show</span>
+                                <select v-model.number="pageSize" class="input-control text-xs" style="width: auto; padding-top: 0.25rem; padding-bottom: 0.25rem;">
+                                    <option v-for="size in pageSizeOptions" :key="size" :value="size">{{ size }}</option>
+                                </select>
+                                <span>entries</span>
+                            </div>
+                            <span class="text-gray-300 dark:text-gray-600">|</span>
+                            <span>Showing <strong>{{ paginationStart }}</strong> to <strong>{{ paginationEnd }}</strong> of <strong>{{ filteredImported.length }}</strong> rows</span>
+                        </div>
+
+                        <div v-if="totalPages > 1" class="flex items-center gap-1">
+                            <button type="button"
+                                    @@click="prevPage"
+                                    :disabled="currentPage === 1"
+                                    class="px-2.5 py-1.5 rounded-md border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                                <i class="bi bi-chevron-left text-xs"></i>
+                            </button>
+
+                            <button v-for="page in pageNumbers"
+                                    :key="page"
+                                    type="button"
+                                    @@click="setPage(page)"
+                                    :disabled="page === '...'"
+                                    :class="currentPage === page
+                                        ? 'bg-[#062a81] text-white font-bold border-[#062a81]'
+                                        : 'bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-600'"
+                                    class="min-w-[32px] px-2.5 py-1.5 rounded-md border text-xs transition">
+                                {{ page }}
+                            </button>
+
+                            <button type="button"
+                                    @@click="nextPage"
+                                    :disabled="currentPage === totalPages"
+                                    class="px-2.5 py-1.5 rounded-md border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                                <i class="bi bi-chevron-right text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </template>
+
+        </div><!-- /#app -->
+    </div><!-- /.card -->
+</div><!-- /.content -->
+
+<script src="~/js/school-manager/legal-guardians-import.js"></script>

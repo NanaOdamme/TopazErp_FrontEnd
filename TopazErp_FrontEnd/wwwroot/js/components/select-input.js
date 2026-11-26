@@ -16,6 +16,7 @@
 * */
 
 /* Vue 3 global-build W-Select component. No build step; load Vue before this file. */
+/* Vue 3 global-build W-Select component. No build step; load Vue before this file. */
 (function registerWSelect(global) {
     'use strict';
 
@@ -59,7 +60,10 @@
                 activeIndex: -1,
                 inputId: id,
                 labelId: `${id}-label`,
-                listboxId: `${id}-listbox`
+                listboxId: `${id}-listbox`,
+                dropdownStyle: {},
+                dropdownListStyle: { maxHeight: this.maxHeight },
+                dropdownDark: false
             };
         },
         computed: {
@@ -119,9 +123,13 @@
             searchQuery(value) {
                 this.activeIndex = this.firstEnabledIndex();
                 this.$emit('search', value);
+                if (this.isOpen) this.$nextTick(this.updateDropdownPosition);
             },
             options() {
-                if (this.isOpen) this.activeIndex = this.firstEnabledIndex();
+                if (this.isOpen) {
+                    this.activeIndex = this.firstEnabledIndex();
+                    this.$nextTick(this.updateDropdownPosition);
+                }
             },
             modelValue() {
                 if (this.isOpen) this.activeIndex = this.firstEnabledIndex();
@@ -134,17 +142,101 @@
         beforeUnmount() {
             document.removeEventListener('mousedown', this.onOutsidePointer);
             document.removeEventListener('touchstart', this.onOutsidePointer);
+            this.stopDropdownPositionTracking();
         },
         methods: {
             optionId(option) { return option.domId; },
             firstEnabledIndex() { return this.filteredOptions.findIndex((option) => !option.disabled); },
+            maxHeightPixels() {
+                const match = String(this.maxHeight || '').trim().match(/^([\d.]+)\s*(px|rem|em|vh|vw)$/i);
+                if (!match) return 240;
+                const value = Number(match[1]);
+                const unit = match[2].toLowerCase();
+                if (unit === 'px') return value;
+                if (unit === 'vh') return value * (window.innerHeight || 768) / 100;
+                if (unit === 'vw') return value * (window.innerWidth || 1024) / 100;
+                const rootSize = parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16;
+                return value * rootSize;
+            },
+            dropdownNaturalHeight(dropdown) {
+                const header = dropdown && dropdown.querySelector('[data-w-select-header]');
+                const footer = dropdown && dropdown.querySelector('[data-w-select-footer]');
+                const headerHeight = header && header.getBoundingClientRect().height || 56;
+                const footerHeight = this.filteredOptions.length
+                    ? (footer && footer.getBoundingClientRect().height || 32)
+                    : 0;
+                const listHeight = this.filteredOptions.length
+                    ? Math.min(this.filteredOptions.length * 40 + 12, this.maxHeightPixels())
+                    : 56;
+                return headerHeight + listHeight + footerHeight;
+            },
+            startDropdownPositionTracking() {
+                window.addEventListener('resize', this.updateDropdownPosition);
+                window.addEventListener('scroll', this.updateDropdownPosition, true);
+                if (window.visualViewport) {
+                    window.visualViewport.addEventListener('resize', this.updateDropdownPosition);
+                    window.visualViewport.addEventListener('scroll', this.updateDropdownPosition);
+                }
+            },
+            stopDropdownPositionTracking() {
+                window.removeEventListener('resize', this.updateDropdownPosition);
+                window.removeEventListener('scroll', this.updateDropdownPosition, true);
+                if (window.visualViewport) {
+                    window.visualViewport.removeEventListener('resize', this.updateDropdownPosition);
+                    window.visualViewport.removeEventListener('scroll', this.updateDropdownPosition);
+                }
+            },
+            updateDropdownPosition() {
+                if (!this.isOpen || !this.$refs.trigger) return;
+                const trigger = this.$refs.trigger;
+                const rect = trigger.getBoundingClientRect();
+                const doc = document.documentElement;
+                const viewportWidth = window.innerWidth || doc.clientWidth || 1024;
+                const viewportHeight = window.innerHeight || doc.clientHeight || 768;
+                const gutter = 8;
+                const gap = 4;
+                const measuredWidth = rect.width || trigger.offsetWidth || 240;
+                const width = Math.min(measuredWidth, Math.max(0, viewportWidth - gutter * 2));
+                const left = Math.max(gutter, Math.min(rect.left, viewportWidth - width - gutter));
+                const dropdown = this.$refs.dropdown;
+                const naturalHeight = this.dropdownNaturalHeight(dropdown);
+                const panelHeight = Math.min(naturalHeight, Math.max(0, viewportHeight - gutter * 2));
+                const spaceBelow = Math.max(0, viewportHeight - rect.bottom - gap - gutter);
+                const spaceAbove = Math.max(0, rect.top - gap - gutter);
+                const openAbove = panelHeight > spaceBelow && spaceAbove > spaceBelow;
+                const candidateTop = openAbove ? rect.top - gap - panelHeight : rect.bottom + gap;
+                const top = Math.max(gutter, Math.min(candidateTop, viewportHeight - panelHeight - gutter));
+                const header = dropdown && dropdown.querySelector('[data-w-select-header]');
+                const footer = dropdown && dropdown.querySelector('[data-w-select-footer]');
+                const headerHeight = header && header.getBoundingClientRect().height || 56;
+                const footerHeight = this.filteredOptions.length
+                    ? (footer && footer.getBoundingClientRect().height || 32)
+                    : 0;
+                const listHeight = Math.max(0, panelHeight - headerHeight - footerHeight);
+                this.dropdownStyle = {
+                    position: 'fixed',
+                    top: `${top}px`,
+                    left: `${left}px`,
+                    width: `${width}px`,
+                    maxHeight: `${panelHeight}px`,
+                    zIndex: 10000
+                };
+                this.dropdownListStyle = { maxHeight: `min(${this.maxHeight}, ${Math.floor(listHeight)}px)` };
+            },
             openDropdown() {
                 if (this.disabled || this.isOpen) return;
                 this.isOpen = true;
                 this.searchQuery = '';
                 this.activeIndex = this.firstEnabledIndex();
+                this.dropdownDark = Boolean(
+                    (this.$el && this.$el.closest && this.$el.closest('.dark')) ||
+                    document.documentElement.classList.contains('dark')
+                );
+                this.updateDropdownPosition();
+                this.startDropdownPositionTracking();
                 this.$emit('open');
                 this.$nextTick(() => {
+                    this.updateDropdownPosition();
                     if (this.$refs.searchInput) this.$refs.searchInput.focus();
                     this.scrollActiveOptionIntoView();
                 });
@@ -152,6 +244,7 @@
             closeDropdown(returnFocus = false) {
                 if (!this.isOpen) return;
                 this.isOpen = false;
+                this.stopDropdownPositionTracking();
                 this.searchQuery = '';
                 this.activeIndex = -1;
                 this.$emit('close');
@@ -162,7 +255,9 @@
                 else this.openDropdown();
             },
             onOutsidePointer(event) {
-                if (this.isOpen && this.$el && !this.$el.contains(event.target)) this.closeDropdown();
+                const inComponent = this.$el && this.$el.contains(event.target);
+                const inDropdown = this.$refs.dropdown && this.$refs.dropdown.contains(event.target);
+                if (this.isOpen && !inComponent && !inDropdown) this.closeDropdown();
             },
             onTriggerKeydown(event) {
                 if (this.disabled) return;
@@ -258,43 +353,46 @@
             <span class="min-w-0 flex-1 truncate" :class="selectedOption ? '' : 'text-slate-400 dark:text-slate-500'">
               {{ selectedOption ? selectedLabel : placeholder }}
             </span>
-            <span class="flex shrink-0 items-center text-slate-400 dark:text-slate-500" :class="clearable && selectedOption && !disabled ? 'pr-6' : ''">
+            <span class="flex shrink-0 items-center text-slate-400 dark:text-slate-500 " :class="clearable && selectedOption && !disabled ? 'pr-6' : ''">
               <i class="bi bi-chevron-down text-xs transition-transform" :class="isOpen ? 'rotate-180' : ''" aria-hidden="true"></i>
             </span>
           </button>
-          <button v-if="clearable && selectedOption && !disabled" type="button" class="absolute right-4 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-slate-100" aria-label="Clear selection" @click.stop="clearSelection">
+          <button v-if="clearable && selectedOption && !disabled" type="button" class="absolute right-2 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-slate-100" aria-label="Clear selection" @click.stop="clearSelection">
             <i class="bi bi-x-lg text-xs" aria-hidden="true"></i>
           </button>
           <input v-if="name" type="hidden" :name="name" :value="modelValue == null ? '' : modelValue">
 
-          <div v-if="isOpen" class="absolute inset-x-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-900 dark:ring-white/10">
-            <div class="border-b border-slate-100 p-2.5 dark:border-slate-700">
-              <label class="sr-only" :for="inputId + '-search'">Search {{ label || 'options' }}</label>
-              <div class="relative">
-                <i class="bi bi-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 dark:text-slate-500" aria-hidden="true"></i>
-                <input ref="searchInput" :id="inputId + '-search'" v-model="searchQuery" type="search" role="combobox"
-                  :placeholder="searchPlaceholder" autocomplete="off" :aria-expanded="true" :aria-controls="listboxId"
-                  :aria-activedescendant="activeDescendant" aria-autocomplete="list" @keydown="onSearchKeydown"
-                  class="block w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:bg-slate-950 dark:focus:ring-blue-900/50">
+          <Teleport to="body">
+            <div v-if="isOpen" ref="dropdown" :data-w-select-dropdown="inputId" :style="dropdownStyle"
+              :class="['fixed z-[10000] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-900 dark:ring-white/10', dropdownDark ? 'dark' : '']">
+              <div data-w-select-header class="border-b border-slate-100 p-2.5 dark:border-slate-700">
+                <label class="sr-only" :for="inputId + '-search'">Search {{ label || 'options' }}</label>
+                <div class="relative">
+                  <i class="bi bi-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 dark:text-slate-500" aria-hidden="true"></i>
+                  <input ref="searchInput" :id="inputId + '-search'" v-model="searchQuery" type="search" role="combobox"
+                    :placeholder="searchPlaceholder" autocomplete="off" :aria-expanded="true" :aria-controls="listboxId"
+                    :aria-activedescendant="activeDescendant" aria-autocomplete="list" @keydown="onSearchKeydown"
+                    class="block w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:bg-slate-950 dark:focus:ring-blue-900/50">
+                </div>
+              </div>
+              <ul :id="listboxId" role="listbox" :aria-labelledby="label ? labelId : undefined" :style="dropdownListStyle" class="overflow-y-auto p-1.5">
+                <li v-for="(option, index) in filteredOptions" :id="optionId(option)" :key="option.index" role="option"
+                  :aria-selected="selectedOption && Object.is(selectedOption.value, option.value) ? 'true' : 'false'"
+                  :aria-disabled="option.disabled ? 'true' : undefined"
+                  @mouseenter="!option.disabled && (activeIndex = index)"
+                  @click="!option.disabled && selectOption(option)"
+                  class="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-sm transition"
+                  :class="option.disabled ? 'cursor-not-allowed text-slate-300 dark:text-slate-600' : index === activeIndex ? 'bg-blue-50 text-blue-800 dark:bg-blue-950/60 dark:text-blue-200' : 'text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800'">
+                  <span class="min-w-0 truncate">{{ option.label }}</span>
+                  <i v-if="selectedOption && Object.is(selectedOption.value, option.value)" class="bi bi-check2 shrink-0 text-blue-600 dark:text-blue-400" aria-hidden="true"></i>
+                </li>
+                <li v-if="filteredOptions.length === 0" role="status" class="px-3 py-5 text-center text-sm text-slate-500 dark:text-slate-400">{{ noResultsText }}</li>
+              </ul>
+              <div v-if="filteredOptions.length" data-w-select-footer class="border-t border-slate-100 px-3 py-2 text-[11px] text-slate-400 dark:border-slate-700 dark:text-slate-500">
+                {{ filteredOptions.length }} option{{ filteredOptions.length === 1 ? '' : 's' }}
               </div>
             </div>
-            <ul :id="listboxId" role="listbox" :aria-labelledby="label ? labelId : undefined" :style="{ maxHeight: maxHeight }" class="overflow-y-auto p-1.5">
-              <li v-for="(option, index) in filteredOptions" :id="optionId(option)" :key="option.index" role="option"
-                :aria-selected="selectedOption && Object.is(selectedOption.value, option.value) ? 'true' : 'false'"
-                :aria-disabled="option.disabled ? 'true' : undefined"
-                @mouseenter="!option.disabled && (activeIndex = index)"
-                @click="!option.disabled && selectOption(option)"
-                class="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-sm transition"
-                :class="option.disabled ? 'cursor-not-allowed text-slate-300 dark:text-slate-600' : index === activeIndex ? 'bg-blue-50 text-blue-800 dark:bg-blue-950/60 dark:text-blue-200' : 'text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800'">
-                <span class="min-w-0 truncate">{{ option.label }}</span>
-                <i v-if="selectedOption && Object.is(selectedOption.value, option.value)" class="bi bi-check2 shrink-0 text-blue-600 dark:text-blue-400" aria-hidden="true"></i>
-              </li>
-              <li v-if="filteredOptions.length === 0" role="status" class="px-3 py-5 text-center text-sm text-slate-500 dark:text-slate-400">{{ noResultsText }}</li>
-            </ul>
-            <div v-if="filteredOptions.length" class="border-t border-slate-100 px-3 py-2 text-[11px] text-slate-400 dark:border-slate-700 dark:text-slate-500">
-              {{ filteredOptions.length }} option{{ filteredOptions.length === 1 ? '' : 's' }}
-            </div>
-          </div>
+          </Teleport>
         </div>
         <p v-if="error" class="mt-1.5 text-xs font-medium text-rose-600 dark:text-rose-400" role="alert">{{ error }}</p>
         <p v-else-if="helperText" class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{{ helperText }}</p>
@@ -309,5 +407,3 @@
     global.WSelect = WSelect;
     global.WSelectPlugin = WSelectPlugin;
 })(globalThis);
-
-

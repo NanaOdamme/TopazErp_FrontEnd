@@ -1,0 +1,435 @@
+@{
+    ViewBag.Title = "Import Assignment Results";
+    Layout = "~/Views/Shared/_adminSchoolManagerLayout.cshtml";
+}
+
+<!-- SheetJS for client-side Excel template generation (.xlsx / .csv) and parsing -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+    .import-card {
+        border-radius: 1rem;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+    .dark .import-card {
+        background: #0f172a;
+        border-color: #334155;
+    }
+    .dropzone-box {
+        border: 2px dashed #cbd5e1;
+        transition: all 0.2s ease;
+    }
+    .dropzone-box:hover, .dropzone-box.drag-over {
+        border-color: #062a81;
+        background-color: #f8fafc;
+    }
+    .dark .dropzone-box {
+        border-color: #334155;
+    }
+    .dark .dropzone-box:hover, .dark .dropzone-box.drag-over {
+        border-color: #3b82f6;
+        background-color: rgb(30 41 59 / 0.56);
+    }
+    .tag-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.2rem 0.55rem;
+        border-radius: 9999px;
+        font-size: 0.72rem;
+        font-weight: 600;
+    }
+    .mark-exceeded-input {
+        border-color: #ef4444 !important;
+        background-color: #fef2f2 !important;
+        color: #b91c1c !important;
+    }
+    .dark .mark-exceeded-input {
+        background-color: #450a0a !important;
+        color: #fca5a5 !important;
+        border-color: #dc2626 !important;
+    }
+</style>
+
+<div class="content">
+    <div class="mb-4 content-header">
+        <div class="flex items-center gap-2 text-sm text-gray-500 mb-1 dark:text-gray-400">
+            <span>School Manager - Import Data</span>
+            <i class="bi bi-chevron-right text-xs"></i>
+            <span class="text-blue-600 font-medium dark:text-blue-400">Import Assignment Results</span>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <h2 class="text-lg font-bold text-gray-800 dark:text-white tracking-tight flex items-center gap-2.5">
+                Import Assessment Results
+            </h2>
+        </div>
+    </div>
+
+    <div class="card" data-card-title="Import Results">
+        <div id="app">
+
+            <!-- Filter Controls Header (Academic Year, Term, Class, Subject) -->
+            <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-5 pb-5 border-b border-gray-100 dark:border-slate-700">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-1">
+                    <div>
+                        <label class="label">Academic Year</label>
+                        <w-select v-model="academicYearId"
+                                  :options="academicYears"
+                                  display-key="name"
+                                  value-key="id"
+                                  placeholder="Academic Year">
+                        </w-select>
+                    </div>
+
+                    <div>
+                        <label class="label">Term</label>
+                        <w-select v-model="termId"
+                                  :options="terms"
+                                  display-key="name"
+                                  value-key="id"
+                                  placeholder="Term">
+                        </w-select>
+                    </div>
+
+                    <div>
+                        <label class="label">Class</label>
+                        <w-select v-model="classId"
+                                  :options="classes"
+                                  display-key="name"
+                                  value-key="id"
+                                  placeholder="Class">
+                        </w-select>
+                    </div>
+
+                    <div>
+                        <label class="label">Subject</label>
+                        <w-select v-model="subjectId"
+                                  :options="availableSubjects"
+                                  display-key="name"
+                                  value-key="id"
+                                  :disabled="!hasAssignedSubjects || availableSubjects.length === 0"
+                                  placeholder="Select Subject">
+                        </w-select>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button v-if="scopeReady && importedRows.length > 0"
+                            type="button"
+                            @@click="saveImportedResults"
+                            :disabled="saving || validRowCount === 0 || hasExceedingMarks"
+                            class="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold text-white bg-[#062a81] hover:bg-blue-900 shadow-sm transition disabled:opacity-50">
+                        <i v-if="saving" class="bi bi-arrow-repeat animate-spin"></i>
+                        <i v-else class="bi bi-check"></i>
+                        <span>Save {{ validRowCount }} Mark(s)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Unassigned subjects alert -->
+            <div v-if="classId && !hasAssignedSubjects" class="mb-5 flex items-center gap-2.5 text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-xl border border-amber-200 dark:border-amber-800/40">
+                <i class="bi bi-exclamation-triangle-fill text-amber-600"></i>
+                <span>No assigned subjects found for <strong>{{ selectedClass ? selectedClass.name : 'this class' }}</strong>. Please assign subjects to this class first.</span>
+            </div>
+
+            <!-- Initial Loading -->
+            <div v-if="!setupDone" class="py-24 text-center text-gray-400">
+                <i class="text-blue-800 bi bi-arrow-repeat animate-spin text-3xl inline-block mb-2 text-[#062a81]"></i>
+                <p class="text-sm">Loading assessment setups and student rosters…</p>
+            </div>
+
+            <template v-else>
+                <template v-if="scopeReady">
+
+                    <!-- Assessment Parameters Card (Type, Assignment Number, Overall Mark, Raw / Percentage) -->
+                    <div class="p-4 mb-4 rounded-xl bg-white dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+                            <div>
+                                <label class="label">Assessment Type</label>
+                                <select v-model="assessmentType" @@change="recalculateAssignmentNumber" class="select text-xs font-semibold">
+                                    <option v-for="t in assessmentTypes" :key="t.id" :value="t.id">{{ t.name }}</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="label">Assignment Number</label>
+                                <input type="number"
+                                       v-model.number="assignmentNumber"
+                                       :disabled="assessmentType === 'MidTerm' || assessmentType === 'Exam'"
+                                       min="1"
+                                       class="input-control text-xs" />
+                            </div>
+
+                            <div>
+                                <label class="label">Overall Mark (Max)</label>
+                                <input type="number"
+                                       v-model.number="overallMark"
+                                       min="1"
+                                       step="any"
+                                       class="input-control text-xs font-bold" />
+                            </div>
+
+                            <div>
+                                <label class="label">Assigned Date</label>
+                                <input type="date"
+                                       v-model="assignedDate"
+                                       class="input-control text-xs" />
+                            </div>
+
+                            <div class="flex items-center gap-4 pb-2">
+                                <label class="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-gray-700 dark:text-gray-200">
+                                    <input type="checkbox" v-model="isRawMark" class="rounded text-[#062a81]" />
+                                    <span>Raw Mark</span>
+                                </label>
+                                <label class="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-gray-700 dark:text-gray-200">
+                                    <input type="checkbox" v-model="isPercentage" class="rounded text-[#062a81]" />
+                                    <span>Percentage (%)</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- IMPORTANT WARNING BANNER IF RESULTS ALREADY EXIST FOR THIS ASSESSMENT -->
+                    <div v-if="existingMatchingResult"
+                         class="mb-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-900 dark:text-amber-200">
+                        <div class="flex items-start sm:items-center gap-2.5">
+                            <i class="bi bi-exclamation-triangle-fill text-amber-600 text-lg shrink-0"></i>
+                            <div>
+                                <p class="font-bold">An assessment record already exists for this exact criteria!</p>
+                                <p class="text-amber-800 dark:text-amber-300 mt-0.5">
+                                    <strong>{{ getTypeName(assessmentType) }} #{{ assignmentNumber }}</strong> for <strong>{{ selectedSubject ? selectedSubject.name : '' }}</strong> (Contains {{ (existingMatchingResult.details || []).length }} student marks).
+                                    Importing and saving will create a new entry or update the existing assessment.
+                                </p>
+                            </div>
+                        </div>
+
+                
+                    </div>
+
+                    <!-- Warning banner if any mark exceeds overallMark -->
+                    <div v-if="hasExceedingMarks"
+                         class="mb-4 flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300 border border-red-200 dark:border-red-800 text-xs">
+                        <i class="bi bi-exclamation-octagon-fill text-red-600 text-sm"></i>
+                        <span>One or more imported student marks exceed the maximum overall mark of <strong>{{ overallMark }}</strong>. Please correct them below before saving.</span>
+                    </div>
+
+                    <!-- FILE UPLOAD DROPZONE -->
+                    <div class="mb-5 p-6 rounded-2xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-center dropzone-box"
+                         @@dragover.prevent="isDragging = true"
+                         @@dragleave.prevent="isDragging = false"
+                         @@drop.prevent="handleFileDrop"
+                         :class="{ 'drag-over': isDragging }">
+                        
+                        <input type="file"
+                               ref="fileInput"
+                               accept=".xlsx, .xls, .csv"
+                               class="hidden"
+                               @@change="handleFileSelect" />
+
+                        <div class="flex flex-col items-center justify-center space-y-2">
+                            <div class="h-12 w-12 rounded-full bg-blue-50 dark:bg-slate-700 flex items-center justify-center text-[#062a81] dark:text-blue-400">
+                                <i class="bi bi-cloud-arrow-up text-2xl"></i>
+                            </div>
+
+                            <p class="text-sm font-bold text-gray-800 dark:text-white">
+                                Select or drag & drop an Excel file (.xlsx, .xls) or CSV
+                            </p>
+                            <p class="text-xs text-gray-400 max-w-md">
+                                Columns expected: <code>No.</code>, <code>Reg No.</code>, <code>StudentName</code>, and <code>Marks</code>.
+                            </p>
+
+                            <div class="pt-2 flex flex-wrap items-center justify-center gap-2">
+                                <button type="button"
+                                        @@click="$refs.fileInput.click()"
+                                        class="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold text-white bg-[#062a81] hover:bg-blue-900 transition shadow-sm">
+                                    <i class="bi bi-folder2-open"></i>
+                                    <span>Browse Excel File</span>
+                                </button>
+
+                                <button type="button"
+                                        @@click="downloadTemplate"
+                                        :disabled="studentsInClass.length === 0"
+                                        class="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 transition">
+                                    <i class="bi bi-download"></i>
+                                    <span>Download Class Template</span>
+                                </button>
+                            </div>
+
+                            <p v-if="fileName" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-2 flex items-center gap-1">
+                                <i class="bi bi-check2-circle"></i>
+                                <span>Loaded: <strong>{{ fileName }}</strong> ({{ importedRows.length }} rows found)</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- PREVIEW TABLE SECTION -->
+                    <div v-if="importedRows.length > 0" class="import-card">
+                        <div class="px-5 py-3.5 bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-xs text-gray-800 dark:text-white uppercase tracking-wider">
+                                    Preview &mdash; {{ getTypeName(assessmentType) }} #{{ assignmentNumber }} ({{ selectedSubject ? selectedSubject.name : '' }})
+                                </span>
+                                <span class="text-xs text-emerald-700 dark:text-emerald-400 font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                                    {{ validRowCount }} valid mark(s) ready
+                                </span>
+                            </div>
+
+                            <button type="button"
+                                    @@click="clearImport"
+                                    class="text-xs text-red-600 dark:text-red-400 hover:underline flex items-center gap-1 self-start sm:self-auto">
+                                <i class="bi bi-x-circle"></i> Clear preview
+                            </button>
+                        </div>
+
+                        <div v-if="scopeReady && importedRows.length > 0" class="flex items-center gap-2.5 self-start lg:self-end mx-4 my-2">
+                            <div class="w-48">
+                                <input type="text"
+                                       v-model="searchQuery"
+                                       placeholder="Search preview..."
+                                       class="input-control text-xs" />
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-sm divide-y divide-gray-100 dark:divide-slate-800">
+                                <thead class="bg-white dark:bg-slate-800/90 text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                    <tr>
+                                        <th class="px-5 py-3 text-left font-bold w-12">No.</th>
+                                        <th class="px-5 py-3 text-left font-bold w-36">Reg No.</th>
+                                        <th class="px-5 py-3 text-left font-bold w-52">Student Name</th>
+                                        <th class="px-5 py-3 text-right font-bold w-36">
+                                            <span>Marks (Max {{ overallMark }})</span>
+                                        </th>
+                                        <th class="px-5 py-3 text-right font-bold w-28">Match Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 dark:divide-slate-800">
+                                    <tr v-for="(row, idx) in paginatedImported"
+                                        :key="row.studentId || idx"
+                                        :class="{ 'bg-red-50/40 dark:bg-red-950/20': isMarkExceeding(row.marks) }"
+                                        class="hover:bg-gray-50 dark:hover:bg-slate-800/60 transition">
+                                        
+                                        <!-- No. -->
+                                        <td class="px-5 py-3.5 text-xs font-mono text-gray-400">
+                                            {{ (currentPage - 1) * pageSize + idx + 1 }}
+                                        </td>
+
+                                        <!-- Reg No. -->
+                                        <td class="px-5 py-3.5 text-xs font-mono text-gray-700 dark:text-gray-200">
+                                            {{ row.studentIdentifier || '—' }}
+                                        </td>
+
+                                        <!-- Student Name -->
+                                        <td class="px-5 py-3.5 font-semibold text-xs text-gray-800 dark:text-white">
+                                            <div class="flex items-center gap-1.5">
+                                                <span>{{ row.studentName }}</span>
+                                                <span v-if="isMarkExceeding(row.marks)"
+                                                      class="inline-flex items-center gap-0.5 text-[10px] font-bold text-red-600 dark:text-red-400"
+                                                      title="Mark exceeds overall maximum">
+                                                    <i class="bi bi-exclamation-circle-fill"></i> Exceeds Max
+                                                </span>
+                                            </div>
+                                        </td>
+
+                                        <!-- Editable Marks in Preview -->
+                                        <td class="px-5 py-2.5 text-right">
+                                            <input type="number"
+                                                   v-model.number="row.marks"
+                                                   min="0"
+                                                   step="any"
+                                                   :class="{ 'mark-exceeded-input': isMarkExceeding(row.marks) }"
+                                                   class="input-control text-right font-semibold text-xs"
+                                                   style="width: 100px; display: inline-block;" />
+                                        </td>
+
+                                        <!-- Match Status -->
+                                        <td class="px-5 py-3.5 text-right whitespace-nowrap">
+                                            <span v-if="row.matched && !isMarkExceeding(row.marks)"
+                                                  class="tag-pill bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                                <i class="bi bi-check-circle-fill text-[10px]"></i> Ready
+                                            </span>
+                                            <span v-else-if="isMarkExceeding(row.marks)"
+                                                  class="tag-pill bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 border border-red-300 dark:border-red-800">
+                                                <i class="bi bi-exclamation-triangle-fill text-[10px]"></i> Invalid
+                                            </span>
+                                            <span v-else
+                                                  class="tag-pill bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300 border border-red-200 dark:border-red-800"
+                                                  title="Student not recognized in this class">
+                                                <i class="bi bi-x-circle-fill text-[10px]"></i> Unmatched
+                                            </span>
+                                        </td>
+                                    </tr>
+
+                                    <tr v-if="filteredImported.length === 0">
+                                        <td colspan="5" class="py-12 text-center text-gray-400">
+                                            <i class="bi bi-search text-2xl block mb-1"></i>
+                                            <span>No matching rows found</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination Footer -->
+                        <div class="px-5 py-3.5 bg-gray-50 dark:bg-slate-800/80 border-t border-gray-100 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-gray-600 dark:text-gray-300">
+                            <!-- Left: Page Size Selector & Record Count -->
+                            <div class="flex items-center gap-3">
+                                <div class="flex items-center gap-1.5">
+                                    <span>Show</span>
+                                    <select v-model.number="pageSize" class="input-control text-xs" style="width: auto; padding-top: 0.25rem; padding-bottom: 0.25rem;">
+                                        <option v-for="size in pageSizeOptions" :key="size" :value="size">{{ size }}</option>
+                                    </select>
+                                    <span>entries</span>
+                                </div>
+                                <span class="text-gray-300 dark:text-gray-600">|</span>
+                                <span>Showing <strong>{{ paginationStart }}</strong> to <strong>{{ paginationEnd }}</strong> of <strong>{{ filteredImported.length }}</strong> rows</span>
+                            </div>
+
+                            <!-- Right: Page Navigation -->
+                            <div v-if="totalPages > 1" class="flex items-center gap-1">
+                                <button type="button"
+                                        @@click="prevPage"
+                                        :disabled="currentPage === 1"
+                                        class="px-2.5 py-1.5 rounded-md border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                                    <i class="bi bi-chevron-left text-xs"></i>
+                                </button>
+
+                                <button v-for="page in pageNumbers"
+                                        :key="page"
+                                        type="button"
+                                        @@click="setPage(page)"
+                                        :disabled="page === '...'"
+                                        :class="currentPage === page
+                                            ? 'bg-[#062a81] text-white font-bold border-[#062a81]'
+                                            : 'bg-white dark:bg-slate-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-600'"
+                                        class="min-w-[32px] px-2.5 py-1.5 rounded-md border text-xs transition">
+                                    {{ page }}
+                                </button>
+
+                                <button type="button"
+                                        @@click="nextPage"
+                                        :disabled="currentPage === totalPages"
+                                        class="px-2.5 py-1.5 rounded-md border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                                    <i class="bi bi-chevron-right text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </template>
+
+                <div v-else class="py-24 text-center text-gray-400">
+                    <i class="bi bi-file-earmark-spreadsheet text-3xl block mb-2 text-gray-300 dark:text-gray-600"></i>
+                    <p class="text-sm font-medium text-gray-600 dark:text-gray-300">Select Academic Year, Term, Class, and Subject to begin importing results</p>
+                </div>
+            </template>
+
+        </div><!-- /#app -->
+    </div><!-- /.card -->
+</div><!-- /.content -->
+
+<script src="~/js/school-manager/assignment-results-import.js"></script>

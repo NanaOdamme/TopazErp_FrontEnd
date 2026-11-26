@@ -60,14 +60,6 @@
                         <span>Prize Awarded</span>
                     </button>
                 </div>
-
-                <button type="button"
-                        class="mb-2 lg:mb-0 self-start lg:self-auto inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800 disabled:opacity-50"
-                        @@click="getSetupData"
-                        :disabled="isShimmerLoading">
-                    <i class="bi bi-arrow-clockwise" :class="{ 'animate-spin': isShimmerLoading }"></i>
-                    Refresh
-                </button>
             </div>
 
             <!-- ============ TAB 1 — PRIZE TYPES (data-grid) ============ -->
@@ -119,7 +111,7 @@
             <!-- ============ TAB 3 — PRIZE AWARDED ============ -->
             <section v-show="activeTab === 'awarded'" role="tabpanel">
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
                     <w-select v-model="awarded.academicYearId"
                               :options="academicYears"
                               display-key="name"

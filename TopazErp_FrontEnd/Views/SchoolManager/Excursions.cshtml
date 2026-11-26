@@ -74,17 +74,9 @@
                             @@click="activeTab = 'saved'">
                         <i class="bi bi-card-checklist"></i>
                         <span>Saved Excursions</span>
-                        <span v-if="scopeReady" class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-800 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200">{{ excursionsInScope.length }}</span>
+                    
                     </button>
                 </div>
-
-                <button type="button"
-                        class="mb-2 lg:mb-0 self-start lg:self-auto inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800 disabled:opacity-50"
-                        @@click="getSetupData"
-                        :disabled="isShimmerLoading">
-                    <i class="bi bi-arrow-clockwise" :class="{ 'animate-spin': isShimmerLoading }"></i>
-                    Refresh
-                </button>
             </div>
 
             <!-- ============ TAB 1 — PLAN EXCURSION ============ -->

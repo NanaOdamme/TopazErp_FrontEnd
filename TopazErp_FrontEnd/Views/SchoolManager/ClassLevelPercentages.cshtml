@@ -26,23 +26,8 @@
     <div class="card" data-card-title="Class Level Percentage">
         <div id="app" style="height: 1000px;">
 
-            <!-- header row -->
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-5 border-b border-gray-200 dark:border-slate-700 pb-4">
-                <p class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                    @*<i class="bi bi-percent text-blue-600 dark:text-blue-400"></i>
-                    One record per academic year. Changes are saved automatically.*@
-                </p>
-                <button type="button"
-                        class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800 disabled:opacity-50"
-                        @@click="getSetupData"
-                        :disabled="isShimmerLoading">
-                    <i class="bi bi-arrow-clockwise" :class="{ 'animate-spin': isShimmerLoading }"></i>
-                    Refresh
-                </button>
-            </div>
-
             <!-- scope: academic year -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
                 <w-select v-model="academicYearId"
                           :options="academicYears"
                           display-key="name"

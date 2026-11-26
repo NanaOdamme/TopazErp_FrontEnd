@@ -7378,92 +7378,6 @@ public async Task<BaseApiResponse> DeleteLevelClass(Guid id)
                "The level class Delete API returned an empty or invalid response.");
 }
 
-// CutOff
-public async Task<ConductCutOfResponse> GetCutOffs()
-{
-    var authToken = _claimsHelper.GetAuthToken();
-    string url = $"{_apiBaseUrl}CutOff/ListAll";
-
-    using var request = new HttpRequestMessage(HttpMethod.Get, url);
-    request.Headers.Add("Authorization", $"Bearer {authToken}");
-
-    using var response = await _httpClient.SendAsync(request);
-    var responseData = await response.Content.ReadAsStringAsync();
-
-    if (!response.IsSuccessStatusCode)
-    {
-        throw new HttpRequestException(
-            $"CutOff retrieval failed ({(int)response.StatusCode}): {responseData}");
-    }
-
-    return JsonConvert.DeserializeObject<ConductCutOfResponse>(responseData)
-           ?? throw new InvalidOperationException(
-               "The CutOff GetAll API returned an empty or invalid response.");
-}
-public async Task<BaseApiResponse> CreateCutOff(object dto)
-{
-    var authToken = _claimsHelper.GetAuthToken();
-    string url = $"{_apiBaseUrl}CutOff/Create";
-
-    using var request = new HttpRequestMessage(HttpMethod.Post, url);
-    request.Headers.Add("Authorization", $"Bearer {authToken}");
-    request.Content = JsonContent.Create(dto);
-
-    using var response = await _httpClient.SendAsync(request);
-
-    if (response.IsSuccessStatusCode)
-    {
-        string responseData = await response.Content.ReadAsStringAsync();
-
-        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
-               ?? new BaseApiResponse { };
-    }
-
-    return new BaseApiResponse { };
-}
-public async Task<BaseApiResponse> UpdateCutOff(object dto)
-{
-    var authToken = _claimsHelper.GetAuthToken();
-    string url = $"{_apiBaseUrl}CutOff/Update";
-
-    using var request = new HttpRequestMessage(HttpMethod.Put, url);
-    request.Headers.Add("Authorization", $"Bearer {authToken}");
-    request.Content = JsonContent.Create(dto);
-
-    using var response = await _httpClient.SendAsync(request);
-
-    if (response.IsSuccessStatusCode)
-    {
-        string responseData = await response.Content.ReadAsStringAsync();
-
-        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
-               ?? new BaseApiResponse { };
-    }
-
-    return new BaseApiResponse { };
-}
-public async Task<BaseApiResponse> DeleteCutOff(Guid id)
-{
-    var authToken = _claimsHelper.GetAuthToken();
-    string url = $"{_apiBaseUrl}CutOff/Delete?id={id}";
-
-    using var request = new HttpRequestMessage(HttpMethod.Delete, url);
-    request.Headers.Add("Authorization", $"Bearer {authToken}");
-
-    using var response = await _httpClient.SendAsync(request);
-    var responseData = await response.Content.ReadAsStringAsync();
-
-    if (!response.IsSuccessStatusCode)
-    {
-        throw new HttpRequestException(
-            $"CutOff deletion failed ({(int)response.StatusCode}): {responseData}");
-    }
-
-    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
-           ?? throw new InvalidOperationException(
-               "The CutOff Delete API returned an empty or invalid response.");
-}
-
 // DisciplinaryAction
 public async Task<DisciplinaryActionResponse> GetDisciplinaryActions()
 {
@@ -7722,91 +7636,6 @@ public async Task<BaseApiResponse> DeleteOffence(Guid id)
                "The Offence Delete API returned an empty or invalid response.");
 }
 
-// NurseryGrading
-public async Task<SmSimpleInputResponse> GetNurseryGradings()
-{
-    var authToken = _claimsHelper.GetAuthToken();
-    string url = $"{_apiBaseUrl}NurseryGrading/ListAll";
-
-    using var request = new HttpRequestMessage(HttpMethod.Get, url);
-    request.Headers.Add("Authorization", $"Bearer {authToken}");
-
-    using var response = await _httpClient.SendAsync(request);
-    var responseData = await response.Content.ReadAsStringAsync();
-
-    if (!response.IsSuccessStatusCode)
-    {
-        throw new HttpRequestException(
-            $"NurseryGrading retrieval failed ({(int)response.StatusCode}): {responseData}");
-    }
-
-    return JsonConvert.DeserializeObject<SmSimpleInputResponse>(responseData)
-           ?? throw new InvalidOperationException(
-               "The NurseryGrading GetAll API returned an empty or invalid response.");
-}
-public async Task<BaseApiResponse> CreateNurseryGrading(object dto)
-{
-    var authToken = _claimsHelper.GetAuthToken();
-    string url = $"{_apiBaseUrl}NurseryGrading/Create";
-
-    using var request = new HttpRequestMessage(HttpMethod.Post, url);
-    request.Headers.Add("Authorization", $"Bearer {authToken}");
-    request.Content = JsonContent.Create(dto);
-
-    using var response = await _httpClient.SendAsync(request);
-
-    if (response.IsSuccessStatusCode)
-    {
-        string responseData = await response.Content.ReadAsStringAsync();
-
-        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
-               ?? new BaseApiResponse { };
-    }
-
-    return new BaseApiResponse { };
-}
-public async Task<BaseApiResponse> UpdateNurseryGrading(object dto)
-{
-    var authToken = _claimsHelper.GetAuthToken();
-    string url = $"{_apiBaseUrl}NurseryGrading/Update";
-
-    using var request = new HttpRequestMessage(HttpMethod.Put, url);
-    request.Headers.Add("Authorization", $"Bearer {authToken}");
-    request.Content = JsonContent.Create(dto);
-
-    using var response = await _httpClient.SendAsync(request);
-
-    if (response.IsSuccessStatusCode)
-    {
-        string responseData = await response.Content.ReadAsStringAsync();
-
-        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
-               ?? new BaseApiResponse { };
-    }
-
-    return new BaseApiResponse { };
-}
-public async Task<BaseApiResponse> DeleteNurseryGrading(Guid id)
-{
-    var authToken = _claimsHelper.GetAuthToken();
-    string url = $"{_apiBaseUrl}NurseryGrading/Delete?id={id}";
-
-    using var request = new HttpRequestMessage(HttpMethod.Delete, url);
-    request.Headers.Add("Authorization", $"Bearer {authToken}");
-
-    using var response = await _httpClient.SendAsync(request);
-    var responseData = await response.Content.ReadAsStringAsync();
-
-    if (!response.IsSuccessStatusCode)
-    {
-        throw new HttpRequestException(
-            $"NurseryGrading deletion failed ({(int)response.StatusCode}): {responseData}");
-    }
-
-    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
-           ?? throw new InvalidOperationException(
-               "The NurseryGrading Delete API returned an empty or invalid response.");
-}
 
 // PerformanceArea
 public async Task<SmSimpleInputResponse> GetPerformanceAreas()
@@ -9505,94 +9334,6 @@ public async Task<BaseApiResponse> CancelSchCreditMemo(List<Guid> memoIds)
                "The SmCreditMemo Cancel API returned an empty or invalid response.");
 }
 
-// DistanceGroup
-public async Task<DistanceGroupResponse> GetDistanceGroups()
-{
-    var authToken = _claimsHelper.GetAuthToken();
-    string url = $"{_apiBaseUrl}DistanceGroup/ListAll";
-
-    using var request = new HttpRequestMessage(HttpMethod.Get, url);
-    request.Headers.Add("Authorization", $"Bearer {authToken}");
-
-    using var response = await _httpClient.SendAsync(request);
-    var responseData = await response.Content.ReadAsStringAsync();
-
-    if (!response.IsSuccessStatusCode)
-    {
-        throw new HttpRequestException(
-            $"DistanceGroup retrieval failed ({(int)response.StatusCode}): {responseData}");
-    }
-
-    return JsonConvert.DeserializeObject<DistanceGroupResponse>(responseData)
-           ?? throw new InvalidOperationException(
-               "The DistanceGroup GetAll API returned an empty or invalid response.");
-}
-
-public async Task<BaseApiResponse> CreateDistanceGroup(object dto)
-{
-    var authToken = _claimsHelper.GetAuthToken();
-    string url = $"{_apiBaseUrl}DistanceGroup/Create";
-
-    using var request = new HttpRequestMessage(HttpMethod.Post, url);
-    request.Headers.Add("Authorization", $"Bearer {authToken}");
-    request.Content = JsonContent.Create(dto);
-
-    using var response = await _httpClient.SendAsync(request);
-
-    if (response.IsSuccessStatusCode)
-    {
-        string responseData = await response.Content.ReadAsStringAsync();
-
-        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
-               ?? new BaseApiResponse { };
-    }
-
-    return new BaseApiResponse { };
-}
-
-public async Task<BaseApiResponse> UpdateDistanceGroup(object dto)
-{
-    var authToken = _claimsHelper.GetAuthToken();
-    string url = $"{_apiBaseUrl}DistanceGroup/Update";
-
-    using var request = new HttpRequestMessage(HttpMethod.Put, url);
-    request.Headers.Add("Authorization", $"Bearer {authToken}");
-    request.Content = JsonContent.Create(dto);
-
-    using var response = await _httpClient.SendAsync(request);
-
-    if (response.IsSuccessStatusCode)
-    {
-        string responseData = await response.Content.ReadAsStringAsync();
-
-        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
-               ?? new BaseApiResponse { };
-    }
-
-    return new BaseApiResponse { };
-}
-
-public async Task<BaseApiResponse> DeleteDistanceGroup(Guid id)
-{
-    var authToken = _claimsHelper.GetAuthToken();
-    string url = $"{_apiBaseUrl}DistanceGroup/Delete?id={id}";
-
-    using var request = new HttpRequestMessage(HttpMethod.Delete, url);
-    request.Headers.Add("Authorization", $"Bearer {authToken}");
-
-    using var response = await _httpClient.SendAsync(request);
-    var responseData = await response.Content.ReadAsStringAsync();
-
-    if (!response.IsSuccessStatusCode)
-    {
-        throw new HttpRequestException(
-            $"DistanceGroup deletion failed ({(int)response.StatusCode}): {responseData}");
-    }
-
-    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
-           ?? throw new InvalidOperationException(
-               "The DistanceGroup Delete API returned an empty or invalid response.");
-}
 
 // Excursion
 public async Task<ExcursionResponse> GetExcursions()
@@ -11042,14 +10783,20 @@ public async Task<BaseApiResponse> UpdateBill(object dto)
     return new BaseApiResponse { };
 }
 
-public async Task<BaseApiResponse> ProcessBills(object dto)
+
+public async Task<BaseApiResponse> CancelStudentBills(object dto)
 {
     var authToken = _claimsHelper.GetAuthToken();
-    var url = $"{_apiBaseUrl}ProcessBill/ProcessMultipleBills";
+    var url = $"{_apiBaseUrl}ProcessBill/CancelBillsForStudents";
+
+    // Serialize safely whether dto is JsonElement, JObject, or POCO
+    var jsonPayload = dto is System.Text.Json.JsonElement je
+        ? je.GetRawText()
+        : JsonConvert.SerializeObject(dto);
 
     using var request = new HttpRequestMessage(HttpMethod.Post, url);
     request.Headers.Add("Authorization", $"Bearer {authToken}");
-    request.Content = JsonContent.Create(dto);
+    request.Content = new StringContent(jsonPayload, System.Text.Encoding.UTF8, "application/json");
 
     using var response = await _httpClient.SendAsync(request);
     var responseData = await response.Content.ReadAsStringAsync();
@@ -11057,15 +10804,15 @@ public async Task<BaseApiResponse> ProcessBills(object dto)
     if (!response.IsSuccessStatusCode)
     {
         throw new HttpRequestException(
-            $"Bill processing failed ({(int)response.StatusCode}): {responseData}");
+            $"Student bill cancellation failed ({(int)response.StatusCode}): {responseData}");
     }
 
     return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
            ?? throw new InvalidOperationException(
-               "The ProcessBill ProcessBills API returned an empty or invalid response.");
+               "The ProcessBill CancelStudentBills API returned an empty or invalid response.");
 }
 
-public async Task<BaseApiResponse> CancelStudentBills(object dto)
+/*public async Task<BaseApiResponse> CancelStudentBills(object dto)
 {
     var authToken = _claimsHelper.GetAuthToken();
     var url = $"{_apiBaseUrl}ProcessBill/CancelBillsForStudents";
@@ -11086,29 +10833,8 @@ public async Task<BaseApiResponse> CancelStudentBills(object dto)
     return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
            ?? throw new InvalidOperationException(
                "The ProcessBill CancelStudentBills API returned an empty or invalid response.");
-}
+}*/
 
-public async Task<ExistingBillResponse> GetExistingBill()
-{
-    var authToken = _claimsHelper.GetAuthToken();
-    string url = $"{_apiBaseUrl}ProcessBill/CheckExistingBill";
-
-    using var request = new HttpRequestMessage(HttpMethod.Get, url);
-    request.Headers.Add("Authorization", $"Bearer {authToken}");
-
-    using var response = await _httpClient.SendAsync(request);
-    var responseData = await response.Content.ReadAsStringAsync();
-
-    if (!response.IsSuccessStatusCode)
-    {
-        throw new HttpRequestException(
-            $"Existing bill retrieval failed ({(int)response.StatusCode}): {responseData}");
-    }
-
-    return JsonConvert.DeserializeObject<ExistingBillResponse>(responseData)
-           ?? throw new InvalidOperationException(
-               "The ProcessBill GetExistingBill API returned an empty or invalid response.");
-}
 
 // PtaExecutive
 public async Task<PtaExecutiveResponse> GetPtaExecutives()
@@ -14153,183 +13879,8 @@ public async Task<BaseApiResponse> DeleteTimeTable(Guid id)
                "The TimeTable Delete API returned an empty or invalid response.");
 }
 
-// TransportationLocation
-public async Task<TransportationLocationResponse> GetTransportationLocations()
-{
-    var authToken = _claimsHelper.GetAuthToken();
-    string url = $"{_apiBaseUrl}TransportationLocation/ListAll";
 
-    using var request = new HttpRequestMessage(HttpMethod.Get, url);
-    request.Headers.Add("Authorization", $"Bearer {authToken}");
 
-    using var response = await _httpClient.SendAsync(request);
-    var responseData = await response.Content.ReadAsStringAsync();
-
-    if (!response.IsSuccessStatusCode)
-    {
-        throw new HttpRequestException(
-            $"TransportationLocations retrieval failed ({(int)response.StatusCode}): {responseData}");
-    }
-
-    return JsonConvert.DeserializeObject<TransportationLocationResponse>(responseData)
-           ?? throw new InvalidOperationException(
-               "The TransportationLocation ListAll API returned an empty or invalid response.");
-}
-
-public async Task<BaseApiResponse> CreateTransportationLocation(object dto)
-{
-    var authToken = _claimsHelper.GetAuthToken();
-    string url = $"{_apiBaseUrl}TransportationLocation/Create";
-
-    using var request = new HttpRequestMessage(HttpMethod.Post, url);
-    request.Headers.Add("Authorization", $"Bearer {authToken}");
-    request.Content = JsonContent.Create(dto);
-
-    using var response = await _httpClient.SendAsync(request);
-
-    if (response.IsSuccessStatusCode)
-    {
-        string responseData = await response.Content.ReadAsStringAsync();
-
-        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
-               ?? new BaseApiResponse { };
-    }
-
-    return new BaseApiResponse { };
-}
-
-public async Task<BaseApiResponse> UpdateTransportationLocation(object dto)
-{
-    var authToken = _claimsHelper.GetAuthToken();
-    string url = $"{_apiBaseUrl}TransportationLocation/Update";
-
-    using var request = new HttpRequestMessage(HttpMethod.Put, url);
-    request.Headers.Add("Authorization", $"Bearer {authToken}");
-    request.Content = JsonContent.Create(dto);
-
-    using var response = await _httpClient.SendAsync(request);
-
-    if (response.IsSuccessStatusCode)
-    {
-        string responseData = await response.Content.ReadAsStringAsync();
-
-        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
-               ?? new BaseApiResponse { };
-    }
-
-    return new BaseApiResponse { };
-}
-
-public async Task<BaseApiResponse> DeleteTransportationLocation(Guid id)
-{
-    var authToken = _claimsHelper.GetAuthToken();
-    string url = $"{_apiBaseUrl}TransportationLocation/Delete?id={id}";
-
-    using var request = new HttpRequestMessage(HttpMethod.Delete, url);
-    request.Headers.Add("Authorization", $"Bearer {authToken}");
-
-    using var response = await _httpClient.SendAsync(request);
-    var responseData = await response.Content.ReadAsStringAsync();
-
-    if (!response.IsSuccessStatusCode)
-    {
-        throw new HttpRequestException(
-            $"TransportationLocation deletion failed ({(int)response.StatusCode}): {responseData}");
-    }
-
-    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
-           ?? throw new InvalidOperationException(
-               "The TransportationLocation Delete API returned an empty or invalid response.");
-}
-
-// TransportationUnit
-public async Task<TransportationUnitResponse> GetTransportationUnits()
-{
-    var authToken = _claimsHelper.GetAuthToken();
-    string url = $"{_apiBaseUrl}TransportationUnit/ListAll";
-
-    using var request = new HttpRequestMessage(HttpMethod.Get, url);
-    request.Headers.Add("Authorization", $"Bearer {authToken}");
-
-    using var response = await _httpClient.SendAsync(request);
-    var responseData = await response.Content.ReadAsStringAsync();
-
-    if (!response.IsSuccessStatusCode)
-    {
-        throw new HttpRequestException(
-            $"TransportationUnits retrieval failed ({(int)response.StatusCode}): {responseData}");
-    }
-
-    return JsonConvert.DeserializeObject<TransportationUnitResponse>(responseData)
-           ?? throw new InvalidOperationException(
-               "The TransportationUnit ListAll API returned an empty or invalid response.");
-}
-
-public async Task<BaseApiResponse> CreatTransportationUnit(object dto)
-{
-    var authToken = _claimsHelper.GetAuthToken();
-    string url = $"{_apiBaseUrl}TransportationUnit/Create";
-
-    using var request = new HttpRequestMessage(HttpMethod.Post, url);
-    request.Headers.Add("Authorization", $"Bearer {authToken}");
-    request.Content = JsonContent.Create(dto);
-
-    using var response = await _httpClient.SendAsync(request);
-
-    if (response.IsSuccessStatusCode)
-    {
-        string responseData = await response.Content.ReadAsStringAsync();
-
-        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
-               ?? new BaseApiResponse { };
-    }
-
-    return new BaseApiResponse { };
-}
-
-public async Task<BaseApiResponse> UpdateTransportationUnit(object dto)
-{
-    var authToken = _claimsHelper.GetAuthToken();
-    string url = $"{_apiBaseUrl}TransportationUnit/Update";
-
-    using var request = new HttpRequestMessage(HttpMethod.Put, url);
-    request.Headers.Add("Authorization", $"Bearer {authToken}");
-    request.Content = JsonContent.Create(dto);
-
-    using var response = await _httpClient.SendAsync(request);
-
-    if (response.IsSuccessStatusCode)
-    {
-        string responseData = await response.Content.ReadAsStringAsync();
-
-        return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
-               ?? new BaseApiResponse { };
-    }
-
-    return new BaseApiResponse { };
-}
-
-public async Task<BaseApiResponse> DeleteTransportationUnit(Guid id)
-{
-    var authToken = _claimsHelper.GetAuthToken();
-    string url = $"{_apiBaseUrl}TransportationUnit/Delete?id={id}";
-
-    using var request = new HttpRequestMessage(HttpMethod.Delete, url);
-    request.Headers.Add("Authorization", $"Bearer {authToken}");
-
-    using var response = await _httpClient.SendAsync(request);
-    var responseData = await response.Content.ReadAsStringAsync();
-
-    if (!response.IsSuccessStatusCode)
-    {
-        throw new HttpRequestException(
-            $"TransportationUnit deletion failed ({(int)response.StatusCode}): {responseData}");
-    }
-
-    return JsonConvert.DeserializeObject<BaseApiResponse>(responseData)
-           ?? throw new InvalidOperationException(
-               "The TransportationUnit Delete API returned an empty or invalid response.");
-}
 
 
 }

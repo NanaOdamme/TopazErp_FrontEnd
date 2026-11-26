@@ -46,17 +46,11 @@
                             @@click="activeTab = 'assessment'">
                         <i class="bi bi-clipboard2-check"></i>
                         <span>Mid-Term Assessment</span>
-                        <span v-if="scopeReady" class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-800 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200">{{ studentsWithSelections.length }}</span>
+                    
                     </button>
                 </div>
 
-                <button type="button"
-                        class="mb-2 lg:mb-0 self-start lg:self-auto inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-slate-800 disabled:opacity-50"
-                        @@click="getSetupData"
-                        :disabled="isShimmerLoading">
-                    <i class="bi bi-arrow-clockwise" :class="{ 'animate-spin': isShimmerLoading }"></i>
-                    Refresh
-                </button>
+            
             </div>
 
             <!-- ============ TAB 1 — REMARK HEADERS (data-grid with child Options) ============ -->
@@ -154,7 +148,7 @@
 
                     <!-- students x headers matrix -->
                     <div class="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden">
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-800 px-4 py-3">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3">
                             <div class="flex items-center gap-2 flex-wrap">
                                 <i class="bi bi-people-fill text-blue-600 dark:text-blue-400"></i>
                                 <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Students — {{ nameOf(classes, classId) }}</span>
